@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Medikpedia - Apotik Online Terpercaya')</title>
+    <title>@yield('title', 'Apotek Medix - Apotik Online Terpercaya')</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     
     <!-- FIX CURSOR - MUST BE FIRST TO OVERRIDE EVERYTHING -->
     <style>
@@ -297,7 +298,7 @@
     <nav class="navbar navbar-expand-lg navbar-light sticky-top">
         <div class="container">
             <a class="navbar-brand" href="{{ route('home') }}">
-                <i class="fas fa-pills"></i>Medikpedia
+                <i class="fas fa-pills"></i>Apotek Medix
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -332,7 +333,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-3 footer-section mb-4">
-                    <h5><i class="fas fa-pills"></i> Medikpedia</h5>
+                    <h5><i class="fas fa-pills"></i> Apotek Medix</h5>
                     <p>Apotik online terpercaya menyediakan obat dan suplemen berkualitas dengan harga terjangkau.</p>
                     <div class="mt-3">
                         <a href="#" class="footer-link"><i class="fab fa-facebook"></i> Facebook</a>
@@ -360,7 +361,7 @@
                         <i class="fas fa-phone"></i> (021) 1234-5678
                     </p>
                     <p class="footer-link">
-                        <i class="fas fa-envelope"></i> medikpedia.mitramedika@gmail.com
+                        <i class="fas fa-envelope"></i> apotekmedix.mitramedika@gmail.com
                     </p>
                     <p class="footer-link">
                         <i class="fas fa-map-marker-alt"></i> Jakarta, Indonesia
@@ -368,7 +369,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 Medikpedia. All rights reserved. | Privacy Policy | Terms & Conditions</p>
+                <p>&copy; 2024 Apotek Medix. All rights reserved. | Privacy Policy | Terms & Conditions</p>
             </div>
         </div>
     </footer>

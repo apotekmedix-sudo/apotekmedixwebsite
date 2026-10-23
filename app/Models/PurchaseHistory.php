@@ -8,6 +8,7 @@ class PurchaseHistory extends Model
 {
     protected $fillable = [
         'buyer_type',
+        'user_id',
         'buyer_name',
         'requester_name',
         'outlet_name',
@@ -29,6 +30,10 @@ class PurchaseHistory extends Model
         'approval_status',
         'payment_method',
         'payment_term_days',
+        'transaction_channel',
+        'payment_status',
+        'cashier_id',
+        'paid_at',
     ];
 
     protected $casts = [
@@ -37,9 +42,20 @@ class PurchaseHistory extends Model
         'original_total' => 'integer',
         'discounted_total' => 'integer',
         'payment_term_days' => 'integer',
+        'paid_at' => 'datetime',
     ];
 
     protected $appends = ['effective_total', 'approval_label'];
+
+    public function cashier()
+    {
+        return $this->belongsTo(User::class, 'cashier_id');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
     public function getEffectiveTotalAttribute(): int
     {

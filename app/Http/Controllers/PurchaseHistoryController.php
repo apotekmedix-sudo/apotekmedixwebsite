@@ -7,6 +7,7 @@ use App\Models\Medicine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Auth;
 
 class PurchaseHistoryController extends Controller
 {
@@ -27,12 +28,13 @@ class PurchaseHistoryController extends Controller
             'sipa'            => ['nullable', 'string', 'max:255'],
             'no_izin_pbf'     => ['nullable', 'string', 'max:255'],
             'apj'             => ['nullable', 'string', 'max:255'],
-            'items'           => ['nullable', 'array'],
-            'items.*.id'      => ['nullable', 'integer', 'exists:medicines,id'],
+            'items'           => ['required_if:transaction_channel,offline', 'array'],
+            'items.*.id'      => ['required_if:transaction_channel,offline', 'nullable', 'integer', 'exists:medicines,id'],
             'items.*.nama_obat' => ['nullable', 'string', 'max:255'],
             'items.*.name'     => ['nullable', 'string', 'max:255'],
-            'items.*.quantity'=> ['nullable', 'integer', 'min:1'],
+            'items.*.quantity'=> ['required_if:transaction_channel,offline', 'nullable', 'integer', 'min:1'],
             'items.*.qty'     => ['nullable', 'integer', 'min:1'],
+            'items.*.sale_unit' => ['nullable', 'string', 'in:tablet,strip,box'],
             'items.*.harga'   => ['nullable', 'integer', 'min:0'],
             'items.*.price'   => ['nullable', 'integer', 'min:0'],
             'items.*.catatan' => ['nullable', 'string'],
@@ -45,7 +47,22 @@ class PurchaseHistoryController extends Controller
             'approval_status' => ['nullable', 'string', 'in:pending,approved,rejected'],
             'payment_method'  => ['nullable', 'string', 'max:255'],
             'payment_term_days' => ['nullable', 'integer', 'min:1'],
+            'transaction_channel' => ['nullable', 'string', 'in:online,offline'],
         ]);
+
+        $channel = $data['transaction_channel'] ?? 'online';
+        if ($channel === 'offline') {
+            if ($data['buyer_type'] !== 'umum' || empty($data['buyer_name']) || empty($data['phone'])) {
+                return response()->json([
+                    'message' => 'Nama dan nomor telepon wajib diisi untuk pesanan kios.',
+                    'errors' => ['buyer_name' => ['Nama dan nomor telepon wajib diisi untuk pesanan kios.']],
+                ], 422);
+            }
+            $data['payment_method'] = 'Tunai';
+            $data['address'] = null;
+            $data['kecamatan'] = null;
+            $data['kota'] = null;
+        }
 
         if (in_array($data['buyer_type'], ['apotik', 'dokter'], true)) {
             $data['buyer_name'] = $data['requester_name'] ?? ($data['buyer_name'] ?? null);
@@ -70,20 +87,57 @@ class PurchaseHistoryController extends Controller
 
         foreach ($items as $index => $item) {
             $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
+            $unit = $item['sale_unit'] ?? 'box';
             $price = (int) ($item['harga'] ?? $item['price'] ?? 0);
+            $product = !empty($item['id']) ? Medicine::find((int) $item['id']) : null;
+
+            if ($product && $product->getSaleUnitFactor($unit) < 1) {
+                return response()->json([
+                    'message' => "Satuan {$unit} tidak tersedia untuk produk {$product->nama_obat}.",
+                    'errors' => ['items' => ["Satuan {$unit} tidak tersedia untuk produk {$product->nama_obat}."]],
+                ], 422);
+            }
+
+            $usePackagePrice = $product
+                && $product->unit_packaging_enabled
+                && ($channel === 'offline' || (
+                    $product->kelompok !== 'PBF'
+                    && $data['buyer_type'] !== 'pbf'
+                    && empty($data['pbf_name'])
+                ));
+
+            if ($usePackagePrice) {
+                $unitPrice = $product->getSaleUnitPrice($unit);
+                if ($unitPrice === null) {
+                    return response()->json([
+                        'message' => "Harga satuan {$unit} belum diatur untuk produk {$product->nama_obat}.",
+                        'errors' => ['items' => ["Harga satuan {$unit} belum diatur untuk produk {$product->nama_obat}."]],
+                    ], 422);
+                }
+                $price = (int) round($unitPrice);
+            } elseif ($channel === 'offline' && $product) {
+                $price = (int) round((float) ($product->harga_retail ?: $product->harga));
+            }
             if ($data['buyer_type'] === 'apotik' && !empty($item['id']) && $price <= 0) {
                 $price = (int) round((float) (Medicine::whereKey($item['id'])->value('harga_modal') ?? 0));
             }
-            $discount = min(
-                (int) ($item['potongan'] ?? $item['discount'] ?? 0),
-                $qty * $price
-            );
+            $discount = $channel === 'offline'
+                ? 0
+                : min((int) ($item['potongan'] ?? $item['discount'] ?? 0), $qty * $price);
             $subtotal = $qty * $price;
             $originalTotal += $subtotal;
             $discountedTotal += max(0, $subtotal - $discount);
 
             $items[$index]['harga'] = $price;
             $items[$index]['potongan'] = $discount;
+            $items[$index]['sale_unit'] = $unit;
+            $items[$index]['unit_label'] = $product && !$product->unit_packaging_enabled
+                ? ($product->sediaan_label ?: 'Pcs')
+                : match ($unit) {
+                    'tablet' => 'Tablet',
+                    'strip' => 'Strip',
+                    default => 'Box',
+                };
         }
 
         $data['items'] = $items;
@@ -91,35 +145,51 @@ class PurchaseHistoryController extends Controller
         $data['discounted_total'] = $discountedTotal;
         $data['total'] = $discountedTotal;
         $data['approval_status'] = $data['approval_status'] ?? 'pending';
+        $data['transaction_channel'] = $channel;
+        $data['user_id'] = Auth::check() && Auth::user()->isUser() && $channel === 'online'
+            ? Auth::id()
+            : null;
+        $data['payment_status'] = 'pending';
+        $data['cashier_id'] = null;
+        $data['paid_at'] = null;
 
         $history = DB::transaction(function () use ($data, $items) {
-            $quantities = [];
+            $productIds = collect($items)->pluck('id')->filter()->map(fn ($id) => (int) $id)->unique()->sort()->values();
+            $products = Medicine::whereIn('id', $productIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+            $requiredUnits = [];
             foreach ($items as $item) {
                 if (empty($item['id']) || empty($item['quantity'])) {
                     continue;
                 }
 
                 $productId = (int) $item['id'];
-                $quantities[$productId] = ($quantities[$productId] ?? 0) + (int) $item['quantity'];
+                $product = $products->get($productId);
+                $unitFactor = $product?->getSaleUnitFactor($item['sale_unit'] ?? 'box') ?? 0;
+                if (!$product || $unitFactor < 1) {
+                    return ['error' => 'Produk atau satuan yang dipilih sudah tidak tersedia. Silakan muat ulang katalog.'];
+                }
+                $requiredUnits[$productId] = ($requiredUnits[$productId] ?? 0) + ((int) $item['quantity'] * $unitFactor);
             }
 
-            $products = Medicine::whereIn('id', array_keys($quantities))
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('id');
-
-            foreach ($quantities as $productId => $quantity) {
+            foreach ($requiredUnits as $productId => $quantity) {
                 $product = $products->get($productId);
-                if (!$product || $product->stok < $quantity) {
+                if (!$product || (int) $product->stock_base_units < $quantity) {
                     $productName = $product?->nama_obat ?? 'Produk #' . $productId;
-                    return [
-                        'error' => "Stok {$productName} tidak mencukupi. Stok tersisa: " . ($product?->stok ?? 0) . '.',
-                    ];
+                    return ['error' => "Stok {$productName} tidak mencukupi. Stok tersisa: " . ($product?->stock_breakdown ?? '0 box') . '.'];
                 }
             }
 
-            foreach ($quantities as $productId => $quantity) {
-                $products->get($productId)->decrement('stok', $quantity);
+            foreach ($requiredUnits as $productId => $quantity) {
+                $product = $products->get($productId);
+                $remainingUnits = (int) $product->stock_base_units - $quantity;
+                $product->update([
+                    'stock_base_units' => $remainingUnits,
+                    'stok' => intdiv($remainingUnits, $product->units_per_box),
+                ]);
             }
 
             return ['history' => PurchaseHistory::create($data)];

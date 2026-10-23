@@ -1,6 +1,6 @@
-@extends('layouts.admin')
-@section('title', 'Promo Produk - Admin Medikpedia')
-@section('page-title', '🏷️ Promo Produk')
+﻿@extends('layouts.admin')
+@section('title', 'Promo Produk - Admin Apotek Medix')
+@section('page-title', 'ðŸ·ï¸ Promo Produk')
 
 @section('styles')
 <style>
@@ -81,7 +81,7 @@
             @if($promo->subjudul)<p class="promo-sub">{{ $promo->subjudul }}</p>@endif
             <div class="promo-meta">
                 <span class="{{ $promo->aktif ? 'badge-aktif' : 'badge-nonaktif' }}">
-                    {{ $promo->aktif ? '● Aktif' : '○ Nonaktif' }}
+                    {{ $promo->aktif ? 'â— Aktif' : 'â—‹ Nonaktif' }}
                 </span>
                 <span class="badge-urutan">#{{ $promo->urutan }}</span>
             </div>
@@ -116,7 +116,7 @@
 {{-- Delete Modal --}}
 <div class="modal-overlay" id="deleteModal">
     <div class="modal-box">
-        <div style="font-size:2.5rem;margin-bottom:0.75rem;">🗑️</div>
+        <div style="font-size:2.5rem;margin-bottom:0.75rem;">ðŸ—‘ï¸</div>
         <h3>Hapus Promo?</h3>
         <p id="deleteMsg">Promo ini akan dihapus permanen.</p>
         <div class="modal-actions">
@@ -150,7 +150,8 @@ async function togglePromo(id, btn) {
     btn.innerHTML = `<i class="fa-solid ${aktif ? 'fa-eye-slash' : 'fa-eye'}"></i> ${aktif ? 'Off' : 'On'}`;
     const badge = btn.closest('.promo-card').querySelector('.badge-aktif, .badge-nonaktif');
     badge.className = aktif ? 'badge-aktif' : 'badge-nonaktif';
-    badge.textContent = aktif ? '● Aktif' : '○ Nonaktif';
+    badge.textContent = aktif ? 'â— Aktif' : 'â—‹ Nonaktif';
 }
 </script>
 @endsection
+

@@ -1,6 +1,6 @@
 ﻿@extends('layouts.frontend')
 
-@section('title', 'Akses Produk PBF - Medikpedia')
+@section('title', 'Akses Produk PBF - Apotek Medix')
 
 @section('styles')
 <style>
@@ -276,7 +276,7 @@
         <div class="pbf-gate-header">
             <div class="lock-icon"><i class="fa-solid fa-lock"></i></div>
             <h1>Akses Terbatas</h1>
-            <p>Halaman ini hanya untuk mitra & distributor resmi Medikpedia</p>
+            <p>Halaman ini hanya untuk mitra & distributor resmi Apotek Medix</p>
         </div>
 
         <div class="pbf-gate-body">
@@ -321,7 +321,7 @@
             </div>
 
             {{-- Tombol WA --}}
-            <a href='https://wa.me/6285890007359?text={{ urlencode("Halo Medikpedia, saya ingin meminta kode akses untuk halaman Produk PBF.\n\nData saya:\n- Nama Perusahaan/Apotek: \n- Nomor SIA/SIPA: \n- Nama PIC: \n\nMohon informasi kode aksesnya. Terima kasih.") }}'
+            <a href='https://wa.me/6285890007359?text={{ urlencode("Halo Apotek Medix, saya ingin meminta kode akses untuk halaman Produk PBF.\n\nData saya:\n- Nama Perusahaan/Apotek: \n- Nomor SIA/SIPA: \n- Nama PIC: \n\nMohon informasi kode aksesnya. Terima kasih.") }}'
                target="_blank"
                class="btn-wa-request">
                 <i class="fa-brands fa-whatsapp" style="font-size:1.3rem;"></i>

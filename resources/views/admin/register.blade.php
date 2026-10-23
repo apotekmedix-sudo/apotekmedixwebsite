@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Register - Medikpedia</title>
+    <title>Admin Register - Apotek Medix</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -140,9 +140,9 @@
     <div class="register-container">
         <div class="register-header">
             <div class="register-logo">
-                <img src="{{ asset('logo1.png') }}" alt="Medikpedia" style="max-height: 80px; max-width: 100%; object-fit: contain;">
+                <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix" style="max-height: 80px; max-width: 100%; object-fit: contain;">
             </div>
-            <h1>Medikpedia Admin</h1>
+            <h1>Apotek Medix Admin</h1>
             <p>Daftar akun admin baru</p>
         </div>
 
@@ -172,7 +172,7 @@
                     id="email"
                     name="email" 
                     class="form-control @error('email') is-invalid @enderror"
-                    placeholder="admin@medikpedia.com"
+                    placeholder="admin@apotekmedix.com"
                     required
                     value="{{ old('email') }}"
                 >

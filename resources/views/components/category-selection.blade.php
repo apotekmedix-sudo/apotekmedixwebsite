@@ -303,10 +303,11 @@
 
 <style>
 .social-follow-section {
-    background: linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #1E88E5 100%);
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 68%, #164E63 100%);
     padding: 2.5rem 0;
     width: 100%;
     overflow: hidden;
+    border-top: 2px solid #06B6D4;
 }
 
 .social-follow-inner {
@@ -401,29 +402,23 @@
         <h2 class="social-follow-title"><i class="fa-solid fa-share-nodes"></i> Ikuti Kami</h2>
         <button type="button" class="social-follow-control" id="socialFollowPrev" title="Sebelumnya" aria-label="Sosial sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
         <div class="social-follow-links" id="socialFollowLinks">
-            <a href="https://www.instagram.com/apotek_medikpedia?igsi=MTVybm4xZmswYXg3Ng==" target="_blank" rel="noopener" class="social-follow-link" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);" title="Instagram" aria-label="Instagram">
+            <a href="https://www.instagram.com/apotekmedix" target="_blank" rel="noopener" class="social-follow-link" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);" title="Instagram" aria-label="Instagram">
                 <i class="fa-brands fa-instagram"></i>
             </a>
             <a href="https://wa.me/6285890007359" target="_blank" rel="noopener" class="social-follow-link" style="background:#25D366;" title="WhatsApp" aria-label="WhatsApp">
                 <i class="fa-brands fa-whatsapp"></i>
             </a>
-            <a href="https://facebook.com/medikpedia" target="_blank" rel="noopener" class="social-follow-link" style="background:#1877F2;" title="Facebook" aria-label="Facebook">
+            <a href="https://facebook.com/apotekmedix" target="_blank" rel="noopener" class="social-follow-link" style="background:#1877F2;" title="Facebook" aria-label="Facebook">
                 <i class="fa-brands fa-facebook-f"></i>
             </a>
             <a href="https://pin.it/69pbGoR2f" target="_blank" rel="noopener" class="social-follow-link" style="background:#E60023;" title="Pinterest" aria-label="Pinterest">
                 <i class="fa-brands fa-pinterest-p"></i>
             </a>
-            <a href="https://youtube.com/@medikpedia?si=YqymYCniGs60plIl" target="_blank" rel="noopener" class="social-follow-link" style="background:#FF0000;" title="YouTube" aria-label="YouTube">
+            <a href="https://www.youtube.com/@apotekmedix" target="_blank" rel="noopener" class="social-follow-link" style="background:#FF0000;" title="YouTube" aria-label="YouTube">
                 <i class="fa-brands fa-youtube"></i>
             </a>
-            <a href="https://shopee.co.id/medikpedia" target="_blank" rel="noopener" class="social-follow-link" style="background:#EE4D2D;" title="Shopee" aria-label="Shopee">
-                <img src="{{ asset('logoshopee.jpeg') }}" alt="Shopee">
-            </a>
-            <a href="https://www.tiktok.com/@medikpedia" target="_blank" rel="noopener" class="social-follow-link" style="background:#111;" title="TikTok" aria-label="TikTok">
+            <a href="https://www.tiktok.com/@apotekmedix" target="_blank" rel="noopener" class="social-follow-link" style="background:#111;" title="TikTok" aria-label="TikTok">
                 <i class="fa-brands fa-tiktok"></i>
-            </a>
-            <a href="https://www.tokopedia.com/medikpedia" target="_blank" rel="noopener" class="social-follow-link" style="background:#42B549;" title="Tokopedia" aria-label="Tokopedia">
-                <img src="{{ asset('logotokopedia.png') }}" alt="Tokopedia">
             </a>
         </div>
         <button type="button" class="social-follow-control" id="socialFollowNext" title="Berikutnya" aria-label="Sosial berikutnya"><i class="fa-solid fa-chevron-right"></i></button>

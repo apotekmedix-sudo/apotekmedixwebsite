@@ -1,7 +1,7 @@
 ﻿
 @extends('layouts.frontend')
 
-@section('title', 'Tentang Kami - Medikpedia')
+@section('title', 'Tentang Kami - Apotek Medix')
 
 @section('styles')
 <style>
@@ -309,7 +309,7 @@
             <div class="about-hero-badge">
                 <i class="fa-solid fa-award"></i> Terpercaya Sejak 2016
             </div>
-            <h1>Kesehatan Anda,<br>Prioritas <span class="accent">Medikpedia</span></h1>
+            <h1>Kesehatan Anda,<br>Prioritas <span class="accent">Apotek Medix</span></h1>
             <p>Distributor farmasi & apotik online yang menjadi mitra strategis bagi praktisi kesehatan dan masyarakat Indonesia — produk berkualitas, harga terjangkau, layanan 24/7.</p>
             <div class="hero-btns">
                 <a href="{{ route('products.index') }}" class="btn-hero-primary">
@@ -355,7 +355,7 @@
                 <div class="section-tag"><i class="fa-solid fa-building"></i> Profil Perusahaan</div>
                 <h2 class="section-title">Distributor & Apotik<br>Terpercaya di Indonesia</h2>
                 <p class="section-lead">
-                    <strong>MEDIKPEDIA</strong> hadir sebagai rantai distribusi untuk menjembatani kebutuhan masyarakat dengan para praktisi kesehatan — RS, Apotek, Dokter, Bidan, Klinik — untuk kebutuhan medis berkualitas dengan harga terjangkau.
+                    <strong>APOTEK MEDIX</strong> hadir sebagai solusi distribusi dan apotek kesehatan yang menjembatani kebutuhan masyarakat dengan para praktisi kesehatan — RS, Apotek, Dokter, Bidan, Klinik — untuk kebutuhan medis berkualitas dengan harga terjangkau.
                 </p>
                 <p class="section-lead" style="margin-top:.75rem;">
                     Sejak 2016, kami mengelola rantai distribusi secara mandiri melalui kerjasama dengan PBF lokal dan nasional untuk memastikan keamanan dan keaslian produk hingga ke tangan mitra dan masyarakat.
@@ -371,12 +371,12 @@
                 <div style="padding:.85rem 1.1rem;background:#eff6ff;border-radius:12px;border-left:4px solid #1E88E5;font-size:.88rem;color:#374151;">
                     <i class="fa-solid fa-envelope" style="color:#1E88E5;margin-right:.4rem;"></i>
                     <strong>Email:</strong>
-                    <a href="mailto:medikpedia.mitramedika@gmail.com" style="color:#1E88E5;text-decoration:none;font-weight:600;">medikpedia.mitramedika@gmail.com</a>
+                    <a href="mailto:hello@apotekmedix.com" style="color:#1E88E5;text-decoration:none;font-weight:600;">hello@apotekmedix.com</a>
                 </div>
             </div>
             <div class="who-img-wrap">
-                <img src="{{ asset('page2.jpeg') }}" alt="Medikpedia" class="who-img-main">
-                <img src="{{ asset('page1.jpeg') }}" alt="Produk Medikpedia" class="who-img-corner">
+                <img src="{{ asset('page2.jpeg') }}" alt="Apotek Medix" class="who-img-main">
+                <img src="{{ asset('page1.jpeg') }}" alt="Produk Apotek Medix" class="who-img-corner">
                 <div class="who-img-badge">
                     <span class="big">2016</span>
                     <span class="sm">Berdiri Sejak</span>
@@ -391,27 +391,27 @@
     <div class="container">
         <div style="text-align:center;margin-bottom:2rem;">
             <div class="section-tag" style="background:#fef3c7;color:#92400e;"><i class="fa-solid fa-images"></i> Galeri Kami</div>
-            <h2 class="section-title">Momen & Aktivitas<br>Medikpedia</h2>
+            <h2 class="section-title">Momen & Aktivitas<br>Apotek Medix</h2>
         </div>
         <div class="gallery-grid">
             <div class="gallery-item gallery-item-large">
-                <img src="{{ asset('page4.jpeg') }}" alt="Aktivitas Medikpedia">
+                <img src="{{ asset('page4.jpeg') }}" alt="Aktivitas Apotek Medix">
                 <div class="gallery-overlay"><span><i class="fa-solid fa-expand"></i> Distribusi Produk</span></div>
             </div>
             <div class="gallery-item">
-                <img src="{{ asset('page5.jpeg') }}" alt="Produk Medikpedia">
+                <img src="{{ asset('page5.jpeg') }}" alt="Produk Apotek Medix">
                 <div class="gallery-overlay"><span><i class="fa-solid fa-expand"></i> Produk Unggulan</span></div>
             </div>
             <div class="gallery-item">
-                <img src="{{ asset('page6.jpeg') }}" alt="Layanan Medikpedia">
+                <img src="{{ asset('page6.jpeg') }}" alt="Layanan Apotek Medix">
                 <div class="gallery-overlay"><span><i class="fa-solid fa-expand"></i> Layanan Profesional</span></div>
             </div>
             <div class="gallery-item">
-                <img src="{{ asset('page7.jpeg') }}" alt="Konsultasi Medikpedia">
+                <img src="{{ asset('page7.jpeg') }}" alt="Konsultasi Apotek Medix">
                 <div class="gallery-overlay"><span><i class="fa-solid fa-expand"></i> Konsultasi Kesehatan</span></div>
             </div>
             <div class="gallery-item">
-                <img src="{{ asset('page3.jpeg') }}" alt="Apotek Medikpedia">
+                <img src="{{ asset('page3.jpeg') }}" alt="Apotek Medix">
                 <div class="gallery-overlay"><span><i class="fa-solid fa-expand"></i> Apotik Online</span></div>
             </div>
         </div>

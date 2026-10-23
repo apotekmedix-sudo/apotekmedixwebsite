@@ -1,6 +1,6 @@
-@extends('layouts.frontend')
+﻿@extends('layouts.frontend')
 
-@section('title', 'Kode Akses GASS - Medikpedia')
+@section('title', 'Kode Akses GASS - Apotek Medix')
 
 @section('styles')
 <style>
@@ -42,3 +42,4 @@
     </div>
 </section>
 @endsection
+

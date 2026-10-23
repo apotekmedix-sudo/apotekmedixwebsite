@@ -55,10 +55,18 @@ class ProductController extends Controller
                             ->orderBy('kategori')
                             ->pluck('kategori');
 
-        return view('products', compact(
-            'medicines', 'search', 'kategori_produk', 'perusahaan',
-            'sort', 'total', 'kategoriOptions', 'perusahaanList'
-        ));
+        return view('products', [
+            'medicines' => $medicines,
+            'search' => $search,
+            'kategori_produk' => $kategori_produk,
+            'perusahaan' => $perusahaan,
+            'sort' => $sort,
+            'total' => $total,
+            'kategoriOptions' => $kategoriOptions,
+            'perusahaanList' => $perusahaanList,
+            'kioskOrder' => $request->routeIs('kiosk'),
+        ]);
+
     }
 
     public function update(Request $request, $id)
@@ -86,19 +94,19 @@ class ProductController extends Controller
     }
 
     /**
-     * Kode akses katalog — medikpedia1 sampai medikpedia10.
+     * Kode akses katalog — APOTEKMEDIX1 sampai APOTEKMEDIX10.
      */
     const PBF_ACCESS_CODES = [
-        'MEDIKPEDIA1',
-        'MEDIKPEDIA2',
-        'MEDIKPEDIA3',
-        'MEDIKPEDIA4',
-        'MEDIKPEDIA5',
-        'MEDIKPEDIA6',
-        'MEDIKPEDIA7',
-        'MEDIKPEDIA8',
-        'MEDIKPEDIA9',
-        'MEDIKPEDIA10',
+        'APOTEKMEDIX1',
+        'APOTEKMEDIX2',
+        'APOTEKMEDIX3',
+        'APOTEKMEDIX4',
+        'APOTEKMEDIX5',
+        'APOTEKMEDIX6',
+        'APOTEKMEDIX7',
+        'APOTEKMEDIX8',
+        'APOTEKMEDIX9',
+        'APOTEKMEDIX10',
     ];
 
     /**
@@ -245,4 +253,3 @@ class ProductController extends Controller
     }
 
 }
-

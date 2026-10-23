@@ -1,11 +1,138 @@
 ﻿@extends('layouts.frontend')
-@section('title', 'Medikpedia - Apotik Online Terpercaya')
+@section('title', 'Apotek Medix - Apotik Online Terpercaya')
 @section('styles')
 <style>
 /* ==============================================
    HOME PAGE - Clean GoApotik Style
    ============================================== */
-</style>
+.home-brand-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    max-width: 1200px;
+    min-height: 410px;
+    margin: 1.5rem auto 2rem;
+    padding: 2.5rem clamp(1.5rem, 4vw, 3rem);
+    overflow: hidden;
+    border-radius: 18px;
+    color: #fff;
+    background:
+        radial-gradient(ellipse at 84% 18%, rgba(6, 182, 212, 0.38), transparent 37%),
+        radial-gradient(ellipse at 12% 110%, rgba(132, 204, 22, 0.18), transparent 42%),
+        linear-gradient(112deg, #0F172A 0%, #16243A 60%, #12394A 100%);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+}
+.home-brand-hero::before {
+    position: absolute;
+    top: -200px;
+    right: 5%;
+    width: 650px;
+    height: 650px;
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: 50%;
+    content: "";
+}
+.home-brand-hero::after {
+    position: absolute;
+    right: 10%;
+    bottom: -220px;
+    width: 480px;
+    height: 480px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 50%;
+    box-shadow: 0 0 0 36px rgba(255,255,255,0.035), 0 0 0 72px rgba(255,255,255,0.025);
+    content: "";
+}
+.home-brand-hero-copy { position: relative; z-index: 1; width: min(100%, 700px); }
+.home-brand-hero-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+    color: #BEF264;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.home-brand-hero h1 {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(2rem, 4.1vw, 3.45rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+}
+.home-brand-hero p {
+    max-width: 600px;
+    margin: 0.85rem 0 1.25rem;
+    color: rgba(255,255,255,0.9);
+    font-size: clamp(1rem, 1.6vw, 1.25rem);
+    line-height: 1.5;
+}
+.home-brand-hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    max-width: 690px;
+}
+.home-brand-hero-actions a {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    min-height: 68px;
+    padding: 0.85rem 1rem;
+    border: 1px solid rgba(255,255,255,0.55);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.96);
+    box-shadow: 0 5px 14px rgba(0, 45, 69, 0.12);
+    color: #0E6470;
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.home-brand-hero-actions a i { width: 30px; text-align: center; font-size: 1.35rem; }
+.home-brand-hero-actions a:hover { transform: translateY(-2px); box-shadow: 0 9px 20px rgba(0, 45, 69, 0.18); background: #fff; }
+.home-brand-hero-mark {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: 310px;
+    height: 310px;
+    flex: 0 0 310px;
+    place-items: center;
+}
+.home-brand-hero-circle {
+    position: absolute;
+    inset: 8%;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.26), rgba(255,255,255,0.04) 68%);
+    box-shadow: 0 0 0 16px rgba(255,255,255,0.06), 0 20px 60px rgba(0,48,74,0.16);
+}
+.home-brand-hero-mark img { position: relative; width: 72%; height: 72%; object-fit: contain; filter: drop-shadow(0 12px 18px rgba(0,38,68,0.2)); }
+@media (max-width: 768px) {
+    .home-brand-hero { min-height: 0; margin: 1rem 1rem 1.5rem; padding: 2rem 1.5rem; }
+    .home-brand-hero-mark { width: 160px; height: 160px; flex-basis: 160px; }
+    .home-brand-hero-copy { width: min(100%, 560px); }
+    .home-brand-hero p { font-size: 1rem; }
+}
+@media (max-width: 480px) {
+    .home-brand-hero { display: block; margin: 0.75rem 0.75rem 1.25rem; padding: 1.5rem 1rem; border-radius: 14px; }
+    .home-brand-hero-mark { position: absolute; top: 0.75rem; right: 0.75rem; width: 64px; height: 64px; }
+    .home-brand-hero-circle { inset: 0; }
+    .home-brand-hero-mark img { width: 70%; height: 70%; }
+    .home-brand-hero-label { font-size: 0.72rem; }
+    .home-brand-hero h1 { max-width: 290px; padding-right: 2.1rem; font-size: 1.8rem; }
+    .home-brand-hero p { max-width: 330px; font-size: 0.92rem; }
+    .home-brand-hero-actions { gap: 0.55rem; }
+    .home-brand-hero-actions a { min-height: 58px; gap: 0.5rem; padding: 0.65rem 0.55rem; font-size: 0.78rem; }
+    .home-brand-hero-actions a i { width: 22px; font-size: 1rem; }
+}
+
 <style>
 /* SEARCH */
 .search-section { padding: 1.25rem 0 0.75rem; background: #f8faff; }
@@ -49,7 +176,7 @@
 /* PROMO CARDS */
 .promo-section { 
     padding: 2.5rem 0; 
-    background: linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #1E88E5 100%);
+    background: linear-gradient(135deg, #0F172A 0%, #17243A 58%, #12394A 100%);
     width: 100%;
     margin: 0;
     position: relative;
@@ -299,7 +426,7 @@
 /* CTA */
 .cta-section { padding: 1.25rem 0; }
 .cta-box {
-    background: linear-gradient(135deg, #0D47A1, #1E88E5);
+    background: linear-gradient(135deg, #0F172A, #1E293B);
     border-radius: 20px; padding: 2rem 2.5rem;
     display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;
 }
@@ -355,7 +482,7 @@
 .cart-overlay.open { opacity: 1; pointer-events: all; }
 .cart-drawer { position: fixed; top: 0; right: -420px; width: 420px; max-width: 100vw; height: 100vh; background: #fff; z-index: 2001; display: flex; flex-direction: column; box-shadow: -8px 0 40px rgba(0,0,0,0.15); transition: right 0.35s cubic-bezier(.4,0,.2,1); }
 .cart-drawer.open { right: 0; }
-.cart-head { background: linear-gradient(135deg, #0D47A1, #1E88E5); padding: 1.25rem 1.5rem; color: #fff; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.cart-head { background: linear-gradient(135deg, #0F172A, #1E293B); padding: 1.25rem 1.5rem; color: #fff; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .cart-head h2 { font-size: 1.1rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
 .cart-close-btn { background: rgba(255,255,255,0.2); border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
 .cart-close-btn:hover { background: rgba(255,255,255,0.35); }
@@ -458,54 +585,162 @@
     .btn-order-wa { padding: 0.8rem; font-size: 0.92rem; border-radius: 10px; }
     .btn-clear-cart { margin-top: 0.35rem; font-size: 0.75rem; }
 }
+
+/* Homepage refresh: healthcare-first, mobile-first, and aligned to the Medix logo. */
+.home-brand-hero {
+    max-width: 1280px;
+    min-height: 390px;
+    margin: 0.25rem auto 0.75rem;
+    padding: clamp(1.5rem, 4vw, 3.25rem);
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 82% 18%, rgba(0, 209, 178, .32), transparent 34%),
+        linear-gradient(118deg, #003eaa 0%, #0052cc 56%, #0878d1 100%);
+    box-shadow: 0 18px 44px rgba(0, 82, 204, .2);
+}
+.home-brand-hero::before { border-color: rgba(255,255,255,.13); }
+.home-brand-hero::after { border-color: rgba(255,255,255,.1); }
+.home-brand-hero-label { color:#a7f3d0; }
+.home-brand-hero-copy { width:min(100%,760px); }
+.home-brand-hero h1 { max-width:690px;font-size:clamp(2.15rem,4.6vw,3.8rem);letter-spacing:-.04em; }
+.home-brand-hero p { max-width:620px;color:rgba(255,255,255,.88); }
+.home-hero-search { display:flex;align-items:center;gap:.55rem;width:min(100%,680px);margin:1.25rem 0 1.15rem;padding:.42rem .45rem .42rem 1rem;border:1px solid rgba(255,255,255,.75);border-radius:14px;background:#fff;box-shadow:0 12px 30px rgba(15,23,42,.16); }
+.home-hero-search > i { color:#64748b; }
+.home-hero-search input { flex:1;min-width:0;padding:.78rem .4rem;border:0;outline:0;background:transparent;color:#1e293b;font:inherit; }
+.home-hero-search button { display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.78rem 1.2rem;border:0;border-radius:10px;background:#0052cc;color:#fff;font:inherit;font-weight:800;cursor:pointer; }
+.home-hero-search button:hover { background:#003eaa; }
+.home-brand-hero-actions { max-width:680px; }
+.home-brand-hero-actions a { min-height:54px;padding:.75rem .9rem;border-color:rgba(255,255,255,.65);border-radius:12px;color:#0052cc; }
+.home-brand-hero-actions a i { color:#00a98f; }
+.home-brand-hero-mark { width:270px;height:270px;flex-basis:270px; }
+.home-brand-hero-circle { border-color:rgba(255,255,255,.48);background:radial-gradient(circle,rgba(255,255,255,.32),rgba(255,255,255,.06) 70%); }
+.home-brand-hero-mark img { width:70%;height:70%; }
+.home-trust-strip { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;width:min(100% - 2rem,1200px);margin:0 auto 1.6rem; }
+.home-trust-item { display:flex;align-items:center;gap:.8rem;min-width:0;min-height:74px;padding:.85rem 1rem;border:1px solid #e2e8f0;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(15,23,42,.04); }
+.home-trust-item > div { min-width:0; }
+.home-trust-icon { display:grid;flex:0 0 42px;width:42px;height:42px;place-items:center;border-radius:12px;background:#ecfdf5;color:#10b981;font-size:1.1rem; }
+.home-trust-item strong { display:block;color:#1e293b;font-size:.88rem; }
+.home-trust-item div > span { display:block;margin-top:.15rem;color:#64748b;font-size:.76rem;line-height:1.4; }
+.home-trust-item div > a { display:inline-flex;align-items:center;gap:.4rem;margin-top:.2rem;color:#0052cc;font-size:.78rem;font-weight:700;text-decoration:none; }
+.home-trust-item div > a:hover { color:#003eaa;text-decoration:underline; }
+.home-trust-item div > a:focus-visible { outline:3px solid #00d1b2;outline-offset:3px;border-radius:3px; }
+.search-engine-section { display:none; }
+.category-selection-section { padding:1rem 0;background:#fff;box-shadow:none; }
+.category-grid { grid-template-columns:repeat(3,minmax(0,180px));gap:.75rem; }
+.category-icon-btn { color:#1e293b;text-transform:none;letter-spacing:0; }
+.category-icon-btn:hover { color:#0052cc; }
+.category-icon { width:58px;height:58px;border-radius:16px;background:#eff6ff!important;box-shadow:none; }
+.category-icon.obat,.category-icon.alkes,.category-icon.kecantikan,.category-icon.nutrisi,.category-icon.apotik,.category-icon.pbf,.category-icon.jasa { background:#eff6ff; }
+.category-icon i { color:#0052cc; }
+.promo-products-section { padding:2.5rem 0;background:#f8fafc;border-block:1px solid #e2e8f0; }
+.promo-products-header .sec-tag { border:1px solid #bae6fd;background:#ecfeff;color:#0e7490; }
+.promo-products-header .sec-title { color:#1e293b;text-shadow:none; }
+.promo-products-track-wrap { margin:0;padding:.25rem 0;scroll-snap-type:x mandatory;scrollbar-color:#94a3b8 #e2e8f0; }
+.promo-products-track { gap:1rem; }
+.promo-photo-card { width:clamp(220px,30vw,340px);height:clamp(135px,18vw,190px);border:1px solid #e2e8f0;border-radius:16px;scroll-snap-align:start;box-shadow:0 8px 22px rgba(15,23,42,.08); }
+.promo-photo-card::after { display:none; }
+.promo-photo-card::before { background:linear-gradient(135deg,rgba(0,82,204,.12),rgba(0,209,178,.1)); }
+.why-cards-section { padding:3rem 0;background:#f8fafc; }
+.why-card { border-color:#e2e8f0;box-shadow:0 8px 22px rgba(15,23,42,.05); }
+.why-card-icon-wrap { background:#ecfeff;color:#0052cc; }
+.cta-box { background:linear-gradient(120deg,#0052cc,#0878d1); }
+.cat-section { padding:2.5rem 0 1.5rem;background:#fff; }
+.cat-card { border-color:#e2e8f0;box-shadow:0 4px 12px rgba(15,23,42,.035); }
+.cat-card:hover { background:#eff6ff;border-color:#93c5fd;color:#0052cc; }
+.cat-icon { background:#eff6ff!important; }
+.cat-icon i { color:#0052cc!important; }
+.about-box { border-color:#e2e8f0;box-shadow:0 8px 24px rgba(15,23,42,.05); }
+.prod-section { background:#f8fafc!important; }
+.prod-card { border-color:#e2e8f0;box-shadow:0 4px 14px rgba(15,23,42,.04); }
+.prod-card:hover { border-color:#93c5fd;box-shadow:0 12px 28px rgba(0,82,204,.1); }
+.prod-img { background:linear-gradient(135deg,#eff6ff,#ecfeff); }
+.prod-badge-label { background:#0052cc; }
+.prod-brand-tag,.sec-tag { background:#eff6ff;color:#0052cc; }
+.prod-price { color:#0052cc; }
+.btn-detail { background:#0052cc; }
+.btn-detail:hover { background:#003eaa; }
+.btn-cart { border-color:#0052cc;color:#0052cc; }
+.btn-cart:hover { background:#eff6ff; }
+.sec-link { color:#0052cc; }
+@media(max-width:768px) {
+    .home-brand-hero { margin:.25rem .8rem .5rem;padding:1.75rem 1.25rem; }
+    .home-brand-hero-mark { width:150px;height:150px;flex-basis:150px; }
+    .home-trust-strip { grid-template-columns:1fr;gap:.55rem;margin-bottom:1rem; }
+    .home-trust-item { min-height:64px;padding:.75rem .85rem; }
+    .promo-products-section { padding:1.8rem 0; }
+    .category-selection-inner { padding:0 1rem; }
+}
+@media(max-width:480px) {
+    .home-brand-hero { display:block;margin:.2rem .65rem .5rem;padding:1.3rem 1rem;border-radius:18px; }
+    .home-brand-hero-mark { top:.65rem;right:.65rem;width:60px;height:60px; }
+    .home-brand-hero h1 { max-width:290px;padding-right:2rem;font-size:1.78rem; }
+    .home-brand-hero p { max-width:330px;font-size:.9rem; }
+    .home-hero-search { gap:.25rem;margin:.95rem 0;padding:.3rem .32rem .3rem .65rem; }
+    .home-hero-search input { padding:.65rem .25rem;font-size:.83rem; }
+    .home-hero-search button { gap:.35rem;padding:.68rem .75rem;font-size:.8rem; }
+    .home-hero-search button span { display:inline; }
+    .home-brand-hero-actions { grid-template-columns:1fr 1fr; }
+    .home-brand-hero-actions a { min-height:50px;font-size:.74rem; }
+    .home-brand-hero-actions a:nth-child(n+3) { display:none; }
+    .category-grid { grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem; }
+    .category-icon-btn { padding:.65rem .25rem;gap:.4rem;font-size:.72rem; }
+    .category-icon { width:46px;height:46px;font-size:1.3rem; }
+    .cat-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .promo-photo-card { width:235px;height:136px; }
+}
 </style>
 @endsection
 
 @section('content')
 
 {{-- ============================================================
-     BANNER PROMO SLIDESHOW
+     APOTEK MEDIX HERO
      ============================================================ --}}
-@if($banners->count())
-<div class="banner-slider" id="bannerSlider" style="width: 100%; height: 100%; aspect-ratio: 3998/1224;">
-    <div class="banner-track" id="bannerTrack" style="display: flex; width: 100%; height: 100%;">
-        @foreach($banners as $i => $banner)
-        <div class="banner-slide {{ $i === 0 ? 'active' : '' }}" data-index="{{ $i }}" style="min-width: 100%; width: 100%; height: 100%;">
-            <a href="{{ $banner->url_tujuan ?: '#' }}" class="banner-link" style="display: block; width: 100%; height: 100%;" {{ $banner->url_tujuan ? 'target=_blank' : '' }}>
-                <img src="{{ url('storage/'.$banner->gambar) }}" alt="{{ $banner->judul }}" class="banner-img" loading="{{ $i === 0 ? 'eager' : 'lazy' }}">
-                <div class="banner-overlay">
-                    <div class="banner-text">
-                        <h2 class="banner-title-text">{{ $banner->judul }}</h2>
-                        @if($banner->subjudul)
-                        <p class="banner-sub-text">{{ $banner->subjudul }}</p>
-                        @endif
-                        @if($banner->url_tujuan)
-                        <span class="banner-btn-label">{{ $banner->label_tombol }} <i class="fa-solid fa-arrow-right"></i></span>
-                        @endif
-                    </div>
-                </div>
-            </a>
+<section class="home-brand-hero" aria-labelledby="homeHeroTitle">
+    <div class="home-brand-hero-copy">
+        <span class="home-brand-hero-label"><i class="fa-solid fa-heart-pulse"></i> Apotek Medix</span>
+        <h1 id="homeHeroTitle">Solusi Kesehatan Terpercaya</h1>
+        <p>Beli obat, suplemen, dan produk kesehatan dengan mudah. Tim Apotek Medix siap membantu Anda.</p>
+        <form method="GET" action="{{ route('products.index') }}" class="home-hero-search" role="search">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input type="search" name="search" aria-label="Cari produk kesehatan" placeholder="Cari obat, vitamin, skincare, atau alat kesehatan">
+            <button type="submit"><i class="fa-solid fa-magnifying-glass"></i><span>Cari</span></button>
+        </form>
+        <div class="home-brand-hero-actions">
+            <a href="{{ route('products.index') }}"><i class="fa-solid fa-prescription-bottle-medical"></i> Beli Obat</a>
+            <a href="{{ route('products.index', ['search' => 'vitamin']) }}"><i class="fa-solid fa-capsules"></i> Vitamin & Suplemen</a>
+            <a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20ingin%20chat%20apoteker." target="_blank" rel="noopener"><i class="fa-solid fa-user-doctor"></i> Chat Apoteker</a>
         </div>
-        @endforeach
     </div>
+    <div class="home-brand-hero-mark" aria-hidden="true">
+        <span class="home-brand-hero-circle"></span>
+        <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="">
+    </div>
+</section>
 
-    @if($banners->count() > 1)
-    {{-- Dots --}}
-    <div class="banner-dots">
-        @foreach($banners as $i => $banner)
-        <button class="banner-dot {{ $i === 0 ? 'active' : '' }}" onclick="goToBanner({{ $i }})" aria-label="Slide {{ $i+1 }}"></button>
-        @endforeach
+<section class="home-trust-strip" aria-label="Informasi layanan Apotek Medix">
+    <div class="home-trust-item">
+        <span class="home-trust-icon"><i class="fa-solid fa-shield-heart"></i></span>
+        <div><strong>Belanja lebih tenang</strong><span>Informasi produk dan satuan tampil jelas.</span></div>
     </div>
-    @endif
-</div>
+    <div class="home-trust-item">
+        <span class="home-trust-icon"><i class="fa-solid fa-truck-fast"></i></span>
+        <div><strong>Praktis untuk kebutuhan Anda</strong><span>Pilih produk dan lanjutkan checkout online.</span></div>
+    </div>
+    <div class="home-trust-item">
+        <span class="home-trust-icon"><i class="fa-solid fa-user-doctor"></i></span>
+        <div><strong>Hubungi Customer Services</strong><a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20perlu%20bantuan." target="_blank" rel="noopener">Hubungi CS <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></div>
+    </div>
+</section>
 
 <style>
 /* ===== BANNER SLIDESHOW ===== */
 .banner-slider {
     position: relative;
     width: 100%;
+    aspect-ratio: 3998 / 1224;
     overflow: hidden;
-    background: linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #1E88E5 100%);
+    background: linear-gradient(135deg, #0F172A 0%, #17243A 58%, #12394A 100%);
     line-height: 0;
 }
 .banner-search-panel {
@@ -709,10 +944,10 @@
 }
 
 .search-engine-section {
-    background: linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #1E88E5 100%);
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 68%, #12394A 100%);
     padding: 2.5rem 0;
     margin: 0;
-    box-shadow: 0 8px 32px rgba(13, 71, 161, 0.2);
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.18);
     width: 100%;
 }
 
@@ -803,7 +1038,7 @@
     align-items: center;
     gap: 0.6rem;
     background: #fff;
-    color: #1E88E5;
+    color: #0E6470;
     padding: 0.75rem 1.75rem;
     border-radius: 50px;
     text-decoration: none;
@@ -903,42 +1138,6 @@
 }
 </style>
 
-<script>
-(function() {
-    let current = 0;
-    const slides = document.querySelectorAll('.banner-slide');
-    const dots   = document.querySelectorAll('.banner-dot');
-    const total  = slides.length;
-    let timer;
-
-    function show(idx) {
-        slides[current].classList.remove('active');
-        if (dots[current]) dots[current].classList.remove('active');
-        current = (idx + total) % total;
-        slides[current].classList.add('active');
-        if (dots[current]) dots[current].classList.add('active');
-    }
-
-    function startTimer() {
-        clearInterval(timer);
-        if (total > 1) timer = setInterval(() => show(current + 1), 4500);
-    }
-
-    window.slideBanner = function(dir) { show(current + dir); startTimer(); };
-    window.goToBanner  = function(idx) { show(idx); startTimer(); };
-
-    startTimer();
-
-    // Pause on hover
-    const slider = document.getElementById('bannerSlider');
-    if (slider) {
-        slider.addEventListener('mouseenter', () => clearInterval(timer));
-        slider.addEventListener('mouseleave', startTimer);
-    }
-})();
-</script>
-@endif
-
 {{-- QUICK CATEGORY --}}
 <div class="quick-section">
   <div class="container">
@@ -953,58 +1152,36 @@
   </div>
 </div>
 
-{{-- PROMO --}}
-<div class="promo-section">
-  <div class="container">
-    <div class="promo-grid">
-      <a href="{{ route('contact') }}" class="promo-card promo-contact">
-        <div class="promo-card-content">
-          <div class="promo-card-icon-wrap">
-            <i class="fa-solid fa-headset"></i>
-          </div>
-          <div class="promo-card-text">
-            <h4>Hubungi Kami</h4>
-            <p>Butuh bantuan? Kontak tim Medikpedia sekarang.</p>
-          </div>
+<section class="home-category-section" aria-labelledby="homeCategoryTitle">
+    <div class="container">
+        <div class="home-category-heading">
+            <div>
+                <span class="home-section-eyebrow">Pilih kebutuhan Anda</span>
+                <h2 id="homeCategoryTitle">Kategori Produk</h2>
+            </div>
+            <a href="{{ route('products.index') }}">Semua produk <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
         </div>
-      </a>
-      <a href="https://store.goapotik.com/penjual/apotek-medikpedia" target="_blank" rel="noopener" class="promo-card promo-goapotik">
-        <div class="promo-card-content">
-          <img src="{{ asset('LOGO GOAPOTIK.png') }}" alt="GoApotik" class="promo-goapotik-logo">
-          <div class="promo-card-text">
-            <h4>GoApotik</h4>
-            <p>Kunjungi toko kami di Go Apotik.</p>
-          </div>
+        <div class="home-category-grid">
+            <a href="{{ route('products.index', ['kategori_produk' => 'OBAT']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-pills" aria-hidden="true"></i></span><strong>Obat</strong>
+            </a>
+            <a href="{{ route('products.index', ['search' => 'vitamin']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-capsules" aria-hidden="true"></i></span><strong>Vitamin & Suplemen</strong>
+            </a>
+            <a href="{{ route('products.index', ['kategori_produk' => 'SKINCARE & KOSMETIK']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-spa" aria-hidden="true"></i></span><strong>Skincare & Kosmetik</strong>
+            </a>
+            <a href="{{ route('products.index', ['kategori_produk' => 'ALAT KESEHATAN']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-stethoscope" aria-hidden="true"></i></span><strong>Alat Kesehatan</strong>
+            </a>
         </div>
-      </a>
     </div>
-  </div>
-</div>
+</section>
 
 {{-- KATEGORI PILIHAN --}}
 @include('components.category-selection')
 
-<div class="search-engine-section {{ $banners->count() ? '' : 'no-banner' }}">
-    <div class="container">
-        <div class="search-engine-wrapper">
-            <form method="GET" action="{{ route('products.index') }}" class="search-engine-box">
-                <i class="fa-solid fa-magnifying-glass" style="color: #9ca3af; padding: 0 0.5rem; font-size: 1.05rem; flex-shrink: 0;"></i>
-                <input type="text" name="search" placeholder="Cari obat, vitamin, skincare, ALKES...">
-                <button type="submit">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <span>Cari</span>
-                </button>
-            </form>
-            <button class="cart-btn-home" onclick="if(typeof openCart==='function'){openCart();}else{window.location.href='{{ route('products.index') }}';}">
-                <i class="fa-solid fa-cart-shopping"></i>
-                <span>Keranjang</span>
-                <span class="cart-badge-home" id="cartBadgeHome">0</span>
-            </button>
-        </div>
-    </div>
-</div>
-
-@if(false)
+@if(isset($featuredProducts) && $featuredProducts->count())
 <style>
 /* ===== FEATURED CAROUSEL ===== */
 .featured-section { padding: 3rem 0; }
@@ -1108,7 +1285,7 @@
             @if($med->gambar)
               <img src="{{ url('storage/'.$med->gambar) }}" alt="{{ $med->nama_obat }}" loading="lazy">
             @else
-              <img class="product-placeholder-logo" src="{{ asset('logo1.png') }}" alt="Logo Medikpedia">
+              <img class="product-placeholder-logo" src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix">
             @endif
             @if($med->kategori_produk)
               <span class="prod-badge-label">{{ $med->kategori_produk==='SKINCARE & KOSMETIK'?'✨':($med->kategori_produk==='ALAT KESEHATAN'?'🩺':'💊') }}</span>
@@ -1117,11 +1294,12 @@
           <div class="prod-body">
             @if($med->kategori)<span class="prod-brand-tag">{{ $med->kategori }}</span>@endif
             <h3 class="prod-name">{{ $med->nama_obat }}</h3>
-            <div class="prod-price">{{ $med->getFormattedCatalogPrice('harga_retail') }}</div>
-            @php $stock = (int) $med->stok; @endphp
+            <div class="prod-price" id="home-price-a-{{ $med->id }}">{{ $med->getFormattedCatalogPrice('harga_retail') }}</div>
+            @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-a-' . $med->id, 'priceTargetId' => 'home-price-a-' . $med->id])
+            @php $stock = (int) ($med->stock_base_units ?? $med->stok); @endphp
             <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
               <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-              {{ $stock > 0 ? 'Stok: ' . number_format($stock, 0, ',', '.') : 'Stok habis' }}
+              {{ $stock > 0 ? 'Stok: ' . $med->stock_breakdown : 'Stok habis' }}
             </span>
             @if($med->sediaan_label)
               <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.35rem;">
@@ -1129,7 +1307,7 @@
               </div>
             @endif
             <a href="{{ route('medicines.show', $med->id) }}" class="btn-detail">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-            <button class="btn-cart" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $med->harga_retail ?: $med->harga }},'{{ $med->gambar ? url('storage/'.$med->gambar) : '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this)">
+            <button class="btn-cart" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $med->harga_retail ?: $med->harga }},'{{ $med->gambar ? url('storage/'.$med->gambar) : '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this,'home-unit-a-{{ $med->id }}')">
               <i class="fa-solid fa-cart-plus"></i> Keranjang
             </button>
           </div>
@@ -1409,10 +1587,20 @@
         <span class="sec-tag">🏷️ PENAWARAN EKSKLUSIF</span>
         <h2 class="sec-title">Promo Spesial Hari Ini</h2>
       </div>
+      @if($promoProducts->count() > 1)
+      <div class="promo-products-controls" aria-label="Kontrol promo">
+        <button type="button" class="promo-scroll-button" data-promo-direction="-1" aria-label="Promo sebelumnya">
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="promo-scroll-button" data-promo-direction="1" aria-label="Promo berikutnya">
+          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        </button>
+      </div>
+      @endif
     </div>
 
-    <div class="promo-products-track-wrap">
-      <div class="promo-products-track">
+    <div class="promo-products-track-wrap" id="promoTrackWrap" tabindex="0" aria-label="Daftar promo Apotek Medix">
+      <div class="promo-products-track" id="promoTrack">
         @foreach($promoProducts as $promo)
           @if($promo->url_tujuan)
             <a href="{{ $promo->url_tujuan }}" class="promo-photo-card" title="{{ $promo->judul }}" data-tooltip="{{ $promo->judul }}">
@@ -1628,7 +1816,7 @@
       <div>
         <span class="why-section-tag"><i class="fa-solid fa-star"></i> Kenapa Pilih Kami?</span>
       </div>
-      <h2 class="why-section-title">Keunggulan Medikpedia</h2>
+      <h2 class="why-section-title">Keunggulan Apotek Medix</h2>
       <p class="why-section-sub">Kami hadir sebagai mitra terpercaya untuk kebutuhan farmasi Anda</p>
     </div>
 
@@ -1676,7 +1864,7 @@
         <h3>💬 Mau pesan via WhatsApp?</h3>
         <p>Tim kami siap bantu proses pesanan Anda dengan cepat & mudah.</p>
       </div>
-      <a href="https://wa.me/6285890007359?text=Halo%20Medikpedia%2C%20saya%20ingin%20memesan%20produk." target="_blank" class="btn-wa">
+      <a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20ingin%20memesan%20produk." target="_blank" class="btn-wa">
         <i class="fa-brands fa-whatsapp" style="font-size:1.3rem;"></i> Chat WhatsApp
       </a>
     </div>
@@ -1725,9 +1913,9 @@
 <div class="about-strip">
   <div class="container">
     <div class="about-box">
-      <img src="{{ asset('logo1.png') }}" alt="Medikpedia" class="about-logo">
+      <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix" class="about-logo">
       <div class="about-info">
-        <h3><span style="color:#1E88E5;">Medik</span><span style="color:#7CB342;">pedia</span> — Distributor Farmasi Terpercaya</h3>
+        <h3>Apotek Medix — Distributor Farmasi Terpercaya</h3>
         <p>Sejak 2016 melayani kebutuhan medis masyarakat & praktisi kesehatan di seluruh Indonesia. Produk original, harga distributor, pengiriman cepat.</p>
         <a href="{{ route('about') }}" class="btn-about"><i class="fa-solid fa-circle-info"></i> Selengkapnya Tentang Kami</a>
       </div>
@@ -1741,73 +1929,77 @@
   </div>
 </div>
 
-{{-- SEMUA PRODUK DI BAWAH ABOUT STRIP --}}
-<section class="prod-section" style="padding-top:1rem; padding-bottom:2rem; background:#f8fbff;">
-  <div class="container">
-    <div class="sec-head" style="margin-bottom:1rem;">
-      <div class="sec-head-left">
-        <span class="sec-tag">🛍️ Semua Produk</span>
-        <h2 class="sec-title">Katalog Produk Lengkap</h2>
-      </div>
-      <a href="{{ route('products.index') }}" class="sec-link">Lihat Semua <i class="fa-solid fa-arrow-right"></i></a>
-    </div>
-    @if($allProducts->count() > 0)
-      <div class="prod-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem;">
-        <style>
-          @media (max-width: 576px) {
-            .prod-grid {
-              grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-              gap: 0.75rem !important;
-            }
-          }
-        </style>
-        @foreach($allProducts as $med)
-          <div class="prod-card">
-            <div class="prod-img">
-              @if($med->gambar)
-                <img src="{{ url('storage/' . $med->gambar) }}" alt="{{ $med->nama_obat }}">
-              @else
-                <img class="product-placeholder-logo" src="{{ asset('logo1.png') }}" alt="Logo Medikpedia">
-              @endif
-              @if($med->kategori_produk)
-                <span class="prod-badge-label">{{ $med->kategori_produk==='SKINCARE & KOSMETIK'?'✨':($med->kategori_produk==='ALAT KESEHATAN'?'🩺':'💊') }}</span>
-              @endif
-            </div>
-            <div class="prod-body">
-              @if($med->kategori)
-                <span class="prod-brand-tag">{{ $med->kategori }}</span>
-              @endif
-              <h3 class="prod-name">{{ $med->nama_obat }}</h3>
-              <div class="prod-price">{{ $med->getFormattedCatalogPrice('harga_retail') }}</div>
-              @php $stock = (int) $med->stok; @endphp
-              <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
-                <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-                {{ $stock > 0 ? 'Stok: ' . number_format($stock, 0, ',', '.') : 'Stok habis' }}
-              </span>
-              @if($med->sediaan_label)
-                <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.35rem;">
-                  <i class="fa-solid fa-cube"></i> <span>{{ $med->sediaan_label }}</span>
-                </div>
-              @endif
-              <div class="prod-actions">
-                <a href="{{ route('medicines.show', $med->id) }}" class="btn-detail">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-                  <button class="btn-cart" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $med->harga_retail ?: $med->harga }},'{{ $med->gambar ? url('storage/'.$med->gambar) : '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this)">
-                    <i class="fa-solid fa-cart-plus"></i> Keranjang
-                  </button>
-              </div>
-            </div>
-          </div>
-        @endforeach
-      </div>
-    @else
-      <p style="color:#475569;">Belum ada produk untuk ditampilkan saat ini.</p>
-    @endif
-  </div>
-</section>
-
 @endsection
 
+<style>
+.promo-products-section { background:#f8fafc;color:#1e293b; }
+.promo-products-header .sec-tag { border:1px solid #bae6fd;background:#ecfeff;color:#0052cc; }
+.promo-products-header .sec-title { color:#1e293b;text-shadow:none; }
+.promo-products-track-wrap { margin:0;padding:.25rem 0;scroll-snap-type:x mandatory;scrollbar-color:#94a3b8 #e2e8f0; }
+.promo-products-track { gap:1rem; }
+.promo-photo-card { width:clamp(220px,30vw,340px);height:clamp(135px,18vw,190px);border:1px solid #e2e8f0;border-radius:16px;scroll-snap-align:start;box-shadow:0 8px 22px rgba(15,23,42,.08); }
+.promo-photo-card::after { display:none; }
+.promo-scroll-button { display:inline-grid;width:42px;height:42px;place-items:center;border:1px solid #cbd5e1;border-radius:50%;background:#fff;color:#0052cc;font-size:1rem;cursor:pointer;transition:background .2s,color .2s,border-color .2s; }
+.promo-scroll-button:hover { border-color:#0052cc;background:#0052cc;color:#fff; }
+.promo-scroll-button:focus-visible { outline:3px solid #00d1b2;outline-offset:2px; }
+.home-brand-hero { background:radial-gradient(circle at 82% 18%,rgba(0,209,178,.32),transparent 34%),linear-gradient(118deg,#003eaa 0%,#0052cc 56%,#0878d1 100%); }
+.home-category-section { padding:1.5rem 0 2rem;background:#fff; }
+.home-category-heading { display:flex;align-items:end;justify-content:space-between;gap:1rem;margin-bottom:1rem; }
+.home-category-heading h2 { margin:.2rem 0 0;color:#1e293b;font-size:clamp(1.3rem,2vw,1.7rem); }
+.home-section-eyebrow { color:#0052cc;font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase; }
+.home-category-heading > a { color:#0052cc;font-size:.85rem;font-weight:700;text-decoration:none;white-space:nowrap; }
+.home-category-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem; }
+.home-category-card { display:flex;min-height:108px;flex-direction:column;align-items:center;justify-content:center;gap:.65rem;padding:.75rem;border:1px solid #e2e8f0;border-radius:14px;background:#fff;color:#1e293b;text-align:center;text-decoration:none;transition:border-color .2s,transform .2s,box-shadow .2s; }
+.home-category-card:hover { transform:translateY(-2px);border-color:#93c5fd;box-shadow:0 8px 18px rgba(0,82,204,.08); }
+.home-category-card > span { display:grid;width:44px;height:44px;place-items:center;border-radius:13px;background:#eff6ff;color:#0052cc;font-size:1.2rem; }
+.home-category-card strong { font-size:.78rem;line-height:1.3; }
+.home-category-card:focus-visible,.home-category-heading > a:focus-visible { outline:3px solid #00d1b2;outline-offset:3px;border-radius:5px; }
+.category-selection-section,.cat-section { background:#fff; }
+.category-icon { background:#eff6ff!important; }
+.category-icon i,.cat-icon i { color:#0052cc!important; }
+.featured-section { background:#fff; }
+.featured-section .sec-link,.featured-cta a { color:#0052cc; }
+.featured-nav-btn { color:#0052cc; }
+.prod-section,.prod-grid { background:#f8fafc; }
+@media(max-width:768px) {
+    .home-trust-strip { grid-template-columns:1fr; }
+    .home-category-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem; }
+    .home-category-card { min-height:100px; }
+    .promo-products-controls { display:flex;gap:.5rem; }
+    .promo-scroll-button { width:38px;height:38px; }
+}
+@media(max-width:480px) {
+    .home-trust-strip { width:calc(100% - 1.3rem); }
+    .home-hero-search button span { display:inline; }
+    .home-category-heading { align-items:center; }
+    .home-category-card { min-height:92px;padding:.6rem .35rem; }
+    .home-category-card strong { font-size:.7rem; }
+}
+@media(prefers-reduced-motion:reduce) {
+    .promo-scroll-button { transition:none; }
+}
+</style>
+
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'medikpedia_cart_retail' };</script>
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_retail' };</script>
 @include('partials.cart')
+<script>
+(() => {
+    const wrap = document.getElementById('promoTrackWrap');
+    const track = document.getElementById('promoTrack');
+    if (!wrap || !track) return;
+
+    document.querySelectorAll('[data-promo-direction]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const card = track.querySelector('.promo-photo-card');
+            const gap = Number.parseFloat(getComputedStyle(track).gap) || 0;
+            const step = card ? card.getBoundingClientRect().width + gap : wrap.clientWidth;
+            wrap.scrollBy({
+                left: step * Number(button.dataset.promoDirection),
+                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+            });
+        });
+    });
+})();
+</script>
 @endsection

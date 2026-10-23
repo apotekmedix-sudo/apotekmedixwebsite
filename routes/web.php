@@ -6,6 +6,10 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CustomerAccountController;
+use App\Http\Controllers\AdminCustomerController;
+use App\Http\Controllers\AdminCashierController;
+use App\Http\Controllers\CashierController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminMedicineController;
 use App\Http\Controllers\AdminMedicineImportController;
@@ -40,6 +44,7 @@ Route::get('/storage/{folder}/{filename}', function (string $folder, string $fil
 
 // Products routes
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+Route::get('/kiosk', [ProductController::class, 'index'])->name('kiosk');
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/products-pbf', [ProductController::class, 'pbf'])->name('products.pbf');
 Route::post('/products-pbf/verify', [ProductController::class, 'pbfVerify'])->name('products.pbf.verify');
@@ -64,7 +69,25 @@ Route::get('/prescriptions/{id}', [PrescriptionController::class, 'show'])->name
 Route::get('/login', [AuthController::class, 'loginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-Route::post('/customer/logout', [AuthController::class, 'customerLogout'])->name('customer.logout');
+Route::get('/customer/login', [CustomerAccountController::class, 'showLogin'])->name('customer.login');
+Route::post('/customer/login', [CustomerAccountController::class, 'login'])->middleware('throttle:5,1')->name('customer.login.post');
+Route::get('/customer/verify-email', [CustomerAccountController::class, 'showEmailVerification'])->name('customer.email-verification');
+Route::post('/customer/verify-email', [CustomerAccountController::class, 'verifyEmail'])->middleware('throttle:10,1')->name('customer.email-verification.verify');
+Route::post('/customer/verify-email/resend', [CustomerAccountController::class, 'resendEmailVerification'])->middleware('throttle:3,1')->name('customer.email-verification.resend');
+Route::get('/customer/register', [CustomerAccountController::class, 'showRegister'])->name('customer.register');
+Route::post('/customer/register', [CustomerAccountController::class, 'register'])->middleware('throttle:5,1')->name('customer.register.post');
+Route::get('/customer/locations/search', [CustomerAccountController::class, 'searchLocations'])->middleware(['auth', 'throttle:10,1'])->name('customer.locations.search');
+Route::get('/customer/account', [CustomerAccountController::class, 'showProfile'])->name('customer.account');
+Route::put('/customer/account', [CustomerAccountController::class, 'updateProfile'])->name('customer.account.update');
+Route::post('/customer/logout', [CustomerAccountController::class, 'logout'])->name('customer.logout');
+Route::get('/cashier/login', [CashierController::class, 'showLogin'])->name('cashier.login');
+Route::post('/cashier/login', [CashierController::class, 'login'])->middleware('throttle:10,1')->name('cashier.login.post');
+Route::post('/cashier/logout', [CashierController::class, 'logout'])->middleware(['auth', 'cashier'])->name('cashier.logout');
+
+Route::middleware(['auth', 'cashier'])->prefix('cashier')->name('cashier.')->group(function () {
+    Route::get('/dashboard', [CashierController::class, 'dashboard'])->name('dashboard');
+    Route::post('/orders/{order}/paid', [CashierController::class, 'markPaid'])->name('orders.paid');
+});
 
 // GASS shared file room
 Route::get('/gass/access', [GassRoomController::class, 'accessForm'])->name('gass.access.form');
@@ -93,6 +116,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/purchase-history/{order}/approval', [AdminDashboardController::class, 'updateApprovalStatus'])->name('purchase-history.approval');
     Route::delete('/purchase-history/{order}', [AdminDashboardController::class, 'destroy'])->name('purchase-history.destroy');
     Route::delete('/purchase-history', [AdminDashboardController::class, 'destroyAll'])->name('purchase-history.destroyAll');
+    Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
+    Route::get('/cashiers', [AdminCashierController::class, 'index'])->name('cashiers.index');
+    Route::post('/cashiers', [AdminCashierController::class, 'store'])->name('cashiers.store');
 
     // Medicines management
     Route::resource('medicines', AdminMedicineController::class);

@@ -1,7 +1,7 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
-@section('title', 'Riwayat Pembelian - Admin Medikpedia')
-@section('page-title', '🧾 Riwayat Pembelian')
+@section('title', 'Riwayat Pembelian - Admin Apotek Medix')
+@section('page-title', 'ðŸ§¾ Riwayat Pembelian')
 
 @section('content')
 
@@ -35,6 +35,7 @@
                     <th>Waktu</th>
                     <th>Nama Pembeli</th>
                     <th>Jenis</th>
+                    <th>Saluran</th>
                     <th>Pembayaran</th>
                     <th>Status</th>
                     <th>Total</th>
@@ -55,6 +56,11 @@
                             @endif
                         </td>
                         <td>
+                            <span class="badge {{ $order->transaction_channel === 'offline' ? 'badge-primary' : 'badge-secondary' }}">
+                                {{ $order->transaction_channel === 'offline' ? 'Offline / Kios' : 'Online' }}
+                            </span>
+                        </td>
+                        <td>
                             @php
                                 $paymentLabel = $order->payment_method;
                                 if ($paymentLabel === 'Tempo' && !empty($order->payment_term_days)) {
@@ -64,7 +70,7 @@
                             @if($order->payment_method)
                                 <span style="background:#eff6ff;color:#1d4ed8;padding:0.2rem 0.55rem;border-radius:20px;font-size:0.78rem;font-weight:600;">{{ $paymentLabel }}</span>
                             @else
-                                <span style="color:#d1d5db;font-size:0.8rem;font-style:italic;">—</span>
+                                <span style="color:#d1d5db;font-size:0.8rem;font-style:italic;">â€”</span>
                             @endif
                         </td>
                         <td>
@@ -75,6 +81,14 @@
                                 $statusBg = $status === 'approved' ? '#dcfce7' : ($status === 'rejected' ? '#fee2e2' : '#f1f5f9');
                             @endphp
                             <div style="display:flex;flex-direction:column;gap:0.4rem;align-items:flex-start;">
+                                @if($order->transaction_channel === 'offline')
+                                    <span style="display:inline-block;padding:0.25rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:700;color:{{ $order->payment_status === 'paid' ? '#166534' : '#92400e' }};background:{{ $order->payment_status === 'paid' ? '#dcfce7' : '#fef3c7' }};">
+                                        {{ $order->payment_status === 'paid' ? 'Lunas' : 'Menunggu kasir' }}
+                                    </span>
+                                    @if($order->payment_status === 'paid' && $order->cashier)
+                                        <small style="color:#64748b;">Kasir: {{ $order->cashier->name }} · {{ $order->paid_at?->format('d M Y H:i') }}</small>
+                                    @endif
+                                @endif
                                 <span style="display:inline-block;padding:0.25rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:700;color:{{ $statusColor }};background:{{ $statusBg }};">{{ $statusLabel }}</span>
                                 <form method="POST" action="{{ route('admin.purchase-history.approval', $order->id) }}" style="display:inline-block;">
                                     @csrf
@@ -100,7 +114,7 @@
                                         @endphp
                                         <li>
                                             {{ $item['nama_obat'] ?? $item['name'] ?? 'N/A' }}
-                                            <span style="color:#6b7280;font-weight:500;">(×{{ $item['quantity'] ?? $item['qty'] ?? 0 }})</span>
+                                            <span style="color:#6b7280;font-weight:500;">(Ã—{{ $item['quantity'] ?? $item['qty'] ?? 0 }} {{ strtolower($item['unit_label'] ?? 'box') }})</span>
                                             @if($potongan > 0)
                                                 <span style="display:inline-block;margin-left:0.3rem;padding:0.15rem 0.45rem;border-radius:999px;background:#fee2e2;color:#b91c1c;font-size:0.72rem;font-weight:700;">Potongan Rp {{ number_format($potongan, 0, ',', '.') }}</span>
                                             @endif

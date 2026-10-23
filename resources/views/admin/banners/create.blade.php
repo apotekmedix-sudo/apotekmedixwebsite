@@ -1,6 +1,6 @@
-@extends('layouts.admin')
-@section('title', 'Tambah Banner - Admin Medikpedia')
-@section('page-title', '🖼️ Tambah Banner Promo')
+﻿@extends('layouts.admin')
+@section('title', 'Tambah Banner - Admin Apotek Medix')
+@section('page-title', 'ðŸ–¼ï¸ Tambah Banner Promo')
 
 @section('styles')
 <style>
@@ -76,7 +76,7 @@
             <div class="img-placeholder" onclick="document.getElementById('gambarInput').click()">
                 <i class="fa-solid fa-image" style="font-size:1.5rem;"></i>
                 <span>Klik untuk pilih gambar</span>
-                <span style="font-size:0.7rem;">JPG, PNG, WEBP — Ukuran: 3998×1224px (wajib)</span>
+                <span style="font-size:0.7rem;">JPG, PNG, WEBP â€” Ukuran: 3998Ã—1224px (wajib)</span>
             </div>
             <img id="imgPreview" class="img-preview" src="#" alt="Preview">
         </div>
@@ -136,3 +136,4 @@ function previewImg(input) {
 }
 </script>
 @endsection
+

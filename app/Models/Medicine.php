@@ -11,6 +11,27 @@ class Medicine extends Model
 
     protected $table = 'medicines';
 
+    protected static function booted(): void
+    {
+        static::creating(function (Medicine $medicine): void {
+            if ($medicine->stock_base_units === null) {
+                $medicine->stock_base_units = (int) $medicine->stok * $medicine->units_per_box;
+            }
+        });
+
+        static::updating(function (Medicine $medicine): void {
+            $packagingChanged = $medicine->isDirty([
+                'unit_packaging_enabled',
+                'tablets_per_strip',
+                'strips_per_box',
+            ]);
+
+            if (($medicine->isDirty('stok') || $packagingChanged) && !$medicine->isDirty('stock_base_units')) {
+                $medicine->stock_base_units = (int) $medicine->stok * $medicine->units_per_box;
+            }
+        });
+    }
+
     protected $fillable = [
         'sku',
         'distributor',
@@ -24,6 +45,13 @@ class Medicine extends Model
         'harga_modal',
         'harga_retail',
         'stok',
+        'unit_packaging_enabled',
+        'tablets_per_strip',
+        'strips_per_box',
+        'price_tablet',
+        'price_strip',
+        'price_box',
+        'stock_base_units',
         'terjual',
         'grade',
         'deskripsi',
@@ -37,6 +65,13 @@ class Medicine extends Model
         'harga_modal'  => 'decimal:2',
         'harga_retail' => 'decimal:2',
         'stok'    => 'integer',
+        'unit_packaging_enabled' => 'boolean',
+        'tablets_per_strip' => 'integer',
+        'strips_per_box' => 'integer',
+        'price_tablet' => 'decimal:2',
+        'price_strip' => 'decimal:2',
+        'price_box' => 'decimal:2',
+        'stock_base_units' => 'integer',
         'terjual' => 'integer',
     ];
 
@@ -66,7 +101,86 @@ class Medicine extends Model
 
     public function isAvailable(): bool
     {
-        return $this->stok > 0;
+        return (int) ($this->stock_base_units ?? $this->stok) > 0;
+    }
+
+    public function getUnitsPerBoxAttribute(): int
+    {
+        if (!$this->unit_packaging_enabled) {
+            return 1;
+        }
+
+        return max(1, (int) $this->tablets_per_strip) * max(1, (int) $this->strips_per_box);
+    }
+
+    public function getStockBoxesAttribute(): float
+    {
+        $stockUnits = (int) ($this->stock_base_units ?? $this->stok);
+
+        return $stockUnits / $this->units_per_box;
+    }
+
+    public function getStockBreakdownAttribute(): string
+    {
+        $stockUnits = (int) ($this->stock_base_units ?? $this->stok);
+        if (!$this->unit_packaging_enabled) {
+            return number_format($stockUnits, 0, ',', '.') . ' box';
+        }
+
+        $unitsPerBox = $this->units_per_box;
+        $boxes = intdiv($stockUnits, $unitsPerBox);
+        $remainder = $stockUnits % $unitsPerBox;
+        $strips = intdiv($remainder, max(1, (int) $this->tablets_per_strip));
+        $tablets = $remainder % max(1, (int) $this->tablets_per_strip);
+        $parts = [];
+
+        if ($boxes > 0) {
+            $parts[] = number_format($boxes, 0, ',', '.') . ' box';
+        }
+        if ($strips > 0) {
+            $parts[] = number_format($strips, 0, ',', '.') . ' strip';
+        }
+        if ($tablets > 0 || $parts === []) {
+            $parts[] = number_format($tablets, 0, ',', '.') . ' tablet';
+        }
+
+        return implode(', ', $parts);
+    }
+
+    public function getSaleUnitFactor(string $unit): int
+    {
+        if (!$this->unit_packaging_enabled) {
+            return $unit === 'box' ? 1 : 0;
+        }
+
+        return match ($unit) {
+            'tablet' => 1,
+            'strip' => max(1, (int) $this->tablets_per_strip),
+            'box' => $this->units_per_box,
+            default => 0,
+        };
+    }
+
+    public function getSaleUnitPrice(string $unit): ?float
+    {
+        if (!$this->unit_packaging_enabled) {
+            return $unit === 'box' ? (float) ($this->harga_retail ?: $this->harga) : null;
+        }
+
+        $price = match ($unit) {
+            'tablet' => $this->price_tablet,
+            'strip' => $this->price_strip,
+            'box' => $this->price_box,
+            default => null,
+        };
+
+        return $price === null ? null : (float) $price;
+    }
+
+    public function setStockInBoxes(float $boxes): void
+    {
+        $this->stock_base_units = (int) round($boxes * $this->units_per_box);
+        $this->stok = intdiv((int) $this->stock_base_units, $this->units_per_box);
     }
 
     public function getSediaanLabelAttribute(): string

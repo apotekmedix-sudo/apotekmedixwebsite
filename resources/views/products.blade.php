@@ -1,6 +1,6 @@
 ﻿@extends('layouts.frontend')
 
-@section('title', 'Produk Obat - Medikpedia')
+@section('title', 'Produk Obat - Apotek Medix')
 
 @section('styles')
 <style>
@@ -312,8 +312,14 @@
             <span>/</span>
             <span class="current">Produk</span>
         </div>
-        <h1><i class="fa-solid fa-pills"></i> Katalog Produk</h1>
-        <p>{{ $total }} produk tersedia dari berbagai perusahaan farmasi terpercaya</p>
+        <h1><i class="fa-solid {{ ($kioskOrder ?? false) ? 'fa-store' : 'fa-pills' }}"></i> {{ ($kioskOrder ?? false) ? 'Pesan di Toko' : 'Katalog Produk' }}</h1>
+        <p>
+            @if($kioskOrder ?? false)
+                Pilih produk, buat struk pesanan, lalu tunjukkan kepada kasir untuk membayar.
+            @else
+                {{ $total }} produk tersedia dari berbagai perusahaan farmasi terpercaya
+            @endif
+        </p>
     </div>
     <i class="fa-solid fa-pills header-deco-icon header-deco-icon-1"></i>
     <i class="fa-solid fa-capsules header-deco-icon header-deco-icon-2"></i>
@@ -323,7 +329,7 @@
 <div class="products-main">
     <div class="container">
 
-        <form method="GET" action="{{ route('products.index') }}" class="filter-bar">
+        <form method="GET" action="{{ ($kioskOrder ?? false) ? route('kiosk') : route('products.index') }}" class="filter-bar">
             <div class="filter-group" style="flex: 2; min-width: 200px;">
                 <label class="filter-label"><i class="fa-solid fa-magnifying-glass"></i> Cari Produk</label>
                 <input type="text" name="search" class="filter-input"
@@ -363,7 +369,7 @@
                     <i class="fa-solid fa-magnifying-glass"></i> Cari
                 </button>
                 @if($search || ($kategori_produk ?? '') || $perusahaan || $sort !== 'terbaru')
-                    <a href="{{ route('products.index') }}" class="btn-reset">✕ Reset</a>
+                    <a href="{{ ($kioskOrder ?? false) ? route('kiosk') : route('products.index') }}" class="btn-reset">✕ Reset</a>
                 @endif
             </div>
         </form>
@@ -386,7 +392,7 @@
                             @if($medicine->gambar)
                                 <img src="{{ url('storage/' . $medicine->gambar) }}" alt="{{ $medicine->nama_obat }}">
                             @else
-                                <img class="product-placeholder-logo" src="{{ asset('logo1.png') }}" alt="Logo Medikpedia">
+                                <img class="product-placeholder-logo" src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix">
                             @endif
                         </div>
                         <div class="medicine-body">
@@ -394,11 +400,12 @@
                             <span class="medicine-company">{{ $medicine->kategori }}</span>
                             <h3 class="medicine-name">{{ $medicine->nama_obat }}</h3>
                             
-                            <div class="medicine-price">{{ $medicine->getFormattedCatalogPrice('harga_retail') }}</div>
-                            @php $stock = (int) $medicine->stok; @endphp
+                            <div class="medicine-price" id="product-price-{{ $medicine->id }}">{{ $medicine->getFormattedCatalogPrice('harga_retail') }}</div>
+                            @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'product-unit-' . $medicine->id, 'priceTargetId' => 'product-price-' . $medicine->id])
+                            @php $stock = (int) ($medicine->stock_base_units ?? $medicine->stok); @endphp
                             <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-                                {{ $stock > 0 ? 'Stok: ' . number_format($stock, 0, ',', '.') : 'Stok habis' }}
+                                {{ $stock > 0 ? 'Stok: ' . $medicine->stock_breakdown : 'Stok habis' }}
                             </span>
                             @if($medicine->sediaan_label)
                                 <div class="medicine-meta" style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.6rem;">
@@ -408,7 +415,7 @@
                             <a href="{{ route('medicines.show', $medicine->id) }}" class="medicine-btn">
                                 Lihat Detail <i class="fa-solid fa-arrow-right"></i>
                             </a>
-                            <button class="btn-cart" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $medicine->harga_retail ?: $medicine->harga }}, '{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this)">
+                            <button class="btn-cart" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $medicine->harga_retail ?: $medicine->harga }}, '{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this, 'product-unit-{{ $medicine->id }}')">
                                 <i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang
                             </button>
                         </div>
@@ -455,7 +462,7 @@
                     @endif
                 </p>
                 @if($search || ($kategori_produk ?? '') || $perusahaan)
-                    <a href="{{ route('products.index') }}" class="btn-reset" style="display:inline-block;margin-top:1rem;">✕ Hapus Filter</a>
+                    <a href="{{ ($kioskOrder ?? false) ? route('kiosk') : route('products.index') }}" class="btn-reset" style="display:inline-block;margin-top:1rem;">✕ Hapus Filter</a>
                 @endif
             </div>
         @endif
@@ -466,6 +473,6 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'medikpedia_cart_retail' };</script>
-@include('partials.cart')
+<script>window.cartSettings = { storageKey: '{{ ($kioskOrder ?? false) ? 'apotekmedix_cart_kiosk' : 'apotekmedix_cart_retail' }}', kioskOrder: @json($kioskOrder ?? false) };</script>
+@include('partials.cart', ['cartKioskOrder' => $kioskOrder ?? false])
 @endsection

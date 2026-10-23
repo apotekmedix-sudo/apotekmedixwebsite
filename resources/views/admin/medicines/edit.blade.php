@@ -1,7 +1,7 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
-@section('title', 'Edit Obat - Admin Medikpedia')
-@section('page-title', '✏️ Edit Obat: ' . $medicine->nama_obat)
+@section('title', 'Edit Obat - Admin Apotek Medix')
+@section('page-title', 'âœï¸ Edit Obat: ' . $medicine->nama_obat)
 
 @section('styles')
 <style>
@@ -273,7 +273,7 @@
                 <div class="form-group">
                     <label class="form-label">Kelompok</label>
                     <select name="kelompok" class="form-input {{ $errors->has('kelompok') ? 'is-invalid' : '' }}">
-                        <option value="">— Pilih Kelompok —</option>
+                        <option value="">â€” Pilih Kelompok â€”</option>
                         <option value="PBF" {{ old('kelompok', $medicine->kelompok) == 'PBF' ? 'selected' : '' }}>PBF</option>
                         <option value="APOTEK" {{ old('kelompok', $medicine->kelompok) == 'APOTEK' ? 'selected' : '' }}>APOTEK</option>
                     </select>
@@ -286,7 +286,7 @@
                     <label class="form-label">Pabrik <span class="req">*</span></label>
                     <select name="kategori"
                             class="form-input {{ $errors->has('kategori') ? 'is-invalid' : '' }}" required>
-                        <option value="">— Pilih Pabrik —</option>
+                        <option value="">â€” Pilih Pabrik â€”</option>
                         @foreach($categories as $category)
                             <option value="{{ $category }}" {{ old('kategori', $medicine->kategori) == $category ? 'selected' : '' }}>
                                 {{ $category }}
@@ -300,22 +300,24 @@
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Retail (Rp) <span class="req">*</span></label>
-                        <input type="number" name="harga" class="form-input {{ $errors->has('harga') ? 'is-invalid' : '' }}" placeholder="5000" step="1" min="0" value="{{ old('harga', $medicine->harga) }}" required>
+                        <label class="form-label">Retail / box (Rp)</label>
+                        <input type="number" name="harga" class="form-input {{ $errors->has('harga') ? 'is-invalid' : '' }}" placeholder="5000" step="1" min="0" value="{{ old('harga', $medicine->harga) }}">
                         @error('harga')
                             <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                         @enderror
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Stok <span class="req">*</span></label>
+                        <label class="form-label">Stok (box) <span class="req">*</span></label>
                         <input type="number" name="stok"
                                class="form-input {{ $errors->has('stok') ? 'is-invalid' : '' }}"
-                               placeholder="100" min="0"
-                               value="{{ old('stok', $medicine->stok) }}" required>
+                               placeholder="100" min="0" step="0.000001"
+                               value="{{ old('stok', $medicine->stock_boxes) }}" required>
+                        <small>Stok dicatat dalam box; sisa satuan kecil tampil setelah terjadi penjualan.</small>
                         @error('stok')
                             <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                         @enderror
                     </div>
+                    @include('admin.partials.packaging-fields', ['medicine' => $medicine])
                 </div>
 
                 <div class="form-group">
@@ -355,7 +357,7 @@
                     <label class="form-label">Golongan <span class="req">*</span></label>
                     <select name="golongan"
                             class="form-input {{ $errors->has('golongan') ? 'is-invalid' : '' }}" required>
-                        <option value="">— Pilih Golongan —</option>
+                        <option value="">â€” Pilih Golongan â€”</option>
                         <option value="BEBAS" {{ old('golongan', $medicine->is_resep ? 'KERAS' : 'BEBAS') == 'BEBAS' ? 'selected' : '' }}>BEBAS</option>
                         <option value="KERAS" {{ old('golongan', $medicine->is_resep ? 'KERAS' : 'BEBAS') == 'KERAS' ? 'selected' : '' }}>KERAS</option>
                     </select>
@@ -404,12 +406,12 @@
                 @endif
 
                 <div class="upload-zone" id="dropZone" onclick="document.getElementById('gambar').click()">
-                    <div class="upload-icon">📸</div>
+                    <div class="upload-icon">ðŸ“¸</div>
                     <p>Klik atau drag & drop gambar di sini</p>
                     <button type="button" class="btn-choose" onclick="event.stopPropagation();document.getElementById('gambar').click()">
                         <i class="fa-solid fa-folder-open"></i> Pilih File
                     </button>
-                    <small>JPG, PNG, GIF — Maks. 10MB</small>
+                    <small>JPG, PNG, GIF â€” Maks. 10MB</small>
                 </div>
                 <input type="file" id="gambar" name="gambar" accept="image/*" style="display:none;">
                 @error('gambar')

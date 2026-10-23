@@ -1,6 +1,6 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
-@section('title', 'Tambah Obat - Admin Medikpedia')
+@section('title', 'Tambah Obat - Admin Apotek Medix')
 @section('page-title', 'Tambah Obat Baru')
 
 @section('styles')
@@ -252,7 +252,7 @@
                 <div class="form-group">
                     <label class="form-label">Kelompok</label>
                     <select name="kelompok" class="form-input {{ $errors->has('kelompok') ? 'is-invalid' : '' }}">
-                        <option value="">— Pilih Kelompok —</option>
+                        <option value="">â€” Pilih Kelompok â€”</option>
                         <option value="PBF" {{ old('kelompok') == 'PBF' ? 'selected' : '' }}>PBF</option>
                         <option value="APOTEK" {{ old('kelompok') == 'APOTEK' ? 'selected' : '' }}>APOTEK</option>
                     </select>
@@ -265,7 +265,7 @@
                     <label class="form-label">Pabrik <span class="req">*</span></label>
                     <select name="kategori"
                             class="form-input {{ $errors->has('kategori') ? 'is-invalid' : '' }}" required>
-                        <option value="">— Pilih Pabrik —</option>
+                        <option value="">â€” Pilih Pabrik â€”</option>
                         @foreach($categories as $category)
                             <option value="{{ $category }}" {{ old('kategori') == $category ? 'selected' : '' }}>
                                 {{ $category }}
@@ -279,22 +279,24 @@
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Retail (Rp) <span class="req">*</span></label>
-                        <input type="number" name="harga" class="form-input {{ $errors->has('harga') ? 'is-invalid' : '' }}" placeholder="5000" step="1" min="0" value="{{ old('harga') }}" required>
+                        <label class="form-label">Retail / box (Rp)</label>
+                        <input type="number" name="harga" class="form-input {{ $errors->has('harga') ? 'is-invalid' : '' }}" placeholder="5000" step="1" min="0" value="{{ old('harga') }}">
                         @error('harga')
                             <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                         @enderror
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Stok <span class="req">*</span></label>
+                        <label class="form-label">Stok (box) <span class="req">*</span></label>
                         <input type="number" name="stok"
                                class="form-input {{ $errors->has('stok') ? 'is-invalid' : '' }}"
-                               placeholder="100" min="0"
+                               placeholder="100" min="0" step="0.000001"
                                value="{{ old('stok') }}" required>
+                        <small>Stok dicatat dalam box; sisa satuan kecil tampil setelah terjadi penjualan.</small>
                         @error('stok')
                             <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                         @enderror
                     </div>
+                    @include('admin.partials.packaging-fields', ['medicine' => null])
                 </div>
 
                 <div class="form-group">
@@ -323,7 +325,7 @@
                     <label class="form-label">Golongan <span class="req">*</span></label>
                     <select name="golongan"
                             class="form-input {{ $errors->has('golongan') ? 'is-invalid' : '' }}" required>
-                        <option value="">— Pilih Golongan —</option>
+                        <option value="">â€” Pilih Golongan â€”</option>
                         <option value="BEBAS" {{ old('golongan') == 'BEBAS' ? 'selected' : '' }}>BEBAS</option>
                         <option value="KERAS" {{ old('golongan') == 'KERAS' ? 'selected' : '' }}>KERAS</option>
                     </select>
@@ -353,12 +355,12 @@
             </div>
             <div class="form-body">
                 <div class="upload-zone" id="dropZone" onclick="document.getElementById('gambar').click()">
-                    <div class="upload-icon">📸</div>
+                    <div class="upload-icon">ðŸ“¸</div>
                     <p>Klik atau drag & drop gambar di sini</p>
                     <button type="button" class="btn-choose" onclick="event.stopPropagation();document.getElementById('gambar').click()">
                         <i class="fa-solid fa-folder-open"></i> Pilih File
                     </button>
-                    <small>JPG, PNG, GIF — Maks. 10MB</small>
+                    <small>JPG, PNG, GIF â€” Maks. 10MB</small>
                 </div>
                 <input type="file" id="gambar" name="gambar" accept="image/*" style="display:none;">
                 @error('gambar')

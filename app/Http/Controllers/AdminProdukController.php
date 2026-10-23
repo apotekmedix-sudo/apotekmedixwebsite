@@ -106,11 +106,17 @@ class AdminProdukController extends Controller
             'brand'           => ['nullable', 'string', 'max:255'],
             'terjual'         => ['nullable', 'integer', 'min:0'],
             'grade'           => ['nullable', 'string'],
-            'harga'           => ['required', 'numeric', 'min:0'],
+            'harga'           => ['required_unless:unit_packaging_enabled,1', 'nullable', 'numeric', 'min:0'],
             'harga_modal'     => ['nullable', 'numeric', 'min:0'],
             'harga_retail'    => ['nullable', 'numeric', 'min:0'],
-            'stok'            => ['required', 'integer', 'min:0'],
+            'stok'            => ['required', 'numeric', 'min:0', 'max:10000000'],
             'sediaan'         => ['nullable', 'string', 'max:255'],
+            'unit_packaging_enabled' => ['nullable', 'boolean'],
+            'tablets_per_strip' => ['required_if:unit_packaging_enabled,1', 'nullable', 'integer', 'min:1', 'max:100000'],
+            'strips_per_box' => ['required_if:unit_packaging_enabled,1', 'nullable', 'integer', 'min:1', 'max:100000'],
+            'price_tablet' => ['required_if:unit_packaging_enabled,1', 'nullable', 'numeric', 'min:0'],
+            'price_strip' => ['required_if:unit_packaging_enabled,1', 'nullable', 'numeric', 'min:0'],
+            'price_box' => ['required_if:unit_packaging_enabled,1', 'nullable', 'numeric', 'min:0'],
             'deskripsi'       => ['nullable', 'string'],
             'komposisi'       => ['nullable', 'string'],
             'indikasi'        => ['nullable', 'string'],
@@ -126,8 +132,11 @@ class AdminProdukController extends Controller
             $validated['deskripsi'] = trim(($validated['komposisi'] ?? '') . ' | ' . ($validated['indikasi'] ?? ''));
         }
 
-            $validated['harga_retail'] = $validated['harga_retail'] ?? $validated['harga'];
-        Medicine::create($validated);
+        $this->applyPackagingFields($request, $validated);
+        $validated['harga_retail'] = $validated['harga_retail'] ?? $validated['harga'];
+        $medicine = new Medicine($validated);
+        $medicine->setStockInBoxes((float) $validated['stok']);
+        $medicine->save();
 
         return redirect()->route('admin.produk.index')
                          ->with('success', 'Produk berhasil ditambahkan!');
@@ -153,11 +162,17 @@ class AdminProdukController extends Controller
             'brand'           => ['nullable', 'string', 'max:255'],
             'terjual'         => ['nullable', 'integer', 'min:0'],
             'grade'           => ['nullable', 'string'],
-            'harga'           => ['required', 'numeric', 'min:0'],
+            'harga'           => ['required_unless:unit_packaging_enabled,1', 'nullable', 'numeric', 'min:0'],
             'harga_modal'     => ['nullable', 'numeric', 'min:0'],
             'harga_retail'    => ['nullable', 'numeric', 'min:0'],
-            'stok'            => ['required', 'integer', 'min:0'],
+            'stok'            => ['required', 'numeric', 'min:0', 'max:10000000'],
             'sediaan'         => ['nullable', 'string', 'max:255'],
+            'unit_packaging_enabled' => ['nullable', 'boolean'],
+            'tablets_per_strip' => ['required_if:unit_packaging_enabled,1', 'nullable', 'integer', 'min:1', 'max:100000'],
+            'strips_per_box' => ['required_if:unit_packaging_enabled,1', 'nullable', 'integer', 'min:1', 'max:100000'],
+            'price_tablet' => ['required_if:unit_packaging_enabled,1', 'nullable', 'numeric', 'min:0'],
+            'price_strip' => ['required_if:unit_packaging_enabled,1', 'nullable', 'numeric', 'min:0'],
+            'price_box' => ['required_if:unit_packaging_enabled,1', 'nullable', 'numeric', 'min:0'],
             'deskripsi'       => ['nullable', 'string'],
             'komposisi'       => ['nullable', 'string'],
             'indikasi'        => ['nullable', 'string'],
@@ -165,6 +180,7 @@ class AdminProdukController extends Controller
         ]);
 
         unset($validated['delete_gambar']);
+        $this->applyPackagingFields($request, $validated);
 
         if ($request->hasFile('gambar') && $request->file('gambar')->isValid()) {
             ImageHelper::deleteProductImage($produk->gambar);
@@ -173,7 +189,7 @@ class AdminProdukController extends Controller
             ImageHelper::deleteProductImage($produk->gambar);
             $validated['gambar'] = null;
         }
-            $validated['harga_retail'] = $validated['harga_retail'] ?? $validated['harga'];
+        $validated['harga_retail'] = $validated['harga_retail'] ?? $validated['harga'];
 
         if (!empty(trim($validated['deskripsi'] ?? ''))) {
             $validated['deskripsi'] = trim($validated['deskripsi']);
@@ -181,7 +197,15 @@ class AdminProdukController extends Controller
             $validated['deskripsi'] = trim(($validated['komposisi'] ?? '') . ' | ' . ($validated['indikasi'] ?? ''));
         }
 
-        $produk->update($validated);
+        $stockBoxes = (float) $validated['stok'];
+        unset($validated['stok']);
+        if ($produk->unit_packaging_enabled) {
+            $validated['price_box'] = $validated['harga_retail'];
+            $validated['harga'] = $validated['harga_retail'];
+        }
+        $produk->fill($validated);
+        $produk->setStockInBoxes($stockBoxes);
+        $produk->save();
 
         $queryParams = $this->buildIndexQueryParams($request);
 
@@ -245,8 +269,9 @@ class AdminProdukController extends Controller
 
     public function updateStock(Request $request, Medicine $produk)
     {
-        $validated = $request->validate(['stok' => ['required', 'integer', 'min:0']]);
-        $produk->update(['stok' => $validated['stok']]);
+        $validated = $request->validate(['stok' => ['required', 'numeric', 'min:0', 'max:10000000']]);
+        $produk->setStockInBoxes((float) $validated['stok']);
+        $produk->save();
         return back()->with('success', 'Stok berhasil diupdate!');
     }
 
@@ -255,12 +280,36 @@ class AdminProdukController extends Controller
         $validated = $request->validate([
             'harga_modal'  => ['required', 'numeric', 'min:0'],
             'harga_retail' => ['required', 'numeric', 'min:0'],
-            'stok'         => ['required', 'integer', 'min:0'],
+            'stok'         => ['required', 'numeric', 'min:0', 'max:10000000'],
         ]);
 
-        $produk->update($validated);
+        $stockBoxes = (float) $validated['stok'];
+        unset($validated['stok']);
+        if ($produk->unit_packaging_enabled) {
+            $validated['price_box'] = $validated['harga_retail'];
+            $validated['harga'] = $validated['harga_retail'];
+        }
+        $produk->fill($validated);
+        $produk->setStockInBoxes($stockBoxes);
+        $produk->save();
 
         return back()->with('success', 'Harga dan stok berhasil diupdate!');
+    }
+
+    private function applyPackagingFields(Request $request, array &$validated): void
+    {
+        $enabled = $request->boolean('unit_packaging_enabled');
+        $validated['unit_packaging_enabled'] = $enabled;
+
+        if ($enabled) {
+            $validated['harga'] = $validated['price_box'];
+            $validated['harga_retail'] = $validated['price_box'];
+            return;
+        }
+
+        foreach (['tablets_per_strip', 'strips_per_box', 'price_tablet', 'price_strip', 'price_box'] as $field) {
+            $validated[$field] = null;
+        }
     }
 
     public function show(Medicine $produk)

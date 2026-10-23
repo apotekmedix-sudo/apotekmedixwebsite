@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Medikpedia - Apotik Online')</title>
-    <link rel="icon" type="image/png" href="{{ asset('logo1.png') }}">
+    <title>@yield('title', 'Apotek Medix')</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     
     <!-- FIX CURSOR - MUST BE FIRST TO OVERRIDE EVERYTHING -->
     <style>
@@ -375,11 +375,12 @@
     
     <style>
         :root {
-            --primary: #1E88E5;
-            --secondary: #1565C0;
-            --accent: #7CB342;
-            --dark: #1f2937;
-            --light: #f3f4f6;
+            --primary: #0F172A;
+            --secondary: #1E293B;
+            --accent: #84CC16;
+            --cyan: #06B6D4;
+            --dark: #1E293B;
+            --light: #F8FAFC;
         }
 
         * {
@@ -388,9 +389,17 @@
             box-sizing: border-box;
         }
 
-        html, body {
+        html {
             margin: 0 !important;
             padding: 0 !important;
+            font-size: 16px;
+            line-height: 1.5;
+            min-height: 100%;
+        }
+
+        body {
+            margin: 0 !important;
+            padding: calc(var(--navbar-height, 65px) - 1.5rem) 0 0 !important;
             font-size: 16px;
             line-height: 1.5;
             min-height: 100%;
@@ -399,7 +408,7 @@
         html {
             scroll-behavior: smooth;
             scroll-padding-top: var(--navbar-height, 65px);
-            background: linear-gradient(160deg, #dbeafe 0%, #ede9fe 35%, #d1fae5 70%, #dbeafe 100%);
+            background: #FFFFFF;
             background-attachment: fixed;
         }
 
@@ -408,9 +417,8 @@
             flex-direction: column;
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: transparent;
+            background: #F8FAFC;
             color: var(--dark);
-            padding-top: var(--navbar-height, 65px);
         }
 
         main {
@@ -453,8 +461,8 @@
 
         /* Navbar */
         .navbar {
-            background: linear-gradient(135deg, #1565C0 0%, #1976D2 50%, #1E88E5 100%);
-            box-shadow: 0 4px 20px rgba(13, 71, 161, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            background: #0F172A;
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
             padding: 0;
             position: fixed;
             top: 0;
@@ -462,7 +470,7 @@
             right: 0;
             margin: 0 !important;
             z-index: 1000;
-            border-bottom: 2px solid rgba(124, 179, 66, 0.4);
+            border-bottom: 2px solid #06B6D4;
         }
 
         /*
@@ -478,9 +486,11 @@
         .news-page-header,
         .medicines-detail-header,
         .about-page-header {
-            padding-top: calc(var(--navbar-height, 65px) + 2.5rem) !important;
-            padding-bottom: 2.5rem;
+            padding-top: 1.5rem !important;
+            padding-bottom: 1.5rem;
         }
+
+        .products-main { padding-top: 1rem !important; }
 
         /* about-hero adalah section pertama di halaman tentang kami */
         .about-hero {
@@ -518,6 +528,12 @@
             height: 45px;
             object-fit: contain;
             margin-left: -8px;
+        }
+        .navbar-brand span {
+            color: white;
+            font-size: 1.05rem;
+            font-weight: 800;
+            white-space: nowrap;
         }
 
         .navbar-menu {
@@ -663,7 +679,7 @@
 
         /* Footer */
         .footer {
-            background: linear-gradient(180deg, #1e1b4b 0%, #0a0e2e 100%) !important;
+            background: #0F172A !important;
             color: white;
             padding: 3rem 0;
             margin-top: 4rem;
@@ -680,8 +696,14 @@
 
         .footer h3 {
             margin-bottom: 1rem;
-            color: var(--accent);
+            color: #10B981;
         }
+
+        .footer .footer-content h3 span:first-of-type { color: #0052CC !important; }
+        .footer .footer-content h3 span:last-of-type { color: #10B981 !important; }
+        .footer .footer-content > div:not(:first-child) i,
+        .footer .footer-content h3 > i { color: #10B981 !important; }
+        .footer .footer-legal-note { color: #d1d5db; font-size: .82rem; line-height: 1.6; }
 
         .footer ul {
             list-style: none;
@@ -741,7 +763,7 @@
                 left: 0;
                 top: var(--navbar-height, 56px);
                 width: 100%;
-                background: linear-gradient(135deg, #1565C0 0%, #1976D2 50%, #1E88E5 100%);
+                background: #0F172A;
                 flex-direction: column;
                 justify-content: flex-start;
                 gap: 0;
@@ -750,7 +772,7 @@
                 overflow: hidden;
                 transition: max-height 0.35s ease, padding 0.35s ease;
                 z-index: 999;
-                box-shadow: 0 8px 24px rgba(13,71,161,0.35);
+                box-shadow: 0 8px 24px rgba(15,23,42,0.3);
             }
 
             .navbar-menu.active {
@@ -801,6 +823,100 @@
     </style>
 
     @yield('styles')
+    <style>
+        body { color: #1E293B; background: #F8FAFC; }
+        .navbar { background: #0F172A !important; border-bottom-color: #06B6D4 !important; }
+        .navbar-menu.active { background: #0F172A !important; }
+        .footer { background: #0F172A !important; }
+        .products-header,
+        .contact-header,
+        .about-page-header,
+        .category-page-header,
+        .detail-page-header,
+        .medicines-detail-header,
+        .farma-header,
+        .act-header,
+        .news-page-header {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 72%, #12394A 100%) !important;
+        }
+        .btn-detail,
+        .btn-primary,
+        .search-engine-box button,
+        .search-box button,
+        .btn-verify,
+        .btn-submit-wa {
+            background: #0F172A !important;
+            border-color: #06B6D4 !important;
+            color: #fff !important;
+        }
+        .btn-cart {
+            border-color: #06B6D4 !important;
+            color: #0E6470 !important;
+        }
+        .btn-cart:hover { background: #ECFEFF !important; }
+        .prod-price,
+        .sec-link,
+        .topbar-title { color: #0E7490 !important; }
+        :focus-visible { outline-color: #06B6D4; }
+
+        .navbar-container {
+            max-width: 1600px;
+            min-height: 68px;
+            padding: 0.35rem 1.25rem;
+            gap: 0.75rem;
+        }
+        .navbar-brand {
+            min-width: 0;
+            gap: 0.5rem;
+            transform: none;
+        }
+        .navbar-brand:hover { transform: none; }
+        .navbar-brand img {
+            width: 44px;
+            height: 44px;
+            margin-left: 0;
+            flex: 0 0 44px;
+            object-fit: contain;
+        }
+        .navbar-brand span {
+            display: inline-block;
+            width: auto;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+        }
+        .navbar-menu {
+            margin: 0;
+            padding-left: 0;
+            gap: 0.15rem;
+        }
+        .navbar-menu a,
+        .navbar-menu .logout-btn {
+            padding: 0.4rem 0.45rem;
+        }
+
+        @media (max-width: 768px) {
+            .navbar-container { min-height: 64px; padding: 0.4rem 1rem; }
+            .navbar-menu { gap: 0; }
+            .navbar-menu a,
+            .navbar-menu .logout-btn { padding: 0.875rem 1rem; }
+            .navbar-brand img {
+                width: 42px;
+                height: 42px;
+                flex-basis: 42px;
+            }
+            .navbar-brand span { font-size: 1rem; }
+        }
+        @media (max-width: 480px) {
+            .navbar-container { padding: 0.4rem 0.75rem; }
+            .navbar-brand { gap: 0.5rem; }
+            .navbar-brand img {
+                width: 38px;
+                height: 38px;
+                flex-basis: 38px;
+            }
+            .navbar-brand span { font-size: 0.95rem; }
+        }
+    </style>
 </head>
 <body>
 
@@ -858,7 +974,8 @@
     <nav class="navbar">
         <div class="navbar-container">
             <a href="{{ route('login') }}" class="navbar-brand" title="Admin Login">
-                <img src="{{ asset('logo2.png') }}" alt="Medikpedia">
+                <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix">
+                <span>Apotek Medix</span>
             </a>
             
             <!-- Hamburger Menu Button -->
@@ -871,6 +988,7 @@
             <ul class="navbar-menu" id="navbarMenu">
                 <li><a href="{{ route('home') }}"><i class="fa-solid fa-house"></i> Home</a></li>
                 <li><a href="{{ route('products.index') }}"><i class="fa-solid fa-pills"></i> Produk Kami</a></li>
+                <li><a href="{{ route('kiosk') }}"><i class="fa-solid fa-store"></i> Pesan di Toko</a></li>
                 <li><a href="{{ route('about') }}"><i class="fa-solid fa-circle-info"></i> Tentang Kami</a></li>
                 <li><a href="{{ route('contact') }}"><i class="fa-solid fa-headset"></i> Hubungi Kami</a></li>
 
@@ -884,20 +1002,24 @@
                             </form>
                         </li>
                     @elseif(auth()->user()->isUser())
+                        <li><a href="{{ route('customer.account') }}"><i class="fa-solid fa-user"></i> Akun Saya</a></li>
                         <li>
                             <form action="{{ route('customer.logout') }}" method="POST" style="margin: 0;">
                                 @csrf
                                 <button type="submit" class="logout-btn">
-                                    <i class="fa-solid fa-right-from-bracket"></i> Logout ({{ auth()->user()->name }})
+                                    <i class="fa-solid fa-right-from-bracket"></i> Keluar
                                 </button>
                             </form>
                         </li>
                     @endif
+                @else
+                    <li><a href="{{ route('customer.login') }}"><i class="fa-solid fa-right-to-bracket"></i> Masuk</a></li>
+                    <li><a href="{{ route('customer.register') }}"><i class="fa-solid fa-user-plus"></i> Daftar</a></li>
                 @endauth
             </ul>
 
             {{-- Cart button --}}
-            <button class="cart-nav-btn" id="cartNavBtn" onclick="if(typeof openCart==='function'){openCart();}else{window.location.href='{{ route('products.index') }}#keranjang';}" title="Keranjang Belanja" style="display:none;">
+            <button class="cart-nav-btn" id="cartNavBtn" onclick="if(typeof openCart==='function'){openCart();}else{window.location.href='{{ route('products.index') }}#keranjang';}" title="Keranjang Belanja" aria-label="Buka keranjang belanja">
                 <i class="fa-solid fa-cart-shopping"></i>
                 <span class="cart-badge" id="cartBadgeNav">0</span>
             </button>
@@ -931,29 +1053,30 @@
         <div class="container">
             <div class="footer-content">
                 <div>
-                    <h3><i class="fa-solid fa-pills" style="color:#7CB342;"></i> <span style="color:#1E88E5;">Medik</span><span style="color:#7CB342;">pedia</span></h3>
-                    <p style="color:#d1d5db; line-height:1.8; margin-bottom:1.25rem;">Apotik online terpercaya dengan koleksi obat lengkap dan harga terjangkau.</p>
+                    <h3><i class="fa-solid fa-pills" style="color:#10B981;"></i> <span style="color:#0052CC;">Apotek</span><span style="color:#10B981;"> Medix</span></h3>
+                    <p style="color:#d1d5db; line-height:1.8; margin-bottom:1.25rem;">Belanja obat dan kebutuhan kesehatan secara online dari Apotek Medix.</p>
                     <div style="display:flex; gap:0.75rem;">
-                        <a href="#" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#1877f2'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="https://www.instagram.com/apotek_medikpedia?igsi=MTVybm4xZmswYXg3Ng==" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#e1306c'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="https://facebook.com/apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#1877f2'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#e1306c'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-instagram"></i></a>
                         <a href="https://wa.me/6285890007359" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#25d366'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-whatsapp"></i></a>
                         <a href="https://pin.it/69pbGoR2f" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#e60023'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" title="Pinterest"><i class="fa-brands fa-pinterest-p"></i></a>
-                        <a href="https://youtube.com/@medikpedia?si=YqymYCniGs60plIl" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#ff0000'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                        <a href="https://www.youtube.com/@apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#ff0000'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
                     </div>
                 </div>
                 <div>
                     <h3>Kategori</h3>
                     <ul>
-                        <li><a href="#"><i class="fa-solid fa-capsules fa-fw" style="margin-right:0.5rem;color:#7CB342;"></i>Antibiotik</a></li>
-                        <li><a href="#"><i class="fa-solid fa-tablets fa-fw" style="margin-right:0.5rem;color:#7CB342;"></i>Vitamin</a></li>
-                        <li><a href="#"><i class="fa-solid fa-flask fa-fw" style="margin-right:0.5rem;color:#7CB342;"></i>Suplemen</a></li>
+                        <li><a href="{{ route('products.index', ['kategori_produk' => 'OBAT', 'search' => 'antibiotik']) }}"><i class="fa-solid fa-capsules fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Antibiotik</a></li>
+                        <li><a href="{{ route('products.index', ['search' => 'vitamin']) }}"><i class="fa-solid fa-tablets fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Vitamin</a></li>
+                        <li><a href="{{ route('products.index', ['search' => 'suplemen']) }}"><i class="fa-solid fa-flask fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Suplemen</a></li>
                     </ul>
                 </div>
                 <div>
                     <h3>Informasi</h3>
                     <ul>
-                        <li><a href="{{ route('contact') }}"><i class="fa-solid fa-headset fa-fw" style="margin-right:0.5rem;color:#7CB342;"></i>Hubungi Kami</a></li>
-                        <li><a href="#"><i class="fa-solid fa-shield-halved fa-fw" style="margin-right:0.5rem;color:#7CB342;"></i>Kebijakan Privasi</a></li>
+                        <li><a href="{{ route('contact') }}"><i class="fa-solid fa-headset fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Bantuan & Kontak</a></li>
+                        <li><a href="{{ route('about') }}"><i class="fa-solid fa-circle-info fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Tentang Kami</a></li>
+                        <li class="footer-legal-note"><i class="fa-solid fa-shield-halved fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Periksa nomor izin edar pada kemasan atau detail produk. Hubungi kami bila perlu bantuan verifikasi.</li>
                     </ul>
                 </div>
                 <div>
@@ -961,19 +1084,19 @@
                     <ul>
                         <li style="margin-bottom:0.75rem;">
                             <a href="tel:+6285890007359" style="color:#d1d5db;text-decoration:none;display:flex;align-items:flex-start;gap:0.6rem;">
-                                <i class="fa-solid fa-phone" style="color:#7CB342;margin-top:3px;flex-shrink:0;"></i>
+                                <i class="fa-solid fa-phone" style="color:#10B981;margin-top:3px;flex-shrink:0;"></i>
                                 <span>0858 9000 7359</span>
                             </a>
                         </li>
                         <li style="margin-bottom:0.75rem;">
-                            <a href="mailto:medikpedia.mitramedika@gmail.com" style="color:#d1d5db;text-decoration:none;display:flex;align-items:flex-start;gap:0.6rem;">
-                                <i class="fa-solid fa-envelope" style="color:#7CB342;margin-top:3px;flex-shrink:0;"></i>
-                                <span>medikpedia.mitramedika@gmail.com</span>
+                            <a href="mailto:hello@apotekmedix.com" style="color:#d1d5db;text-decoration:none;display:flex;align-items:flex-start;gap:0.6rem;">
+                                <i class="fa-solid fa-envelope" style="color:#10B981;margin-top:3px;flex-shrink:0;"></i>
+                                <span>hello@apotekmedix.com</span>
                             </a>
                         </li>
                         <li>
                             <span style="color:#d1d5db;display:flex;align-items:flex-start;gap:0.6rem;">
-                                <i class="fa-solid fa-location-dot" style="color:#7CB342;margin-top:3px;flex-shrink:0;"></i>
+                                <i class="fa-solid fa-location-dot" style="color:#10B981;margin-top:3px;flex-shrink:0;"></i>
                                 <span>Jl. Letjen Suprapto No.1, Sumur Batu, Kec. Kemayoran, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10640</span>
                             </span>
                         </li>
@@ -981,138 +1104,35 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 Medikpedia. Semua hak dilindungi.</p>
+                <p>&copy; 2025 Apotek Medix. Semua hak dilindungi.</p>
             </div>
         </div>
     </footer>
 
     <!-- Floating Buttons -->
     <style>
-        .float-wrap { position:fixed; bottom:1.75rem; right:1.75rem; display:flex; flex-direction:column; align-items:center; gap:0; z-index:999; }
-
-        /* Links container desktop */
-        .float-links {
-            display:flex; flex-direction:column; align-items:center; gap:1.6rem;
-        }
-
-        .float-item { position:relative; display:flex; align-items:center; justify-content:center; }
-        .float-tooltip { display:none; }
-        .float-label-mobile { display:none; }
-
-        .float-btn {
-            width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-            text-decoration:none; transition:transform 0.2s, box-shadow 0.2s; flex-shrink:0;
-            font-size:1.1rem;
-        }
-        .float-btn:hover { transform:scale(1.13); }
-
-        /* WhatsApp lebih besar */
+        .float-wrap { position:fixed; bottom:1.75rem; right:1.75rem; z-index:999; }
         .float-btn-wa {
-            width:60px !important; height:60px !important; font-size:1.85rem !important;
-            margin-top:0.6rem;
+            width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+            background:#16A34A; color:#fff; font-size:1.85rem; text-decoration:none;
+            border:3px solid #fff;
+            box-shadow:0 4px 16px rgba(15,23,42,.32), 0 0 0 2px #15803D;
+            transition:transform 0.2s, box-shadow 0.2s, background-color 0.2s;
         }
-
-        /* Toggle button (mobile only) */
-        .float-toggle {
-            width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#1565C0,#1E88E5);
-            border:none; color:white; font-size:1.3rem; cursor:pointer;
-            display:none; align-items:center; justify-content:center;
-            box-shadow:0 4px 16px rgba(13,71,161,0.45); transition:transform 0.3s;
-            flex-shrink:0;
-        }
-        .float-toggle.open { transform:rotate(45deg); }
-
-        /* Mobile */
+        .float-btn-wa:hover { background:#15803D; transform:scale(1.08); box-shadow:0 6px 20px rgba(15,23,42,.38), 0 0 0 2px #166534; }
+        .float-btn-wa:focus-visible { outline:3px solid #0052CC; outline-offset:4px; }
         @media (max-width: 768px) {
-            .float-links {
-                display:flex; flex-direction:column; align-items:flex-end; gap:0.75rem;
-                overflow:hidden; max-height:0; transition:max-height 0.45s ease, opacity 0.35s;
-                opacity:0; pointer-events:none;
-            }
-            .float-links.open {
-                max-height:600px; opacity:1; pointer-events:auto;
-            }
-            .float-wrap { gap:0.6rem; align-items:flex-end; }
-            .float-btn { width:50px !important; height:50px !important; font-size:1.4rem !important; }
-            .float-btn-wa { width:50px !important; height:50px !important; font-size:1.6rem !important; margin-top:0; }
-            .float-toggle { display:flex; }
-            .float-item { gap:0.5rem; flex-direction:row; align-items:center; }
-            .float-label-mobile {
-                background:#1f2937; color:white; font-size:0.72rem; font-weight:600;
-                padding:0.25rem 0.6rem; border-radius:8px; white-space:nowrap;
-                display:none;
-            }
-            .float-links.open .float-label-mobile { display:block; }
+            .float-wrap { bottom:1rem; right:1rem; }
+            .float-btn-wa { width:52px; height:52px; font-size:1.6rem; }
         }
     </style>
 
     <div class="float-wrap">
-        <!-- Links (semua tombol) -->
-        <div class="float-links" id="floatLinks">
-            <!-- GASS file room -->
-            <div class="float-item">
-                <span class="float-tooltip">Ruang File GASS</span>
-                <span class="float-label-mobile">Ruang File GASS</span>
-                <a href="{{ route('gass.access.form') }}" class="float-btn"
-                   style="width:50px;height:50px;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.2);overflow:hidden;">
-                    <img src="{{ asset('logo gass.jpeg') }}" alt="Ruang File GASS" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
-                </a>
-            </div>
-            <!-- Dermilosofi -->
-            <div class="float-item">
-                <span class="float-tooltip">Dermilosofi</span>
-                <span class="float-label-mobile">Dermilosofi</span>
-                <a href="https://dermilosofi.site" target="_blank" class="float-btn"
-                   style="background:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.2);overflow:hidden;">
-                    <img src="{{ asset('logodermilosofi.site.jpeg') }}" alt="Dermilosofi" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
-                </a>
-            </div>
-            <!-- WhatsApp -->
-            <div class="float-item">
-                <span class="float-tooltip">Chat WhatsApp</span>
-                <span class="float-label-mobile">WhatsApp</span>
-                <a href="https://wa.me/6285890007359?text=Halo%20Medikpedia%2C%20saya%20ingin%20bertanya%20tentang%20produk%20obat."
-                   target="_blank" class="float-btn float-btn-wa"
-                   style="background:#25D366;color:white;font-size:1.9rem;box-shadow:0 6px 24px rgba(37,211,102,0.55);">
-                    <i class="fa-brands fa-whatsapp"></i>
-                </a>
-            </div>
-        </div>
-
-        <!-- Toggle button (mobile only) -->
-        <button class="float-toggle" id="floatToggle" onclick="toggleFloat()">
-            <i class="fa-solid fa-plus"></i>
-        </button>
+        <a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20ingin%20bertanya%20tentang%20produk%20obat."
+           target="_blank" rel="noopener" class="float-btn-wa" aria-label="Chat WhatsApp Apotek Medix">
+            <i class="fa-brands fa-whatsapp"></i>
+        </a>
     </div>
-
-    <script>
-        function toggleFloat() {
-            const links  = document.getElementById('floatLinks');
-            const toggle = document.getElementById('floatToggle');
-            links.classList.toggle('open');
-            toggle.classList.toggle('open');
-        }
-        // Desktop: selalu tampil � jangan pakai inline style agar tidak override CSS
-        function checkFloatDesktop() {
-            const links = document.getElementById('floatLinks');
-            if (window.innerWidth > 768) {
-                // Hapus semua inline style supaya CSS desktop berlaku
-                links.style.maxHeight = '';
-                links.style.opacity   = '';
-                links.style.overflow  = '';
-                links.style.display   = '';
-                links.classList.remove('open');
-            } else {
-                // Mobile: biarkan CSS yang mengatur via class .open
-                links.style.maxHeight = '';
-                links.style.opacity   = '';
-                links.style.overflow  = '';
-                links.style.display   = '';
-            }
-        }
-        checkFloatDesktop();
-        window.addEventListener('resize', checkFloatDesktop);
-    </script>
 
     @yield('scripts')
 
@@ -1245,14 +1265,14 @@
     <script>
         // Cart badge sync - gunakan key khusus jika halaman mendefinisikan cartSettings
         (function() {
-            const storageKey = (window.cartSettings && window.cartSettings.storageKey) ? window.cartSettings.storageKey : 'medikpedia_cart';
+            const storageKey = (window.cartSettings && window.cartSettings.storageKey) ? window.cartSettings.storageKey : 'apotekmedix_cart';
             const cart = JSON.parse(localStorage.getItem(storageKey) || '[]');
             const total = cart.reduce(function(s, i) { return s + i.qty; }, 0);
             
             const badge = document.getElementById('cartBadgeNav');
             const btn   = document.getElementById('cartNavBtn');
             if (badge) { badge.textContent = total; badge.style.display = total > 0 ? 'flex' : 'none'; }
-            if (btn) btn.style.display = total > 0 ? 'flex' : 'none';
+            if(btn) btn.style.display = 'flex';
         })();
 
         // Hamburger Menu Toggle

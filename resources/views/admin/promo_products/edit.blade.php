@@ -1,6 +1,6 @@
-@extends('layouts.admin')
-@section('title', 'Edit Promo Produk - Admin Medikpedia')
-@section('page-title', '🏷️ Edit Promo Produk')
+﻿@extends('layouts.admin')
+@section('title', 'Edit Promo Produk - Admin Apotek Medix')
+@section('page-title', 'ðŸ·ï¸ Edit Promo Produk')
 
 @section('styles')
 <style>
@@ -134,3 +134,4 @@ function previewImg(input) {
 }
 </script>
 @endsection
+

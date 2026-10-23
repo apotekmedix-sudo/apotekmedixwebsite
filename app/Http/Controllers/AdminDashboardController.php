@@ -30,7 +30,9 @@ class AdminDashboardController extends Controller
         $latestBanners = Schema::hasTable('banners') ? Banner::orderBy('urutan')->orderBy('id')->limit(5)->get() : collect();
         $totalBanners  = Schema::hasTable('banners') ? Banner::count() : 0;
         $activeBanners = Schema::hasTable('banners') ? Banner::where('aktif', true)->count() : 0;
-        $totalOmzet    = Schema::hasTable('purchase_histories') ? (float) PurchaseHistory::sum('total') : 0;
+        $totalOmzet    = Schema::hasTable('purchase_histories')
+            ? $this->revenueOrders()->get()->sum(fn ($order) => $order->effective_total)
+            : 0;
         $recentOrders  = Schema::hasTable('purchase_histories') ? PurchaseHistory::latest()->limit(5)->get() : collect();
 
         return view('admin.dashboard', compact(
@@ -69,10 +71,10 @@ class AdminDashboardController extends Controller
     public function purchaseHistory()
     {
         $orders = Schema::hasTable('purchase_histories')
-            ? PurchaseHistory::latest()->paginate(20)
+            ? PurchaseHistory::with('cashier')->latest()->paginate(20)
             : new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
         $total_omzet = Schema::hasTable('purchase_histories')
-            ? (float) PurchaseHistory::query()->get()->sum(fn($order) => $order->effective_total)
+            ? $this->revenueOrders()->get()->sum(fn ($order) => $order->effective_total)
             : 0;
 
         return view('admin.purchase-history', compact('orders', 'total_omzet'));
@@ -147,13 +149,17 @@ class AdminDashboardController extends Controller
             return redirect()->route('admin.purchase-history.index')->with('error', 'Tabel purchase_histories tidak tersedia.');
         }
 
-        $orders = PurchaseHistory::latest()->get();
+        $orders = PurchaseHistory::with('cashier')->latest()->get();
 
         $headers = [
             'ID',
             'Tanggal',
             'Nama Pembeli',
             'Jenis',
+            'Saluran Transaksi',
+            'Status Pembayaran',
+            'Kasir',
+            'Waktu Pembayaran',
             'Kontak',
             'Alamat',
             'Kecamatan',
@@ -168,7 +174,7 @@ class AdminDashboardController extends Controller
             'Total Pesanan (Rp)',
         ];
 
-        $widths = [8, 18, 24, 10, 16, 30, 18, 18, 18, 18, 30, 8, 20, 20, 18, 20];
+        $widths = [8, 18, 24, 10, 18, 18, 22, 18, 16, 30, 18, 18, 18, 18, 30, 8, 20, 20, 18, 20];
 
         $rows       = [];
         $grandTotal = 0;
@@ -189,6 +195,10 @@ class AdminDashboardController extends Controller
                         $index === 0 ? $order->created_at->format('d/m/Y H:i')                : '',
                         $index === 0 ? ($order->buyer_name ?? '')                             : '',
                         $index === 0 ? ($order->buyer_type === 'apotik' ? 'Apotik' : 'Umum') : '',
+                        $index === 0 ? ($order->transaction_channel === 'offline' ? 'Offline / Kios' : 'Online') : '',
+                        $index === 0 ? ($order->payment_status === 'paid' ? 'Lunas' : 'Menunggu pembayaran') : '',
+                        $index === 0 ? ($order->cashier?->name ?? '') : '',
+                        $index === 0 ? ($order->paid_at?->format('d/m/Y H:i') ?? '') : '',
                         $index === 0 ? ($order->phone ?? '')                                   : '',
                         $index === 0 ? ($order->address ?? '')                                 : '',
                         $index === 0 ? ($order->kecamatan ?? '')                               : '',
@@ -209,6 +219,10 @@ class AdminDashboardController extends Controller
                     $order->created_at->format('d/m/Y H:i'),
                     $order->buyer_name ?? '',
                     $order->buyer_type === 'apotik' ? 'Apotik' : 'Umum',
+                    $order->transaction_channel === 'offline' ? 'Offline / Kios' : 'Online',
+                    $order->payment_status === 'paid' ? 'Lunas' : 'Menunggu pembayaran',
+                    $order->cashier?->name ?? '',
+                    $order->paid_at?->format('d/m/Y H:i') ?? '',
                     $order->phone    ?? '',
                     $order->address  ?? '',
                     $order->kecamatan ?? '',
@@ -241,5 +255,19 @@ class AdminDashboardController extends Controller
         $filename = 'purchase_history_' . date('Y-m-d_His') . '.xlsx';
 
         return \App\Helpers\XlsxWriter::download($filename, $headers, $rows, $widths);
+    }
+
+    private function revenueOrders()
+    {
+        $query = PurchaseHistory::query();
+        if (Schema::hasColumn('purchase_histories', 'transaction_channel')
+            && Schema::hasColumn('purchase_histories', 'payment_status')) {
+            $query->where(function ($orders) {
+                $orders->where('transaction_channel', 'online')
+                    ->orWhere('payment_status', 'paid');
+            });
+        }
+
+        return $query;
     }
 }

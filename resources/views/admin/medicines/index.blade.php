@@ -1,6 +1,6 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
-@section('title', 'Manajemen Obat - Admin Medikpedia')
+@section('title', 'Manajemen Obat - Admin Apotek Medix')
 @section('page-title', 'Manajemen Obat')
 
 @section('styles')
@@ -374,7 +374,7 @@
                             <img src="{{ url('storage/' . $medicine->gambar) }}"
                                  alt="{{ $medicine->nama_obat }}" class="med-img">
                         @else
-                            <div class="med-img-placeholder">💊</div>
+                            <div class="med-img-placeholder">ðŸ’Š</div>
                         @endif
                     </td>
                     <td>
@@ -405,10 +405,10 @@
                         <span class="price-text">{{ $medicine->getFormattedPrice() }}</span>
                     </td>
                     <td>
-                        @if($medicine->stok > 10)
-                            <span class="stock-badge stock-ok">{{ $medicine->stok }}</span>
-                        @elseif($medicine->stok > 0)
-                            <span class="stock-badge stock-low">{{ $medicine->stok }}</span>
+                        @if(($medicine->stock_base_units ?? $medicine->stok) > 10)
+                            <span class="stock-badge stock-ok">{{ $medicine->stock_breakdown }}</span>
+                        @elseif(($medicine->stock_base_units ?? $medicine->stok) > 0)
+                            <span class="stock-badge stock-low">{{ $medicine->stock_breakdown }}</span>
                         @else
                             <span class="stock-badge stock-empty">Habis</span>
                         @endif
@@ -454,14 +454,14 @@
         {{-- Pagination --}}
         <div class="pagination-wrap">
             <div class="pagination-info">
-                Menampilkan {{ $medicines->firstItem() }}–{{ $medicines->lastItem() }} dari {{ $medicines->total() }} obat
+                Menampilkan {{ $medicines->firstItem() }}â€“{{ $medicines->lastItem() }} dari {{ $medicines->total() }} obat
             </div>
             <div class="pagination-pages">
                 {{-- Prev --}}
                 @if($medicines->onFirstPage())
-                    <span class="page-btn disabled">‹</span>
+                    <span class="page-btn disabled">â€¹</span>
                 @else
-                    <a href="{{ $medicines->previousPageUrl() }}" class="page-btn">‹</a>
+                    <a href="{{ $medicines->previousPageUrl() }}" class="page-btn">â€¹</a>
                 @endif
 
                 @foreach($medicines->getUrlRange(1, $medicines->lastPage()) as $page => $url)
@@ -472,15 +472,15 @@
                             <a href="{{ $url }}" class="page-btn">{{ $page }}</a>
                         @endif
                     @elseif(abs($page - $medicines->currentPage()) == 3)
-                        <span class="page-btn disabled" style="border:none;background:none;">…</span>
+                        <span class="page-btn disabled" style="border:none;background:none;">â€¦</span>
                     @endif
                 @endforeach
 
                 {{-- Next --}}
                 @if($medicines->hasMorePages())
-                    <a href="{{ $medicines->nextPageUrl() }}" class="page-btn">›</a>
+                    <a href="{{ $medicines->nextPageUrl() }}" class="page-btn">â€º</a>
                 @else
-                    <span class="page-btn disabled">›</span>
+                    <span class="page-btn disabled">â€º</span>
                 @endif
             </div>
         </div>
@@ -489,14 +489,14 @@
 @else
     <div class="empty-state">
         @if($search || $kategori)
-            <div class="empty-icon">🔍</div>
+            <div class="empty-icon">ðŸ”</div>
             <h3>Tidak ada hasil</h3>
             <p>Tidak ada obat yang cocok dengan <strong>"{{ $search ?: $kategori }}"</strong>.</p>
             <a href="{{ route('admin.medicines.index') }}" class="btn-icon btn-icon-outline">
                 <i class="fa-solid fa-xmark"></i> Hapus Filter
             </a>
         @else
-            <div class="empty-icon">💊</div>
+            <div class="empty-icon">ðŸ’Š</div>
             <h3>Belum ada obat</h3>
             <p>Mulai tambahkan obat atau import dari file Excel/CSV.</p>
             <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;">

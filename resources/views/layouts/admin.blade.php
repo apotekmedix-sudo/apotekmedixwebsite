@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Admin - Medikpedia')</title>
-    <link rel="icon" type="image/png" href="{{ asset('logo1.png') }}">
+    <title>@yield('title', 'Admin - Apotek Medix')</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
     <!-- Font Awesome (icons for admin UI) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -12,12 +12,12 @@
 
     <style>
         :root {
-            --primary: #1E88E5;
-            --secondary: #1565C0;
-            --accent: #7CB342;
-            --dark: #1f2937;
-            --light: #f3f4f6;
-            --sidebar: #111827;
+            --primary: #0F172A;
+            --secondary: #1E293B;
+            --accent: #84CC16;
+            --dark: #1E293B;
+            --light: #F8FAFC;
+            --sidebar: #0F172A;
         }
 
         * {
@@ -39,7 +39,7 @@
 
         /* Sidebar */
         .sidebar {
-            background: linear-gradient(180deg, #0D47A1 0%, var(--sidebar) 100%);
+            background: linear-gradient(180deg, #0F172A 0%, #111C31 100%);
             color: white;
             width: 250px;
             padding: 2rem 0;
@@ -112,7 +112,7 @@
             background: linear-gradient(90deg, white 0%, #F5F7FA 100%);
             padding: 1.5rem;
             border-radius: 0.75rem;
-            box-shadow: 0 2px 8px rgba(30, 136, 229, 0.1);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
             margin-bottom: 2rem;
             border-left: 4px solid var(--primary);
         }
@@ -606,7 +606,7 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-brand">
-                <img src="{{ asset('logo1.png') }}" alt="Medikpedia" style="height: 35px; object-fit: contain;">
+                <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix" style="height: 35px; object-fit: contain;">
                 <span style="white-space: nowrap;">Admin</span>
             </div>
             <ul class="sidebar-menu">
@@ -626,6 +626,30 @@
                     <a href="{{ route('admin.produk-pbf.index') }}" class="@if(Route::current()->getName() === 'admin.produk-pbf.index') active @endif">
                         <span>📦</span>
                         <span>Produk Pemesanan PBF</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.purchase-history.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.purchase-history')) active @endif">
+                        <i class="fa-solid fa-receipt"></i>
+                        <span>Transaksi</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.customers.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.customers')) active @endif">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Data Customer</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.cashiers.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.cashiers')) active @endif">
+                        <i class="fa-solid fa-cash-register"></i>
+                        <span>Kelola Kasir</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('kiosk') }}" target="_blank" rel="noopener">
+                        <i class="fa-solid fa-store"></i>
+                        <span>Buka Kios Toko</span>
                     </a>
                 </li>
                 <li>

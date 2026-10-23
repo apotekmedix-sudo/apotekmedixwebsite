@@ -1,4 +1,4 @@
-@php
+﻿@php
     $money = fn ($value) => 'Rp ' . number_format((int) $value, 0, ',', '.');
     $buyerType = match ($order->buyer_type) {
         'apotik' => 'Apotik',
@@ -12,7 +12,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Surat Pesanan {{ $order->id }} - Apotek Medikpedia</title>
+    <title>Surat Pesanan {{ $order->id }} - Apotek Medix</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; color: #111; background: #e9edf0; font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
@@ -52,7 +52,7 @@
         <button class="download-button" onclick="downloadPdf()">Download PDF</button>
     </div>
     <main class="paper">
-        <header class="head"><h2>APOTEK MEDIKPEDIA</h2><div class="address">ITC CEMPAKA MAS LT.1 NO.88, KEL. SUMUR BATU, KEC. KEMAYORAN, JAKARTA PUSAT</div></header>
+        <header class="head"><h2>APOTEK MEDIX</h2><div class="address">ITC CEMPAKA MAS LT.1 NO.88, KEL. SUMUR BATU, KEC. KEMAYORAN, JAKARTA PUSAT</div></header>
         <h1>SURAT PESANAN</h1>
         <div class="order-number">NO. PESANAN : MDK - PO.{{ $order->created_at?->format('ymd') }}.{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</div>
         <div class="details">
@@ -62,16 +62,16 @@
         <div class="table-wrap"><table><colgroup><col class="no"><col class="principle"><col class="product"><col class="qty"><col class="price"><col class="line-total"></colgroup><thead><tr><th>NO</th><th>PRINCIPLE</th><th>NAMA PRODUK</th><th>QTY</th><th>MODAL</th><th>TOTAL</th></tr></thead><tbody>
             @forelse($items as $index => $item)
                 @php $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0); $price = (int) ($item['harga_modal'] ?? $item['modal'] ?? $item['harga'] ?? $item['price'] ?? 0); $lineTotal = $qty * $price; $total += $lineTotal; @endphp
-                <tr><td class="center">{{ $index + 1 }}</td><td>{{ $item['brand'] ?? $item['principle'] ?? '-' }}</td><td>{{ $item['nama_obat'] ?? $item['name'] ?? '-' }}</td><td class="center">{{ $qty }}</td><td class="right">{{ $money($price) }}</td><td class="right">{{ $money($lineTotal) }}</td></tr>
+                <tr><td class="center">{{ $index + 1 }}</td><td>{{ $item['brand'] ?? $item['principle'] ?? '-' }}</td><td>{{ $item['nama_obat'] ?? $item['name'] ?? '-' }}</td><td class="center">{{ $qty }} {{ strtolower($item['unit_label'] ?? 'box') }}</td><td class="right">{{ $money($price) }}</td><td class="right">{{ $money($lineTotal) }}</td></tr>
             @empty <tr><td colspan="6" class="center">Belum ada produk</td></tr>@endforelse
             @for($blank = count($items); $blank < 12; $blank++)<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>@endfor
         </tbody></table></div>
-        <div class="footer-note"><div><p><b>Catatan :</b></p><p>Mohon diproses sesuai dengan jumlah dan harga modal yang tercantum.</p></div><div class="signature">Hormat Kami,<img src="{{ asset('logo2.png') }}" alt="Apotek Medikpedia"><small>ITC Cempaka Mas Lt. 1, Jakarta</small><strong>Apotek Medikpedia</strong></div></div>
+        <div class="footer-note"><div><p><b>Catatan :</b></p><p>Mohon diproses sesuai dengan jumlah dan harga modal yang tercantum.</p></div><div class="signature">Hormat Kami,<img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix"><small>ITC Cempaka Mas Lt. 1, Jakarta</small><strong>Apotek Medix</strong></div></div>
     </main>
 </body>
 <script>
     function downloadPdf() {
-        document.title = 'Surat-Pesanan-Medikpedia-{{ $order->id }}';
+        document.title = 'Surat-Pesanan-Apotek Medix-{{ $order->id }}';
         window.print();
     }
 </script>

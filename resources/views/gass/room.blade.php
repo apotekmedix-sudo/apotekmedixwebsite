@@ -1,6 +1,6 @@
-@extends('layouts.frontend')
+﻿@extends('layouts.frontend')
 
-@section('title', 'Ruang File GASS - Medikpedia')
+@section('title', 'Ruang File GASS - Apotek Medix')
 
 @section('styles')
 <style>
@@ -276,7 +276,7 @@
 
             const totalSize = selectedFiles.reduce((total, file) => total + file.size, 0);
             summary.textContent = selectedFiles.length
-                ? `${selectedFiles.length} file dipilih · ${formatSize(totalSize)} total`
+                ? `${selectedFiles.length} file dipilih Â· ${formatSize(totalSize)} total`
                 : 'Belum ada file dipilih.';
             uploadButton.disabled = selectedFiles.length === 0;
         };
@@ -410,3 +410,4 @@
     })();
 </script>
 @endsection
+

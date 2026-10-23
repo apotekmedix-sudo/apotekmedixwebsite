@@ -1,5 +1,5 @@
 @extends('layouts.frontend')
-@section('title', 'Kategori ' . ucfirst($mainCategory) . ' - ' . ucfirst($subCategory) . ' - Medikpedia')
+@section('title', 'Kategori ' . ucfirst($mainCategory) . ' - ' . ucfirst($subCategory) . ' - Apotek Medix')
 
 @section('styles')
 <style>
@@ -568,7 +568,7 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'medikpedia_cart_retail' };</script>
+<script>window.cartSettings = { storageKey: 'apotek_medix_cart_retail' };</script>
 @include('partials.cart')
 @endsection
 
@@ -689,10 +689,10 @@
                                 <h3 class="product-name">{{ $med->nama_obat }}</h3>
                                 
                                 <div class="product-price">{{ $med->getFormattedPrice() }}</div>
-                                @php $stock = (int) $med->stok; @endphp
+                                @php $stock = (int) ($med->stock_base_units ?? $med->stok); @endphp
                                 <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
                                     <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-                                    {{ $stock > 0 ? 'Stok: ' . number_format($stock, 0, ',', '.') : 'Stok habis' }}
+                                    {{ $stock > 0 ? 'Stok: ' . $med->stock_breakdown : 'Stok habis' }}
                                 </span>
                                 @if($med->sediaan_label)
                                     <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.35rem;">
@@ -701,7 +701,9 @@
                                 @endif
                                 <div class="product-actions">
                                     <a href="{{ route('medicines.show', $med->id) }}" class="btn-detail">Lihat Detail</a>
-                                    <button class="btn-add-cart" onclick="addToCart({{ $med->id }}, '{{ addslashes($med->nama_obat) }}', {{ $med->harga }}, '', '{{ addslashes($med->brand ?: $med->kategori) }}')">
+                                    <div id="category-price-{{ $med->id }}">{{ $med->getFormattedCatalogPrice('harga_retail') }}</div>
+                                    @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'category-unit-' . $med->id, 'priceTargetId' => 'category-price-' . $med->id])
+                                    <button class="btn-add-cart" onclick="addToCart({{ $med->id }}, '{{ addslashes($med->nama_obat) }}', {{ $med->harga_retail ?: $med->harga }}, '{{ $med->gambar ? url('storage/'.$med->gambar) : '' }}', '{{ addslashes($med->brand ?: $med->kategori) }}', this, 'category-unit-{{ $med->id }}')">
                                         <i class="fa-solid fa-cart-plus"></i> Keranjang
                                     </button>
                                 </div>

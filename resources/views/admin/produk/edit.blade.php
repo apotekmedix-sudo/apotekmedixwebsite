@@ -1,7 +1,7 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
-@section('title', 'Edit Produk - Admin Medikpedia')
-@section('page-title', '✏️ Edit: ' . $medicine->nama_obat)
+@section('title', 'Edit Produk - Admin Apotek Medix')
+@section('page-title', 'âœï¸ Edit: ' . $medicine->nama_obat)
 
 @section('styles')
 <style>
@@ -52,7 +52,7 @@
 @section('content')
 
 <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:#9ca3af;margin-bottom:1.25rem;">
-    <a href="{{ route('admin.produk.index') }}" style="color:#1E88E5;text-decoration:none;font-weight:600;">🛒 Produk Kami</a>
+    <a href="{{ route('admin.produk.index') }}" style="color:#1E88E5;text-decoration:none;font-weight:600;">ðŸ›’ Produk Kami</a>
     <i class="fa-solid fa-chevron-right" style="font-size:0.65rem;"></i>
     <span style="color:#374151;font-weight:600;">Edit Produk</span>
 </div>
@@ -115,7 +115,7 @@
                 <div class="form-group">
                     <label class="form-label">Kelompok</label>
                     <select name="kelompok" class="form-input {{ $errors->has('kelompok') ? 'is-invalid' : '' }}">
-                        <option value="">— Pilih Kelompok —</option>
+                        <option value="">â€” Pilih Kelompok â€”</option>
                         <option value="PBF"    {{ old('kelompok', $medicine->kelompok) == 'PBF'    ? 'selected' : '' }}>PBF</option>
                         <option value="APOTEK" {{ old('kelompok', $medicine->kelompok) == 'APOTEK' ? 'selected' : '' }}>APOTEK</option>
                     </select>
@@ -139,21 +139,23 @@
                         <input type="number" name="harga_modal" class="form-input" step="1" min="0" value="{{ old('harga_modal', $medicine->harga_modal) }}">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Harga Retail (Rp) <span class="req">*</span></label>
+                        <label class="form-label">Harga Retail / box (Rp)</label>
                         <input type="number" name="harga" class="form-input {{ $errors->has('harga') ? 'is-invalid' : '' }}"
-                               step="1" min="0" value="{{ old('harga', $medicine->harga) }}" required>
+                               step="1" min="0" value="{{ old('harga', $medicine->harga) }}">
                         @error('harga')
                             <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                         @enderror
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Stok <span class="req">*</span></label>
+                        <label class="form-label">Stok (box) <span class="req">*</span></label>
                         <input type="number" name="stok" class="form-input {{ $errors->has('stok') ? 'is-invalid' : '' }}"
-                               min="0" value="{{ old('stok', $medicine->stok) }}" required>
+                               min="0" step="0.000001" value="{{ old('stok', $medicine->stock_boxes) }}" required>
+                        <small>Stok dicatat dalam box; sisa satuan kecil tampil setelah terjadi penjualan.</small>
                         @error('stok')
                             <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                         @enderror
                     </div>
+                    @include('admin.partials.packaging-fields', ['medicine' => $medicine])
                 </div>
 
                 <div class="form-grid">
@@ -203,7 +205,7 @@
                     <div class="kat-selector">
                         @foreach($kategoriOptions as $kat)
                             @php
-                                $icon = match($kat) { 'OBAT' => '💊', 'SKINCARE & KOSMETIK' => '✨', 'ALAT KESEHATAN' => '🩺', default => '📦' };
+                                $icon = match($kat) { 'OBAT' => 'ðŸ’Š', 'SKINCARE & KOSMETIK' => 'âœ¨', 'ALAT KESEHATAN' => 'ðŸ©º', default => 'ðŸ“¦' };
                                 $isSelected = old('kategori_produk', $medicine->kategori_produk) === $kat;
                             @endphp
                             <label class="kat-card {{ $isSelected ? 'selected' : '' }}" onclick="selectKat(this)">
@@ -251,12 +253,12 @@
                     </div>
                 @endif
                 <div class="upload-zone" id="dropZone" onclick="document.getElementById('gambar').click()">
-                    <div class="upload-icon">📸</div>
+                    <div class="upload-icon">ðŸ“¸</div>
                     <p>Klik atau drag & drop gambar di sini</p>
                     <button type="button" class="btn-choose" onclick="event.stopPropagation();document.getElementById('gambar').click()">
                         <i class="fa-solid fa-folder-open"></i> Pilih File
                     </button>
-                    <small>JPG, PNG, GIF — Maks. 10MB</small>
+                    <small>JPG, PNG, GIF â€” Maks. 10MB</small>
                 </div>
                 <input type="file" id="gambar" name="gambar" accept="image/*" style="display:none;">
                 @error('gambar')

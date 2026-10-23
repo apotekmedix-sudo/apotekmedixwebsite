@@ -1,6 +1,6 @@
 @extends('layouts.frontend')
 
-@section('title', $medicine->nama_obat . ' - Medikpedia')
+@section('title', $medicine->nama_obat . ' - Apotek Medix')
 
 @section('styles')
 <style>
@@ -511,7 +511,7 @@
         const total          = formatRupiah(hargaSatuan * qty);
         const hargaSatuanFmt = formatRupiah(hargaSatuan);
 
-        const pesan = 'Halo Medikpedia, saya ingin memesan:\n\n' +
+        const pesan = 'Halo Apotek Medix, saya ingin memesan:\n\n' +
             'Produk     : ' + namaObat + '\n' +
             'Perusahaan : ' + kategori + '\n' +
             'Harga      : ' + hargaSatuanFmt + ' / pcs\n' +

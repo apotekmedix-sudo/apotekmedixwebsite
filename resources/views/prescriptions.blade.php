@@ -1,6 +1,6 @@
 ﻿@extends('layouts.frontend')
 
-@section('title', 'Produk - Medikpedia')
+@section('title', 'Produk - Apotek Medix')
 
 @section('styles')
 <style>
@@ -325,7 +325,7 @@
                             @if($medicine->gambar)
                                 <img src="{{ url('storage/' . $medicine->gambar) }}" alt="{{ $medicine->nama_obat }}">
                             @else
-                                <img class="product-placeholder-logo" src="{{ asset('logo1.png') }}" alt="Logo Medikpedia">
+                                <img class="product-placeholder-logo" src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix">
                             @endif
                         </div>
                         <div class="medicine-body">
@@ -334,10 +334,10 @@
                             <h3 class="medicine-name">{{ $medicine->nama_obat }}</h3>
                             
                             <div class="medicine-price">{{ $medicine->getFormattedPrice() }}</div>
-                            @php $stock = (int) $medicine->stok; @endphp
+                            @php $stock = (int) ($medicine->stock_base_units ?? $medicine->stok); @endphp
                             <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-                                {{ $stock > 0 ? 'Stok: ' . number_format($stock, 0, ',', '.') : 'Stok habis' }}
+                                {{ $stock > 0 ? 'Stok: ' . $medicine->stock_breakdown : 'Stok habis' }}
                             </span>
                             @if($medicine->sediaan_label)
                                 <div class="medicine-meta" style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.6rem;">
@@ -347,7 +347,9 @@
                             <a href="{{ route('medicines.show', $medicine->id) }}" class="medicine-btn">
                                 Lihat Detail <i class="fa-solid fa-arrow-right"></i>
                             </a>
-                            <button class="btn-cart" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $medicine->harga }}, '{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this)">
+                            <div id="prescription-price-{{ $medicine->id }}">{{ $medicine->getFormattedCatalogPrice('harga_retail') }}</div>
+                            @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'prescription-unit-' . $medicine->id, 'priceTargetId' => 'prescription-price-' . $medicine->id])
+                            <button class="btn-cart" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $medicine->harga_retail ?: $medicine->harga }}, '{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this, 'prescription-unit-{{ $medicine->id }}')">
                                 <i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang
                             </button>
                         </div>
@@ -405,6 +407,6 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'medikpedia_cart_prescriptions' };</script>
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_prescriptions' };</script>
 @include('partials.cart')
 @endsection

@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -24,6 +25,14 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'phone',
+        'address',
+        'apartment',
+        'city',
+        'province',
+        'postal_code',
+        'is_default_address',
+        'is_cashier',
     ];
 
     /**
@@ -46,6 +55,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_default_address' => 'boolean',
+            'is_cashier' => 'boolean',
         ];
     }
 
@@ -57,6 +68,16 @@ class User extends Authenticatable
 
     public function isUser()
     {
-        return $this->role === 'user';
+        return $this->role === 'user' && !$this->is_cashier;
+    }
+
+    public function isCashier(): bool
+    {
+        return $this->role === 'user' && $this->is_cashier;
+    }
+
+    public function purchaseHistories(): HasMany
+    {
+        return $this->hasMany(PurchaseHistory::class);
     }
 }

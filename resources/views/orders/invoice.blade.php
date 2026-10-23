@@ -1,4 +1,4 @@
-@php
+﻿@php
     $formatMoney = fn ($amount) => 'Rp ' . number_format((int) $amount, 0, ',', '.');
     $originalTotal = (int) ($order->original_total ?: $order->total);
     $discountedTotal = (int) ($order->discounted_total ?? $order->total);
@@ -29,7 +29,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice #{{ $order->id }} - Apotek Medikpedia</title>
+    <title>Invoice #{{ $order->id }} - Apotek Medix</title>
     <style>
         :root { --ink: #17202a; --muted: #667085; --blue: #0879bd; --green: #8bcf43; --line: #b9c2ca; }
         * { box-sizing: border-box; }
@@ -82,12 +82,12 @@
     <div class="toolbar"><a href="{{ url('/') }}">Kembali</a><button onclick="window.print()">Cetak / Simpan PDF</button></div>
     <main class="invoice">
         <header class="masthead">
-            <img src="{{ asset('logo1.png') }}" alt="Logo Apotek Medikpedia">
+            <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix">
             <div>
-                <h1>APOTEK MEDIKPEDIA</h1>
+                <h1>APOTEK MEDIX</h1>
                 <p class="tagline">Melayani pembelian apotek dan retail</p>
                 <p>ITC Cempaka Mas LT.1 No. 88, RT.4 RW.8, Kel. Sumur Batu, Kec. Kemayoran, Jakarta Pusat</p>
-                <p>Website: www.medikpedia.com - Whatsapp: 085890007359</p>
+                <p>Website: www.apotekmedix.com - Whatsapp: 085890007359</p>
             </div>
         </header>
         <div class="rule"></div>
@@ -98,6 +98,10 @@
             <div class="meta-group"><span class="meta-label">TANGGAL</span><span>:</span><span class="meta-value">{{ $order->created_at?->format('d/m/Y') }}</span></div>
             <div class="meta-group"><span class="meta-label">JENIS PEMBELI</span><span>:</span><span class="meta-value">{{ $buyerType }}</span></div>
             <div class="meta-group"><span class="meta-label">NO. INVOICE</span><span>:</span><span class="meta-value">INV/{{ $order->created_at?->format('Ymd') }}/{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</span></div>
+            <div class="meta-group"><span class="meta-label">TRANSAKSI</span><span>:</span><span class="meta-value">{{ $order->transaction_channel === 'offline' ? 'Offline / Pesanan Kios' : 'Online' }}</span></div>
+            @if($order->transaction_channel === 'offline')
+                <div class="meta-group"><span class="meta-label">STATUS BAYAR</span><span>:</span><span class="meta-value">{{ $order->payment_status === 'paid' ? 'LUNAS' : 'MENUNGGU PEMBAYARAN KASIR' }}</span></div>
+            @endif
             <div class="meta-group"><span class="meta-label">ALAMAT</span><span>:</span><span class="meta-value">{{ collect([$order->address, $order->kecamatan, $order->kota])->filter()->join(', ') ?: '-' }}</span></div>
             @php
                 $paymentDisplay = $order->payment_method ?: '-';
@@ -126,7 +130,7 @@
                             $discount = min($discount, $qty * $price);
                             $lineTotal = max(0, ($qty * $price) - $discount);
                         @endphp
-                        <tr><td class="center">{{ $index + 1 }}</td><td>{{ $name }} @if(!empty($item['brand']))<span class="item-note">{{ $item['brand'] }}</span>@endif</td><td>{{ $item['catatan'] ?? $item['note'] ?? '-' }}</td><td class="center">{{ $item['sediaan'] ?? 'Pcs' }}</td><td class="center">{{ $qty }}</td><td class="money">{{ $formatMoney($price) }}</td><td class="money">{{ $discount ? $formatMoney($discount) : '-' }}</td><td class="money">{{ $formatMoney($lineTotal) }}</td></tr>
+                        <tr><td class="center">{{ $index + 1 }}</td><td>{{ $name }} @if(!empty($item['brand']))<span class="item-note">{{ $item['brand'] }}</span>@endif</td><td>{{ $item['catatan'] ?? $item['note'] ?? '-' }}</td><td class="center">{{ $item['unit_label'] ?? $item['sediaan'] ?? 'Pcs' }}</td><td class="center">{{ $qty }}</td><td class="money">{{ $formatMoney($price) }}</td><td class="money">{{ $discount ? $formatMoney($discount) : '-' }}</td><td class="money">{{ $formatMoney($lineTotal) }}</td></tr>
                     @empty
                         <tr><td colspan="8" class="center">Tidak ada produk</td></tr>
                     @endforelse
@@ -139,7 +143,7 @@
             <table class="summary"><tr><td>SUBTOTAL</td><td class="money">{{ $formatMoney($originalTotal) }}</td></tr><tr><td>POTONGAN</td><td class="money">{{ $discountTotal ? '- ' . $formatMoney($discountTotal) : '-' }}</td></tr><tr class="grand"><td>TOTAL</td><td class="money">{{ $formatMoney($total) }}</td></tr></table>
         </div>
         <section class="notes"><h3>Catatan :</h3><ol><li>Harga dan ketersediaan produk mengikuti konfirmasi apotek.</li><li>Mohon simpan invoice ini sebagai bukti pemesanan.</li></ol></section>
-        <footer class="footer"><div class="payment"><h3>INFORMASI PEMBAYARAN :</h3><div class="payment-row"><b>BANK</b><span>:</span><span>BCA (BANK CENTRAL ASIA)</span></div><div class="payment-row"><b>NO. REKENING</b><span>:</span><span>6540126787</span></div><div class="payment-row"><b>ATAS NAMA</b><span>:</span><span>RULY HAYKAL</span></div><p><i>Harap melakukan konfirmasi pembayaran melalui WhatsApp : 085890007359</i></p></div><div class="signature"><span class="signature-label">Hormat Kami,</span><img src="{{ asset('logo2.png') }}" alt="Apotek Medikpedia"><span class="signature-address">ITC Cempaka Mas Lt. 1 Blok B, Jakarta</span><span class="signature-name">Apotek Medikpedia</span></div></footer>
+        <footer class="footer"><div class="payment"><h3>INFORMASI PEMBAYARAN :</h3><div class="payment-row"><b>BANK</b><span>:</span><span>BCA (BANK CENTRAL ASIA)</span></div><div class="payment-row"><b>NO. REKENING</b><span>:</span><span>6540126787</span></div><div class="payment-row"><b>ATAS NAMA</b><span>:</span><span>RULY HAYKAL</span></div><p><i>Harap melakukan konfirmasi pembayaran melalui WhatsApp : 085890007359</i></p></div><div class="signature"><span class="signature-label">Hormat Kami,</span><img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix"><span class="signature-address">ITC Cempaka Mas Lt. 1 Blok B, Jakarta</span><span class="signature-name">Apotek Medix</span></div></footer>
     </main>
 </body>
 </html>

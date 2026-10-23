@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Database\Seeders;
 
@@ -15,10 +15,11 @@ class CustomerSeeder extends Seeder
             [
                 'name'     => 'Customer',
                 'username' => 'Customer',
-                'email'    => 'customer@medikpedia.com',
-                'password' => Hash::make('Medikpedia'),
+                'email'    => 'customer@apotekmedix.com',
+                'password' => Hash::make('Apotek Medix'),
                 'role'     => 'user',
             ]
         );
     }
 }
+

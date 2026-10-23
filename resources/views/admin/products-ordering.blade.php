@@ -1,7 +1,7 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
-@section('title', 'Produk Pemesanan PBF - Admin Medikpedia')
-@section('page-title', '📦 Produk Pemesanan PBF')
+@section('title', 'Produk Pemesanan PBF - Admin Apotek Medix')
+@section('page-title', 'ðŸ“¦ Produk Pemesanan PBF')
 
 @section('styles')
 <style>
@@ -70,6 +70,6 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'medikpedia_cart_pbf_admin', receiptStoreName: 'APOTEK MEDIKPEDIA', receiptStoreAddress: 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat', receiptFilePrefix: 'surat-pesanan-pbf', adminPbfOrder: true, adminPurchaseOrderBase: '{{ str_replace('/0/', '/__ORDER__/', route('admin.purchase-history.purchase-order', ['order' => 0])) }}' };</script>
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_pbf_admin', receiptStoreName: 'APOTEK MEDIX', receiptStoreAddress: 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat', receiptFilePrefix: 'surat-pesanan-pbf', adminPbfOrder: true, adminPurchaseOrderBase: '{{ str_replace('/0/', '/__ORDER__/', route('admin.purchase-history.purchase-order', ['order' => 0])) }}' };</script>
 @include('partials.cart')
 @endsection

@@ -5,6 +5,14 @@
       @include('partials.cart')
   =====================================================================
 --}}
+@php
+  $isKioskOrder = !empty($cartKioskOrder);
+  $defaultShippingAddress = auth()->check()
+    && auth()->user()->isUser()
+    && auth()->user()->is_default_address
+      ? auth()->user()
+      : null;
+@endphp
 
 {{-- ===== CART CSS ===== --}}
 <style>
@@ -98,7 +106,7 @@
 <div class="modal-overlay" id="orderOverlay" onclick="closeOrder()"></div>
 <div class="modal-box" id="orderModal">
   <div class="modal-head">
-    <div><h3><i class="fa-solid fa-file-invoice"></i> Form Pemesanan</h3><p>Lengkapi data untuk melanjutkan</p></div>
+    <div><h3><i class="fa-solid {{ $isKioskOrder ? 'fa-store' : 'fa-file-invoice' }}"></i> {{ $isKioskOrder ? 'Pesanan di Toko' : 'Form Pemesanan' }}</h3><p>{{ $isKioskOrder ? 'Tunjukkan struk pesanan kepada kasir untuk pembayaran.' : 'Lengkapi data untuk melanjutkan' }}</p></div>
     <button class="modal-close" onclick="closeOrder()">&#x2715;</button>
   </div>
   <div class="modal-summary">
@@ -111,6 +119,9 @@
   </div>
   <div class="modal-form" id="orderFormPanel">
     @if(empty($cartWholesaleOrder))
+    @if($isKioskOrder)
+    <input type="hidden" id="f_jenis" value="umum">
+    @else
     <div id="standardBuyerFields">
     <label class="form-lbl">Jenis Pembeli <span style="color:#ef4444;">*</span></label>
     <select id="f_jenis" class="form-inp" onchange="toggleBuyerType()">
@@ -119,6 +130,7 @@
       <option value="dokter">Dokter</option>
     </select>
     </div>
+    @endif
     @endif
     <div id="pbfDestinationFields" style="display:none;">
       <label class="form-lbl">Nama PBF <span style="color:#ef4444;">*</span></label>
@@ -136,17 +148,23 @@
       <label class="form-lbl">No. SIPA <span style="color:#ef4444;">*</span></label>
       <input id="f_signer_sipa" type="text" class="form-inp" value="1/b.19/31.71.03.1007.4k-1.b/4/tm.09/e/2026" placeholder="Nomor SIPA">
     </div>
-    <div id="buyerFieldsUmum" class="standard-buyer-fields" @if(!empty($cartWholesaleOrder)) style="display:none;" @endif>
+    <div id="buyerFieldsUmum" class="standard-buyer-fields" @if(!empty($cartWholesaleOrder)) style="display:none;" @elseif($isKioskOrder) style="display:block;" @endif>
       <label class="form-lbl">Nama Pemesan <span style="color:#ef4444;">*</span></label>
-      <input id="f_nama" type="text" class="form-inp" placeholder="Nama lengkap">
+      <input id="f_nama" type="text" class="form-inp" placeholder="Nama lengkap" value="{{ $defaultShippingAddress?->name }}">
       <label class="form-lbl">No. HP / WA <span style="color:#ef4444;">*</span></label>
-      <input id="f_hp" type="tel" class="form-inp" placeholder="08xxxxxxxxxx">
+      <input id="f_hp" type="tel" class="form-inp" placeholder="08xxxxxxxxxx" value="{{ $defaultShippingAddress?->phone }}">
+      @unless($isKioskOrder)
       <label class="form-lbl">Alamat Lengkap <span style="color:#ef4444;">*</span></label>
-      <textarea id="f_alamat" rows="3" class="form-inp" style="resize:vertical;" placeholder="Jl. nama jalan, no. rumah, RT/RW..."></textarea>
+      <textarea id="f_alamat" rows="3" class="form-inp" style="resize:vertical;" placeholder="Jl. nama jalan, no. rumah, RT/RW...">{{ $defaultShippingAddress?->address }}</textarea>
       <div class="form-row">
-        <div><label class="form-lbl">Kecamatan</label><input id="f_kec" type="text" class="form-inp" placeholder="Kecamatan"></div>
-        <div><label class="form-lbl">Kota / Kab</label><input id="f_kota" type="text" class="form-inp" placeholder="Kota / Kabupaten"></div>
+        <div><label class="form-lbl">Apartemen / Unit</label><input id="f_apartemen" type="text" class="form-inp" placeholder="Opsional" value="{{ $defaultShippingAddress?->apartment }}"></div>
+        <div><label class="form-lbl">Kota / Kabupaten</label><input id="f_kota" type="text" class="form-inp" placeholder="Kota / Kabupaten" value="{{ $defaultShippingAddress?->city }}"></div>
       </div>
+      <div class="form-row">
+        <div><label class="form-lbl">Provinsi</label><input id="f_provinsi" type="text" class="form-inp" placeholder="Provinsi" value="{{ $defaultShippingAddress?->province }}"></div>
+        <div><label class="form-lbl">Kode Pos</label><input id="f_kode_pos" type="text" class="form-inp" placeholder="Kode pos" value="{{ $defaultShippingAddress?->postal_code }}"></div>
+      </div>
+      @endunless
     </div>
     <div id="buyerFieldsApotik" class="standard-buyer-fields" @if(!empty($cartWholesaleOrder)) style="display:block;" @else style="display:none;" @endif>
       <label class="form-lbl">Nama Pemesan <span style="color:#ef4444;">*</span></label>
@@ -158,7 +176,7 @@
       <label class="form-lbl">Alamat <span style="color:#ef4444;">*</span></label>
       <textarea id="f_alamat_apotik" rows="3" class="form-inp" style="resize:vertical;" placeholder="Alamat lengkap apotik"></textarea>
     </div>
-    @if(empty($cartWholesaleOrder))
+    @if(empty($cartWholesaleOrder) && !$isKioskOrder)
     <label class="form-lbl">Metode Pembayaran <span style="color:#ef4444;">*</span></label>
     <select id="f_payment" class="form-inp" onchange="toggleTempoFields()">
       <option value="">Pilih metode pembayaran</option>
@@ -176,17 +194,22 @@
       <input id="f_payment_term_days" type="number" min="1" step="1" class="form-inp" placeholder="Contoh: 14">
     </div>
     @endif
+    @if($isKioskOrder)
+      <p style="padding:.75rem;background:#ecfeff;border-radius:.6rem;color:#155e75;font-size:.85rem;">
+        <i class="fa-solid fa-circle-info"></i> Pembayaran tunai dilakukan di kasir. Pesanan akan disimpan dan stok diperbarui setelah dibuat.
+      </p>
+    @endif
     <div class="form-error" id="formErr"></div>
     <button class="btn-submit-wa" onclick="submitOrder()">
-      <i class="fa-solid fa-paper-plane"></i> Lanjutkan
+      <i class="fa-solid {{ $isKioskOrder ? 'fa-receipt' : 'fa-paper-plane' }}"></i> {{ $isKioskOrder ? 'Buat Struk Pesanan' : 'Lanjutkan' }}
     </button>
   </div>
   <div class="modal-form" id="nextActionPanel" style="display:none;">
-    <p style="color:#374151;font-size:0.9rem;margin-bottom:1rem;">Pesanan berhasil dicatat! Pilih tindakan selanjutnya:</p>
+    <p id="orderSuccessMessage" style="color:#374151;font-size:0.9rem;margin-bottom:1rem;">Pesanan berhasil dicatat! Pilih tindakan selanjutnya:</p>
     <a id="invoiceLink" href="#" target="_blank" rel="noopener" style="width:100%;padding:0.75rem;background:#e8f5e9;color:#187b35;border:1.5px solid #86d39a;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:0.75rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;text-decoration:none;">
       <i class="fa-solid fa-file-invoice"></i> Lihat Invoice
     </a>
-    <button onclick="openWhatsAppOrder()" style="width:100%;padding:0.75rem;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+    <button id="whatsappOrderButton" onclick="openWhatsAppOrder()" style="width:100%;padding:0.75rem;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
       <i class="fa-brands fa-whatsapp" style="font-size:1.2rem;"></i> Chat WhatsApp
     </button>
   </div>
@@ -197,13 +220,14 @@
 // Keranjang disimpan per konteks halaman melalui CART_CONFIG.storageKey.
 const WA = '6285890007359';
 const CART_DEFAULT_SETTINGS = {
-  storageKey: 'medikpedia_cart',
-  receiptStoreName: 'MEDIKPEDIA',
+  storageKey: 'apotekmedix_cart',
+  receiptStoreName: 'APOTEK MEDIX',
   receiptStoreAddress: 'Jl. Letjen Suprapto No.1, Sumur Batu, Kec. Kemayoran, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10640',
-  receiptFilePrefix: 'struk-medikpedia'
+  receiptFilePrefix: 'struk-apotekmedix'
 };
 const CART_CONFIG = Object.assign({}, CART_DEFAULT_SETTINGS, window.cartSettings || {});
 let cart = JSON.parse(localStorage.getItem(CART_CONFIG.storageKey) || '[]');
+if (CART_CONFIG.kioskOrder) cart = cart.map(item => ({ ...item, discount: 0 }));
 
 function save() {
   localStorage.setItem(CART_CONFIG.storageKey, JSON.stringify(cart));
@@ -219,7 +243,7 @@ function syncBadge() {
     b.style.display = tot > 0 ? 'flex' : 'none';
   });
   const navBtn = document.getElementById('cartNavBtn');
-  if (navBtn) navBtn.style.display = tot > 0 ? 'flex' : 'none';
+  if (navBtn) navBtn.style.display = 'flex';
   const cartBtnHome = document.querySelector('.cart-btn-home');
   if (cartBtnHome) {
     const badge = cartBtnHome.querySelector('.cart-badge-home');
@@ -229,11 +253,26 @@ function syncBadge() {
 
 function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
 
-function addToCart(id, name, price, img, brand, btn) {
-  const ex = cart.find(i => i.id === id);
+function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
+  const unitSelect = unitSelectId ? document.getElementById(unitSelectId) : null;
+  const selectedOption = unitSelect?.selectedOptions?.[0];
+  const saleUnit = unitSelect?.value || 'box';
+  const unitPrices = unitSelect ? JSON.parse(unitSelect.dataset.unitPrices || '{}') : null;
+  const unitFactors = unitSelect ? JSON.parse(unitSelect.dataset.unitFactors || '{}') : null;
+  const unitPrice = selectedOption ? Number(selectedOption.dataset.price) : Number(price);
+  const unitFactor = unitFactors?.[saleUnit] || 1;
+  const availableQty = unitSelect ? Math.floor(Number(unitSelect.dataset.stockUnits || 0) / unitFactor) : null;
+  const ex = cart.find(i => i.id === id && (i.saleUnit || 'box') === saleUnit);
   console.log('addToCart:', { id, name, brand, img });
-  if (ex) { ex.qty++; ex.brand = brand; } else cart.push({ id, name, price, img, brand: brand || '', qty: 1, note: '', discount: 0 });
-  console.log('Cart item:', cart.find(i => i.id === id));
+  if (availableQty !== null && (!availableQty || (ex?.qty || 0) + 1 > availableQty)) {
+    alert('Stok untuk satuan ' + saleUnit + ' tidak mencukupi.');
+    return;
+  }
+  if (ex) { ex.qty++; ex.brand = brand; } else cart.push({
+    id, name, price: unitPrice, img, brand: brand || '', qty: 1, note: '', discount: 0,
+    saleUnit, unitPrices, unitFactors, availableQty, stockUnits: unitSelect ? Number(unitSelect.dataset.stockUnits || 0) : null
+  });
+  console.log('Cart item:', cart.find(i => i.id === id && (i.saleUnit || 'box') === saleUnit));
   save(); render();
   if (btn) {
     btn.classList.add('added');
@@ -246,39 +285,54 @@ function addToCart(id, name, price, img, brand, btn) {
   openCart();
 }
 
-function removeItem(id) { cart = cart.filter(i => i.id !== id); save(); render(); }
+function removeItem(id, unit = 'box') { cart = cart.filter(i => !(i.id === id && (i.saleUnit || 'box') === unit)); save(); render(); }
 // Alias for compatibility
 function removeFromCart(id) { removeItem(id); }
 
-function changeQty(id, d) {
-  const it = cart.find(i => i.id === id);
+function changeQty(id, d, unit = 'box') {
+  const it = cart.find(i => i.id === id && (i.saleUnit || 'box') === unit);
   if (!it) return;
-  it.qty += d;
-  if (it.qty <= 0) removeItem(id); else { save(); render(); }
+  const nextQty = it.qty + d;
+  if (d > 0 && it.availableQty != null && nextQty > it.availableQty) {
+    alert('Stok untuk satuan ' + unit + ' tidak mencukupi.');
+    return;
+  }
+  it.qty = nextQty;
+  if (it.qty <= 0) removeItem(id, unit); else { save(); render(); }
 }
 
-function setQty(id, value) {
-  const it = cart.find(i => i.id === id);
+function setQty(id, value, unit = 'box') {
+  const it = cart.find(i => i.id === id && (i.saleUnit || 'box') === unit);
   if (!it) return;
+  if (it.availableQty === 0) {
+    removeItem(id, unit);
+    alert('Stok untuk satuan tersebut sudah habis.');
+    return;
+  }
   it.qty = Math.max(1, parseInt(value, 10) || 1);
+  if (it.availableQty != null && it.qty > it.availableQty) {
+    it.qty = it.availableQty;
+    alert('Jumlah disesuaikan dengan stok yang tersedia.');
+  }
   save(); render();
 }
 
-function setNote(id, value) {
-  const it = cart.find(i => i.id === id);
+function setNote(id, value, unit = 'box') {
+  const it = cart.find(i => i.id === id && (i.saleUnit || 'box') === unit);
   if (!it) return;
   it.note = String(value || '').trim();
   save();
 }
 
-function setDiscount(id, value) {
-  const it = cart.find(i => i.id === id);
+function setDiscount(id, value, unit = 'box') {
+  if (CART_CONFIG.kioskOrder) return;
+  const it = cart.find(i => i.id === id && (i.saleUnit || 'box') === unit);
   if (!it) return;
   const raw = String(value).replace(/[^0-9]/g, '');
   it.discount = Math.min(parseInt(raw, 10) || 0, it.price * it.qty);
   save();
   // update live preview
-  const previewEl = document.getElementById('disc-preview-' + id);
+  const previewEl = document.getElementById('disc-preview-' + id + '-' + unit);
   if (previewEl) {
     const subtotal   = it.price * it.qty;
     const afterDisc  = subtotal - it.discount;
@@ -312,6 +366,9 @@ function render() {
   foot.style.display = '';
   let html = '', total = 0;
   cart.forEach(it => {
+    const unit = it.saleUnit || 'box';
+    const unitLabel = unit.charAt(0).toUpperCase() + unit.slice(1);
+    const key = `${it.id}-${unit}`;
     total += (it.price * it.qty) - (it.discount || 0);
     const imgHtml = it.img
       ? `<img src="${it.img}" alt="">`
@@ -320,16 +377,19 @@ function render() {
       <div class="cart-item-thumb">${imgHtml}</div>
       <div class="cart-item-info">
         <div class="cart-item-name">${it.name}</div>
-        <div class="cart-item-price">${rp(it.price)}</div>
-        <div class="cart-qty-row">
-          <button class="qty-btn" onclick="changeQty(${it.id},-1)">−</button>
-          <input type="number" class="qty-num" min="1" value="${it.qty}" onchange="setQty(${it.id}, this.value)"
-            style="width:4rem;text-align:center;border:1px solid #d1d5db;border-radius:8px;padding:0.4rem;" />
-          <button class="qty-btn" onclick="changeQty(${it.id},1)">+</button>
-        </div>
-        <textarea class="cart-note" placeholder="Catatan produk..." onchange="setNote(${it.id}, this.value)"
+          <div class="cart-item-price">${rp(it.price)} / ${unitLabel}</div>
+          ${it.unitPrices ? `<select onchange="changeCartUnit(${it.id}, '${unit}', this.value)" style="width:100%;margin-top:.4rem;padding:.4rem;border:1px solid #cbd5e1;border-radius:8px;">
+            ${Object.entries(it.unitPrices).map(([value, unitPrice]) => `<option value="${value}" ${value === unit ? 'selected' : ''}>${value.charAt(0).toUpperCase() + value.slice(1)} · ${rp(unitPrice)}</option>`).join('')}
+          </select>` : ''}
+          <div class="cart-qty-row">
+            <button class="qty-btn" onclick="changeQty(${it.id},-1,'${unit}')">−</button>
+            <input type="number" class="qty-num" min="1" ${it.availableQty != null ? `max="${it.availableQty}"` : ''} value="${it.qty}" onchange="setQty(${it.id}, this.value,'${unit}')"
+              style="width:4rem;text-align:center;border:1px solid #d1d5db;border-radius:8px;padding:0.4rem;" />
+            <button class="qty-btn" onclick="changeQty(${it.id},1,'${unit}')">+</button>
+          </div>
+          <textarea class="cart-note" placeholder="Catatan produk..." onchange="setNote(${it.id}, this.value,'${unit}')"
           style="width:100%;margin-top:0.75rem;padding:0.65rem 0.85rem;border:1px solid #e5e7eb;border-radius:12px;font-size:0.9rem;min-height:72px;resize:vertical;">${it.note || ''}</textarea>
-        <div style="margin-top:.6rem;">
+        ${CART_CONFIG.kioskOrder ? '' : `<div style="margin-top:.6rem;">
           <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem;">
             <i class="fa-solid fa-tag" style="color:#ef4444;margin-right:.25rem;"></i>Ajuan Potongan Harga
           </label>
@@ -338,20 +398,59 @@ function render() {
             <input type="text" inputmode="numeric"
               placeholder="0"
               value="${it.discount > 0 ? it.discount : ''}"
-              oninput="setDiscount(${it.id}, this.value)"
+              oninput="setDiscount(${it.id}, this.value,'${unit}')"
               style="flex:1;padding:.45rem .7rem;border:1.5px solid #fca5a5;border-radius:10px;font-size:.88rem;outline:none;color:#374151;background:#fff9f9;"
             />
           </div>
-          <div id="disc-preview-${it.id}" style="margin-top:.4rem;display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;min-height:1.2rem;font-size:.84rem;">
+          <div id="disc-preview-${key}" style="margin-top:.4rem;display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;min-height:1.2rem;font-size:.84rem;">
             ${it.discount > 0 ? `<span style="text-decoration:line-through;color:#9ca3af;">${rp(it.price * it.qty)}</span><span style="color:#ef4444;font-weight:700;font-size:.78rem;">-${rp(it.discount)}</span><span style="color:#10b981;font-weight:800;">${rp(it.price * it.qty - it.discount)}</span>` : ''}
           </div>
-        </div>
+        </div>`}
       </div>
-      <button class="cart-item-del" onclick="removeItem(${it.id})"><i class="fa-solid fa-trash"></i></button>
+      <button class="cart-item-del" onclick="removeItem(${it.id},'${unit}')"><i class="fa-solid fa-trash"></i></button>
     </div>`;
   });
   body.innerHTML = html;
   tot.textContent = rp(total);
+}
+
+function updateCardUnitPrice(selectId, targetId) {
+  const select = document.getElementById(selectId);
+  const target = document.getElementById(targetId);
+  if (select && target) target.textContent = rp(Number(select.selectedOptions[0]?.dataset.price || 0));
+}
+
+function changeCartUnit(id, oldUnit, newUnit) {
+  const item = cart.find(i => i.id === id && (i.saleUnit || 'box') === oldUnit);
+  if (!item || !item.unitPrices || !item.unitFactors) return;
+  const factor = item.unitFactors[newUnit];
+  const available = item.stockUnits === null ? null : Math.floor(Number(item.stockUnits) / factor);
+  if (available !== null && available < 1) {
+    alert('Stok untuk satuan tersebut sudah habis.');
+    render();
+    return;
+  }
+  const existing = cart.find(i => i.id === id && (i.saleUnit || 'box') === newUnit);
+  if (existing) {
+    existing.qty += item.qty;
+    existing.availableQty = available;
+    existing.discount = Math.min((existing.discount || 0) + (item.discount || 0), existing.price * existing.qty);
+    if (available !== null && existing.qty > available) {
+      existing.qty = available;
+      alert('Jumlah disesuaikan dengan stok yang tersedia.');
+    }
+    cart = cart.filter(i => i !== item);
+  } else {
+    item.saleUnit = newUnit;
+    item.price = Number(item.unitPrices[newUnit]);
+    item.availableQty = available;
+    if (available !== null && item.qty > available) {
+      item.qty = available;
+      alert('Jumlah disesuaikan dengan stok yang tersedia.');
+    }
+  }
+  save();
+  render();
 }
 
 function openCart() {
@@ -381,9 +480,10 @@ function openOrder() {
     const disc = it.discount || 0;
     const afterDisc = sub - disc;
     total += afterDisc;
+    const unitLabel = (it.saleUnit || 'box').charAt(0).toUpperCase() + (it.saleUnit || 'box').slice(1);
     html += `<div style="padding:0.35rem 0;border-bottom:1px solid #f3f4f6;font-size:0.83rem;">
       <div style="display:flex;justify-content:space-between;gap:0.75rem;">
-        <span>${i+1}. ${it.name} <span style="color:#9ca3af;">&times;${it.qty}</span></span>
+        <span>${i+1}. ${it.name} <span style="color:#9ca3af;">&times;${it.qty} ${unitLabel}</span></span>
         <span style="font-weight:700;color:#1E88E5;">${disc > 0 ? `<span style="text-decoration:line-through;color:#9ca3af;font-size:.78rem;">${rp(sub)}</span> ${rp(afterDisc)}` : rp(sub)}</span>
       </div>`;
     if (disc > 0) html += `<div style="color:#ef4444;font-size:.78rem;">Potongan: -${rp(disc)}</div>`;
@@ -496,7 +596,7 @@ function buildReceiptPdf(orderData) {
       doc.setFontSize(13);
       doc.text('Apotik Online Terpercaya', leftMargin + receiptWidth / 2, y, { align: 'center' });
       y += 14;
-      doc.text('www.medikpedia.com', leftMargin + receiptWidth / 2, y, { align: 'center' });
+      doc.text('www.apotekmedix.com', leftMargin + receiptWidth / 2, y, { align: 'center' });
       y += 16;
     } else {
       y += 16;
@@ -559,7 +659,7 @@ function buildReceiptPdf(orderData) {
       const textX = leftMargin + (idx === 0 ? 0 : 8);
       doc.text(ln, textX, y);
       if (idx === 0) {
-        doc.text(String(it.qty), qtyX, y, { align: 'right' });
+        doc.text(`${it.qty} ${it.saleUnit || 'box'}`, qtyX, y, { align: 'right' });
         doc.text(`x ${rp(it.price)}`, unitPriceX, y, { align: 'right' });
         doc.text(rp(afterDiscount), subtotalX, y, { align: 'right' });
       }
@@ -611,23 +711,24 @@ function buildReceiptPdf(orderData) {
 }
 
 async function submitOrder() {
-  const jenis = CART_CONFIG.adminPbfOrder || CART_CONFIG.wholesaleOrder ? 'apotik' : document.getElementById('f_jenis').value;
+  const jenis = CART_CONFIG.adminPbfOrder || CART_CONFIG.wholesaleOrder ? 'apotik' : (document.getElementById('f_jenis')?.value || 'umum');
   const err = document.getElementById('formErr');
   err.style.display = 'none';
 
   const originalTotal = cart.reduce((s, it) => s + (it.price * it.qty), 0);
   const discountedTotal = cart.reduce((s, it) => s + (it.price * it.qty) - (it.discount || 0), 0);
-  const paymentMethod = document.getElementById('f_payment')?.value.trim() || '';
+  const paymentMethod = CART_CONFIG.kioskOrder ? 'Tunai' : (document.getElementById('f_payment')?.value.trim() || '');
   const paymentTermDays = Number(document.getElementById('f_payment_term_days')?.value || 0);
   const payload = {
     buyer_type: jenis,
-    items: cart.map(it => ({ id: it.id, nama_obat: it.name, quantity: it.qty, harga: it.price, catatan: it.note || '', potongan: it.discount || 0 })),
+    items: cart.map(it => ({ id: it.id, nama_obat: it.name, quantity: it.qty, harga: it.price, sale_unit: it.saleUnit || 'box', catatan: it.note || '', potongan: it.discount || 0 })),
     total: discountedTotal,
     original_total: originalTotal,
     discounted_total: discountedTotal,
     approval_status: 'pending',
     payment_method: paymentMethod,
     payment_term_days: paymentMethod === 'Tempo' ? paymentTermDays : null,
+    transaction_channel: CART_CONFIG.kioskOrder ? 'offline' : 'online',
   };
 
   if (CART_CONFIG.adminPbfOrder) {
@@ -639,7 +740,7 @@ async function submitOrder() {
   }
 
   if (CART_CONFIG.adminPbfOrder) {
-    payload.buyer_name = 'Apotek Medikpedia';
+    payload.buyer_name = 'Apotek Medix';
     payload.phone = '085890007359';
     payload.address = 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat';
     payload.requester_name = document.getElementById('f_signer_name').value.trim();
@@ -661,11 +762,24 @@ async function submitOrder() {
   } else {
     payload.buyer_name = document.getElementById('f_nama').value.trim();
     payload.phone    = document.getElementById('f_hp').value.trim();
-    payload.address  = document.getElementById('f_alamat').value.trim();
-    payload.kecamatan = document.getElementById('f_kec').value.trim();
-    payload.kota     = document.getElementById('f_kota').value.trim();
-    if (!payload.buyer_name || !payload.phone || !payload.address) {
-      err.textContent = 'Nama, No. HP, dan Alamat wajib diisi.'; err.style.display = 'block'; return;
+    if (CART_CONFIG.kioskOrder) {
+      payload.address = '';
+    } else {
+      const addressParts = [
+        document.getElementById('f_alamat').value.trim(),
+        document.getElementById('f_apartemen').value.trim(),
+        document.getElementById('f_kota').value.trim(),
+        document.getElementById('f_provinsi').value.trim(),
+        document.getElementById('f_kode_pos').value.trim(),
+      ].filter(Boolean);
+      payload.address = addressParts.join(', ');
+      payload.kota = document.getElementById('f_kota').value.trim();
+    }
+    if (!payload.buyer_name || !payload.phone || (!CART_CONFIG.kioskOrder && !payload.address)) {
+      err.textContent = CART_CONFIG.kioskOrder
+        ? 'Nama dan nomor telepon wajib diisi.'
+        : 'Nama, No. HP, dan Alamat wajib diisi.';
+      err.style.display = 'block'; return;
     }
   }
 
@@ -695,6 +809,14 @@ async function submitOrder() {
     document.getElementById('invoiceLink').href = CART_CONFIG.adminPurchaseOrderBase
       ? CART_CONFIG.adminPurchaseOrderBase.replace('__ORDER__', result.id)
       : result.invoice_url;
+    if (CART_CONFIG.kioskOrder) {
+      document.getElementById('orderSuccessMessage').textContent = 'Struk pesanan siap. Tunjukkan kepada kasir untuk membayar dan menyelesaikan transaksi.';
+      document.getElementById('invoiceLink').innerHTML = '<i class="fa-solid fa-receipt"></i> Buka / Cetak Struk';
+      document.getElementById('whatsappOrderButton').style.display = 'none';
+      cart = [];
+      save();
+      render();
+    }
     document.getElementById('orderFormPanel').style.display = 'none';
     document.getElementById('nextActionPanel').style.display = 'block';
   } catch (error) {
@@ -716,19 +838,19 @@ function downloadReceiptAndClose() {
 
 function openWhatsAppOrder() {
   let total = 0;
-  let msg = '*Halo Medikpedia, saya ingin memesan:*\n';
+  let msg = '*Halo Apotek Medix, saya ingin memesan:*\n';
   cart.forEach((it, i) => {
     const sub = it.price * it.qty;
     const disc = it.discount || 0;
     const afterDisc = sub - disc;
     total += afterDisc;
-    msg += `${i+1}. *${it.name}*\n   Qty: ${it.qty} x ${rp(it.price)} = ${rp(sub)}\n`;
+    msg += `${i+1}. *${it.name}*\n   Qty: ${it.qty} ${it.saleUnit || 'box'} x ${rp(it.price)} = ${rp(sub)}\n`;
     if (disc > 0) msg += `   Potongan: -${rp(disc)} → *${rp(afterDisc)}*\n`;
     if (it.note) msg += `   Catatan: ${it.note}\n`;
   });
   msg += `---\n*Total: ${rp(total)}*\n\n*Data Pemesanan:*\n`;
   if (CART_CONFIG.adminPbfOrder) {
-    msg += `- Pengirim: Apotek Medikpedia\n- Nama PBF: ${window.orderPayload?.pbf_name || '-'}\n- Alamat PBF: ${window.orderPayload?.pbf_address || '-'}\n`;
+    msg += `- Pengirim: Apotek Medix\n- Nama PBF: ${window.orderPayload?.pbf_name || '-'}\n- Alamat PBF: ${window.orderPayload?.pbf_address || '-'}\n`;
   } else if (window.orderPayload?.buyer_type === 'apotik' || window.orderPayload?.buyer_type === 'dokter') {
     msg += `- Nama: ${window.orderPayload.buyer_name}\n- Nama Pemesan: ${window.orderPayload.requester_name}\n- Nama Outlet: ${window.orderPayload.outlet_name}\n- HP/WA: ${window.orderPayload.phone}\n- Alamat: ${window.orderPayload.address}\n`;
   } else {

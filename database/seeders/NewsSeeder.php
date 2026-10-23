@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Database\Seeders;
 
@@ -79,7 +79,7 @@ Apoteker memiliki pengetahuan mendalam tentang obat-obatan, termasuk:
 - Ketika hamil atau menyusui
 - Ketika punya kondisi kesehatan khusus
 
-Medikpedia siap membantu Anda dengan apoteker profesional yang berpengalaman. Jangan ragu untuk bertanya tentang obat-obatan Anda!',
+Apotek Medix siap membantu Anda dengan apoteker profesional yang berpengalaman. Jangan ragu untuk bertanya tentang obat-obatan Anda!',
             'tipe' => 'artikel',
             'file' => null,
             'thumbnail' => null,
@@ -91,7 +91,7 @@ Medikpedia siap membantu Anda dengan apoteker profesional yang berpengalaman. Ja
         News::create([
             'judul' => 'Kampanye Hari Kesehatan Sedunia 2025',
             'deskripsi' => 'Ikuti kampanye kesehatan global kami untuk meningkatkan kesadaran tentang pentingnya kesehatan preventif.',
-            'konten' => 'Hari Kesehatan Sedunia adalah momentum penting untuk meningkatkan kesadaran global tentang isu-isu kesehatan. Medikpedia mengikuti kampanye ini dengan berbagai inisiatif lokal.
+            'konten' => 'Hari Kesehatan Sedunia adalah momentum penting untuk meningkatkan kesadaran global tentang isu-isu kesehatan. Apotek Medix mengikuti kampanye ini dengan berbagai inisiatif lokal.
 
 **Aktivitas Kampanye:**
 
@@ -152,13 +152,13 @@ Bergabunglah dengan kami dalam misi untuk menciptakan komunitas yang lebih sehat
 **Kapan Harus ke Dokter?**
 
 Segera ke dokter jika mengalami:
-- Demam tinggi (>39°C)
+- Demam tinggi (>39Â°C)
 - Pendarahan spontan
 - Sakit kepala parah
 - Sesak napas
 - Diare berkepanjangan
 
-Medikpedia menyediakan obat-obatan berkualitas untuk membantu Anda dan keluarga tetap sehat di musim hujan. Jangan ragu untuk berkonsultasi dengan apoteker kami!',
+Apotek Medix menyediakan obat-obatan berkualitas untuk membantu Anda dan keluarga tetap sehat di musim hujan. Jangan ragu untuk berkonsultasi dengan apoteker kami!',
             'tipe' => 'artikel',
             'file' => null,
             'thumbnail' => null,
@@ -167,3 +167,4 @@ Medikpedia menyediakan obat-obatan berkualitas untuk membantu Anda dan keluarga 
         ]);
     }
 }
+

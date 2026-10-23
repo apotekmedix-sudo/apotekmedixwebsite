@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Medikpedia'),
+    'name' => env('APP_NAME', 'Apotek Medix'),
 
     /*
     |--------------------------------------------------------------------------

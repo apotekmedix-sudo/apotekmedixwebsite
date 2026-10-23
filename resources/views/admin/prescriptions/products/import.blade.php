@@ -1,6 +1,6 @@
 ﻿@extends('layouts.admin')
 
-@section('title', 'Import Produk Resep - Admin Medikpedia')
+@section('title', 'Import Produk Resep - Admin Apotek Medix')
 @section('page-title', 'Import Produk Resep')
 
 @section('styles')
@@ -300,3 +300,4 @@ function submitForm() {
 }
 </script>
 @endsection
+

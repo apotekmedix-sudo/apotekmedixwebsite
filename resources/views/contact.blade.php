@@ -1,6 +1,6 @@
 @extends('layouts.frontend')
 
-@section('title', 'Hubungi Kami - Medikpedia')
+@section('title', 'Hubungi Kami - Apotek Medix')
 
 @section('styles')
 <style>
@@ -307,7 +307,7 @@
                         <div class="info-icon icon-purple"><i class="fa-solid fa-envelope"></i></div>
                         <div class="info-text">
                             <h4>Email</h4>
-                            <a href="mailto:medikpedia.mitramedika@gmail.com">medikpedia.mitramedika@gmail.com</a>
+                            <a href="mailto:hello@apotekmedix.com">hello@apotekmedix.com</a>
                         </div>
                     </div>
                 </div>
@@ -316,10 +316,10 @@
                     <h4 style="font-size:0.9rem;font-weight:700;color:#374151;margin-bottom:0.75rem;"><i class="fa-solid fa-share-nodes" style="color:#1E88E5;margin-right:0.4rem;"></i> Ikuti Kami</h4>
                     <div class="social-row">
                         <a href="#" class="social-btn" style="background:#1877f2;" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="https://www.instagram.com/apotek_medikpedia?igsi=MTVybm4xZmswYXg3Ng==" target="_blank" rel="noopener" class="social-btn" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="https://www.instagram.com/apotekmedix" target="_blank" rel="noopener" class="social-btn" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
                         <a href="https://wa.me/6285890007359" target="_blank" class="social-btn" style="background:#25D366;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
                         <a href="https://pin.it/69pbGoR2f" target="_blank" rel="noopener" class="social-btn" style="background:#E60023;" title="Pinterest"><i class="fa-brands fa-pinterest-p"></i></a>
-                        <a href="https://youtube.com/@medikpedia?si=YqymYCniGs60plIl" target="_blank" rel="noopener" class="social-btn" style="background:#FF0000;" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                        <a href="https://www.youtube.com/@apotekmedix" target="_blank" rel="noopener" class="social-btn" style="background:#FF0000;" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
                     </div>
                 </div>
 
@@ -402,7 +402,7 @@ function kirimWA() {
     errEl.style.display = 'none';
 
     const teks =
-`Halo Medikpedia!
+`Halo Apotek Medix!
 
 👤 *Nama*    : ${nama}
 📱 *Telepon* : ${telp || '-'}

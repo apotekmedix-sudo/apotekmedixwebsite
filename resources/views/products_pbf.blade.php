@@ -1,6 +1,6 @@
 ﻿@extends('layouts.frontend')
 
-@section('title', 'PT. Surya Sharone Abadi - Produk PBF')
+@section('title', 'Apotek Medix - Produk PBF')
 
 @section('styles')
 <style>
@@ -442,15 +442,15 @@
 <div class="products-header">
     <div class="container">
         <div class="hero-panel">
-            <img src="{{ asset('LOGO SURYA SHARONE.png') }}" alt="PT. Surya Sharone Abadi" class="brand-logo" />
+            <img src="{{ asset('LOGO SURYA SHARONE.png') }}" alt="Apotek Medix" class="brand-logo" />
             <div class="brand-copy">
                 <div class="breadcrumb-custom" style="margin:0 0 0.75rem;">
                     <a href="{{ route('home') }}"><i class="fa-solid fa-house"></i> Home</a>
                     <span>/</span>
-                    <span class="current">PT. Surya Sharone Abadi</span>
+                    <span class="current">Apotek Medix</span>
                 </div>
                 <h1><i class="fa-solid fa-box"></i> Katalog Produk PBF</h1>
-                <p>{{ $total }} produk PBF tersedia dari PT. Surya Sharone Abadi untuk mitra apotek dan distributor yang membutuhkan stok terpercaya.</p>
+                <p>{{ $total }} produk PBF tersedia dari Apotek Medix untuk mitra apotek dan distributor yang membutuhkan stok terpercaya.</p>
                 <p class="brand-address">Jl. Pendawa Jl. Sersan Muis No.99, 2 Ilir, Kec. Ilir Tim. II, Kota Palembang, Sumatera Selatan 30118</p>
                 <div class="partner-logos">
                     <img src="{{ asset('LOGO 5 PABRIK.png') }}" alt="Mitra 5 Pabrik" class="partner-logo-desktop" />
@@ -556,7 +556,7 @@
                             @if($medicine->gambar)
                                 <img src="{{ url('storage/' . $medicine->gambar) }}" alt="{{ $medicine->nama_obat }}">
                             @else
-                                <img class="product-placeholder-logo" src="{{ asset('logo1.png') }}" alt="Logo Medikpedia">
+                                <img class="product-placeholder-logo" src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix">
                             @endif
                         </div>
                         <div class="medicine-body">
@@ -638,8 +638,8 @@
 @section('scripts')
 <script>
 window.cartSettings = {
-    storageKey: 'medikpedia_cart_pbf',
-    receiptStoreName: 'PT. Surya Sharone Abadi',
+    storageKey: 'apotekmedix_cart_pbf',
+    receiptStoreName: 'Apotek Medix',
     receiptStoreAddress: 'Jl. Pendawa Jl. Sersan Muis No.99, 2 Ilir, Kec. Ilir Tim. II, Kota Palembang\nSumatera Selatan 30118',
     receiptFilePrefix: 'struk-pt-surya-sharone-abadi'
 };

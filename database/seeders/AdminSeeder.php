@@ -13,14 +13,17 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
-            ['email' => 'medikpedia@admin.com'],
-            [
-                'name' => 'Admin Medikpedia',
-                'email' => 'medikpedia@admin.com',
-                'password' => Hash::make('Rh.101185'),
-                'role' => 'admin',
-            ]
-        );
+        $admin = User::firstOrNew(['email' => 'apotekmedix@gmail.com']);
+
+        if (!$admin->exists) {
+            $admin = User::firstOrNew(['email' => 'apotekmedix@admin.com']);
+        }
+
+        $admin->fill([
+            'name' => 'Admin Apotek Medix',
+            'email' => 'apotekmedix@gmail.com',
+            'password' => Hash::make('Rh.101185'),
+            'role' => 'admin',
+        ])->save();
     }
 }

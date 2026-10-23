@@ -1,7 +1,7 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
-@section('title', 'Produk Kami - Admin Medikpedia')
-@section('page-title', '🛒 Produk Kami')
+@section('title', 'Produk Kami - Admin Apotek Medix')
+@section('page-title', 'Produk Kami')
 
 @section('styles')
 <style>
@@ -47,7 +47,9 @@
     .data-table tbody tr:hover { background:#fafbff; }
 
     .med-img { width:88px; height:88px; border-radius:0.5rem; object-fit:cover; border:1px solid #e5e7eb; display:block; }
-    .med-img-placeholder { width:88px; height:88px; border-radius:0.5rem; background:linear-gradient(135deg,#e3f2fd,#bbdefb); display:flex; align-items:center; justify-content:center; font-size:1.25rem; border:1px solid #e5e7eb; }
+    .med-img-placeholder { width:88px; height:88px; padding:0.5rem; border-radius:0.5rem; background:linear-gradient(135deg,#f8fafc,#e0f2fe); display:flex; align-items:center; justify-content:center; border:1px solid #e5e7eb; }
+    .med-img-placeholder img { width:100%; height:100%; object-fit:contain; }
+    .kat-tab i { margin-right:0.25rem; }
     .med-name { font-weight:600; color:#1f2937; }
     .med-desc { color:#374151; font-size:0.82rem; margin-top:0.45rem; max-width:240px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
     .med-meta { font-size:0.76rem; color:#6b7280; margin-top:0.25rem; max-width:240px; }
@@ -103,7 +105,7 @@
     .page-btn.disabled { background:#f9fafb; color:#d1d5db; cursor:not-allowed; pointer-events:none; }
 
     .empty-state { padding:4rem 2rem; text-align:center; background:white; border-radius:0.75rem; border:1px solid #f0f0f0; }
-    .empty-icon { font-size:3rem; margin-bottom:1rem; }
+    .empty-icon { margin-bottom:1rem; color:#0e7490; font-size:3rem; }
     .empty-state h3 { font-size:1rem; font-weight:700; color:#1f2937; margin-bottom:0.5rem; }
     .empty-state p { font-size:0.875rem; color:#6b7280; margin-bottom:1.5rem; }
 
@@ -121,7 +123,7 @@
 
 <div class="page-header">
     <div class="page-header-left">
-        <h2>{{ ($mode ?? '') === 'pbf' ? '📦 Produk Pemesanan PBF - Harga Modal' : '🛒 Daftar Produk' }}</h2>
+        <h2><i class="fa-solid {{ ($mode ?? '') === 'pbf' ? 'fa-boxes-stacked' : 'fa-pills' }}" aria-hidden="true"></i> {{ ($mode ?? '') === 'pbf' ? 'Produk Pemesanan PBF - Harga Modal' : 'Daftar Produk' }}</h2>
         <p>Total <strong>{{ $total }}</strong> produk terdaftar</p>
     </div>
     <div class="page-header-actions">
@@ -138,22 +140,22 @@
 <div class="kat-tabs">
     <a href="{{ route('admin.produk.index', array_merge(request()->except('kategori_produk'), [])) }}"
        class="kat-tab {{ !$kategori_produk ? 'active' : '' }}">
-        🛒 Semua
+        <i class="fa-solid fa-layer-group" aria-hidden="true"></i> Semua
         <span class="kat-count">{{ $total }}</span>
     </a>
     @foreach($kategoriOptions as $kat)
         @php
             $count = \App\Models\Medicine::where('kategori_produk', $kat)->count();
             $icon  = match($kat) {
-                'OBAT'                => '💊',
-                'SKINCARE & KOSMETIK' => '✨',
-                'ALAT KESEHATAN'      => '🩺',
-                default               => '📦',
+                'OBAT'                => 'fa-pills',
+                'SKINCARE & KOSMETIK' => 'fa-sparkles',
+                'ALAT KESEHATAN'      => 'fa-kit-medical',
+                default               => 'fa-box',
             };
         @endphp
         <a href="{{ route('admin.produk.index', array_merge(request()->except('kategori_produk'), ['kategori_produk' => $kat])) }}"
            class="kat-tab {{ $kategori_produk === $kat ? 'active' : '' }}">
-            {{ $icon }} {{ $kat }}
+            <i class="fa-solid {{ $icon }}" aria-hidden="true"></i> {{ $kat }}
             <span class="kat-count">{{ $count }}</span>
         </a>
     @endforeach
@@ -211,10 +213,11 @@
             <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width:48px;">☑</th>
+                    <th style="width:48px;"><i class="fa-regular fa-square-check" aria-label="Pilih produk"></i></th>
                     <th style="width:140px;">Foto</th>
                     <th>Nama Produk</th>
                     <th>Sediaan</th>
+                    <th>Isi Kemasan</th>
                     <th>Kategori</th>
                     <th>Pabrik/Merek</th>
                     <th>Modal</th>
@@ -235,7 +238,7 @@
                             <img src="{{ url('storage/' . $medicine->gambar) }}" alt="{{ $medicine->nama_obat }}" class="med-img">
                         @else
                             <div class="med-img-placeholder">
-                                {{ match($medicine->kategori_produk) { 'SKINCARE & KOSMETIK' => '✨', 'ALAT KESEHATAN' => '🩺', default => '💊' } }}
+                                <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix">
                             </div>
                         @endif
                     </td>
@@ -247,6 +250,14 @@
                             </span>
                         @else
                             <span style="font-size:0.75rem;color:#9ca3af;">-</span>
+                        @endif
+                    </td>
+                    <td style="font-size:.78rem;color:#475569;">
+                        @if($medicine->unit_packaging_enabled)
+                            1 strip = {{ $medicine->tablets_per_strip }} tablet<br>
+                            1 box = {{ $medicine->strips_per_box }} strip
+                        @else
+                            <span style="color:#9ca3af;">Satuan lama</span>
                         @endif
                     </td>
                     <td>
@@ -264,10 +275,19 @@
                         <input class="inline-number" type="number" name="harga_modal" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->harga_modal ?: $medicine->harga }}" min="0" step="0.01" aria-label="Harga modal {{ $medicine->nama_obat }}">
                     </td>
                     <td>
-                        <input class="inline-number" type="number" name="harga_retail" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->harga_retail ?: $medicine->harga }}" min="0" step="0.01" aria-label="Harga retail {{ $medicine->nama_obat }}">
+                        <input class="inline-number" type="number" name="harga_retail" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_box ?? ($medicine->harga_retail ?: $medicine->harga) }}" min="0" step="0.01" aria-label="Harga retail {{ $medicine->nama_obat }}">
+                        @if($medicine->unit_packaging_enabled)
+                            <small style="display:block;margin-top:.25rem;color:#64748b;">
+                                Tablet Rp {{ number_format($medicine->price_tablet, 0, ',', '.') }} ·
+                                Strip Rp {{ number_format($medicine->price_strip, 0, ',', '.') }}
+                            </small>
+                        @endif
                     </td>
                     <td>
-                        <input class="inline-number" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->stok }}" min="0" step="1" aria-label="Stok {{ $medicine->nama_obat }}">
+                        <input class="inline-number" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ number_format($medicine->stock_boxes, 6, '.', '') }}" min="0" step="0.000001" aria-label="Stok box {{ $medicine->nama_obat }}">
+                        @if($medicine->unit_packaging_enabled)
+                            <small style="display:block;margin-top:.25rem;color:#64748b;">{{ $medicine->stock_breakdown }}</small>
+                        @endif
                     </td>
                     <td style="font-size:0.82rem;color:#9ca3af;">{{ $medicine->created_at->format('d M Y') }}</td>
                     <td>
@@ -292,13 +312,13 @@
 
         <div class="pagination-wrap">
             <div class="pagination-info">
-                Menampilkan {{ $medicines->firstItem() }}–{{ $medicines->lastItem() }} dari {{ $medicines->total() }} produk
+                Menampilkan {{ $medicines->firstItem() }}&ndash;{{ $medicines->lastItem() }} dari {{ $medicines->total() }} produk
             </div>
             <div class="pagination-pages">
                 @if($medicines->onFirstPage())
-                    <span class="page-btn disabled">‹</span>
+                    <span class="page-btn disabled">&lsaquo;</span>
                 @else
-                    <a href="{{ $medicines->previousPageUrl() }}" class="page-btn">‹</a>
+                    <a href="{{ $medicines->previousPageUrl() }}" class="page-btn">&lsaquo;</a>
                 @endif
                 @foreach($medicines->getUrlRange(1, $medicines->lastPage()) as $page => $url)
                     @if(abs($page - $medicines->currentPage()) <= 2 || $page == 1 || $page == $medicines->lastPage())
@@ -308,20 +328,20 @@
                             <a href="{{ $url }}" class="page-btn">{{ $page }}</a>
                         @endif
                     @elseif(abs($page - $medicines->currentPage()) == 3)
-                        <span class="page-btn disabled" style="border:none;background:none;">…</span>
+                        <span class="page-btn disabled" style="border:none;background:none;">&hellip;</span>
                     @endif
                 @endforeach
                 @if($medicines->hasMorePages())
-                    <a href="{{ $medicines->nextPageUrl() }}" class="page-btn">›</a>
+                    <a href="{{ $medicines->nextPageUrl() }}" class="page-btn">&rsaquo;</a>
                 @else
-                    <span class="page-btn disabled">›</span>
+                    <span class="page-btn disabled">&rsaquo;</span>
                 @endif
             </div>
         </div>
     </div>
 @else
     <div class="empty-state">
-        <div class="empty-icon">🛒</div>
+        <div class="empty-icon"><i class="fa-solid fa-box-open" aria-hidden="true"></i></div>
         <h3>Belum ada produk</h3>
         <p>Mulai tambahkan produk atau import dari file Excel/CSV.</p>
         <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;">
@@ -341,7 +361,7 @@
 {{-- Modal Konfirmasi Hapus --}}
 <div class="modal-overlay" id="deleteModal">
     <div class="modal-box">
-        <div class="modal-icon">🗑️</div>
+        <div class="modal-icon"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></div>
         <h3>Hapus Produk?</h3>
         <p id="deleteModalText">Produk ini akan dihapus permanen dan tidak bisa dikembalikan.</p>
         <div class="modal-actions">
