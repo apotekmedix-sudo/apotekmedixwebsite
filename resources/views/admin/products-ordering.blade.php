@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Produk Pemesanan PBF - Admin Apotek Medix')
 @section('page-title', '📦 Produk Pemesanan PBF')
@@ -42,12 +42,12 @@
     <div class="ordering-grid">
         @foreach($medicines as $medicine)
             <article class="ordering-card">
-                <div class="ordering-image">@if($medicine->gambar)<img src="{{ url('storage/' . $medicine->gambar) }}" alt="{{ $medicine->nama_obat }}">@else<i class="fa-solid fa-pills"></i>@endif</div>
+                <div class="ordering-image">@if($medicine->image_url)<img src="{{ $medicine->image_url }}" alt="{{ $medicine->nama_obat }}">@else<i class="fa-solid fa-pills"></i>@endif</div>
                 <div class="ordering-body">
                     <span class="ordering-principle">{{ $medicine->brand ?: $medicine->kategori ?: 'Produk' }}</span>
                     <h3 class="ordering-name">{{ $medicine->nama_obat }}</h3>
                     <div class="ordering-price">{{ $medicine->getFormattedCatalogPrice('harga_modal') }}</div>
-                    <button class="ordering-button" data-package-unit-label="{{ $medicine->package_unit_label }}" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $medicine->harga_modal }}, '{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this)"><i class="fa-solid fa-cart-plus"></i> Tambah Pesanan</button>
+                    <button class="ordering-button" data-package-unit-label="{{ $medicine->package_unit_label }}" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $medicine->harga_modal }}, '{{ $medicine->image_url ?: '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this)"><i class="fa-solid fa-cart-plus"></i> Tambah Pesanan</button>
                 </div>
             </article>
         @endforeach

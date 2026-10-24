@@ -59,6 +59,9 @@ Route::get('/products-pbf', [ProductController::class, 'pbf'])->name('products.p
 Route::post('/products-pbf/verify', [ProductController::class, 'pbfVerify'])->middleware('throttle:5,1')->name('products.pbf.verify');
 Route::post('/products-pbf/logout', [ProductController::class, 'pbfLogout'])->name('products.pbf.logout');
 Route::get('/products-apotek', [ProductController::class, 'apotek'])->name('products.apotek');
+Route::get('/keranjang', [ProductController::class, 'cart'])->name('cart.index');
+Route::get('/cart', [ProductController::class, 'cart'])->name('cart.page');
+Route::get('/checkout', [ProductController::class, 'checkout'])->name('checkout.index');
 Route::post('/orders/history', [PurchaseHistoryController::class, 'store'])->name('orders.history.store');
 Route::get('/invoice/{order}', [PurchaseHistoryController::class, 'invoice'])
     ->middleware('signed')

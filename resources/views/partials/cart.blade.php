@@ -1,4 +1,4 @@
-﻿{{--
+{{--
   =====================================================================
   SHARED CART PARTIAL - resources/views/partials/cart.blade.php
   Include ini di @section('scripts') semua halaman yang butuh keranjang:
@@ -231,6 +231,17 @@ if (CART_CONFIG.kioskOrder) cart = cart.map(item => ({ ...item, discount: 0 }));
 
 function save() {
   localStorage.setItem(CART_CONFIG.storageKey, JSON.stringify(cart));
+  localStorage.setItem('apotekmedix_active_cart_context', JSON.stringify({
+    storageKey: CART_CONFIG.storageKey,
+    kioskOrder: Boolean(CART_CONFIG.kioskOrder),
+    wholesaleOrder: Boolean(CART_CONFIG.wholesaleOrder),
+    adminPbfOrder: Boolean(CART_CONFIG.adminPbfOrder),
+    adminPurchaseOrderBase: CART_CONFIG.adminPurchaseOrderBase || null,
+    receiptStoreName: CART_CONFIG.receiptStoreName,
+    receiptStoreAddress: CART_CONFIG.receiptStoreAddress,
+    receiptFilePrefix: CART_CONFIG.receiptFilePrefix,
+    continueShoppingUrl: window.location.pathname
+  }));
   syncBadge();
 }
 
@@ -569,6 +580,9 @@ function changeCartUnit(id, oldUnit, newUnit) {
 }
 
 function openCart() {
+  save();
+  window.location.href = '{{ route("cart.index") }}';
+  return;
   document.getElementById('cartDrawer').classList.add('open');
   document.getElementById('cartOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -589,6 +603,9 @@ function escapeHtml(text) {
 
 function openOrder() {
   if (!cart.length) return;
+  save();
+  window.location.href = '{{ route("checkout.index") }}';
+  return;
   let html = '', total = 0;
   cart.forEach((it, i) => {
     const sub = it.price * it.qty;

@@ -1,4 +1,4 @@
-﻿@extends('layouts.frontend')
+@extends('layouts.frontend')
 @section('title', 'Apotek Medix - Apotik Online Terpercaya')
 @section('styles')
 <style>
@@ -1340,7 +1340,7 @@
               </div>
             @endif
             <a href="{{ route('medicines.show', $med->id) }}" class="btn-detail">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-            <button class="btn-cart" data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $homePromoPrice }},'{{ $med->gambar ? url('storage/'.$med->gambar) : '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this,'home-unit-a-{{ $med->id }}')">
+            <button class="btn-cart" data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $homePromoPrice }},'{{ $med->image_url ?: '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this,'home-unit-a-{{ $med->id }}')">
               <i class="fa-solid fa-cart-plus"></i> Keranjang
             </button>
           </div>

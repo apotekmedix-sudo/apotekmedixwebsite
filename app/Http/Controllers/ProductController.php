@@ -331,4 +331,52 @@ class ProductController extends Controller
         ));
     }
 
+    /**
+     * Halaman Keranjang Belanja (Full Page)
+     */
+    public function cart(Request $request)
+    {
+        $productCatalog = Medicine::query()
+            ->get(['id', 'nama_obat', 'kategori', 'brand', 'satuan', 'sediaan', 'gambar', 'gambar_tambahan'])
+            ->mapWithKeys(fn (Medicine $med) => [
+                $med->id => [
+                    'image_url' => $med->image_url,
+                    'nama_obat' => $med->nama_obat,
+                    'kategori' => $med->brand ?: $med->kategori,
+                    'unit_label' => $med->package_unit_label,
+                    'sediaan_label' => $med->sediaan_label,
+                ],
+            ])
+            ->all();
+
+        return view('cart', compact('productCatalog'));
+    }
+
+    /**
+     * Halaman Checkout / Transaksi (Full Page)
+     */
+    public function checkout(Request $request)
+    {
+        $defaultShippingAddress = auth()->check()
+            && auth()->user()->isUser()
+            && auth()->user()->is_default_address
+            ? auth()->user()
+            : null;
+
+        $productCatalog = Medicine::query()
+            ->get(['id', 'nama_obat', 'kategori', 'brand', 'satuan', 'sediaan', 'gambar', 'gambar_tambahan'])
+            ->mapWithKeys(fn (Medicine $med) => [
+                $med->id => [
+                    'image_url' => $med->image_url,
+                    'nama_obat' => $med->nama_obat,
+                    'kategori' => $med->brand ?: $med->kategori,
+                    'unit_label' => $med->package_unit_label,
+                    'sediaan_label' => $med->sediaan_label,
+                ],
+            ])
+            ->all();
+
+        return view('checkout', compact('defaultShippingAddress', 'productCatalog'));
+    }
+
 }
