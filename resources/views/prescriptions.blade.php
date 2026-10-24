@@ -1,4 +1,4 @@
-﻿@extends('layouts.frontend')
+@extends('layouts.frontend')
 
 @section('title', 'Produk - Apotek Medix')
 
@@ -345,7 +345,7 @@
                             </a>
                             <div id="prescription-price-{{ $medicine->id }}">{{ $medicine->getFormattedCatalogPrice('harga_retail') }}</div>
                             @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'prescription-unit-' . $medicine->id, 'priceTargetId' => 'prescription-price-' . $medicine->id])
-                            <button class="btn-cart" data-package-unit-label="{{ $medicine->package_unit_label }}" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $medicine->harga_retail ?: $medicine->harga }}, '{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this, 'prescription-unit-{{ $medicine->id }}')">
+                            <button class="btn-cart" data-package-unit-label="{{ $medicine->package_unit_label }}" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $medicine->harga_retail ?: $medicine->harga }}, '{{ $medicine->image_url ?: '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this, 'prescription-unit-{{ $medicine->id }}')">
                                 <i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang
                             </button>
                         </div>

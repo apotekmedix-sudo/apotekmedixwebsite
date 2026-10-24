@@ -1,4 +1,4 @@
-﻿@extends('layouts.frontend')
+@extends('layouts.frontend')
 
 @section('title', 'Belanja B2C - Apotek Medix')
 
@@ -417,7 +417,7 @@
                                     data-package-unit-label="{{ $medicine->package_unit_label }}"
                                     data-product-name="{{ $medicine->nama_obat }}"
                                     data-product-price="{{ $promoPrice }}"
-                                    data-product-image="{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}"
+                                    data-product-image="{{ $medicine->image_url ?: '' }}"
                                     data-product-brand="{{ $medicine->brand ?: $medicine->kategori }}"
                                     onclick="addToCart({{ $medicine->id }}, this.dataset.productName, Number(this.dataset.productPrice), this.dataset.productImage, this.dataset.productBrand, this, 'apotik-unit-{{ $medicine->id }}')">
                                 <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang

@@ -568,7 +568,7 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'apotek_medix_cart_retail' };</script>
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_retail' };</script>
 @include('partials.cart')
 @endsection
 
@@ -699,7 +699,7 @@
                                     <a href="{{ route('medicines.show', $med->id) }}" class="btn-detail">Lihat Detail</a>
                                     <div id="category-price-{{ $med->id }}">{{ $med->getFormattedCatalogPrice('harga_retail') }}</div>
                                     @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'category-unit-' . $med->id, 'priceTargetId' => 'category-price-' . $med->id])
-                                    <button class="btn-add-cart" data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }}, '{{ addslashes($med->nama_obat) }}', {{ $med->harga_retail ?: $med->harga }}, '{{ $med->gambar ? url('storage/'.$med->gambar) : '' }}', '{{ addslashes($med->brand ?: $med->kategori) }}', this, 'category-unit-{{ $med->id }}')">
+                                    <button class="btn-add-cart" data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }}, '{{ addslashes($med->nama_obat) }}', {{ $med->harga_retail ?: $med->harga }}, '{{ $med->image_url ?: '' }}', '{{ addslashes($med->brand ?: $med->kategori) }}', this, 'category-unit-{{ $med->id }}')">
                                         <i class="fa-solid fa-cart-plus"></i> Keranjang
                                     </button>
                                 </div>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -1078,7 +1078,7 @@
             </ul>
 
             {{-- Cart button --}}
-            <button class="cart-nav-btn" id="cartNavBtn" onclick="if(typeof openCart==='function'){openCart();}else{window.location.href='{{ route('products.index') }}#keranjang';}" title="Keranjang Belanja" aria-label="Buka keranjang belanja">
+            <button class="cart-nav-btn" id="cartNavBtn" onclick="if(typeof openCart==='function'){openCart();}else{window.location.href='{{ route('cart.index') }}';}" title="Keranjang Belanja" aria-label="Buka keranjang belanja">
                 <i class="fa-solid fa-cart-shopping"></i>
                 <span class="cart-badge" id="cartBadgeNav">0</span>
             </button>
@@ -1324,7 +1324,11 @@
     <script>
         // Cart badge sync - gunakan key khusus jika halaman mendefinisikan cartSettings
         (function() {
-            const storageKey = (window.cartSettings && window.cartSettings.storageKey) ? window.cartSettings.storageKey : 'apotekmedix_cart';
+            let savedCtx = {};
+            try { savedCtx = JSON.parse(localStorage.getItem('apotekmedix_active_cart_context') || '{}'); } catch (e) {}
+            const storageKey = (window.cartSettings && window.cartSettings.storageKey)
+                ? window.cartSettings.storageKey
+                : (savedCtx.storageKey || 'apotekmedix_cart_retail');
             const cart = JSON.parse(localStorage.getItem(storageKey) || '[]');
             const total = cart.reduce(function(s, i) { return s + i.qty; }, 0);
             
