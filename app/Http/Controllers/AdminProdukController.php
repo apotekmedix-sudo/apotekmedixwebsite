@@ -8,6 +8,7 @@ use App\Constants\Companies;
 use App\Helpers\ImageHelper;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use App\Models\PbfSupplier;
 
 class AdminProdukController extends Controller
 {
@@ -102,7 +103,47 @@ class AdminProdukController extends Controller
             'sediaanList'  => $attrOptions['sediaanList'],
             'golonganList' => $attrOptions['golonganList'],
             'total'        => Medicine::where('harga_modal', '>', 0)->count(),
+            'suppliers'    => Schema::hasTable('pbf_suppliers') ? PbfSupplier::orderBy('name')->get(['id', 'name', 'address']) : collect(),
         ]);
+    }
+
+    public function storePbfSupplier(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:pbf_suppliers,name'],
+            'address' => ['required', 'string', 'max:2000'],
+        ]);
+
+        PbfSupplier::create($data);
+
+        return redirect()
+            ->route('admin.produk-pbf.index', array_filter([
+                'search' => $request->input('search'),
+            ]))
+            ->with('status', 'Supplier berhasil ditambahkan.');
+    }
+
+    public function updatePbfSupplier(Request $request, PbfSupplier $supplier)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:pbf_suppliers,name,' . $supplier->id],
+            'address' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $supplier->update($data);
+
+        return redirect()
+            ->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+            ->with('status', 'Supplier berhasil diperbarui.');
+    }
+
+    public function destroyPbfSupplier(PbfSupplier $supplier)
+    {
+        $supplier->delete();
+
+        return redirect()
+            ->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+            ->with('status', 'Supplier berhasil dihapus.');
     }
 
     public function export(Request $request)
@@ -113,10 +154,10 @@ class AdminProdukController extends Controller
             'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
             'MODAL', 'HARGA JUAL INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
-            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET',
+            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO',
         ];
-        $rows = $products->values()->map(fn ($product, $index) => [
-            $index + 1,
+        $rows = $products->map(fn ($product) => [
+            $product->id,
             $product->kategori ?: '',
             $product->nama_obat,
             $product->logo ?: '',
@@ -135,9 +176,14 @@ class AdminProdukController extends Controller
             $product->getChannelBasePrice('b2c'),
             $product->price_strip ?: 0,
             $product->price_tablet ?: 0,
+            $product->image_url ?: '',
         ])->all();
+        $widths = array_fill(0, count($columns), 20);
+        $widths[2] = $widths[5] = $widths[6] = 30;
+        $widths[8] = $widths[19] = 48;
+        $numericColumns = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 
-        return \App\Helpers\XlsxWriter::download('produk.xlsx', $columns, $rows, [8, 25, 30, 12, 18, 28, 28, 12, 22, 12, 12, 12, 12, 15, 20, 18, 18, 20, 20]);
+        return \App\Helpers\XlsxWriter::download('produk.xlsx', $columns, $rows, $widths, $numericColumns);
     }
 
     public function create()
@@ -380,6 +426,8 @@ class AdminProdukController extends Controller
             'harga_internal' => ['required', 'numeric', 'min:0'],
             'harga_grosir' => ['nullable', 'numeric', 'min:0'],
             'harga_retail' => ['required', 'numeric', 'min:0'],
+            'price_strip' => ['nullable', 'numeric', 'min:0'],
+            'price_tablet' => ['nullable', 'numeric', 'min:0'],
             'stok'         => ['required', 'numeric', 'min:0', 'max:10000000'],
         ]);
 
@@ -388,6 +436,8 @@ class AdminProdukController extends Controller
         $validated['harga_grosir'] = $validated['harga_grosir'] ?? $produk->harga_grosir;
         if ($produk->unit_packaging_enabled) {
             $validated['price_box'] = $validated['harga_retail'];
+        } else {
+            unset($validated['price_strip'], $validated['price_tablet']);
         }
         $produk->fill($validated);
         $produk->setStockInPackages($stockPackages);

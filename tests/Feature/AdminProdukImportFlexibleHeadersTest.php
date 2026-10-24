@@ -49,6 +49,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             $table->decimal('harga_modal', 12, 2)->default(0);
             $table->decimal('harga_grosir', 12, 2)->default(0);
             $table->decimal('harga_retail', 12, 2)->default(0);
+            $table->unsignedInteger('promo_b2c_percent')->default(0);
             $table->boolean('unit_packaging_enabled')->default(false);
             $table->unsignedInteger('tablets_per_strip')->nullable();
             $table->unsignedInteger('strips_per_box')->nullable();
@@ -66,11 +67,18 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             $table->json('gambar_tambahan')->nullable();
             $table->timestamps();
         });
+
+        Schema::create('purchase_stock_reservations', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('medicine_id');
+            $table->unsignedInteger('quantity_units');
+        });
     }
 
     protected function tearDown(): void
     {
         Schema::dropIfExists('medicines');
+        Schema::dropIfExists('purchase_stock_reservations');
         Schema::dropIfExists('users');
         parent::tearDown();
     }
@@ -117,11 +125,46 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'grade' => 'B',
         ]);
 
+        Medicine::create([
+            'nama_obat' => 'Obat PBF Grade A',
+            'harga' => 15000,
+            'stok' => 10,
+            'grade' => 'A',
+            'kelompok' => 'PBF',
+        ]);
+
+        Medicine::create([
+            'nama_obat' => 'Obat Tanpa Harga B2C',
+            'harga' => 0,
+            'harga_grosir' => 15000,
+            'stok' => 10,
+            'grade' => 'A',
+        ]);
+
+        Medicine::create([
+            'nama_obat' => 'Obat Promo B2C',
+            'harga_retail' => 12000,
+            'promo_b2c_percent' => 10,
+            'stok' => 10,
+        ]);
+
         $view = (new HomeController())->index(new Request());
         $featuredProducts = $view->getData()['featuredProducts'];
+        $discountedProducts = $view->getData()['discountedProducts'];
 
         $this->assertCount(1, $featuredProducts);
         $this->assertSame('Obat Grade A', $featuredProducts->first()->nama_obat);
+        $this->assertCount(1, $discountedProducts);
+        $this->assertSame('Obat Promo B2C', $discountedProducts->first()->nama_obat);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Terlaris B2C')
+            ->assertSee('Promo B2C')
+            ->assertSee(route('products.apotek'), false)
+            ->assertSee('class="discounted-product-card"', false)
+            ->assertSee('data-price-target="home-price-current-a-', false)
+            ->assertSee('data-price-target="home-price-b-', false);
     }
 
     public function test_import_maps_channel_prices_and_package_units_from_new_template(): void
@@ -310,11 +353,15 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'harga_internal' => 124000,
             'harga_grosir' => 136000,
             'harga_retail' => 154000,
+            'price_strip' => 15400,
+            'price_tablet' => 1540,
             'stok' => 9,
         ]), $product);
         $product->refresh();
         $this->assertSame(124000.0, $product->getChannelBasePrice('internal'));
         $this->assertSame(136000.0, $product->getChannelBasePrice('b2b'));
+        $this->assertSame(15400.0, (float) $product->price_strip);
+        $this->assertSame(1540.0, (float) $product->price_tablet);
 
         foreach ($product->image_gallery as $image) {
             \App\Helpers\ImageHelper::deleteProductImage($image);
@@ -325,11 +372,27 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
     public function test_admin_product_index_loads_without_missing_company_class(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
+        Medicine::create([
+            'nama_obat' => 'Produk Satuan',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 10000,
+            'stok' => 2,
+            'stock_base_units' => 200,
+            'unit_packaging_enabled' => true,
+            'strips_per_box' => 10,
+            'tablets_per_strip' => 10,
+            'price_strip' => 1000,
+            'price_tablet' => 100,
+            'deskripsi' => 'Produk untuk tes harga strip dan tablet',
+        ]);
 
         $this->actingAs($admin)
             ->get(route('admin.produk.index'))
             ->assertOk()
-            ->assertSee('Produk Kami');
+            ->assertSee('Produk Kami')
+            ->assertSee('Harga Strip / Tablet')
+            ->assertSee('name="price_strip"', false)
+            ->assertSee('name="price_tablet"', false);
     }
 
 }

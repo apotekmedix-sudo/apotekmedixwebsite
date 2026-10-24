@@ -62,7 +62,7 @@
         <div class="table-wrap"><table><colgroup><col class="no"><col class="principle"><col class="product"><col class="qty"><col class="price"><col class="line-total"></colgroup><thead><tr><th>NO</th><th>PRINCIPLE</th><th>NAMA PRODUK</th><th>QTY</th><th>MODAL</th><th>TOTAL</th></tr></thead><tbody>
             @forelse($items as $index => $item)
                 @php $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0); $price = (int) ($item['harga_modal'] ?? $item['modal'] ?? $item['harga'] ?? $item['price'] ?? 0); $lineTotal = $qty * $price; $total += $lineTotal; @endphp
-                <tr><td class="center">{{ $index + 1 }}</td><td>{{ $item['brand'] ?? $item['principle'] ?? '-' }}</td><td>{{ $item['nama_obat'] ?? $item['name'] ?? '-' }}</td><td class="center">{{ $qty }} {{ strtolower($item['unit_label'] ?? 'box') }}</td><td class="right">{{ $money($price) }}</td><td class="right">{{ $money($lineTotal) }}</td></tr>
+                <tr><td class="center">{{ $index + 1 }}</td><td>{{ $item['brand'] ?? $item['principle'] ?? '-' }}</td><td>{{ $item['nama_obat'] ?? $item['name'] ?? '-' }}</td><td class="center">{{ $qty }}</td><td class="right">{{ $money($price) }}</td><td class="right">{{ $money($lineTotal) }}</td></tr>
             @empty <tr><td colspan="6" class="center">Belum ada produk</td></tr>@endforelse
             @for($blank = count($items); $blank < 12; $blank++)<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>@endfor
         </tbody></table></div>

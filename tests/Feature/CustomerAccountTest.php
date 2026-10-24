@@ -32,6 +32,14 @@ class CustomerAccountTest extends TestCase
             ->assertDontSee('> Daftar</a>', false);
     }
 
+    public function test_user_navbar_links_to_b2c_catalog_instead_of_general_products(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('<a href="' . route('products.apotek') . '"><i class="fa-solid fa-store"></i> Belanja B2C</a>', false)
+            ->assertDontSee('<a href="' . route('products.index') . '"><i class="fa-solid fa-pills"></i> Produk Kami</a>', false);
+    }
+
     public function test_public_footer_uses_google_maps_contact_details_and_requested_email(): void
     {
         $this->get(route('home'))
@@ -58,6 +66,8 @@ class CustomerAccountTest extends TestCase
             ->assertSee('Belanja Internal')
             ->assertSee('Belanja B2B')
             ->assertSee('Belanja B2C')
+            ->assertSee('<a href="' . route('products.apotek') . '"><i class="fa-solid fa-store"></i> Belanja B2C</a>', false)
+            ->assertDontSee('<a href="' . route('products.index') . '"><i class="fa-solid fa-pills"></i> Produk Kami</a>', false)
             ->assertDontSee('Pesan di Toko')
             ->assertDontSee('Buka Kios Toko');
 

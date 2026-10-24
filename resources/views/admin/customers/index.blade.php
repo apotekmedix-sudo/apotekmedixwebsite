@@ -11,6 +11,7 @@
     .customer-summary-card strong{display:block;margin-top:6px;color:#1e293b;font-size:22px}
     .customer-heading{display:flex;justify-content:space-between;align-items:center;gap:14px}
     .customer-add,.customer-action{display:inline-block;padding:8px 11px;border-radius:8px;background:#0052cc;color:#fff;text-decoration:none;font-size:12px;font-weight:700}
+    .customer-export{background:#15803d}
     .customer-filters{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:16px 0}
     .customer-filters label{display:block;margin-bottom:5px;color:#475569;font-size:12px;font-weight:700}
     .customer-filters input,.customer-filters select{min-width:190px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
@@ -38,7 +39,10 @@
             <div class="card-title">Master Customer</div>
             <p style="color:#64748b;margin-top:-.75rem;">Data customer otomatis dihimpun dari pesanan Internal, B2B, dan B2C. Pesanan berulang dengan identitas yang cocok akan masuk ke satu profil.</p>
         </div>
-        <a class="customer-add" href="{{ route('admin.customers.create') }}">+ Tambah Customer</a>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a class="customer-add customer-export" href="{{ route('admin.customers.export') }}">Export Customer per Kanal</a>
+            <a class="customer-add" href="{{ route('admin.customers.create') }}">+ Tambah Customer</a>
+        </div>
     </div>
 
     <form class="customer-filters" method="GET" action="{{ route('admin.customers.index') }}">

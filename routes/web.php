@@ -20,6 +20,7 @@ use App\Http\Controllers\AdminPrescriptionProductController;
 use App\Http\Controllers\AdminPrescriptionProductImportController;
 use App\Http\Controllers\AdminProdukController;
 use App\Http\Controllers\AdminProdukImportController;
+use App\Http\Controllers\AdminBusinessDataExportController;
 use App\Http\Controllers\AdminBannerController;
 use App\Http\Controllers\AdminMedicinePromotionController;
 use App\Http\Controllers\AdminDiscountCodeController;
@@ -46,6 +47,7 @@ Route::get('/storage/{folder}/{filename}', function (string $folder, string $fil
 
 // Products routes
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+Route::get('/products/stock-availability', [ProductController::class, 'stockAvailability'])->name('products.stock-availability');
 Route::get('/belanja-internal/akses', [InternalShoppingAccessController::class, 'show'])->name('shopping.internal.access');
 Route::post('/belanja-internal/akses', [InternalShoppingAccessController::class, 'verify'])
     ->middleware('throttle:5,1')
@@ -126,6 +128,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/purchase-history/{order}/approval', [AdminDashboardController::class, 'updateApprovalStatus'])->name('purchase-history.approval');
     Route::delete('/purchase-history/{order}', [AdminDashboardController::class, 'destroy'])->name('purchase-history.destroy');
     Route::delete('/purchase-history', [AdminDashboardController::class, 'destroyAll'])->name('purchase-history.destroyAll');
+    Route::get('/customers/export', [AdminCustomerController::class, 'export'])->name('customers.export');
     Route::resource('customers', AdminCustomerController::class)->except('show');
     Route::get('/access-codes', [AdminShoppingAccessCodeController::class, 'index'])->name('access-codes.index');
     Route::post('/access-codes/{channel}/generate', [AdminShoppingAccessCodeController::class, 'generate'])
@@ -160,7 +163,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Produk management
     Route::delete('produk/bulk-delete', [AdminProdukController::class, 'destroyMany'])->name('produk.destroyMany');
     Route::get('produk-pbf', [AdminProdukController::class, 'indexPbf'])->name('produk-pbf.index');
+    Route::post('produk-pbf/suppliers', [AdminProdukController::class, 'storePbfSupplier'])->name('produk-pbf.suppliers.store');
+    Route::put('produk-pbf/suppliers/{supplier}', [AdminProdukController::class, 'updatePbfSupplier'])->name('produk-pbf.suppliers.update');
+    Route::delete('produk-pbf/suppliers/{supplier}', [AdminProdukController::class, 'destroyPbfSupplier'])->name('produk-pbf.suppliers.destroy');
     Route::get('produk-export', [AdminProdukController::class, 'export'])->name('produk.export');
+    Route::get('business-data-export', [AdminBusinessDataExportController::class, 'export'])->name('business-data.export');
     Route::resource('produk', AdminProdukController::class);
     Route::post('produk/{produk}/update-stock', [AdminProdukController::class, 'updateStock'])->name('produk.update-stock');
     Route::post('produk/{produk}/update-inline', [AdminProdukController::class, 'updateInline'])->name('produk.update-inline');

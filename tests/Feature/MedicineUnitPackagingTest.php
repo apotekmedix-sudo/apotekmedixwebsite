@@ -123,12 +123,93 @@ class MedicineUnitPackagingTest extends TestCase
         $this->assertSame('Tablet', $order->items[0]['unit_label']);
         $this->assertSame('Botol', $order->items[2]['unit_label']);
         $this->assertSame(100, $order->items[0]['harga']);
-        $this->assertSame('18 Botol, 7 strip, 7 tablet', $medicine->fresh()->stock_breakdown);
+        $this->assertSame('20 Botol', $medicine->fresh()->stock_breakdown);
         $this->assertDatabaseHas('medicines', [
             'id' => $medicine->id,
-            'stock_base_units' => 1877,
-            'stok' => 18,
+            'stock_base_units' => 2000,
+            'stok' => 20,
         ]);
+        $this->assertDatabaseHas('purchase_stock_reservations', [
+            'purchase_history_id' => $order->id,
+            'medicine_id' => $medicine->id,
+            'quantity_units' => 123,
+            'sale_quantity' => 6,
+        ]);
+    }
+
+    public function test_internal_and_b2b_catalogs_only_offer_channel_package_prices(): void
+    {
+        $medicine = Medicine::create([
+            'nama_obat' => 'Obat Harga Kanal',
+            'satuan' => 'Botol',
+            'kategori' => 'Pabrik Contoh',
+            'kelompok' => 'APOTEK',
+            'harga' => 1600,
+            'harga_internal' => 1200,
+            'harga_grosir' => 1400,
+            'harga_retail' => 1600,
+            'stok' => 10,
+            'stock_base_units' => 1000,
+            'unit_packaging_enabled' => true,
+            'tablets_per_strip' => 10,
+            'strips_per_box' => 10,
+            'price_tablet' => 100,
+            'price_strip' => 900,
+            'price_box' => 1600,
+            'deskripsi' => 'Produk untuk pengujian harga kanal',
+        ]);
+        $internalCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
+            'code_hash' => Hash::make('12345'),
+            'expires_at' => now()->addDays(30),
+        ]);
+
+        $this->withSession([
+            'internal_shopping_expires_at' => now()->addDays(30)->timestamp,
+            'internal_shopping_code_hash' => $internalCode->code_hash,
+        ])->get(route('shopping.internal'))
+            ->assertOk()
+            ->assertSee('Harga per kemasan')
+            ->assertSee('Botol · Rp 1.200', false)
+            ->assertDontSee('Tablet · Rp 100', false)
+            ->assertDontSee('Strip · Rp 900', false);
+
+        $b2bCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2B,
+            'code_hash' => Hash::make('54321'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $this->withSession([
+            'pbf_access_expires_at' => now()->addDays(30)->timestamp,
+            'pbf_access_code_hash' => $b2bCode->code_hash,
+        ])->get(route('products.pbf'))
+            ->assertOk()
+            ->assertSee('Harga per kemasan')
+            ->assertSee('Botol · Rp 1.400', false)
+            ->assertDontSee('Tablet · Rp 140', false)
+            ->assertDontSee('Strip · Rp 140', false);
+
+        $this->withSession([
+            'internal_shopping_expires_at' => now()->addDays(30)->timestamp,
+            'internal_shopping_code_hash' => $internalCode->code_hash,
+        ])->postJson(route('orders.history.store'), [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Petugas Internal',
+            'phone' => '081234567890',
+            'transaction_channel' => 'offline',
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 1, 'sale_unit' => 'tablet'],
+            ],
+            'total' => 0,
+        ])->assertUnprocessable();
+
+        $this->postJson(route('orders.history.store'), [
+            'buyer_type' => 'pbf',
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 1, 'sale_unit' => 'strip'],
+            ],
+            'total' => 0,
+        ])->assertUnprocessable();
     }
 
     public function test_unpacked_product_stock_uses_its_package_unit_label(): void
@@ -228,6 +309,9 @@ class MedicineUnitPackagingTest extends TestCase
         $response = $this->actingAs($admin)->postJson(route('orders.history.store'), [
             'buyer_type' => 'apotik',
             'requester_name' => 'Apoteker',
+            'apj' => 'Apoteker',
+            'sia' => 'SIA-123',
+            'sipa' => 'SIPA-123',
             'pbf_name' => 'PBF Contoh',
             'pbf_address' => 'Alamat PBF',
             'is_pbf_purchase_order' => true,
@@ -240,13 +324,208 @@ class MedicineUnitPackagingTest extends TestCase
 
         $order = PurchaseHistory::findOrFail($response->json('id'));
         $this->assertTrue($order->is_pbf_purchase_order);
+        $this->assertSame('Apotek Medix', $order->buyer_name);
+        $this->assertNull($order->customer_id);
         $this->assertSame(1000, $order->total);
         $this->assertSame(500, $order->items[0]['harga']);
+        $this->assertSame(500, $order->items[0]['harga_modal']);
+        $this->assertSame('Pabrik Contoh', $order->items[0]['brand']);
         $this->assertDatabaseHas('medicines', [
             'id' => $medicine->id,
             'stock_base_units' => 0,
             'stok' => 0,
         ]);
+
+        $medicine->update(['harga_modal' => 900]);
+        $this->actingAs($admin)
+            ->get(route('admin.purchase-history.purchase-order', $order))
+            ->assertOk()
+            ->assertSee('SURAT PESANAN')
+            ->assertSee('PBF Contoh')
+            ->assertSee('SIA-123')
+            ->assertSee('SIPA-123')
+            ->assertSee('Obat Pesanan PBF')
+            ->assertSee('Pabrik Contoh')
+            ->assertSee('MODAL')
+            ->assertSee('TOTAL')
+            ->assertSee('Rp 500')
+            ->assertSee('Rp 1.000')
+            ->assertDontSee('Rp 900');
+    }
+
+    public function test_admin_pbf_ordering_page_uses_dedicated_purchase_order_checkout(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.produk-pbf.index'))
+            ->assertOk()
+            ->assertSee('Pesan ke PBF')
+            ->assertSee('pengadaan Apotek Medix ke distributor')
+            ->assertSee('Buat Surat Pesanan')
+            ->assertSee('adminPbfOrder: true', false)
+            ->assertSee('function openOrder()', false)
+            ->assertSee('if (CART_CONFIG.adminPbfOrder)', false)
+            ->assertSee("document.getElementById('cartDrawer').classList.add('open')", false)
+            ->assertSee("document.getElementById('cartOverlay').classList.add('open')", false)
+            ->assertSee('openPbfCheckout();', false)
+            ->assertSee('window.location.href = \'' . route('cart.index') . '\'', false)
+            ->assertDontSee('id="orderModal"', false)
+            ->assertDontSee('id="f_payment"', false);
+    }
+
+    public function test_admin_pbf_product_search_matches_medicine_details_and_dose_in_description(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $medicine = Medicine::create([
+            'nama_obat' => 'Produk Pencarian PBF',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 1000,
+            'harga_modal' => 500,
+            'stok' => 5,
+            'deskripsi' => 'Dosis harian 5 mg untuk pemakaian sesuai anjuran.',
+            'indikasi' => 'Membantu meredakan gejala pencarian indikasi',
+            'komposisi' => 'Kandungan pencarian komposisi',
+            'golongan' => 'Pencarian golongan',
+            'sediaan' => 'Pencarian sediaan',
+        ]);
+
+        foreach (['indikasi', 'komposisi', 'golongan', 'sediaan', '5 mg'] as $search) {
+            $this->actingAs($admin)
+                ->get(route('admin.produk-pbf.index', ['search' => $search]))
+                ->assertOk()
+                ->assertSee($medicine->nama_obat);
+        }
+
+        $this->actingAs($admin)
+            ->get(route('admin.produk-pbf.index'))
+            ->assertSee('Cari nama, indikasi, komposisi, golongan, sediaan, dosis');
+    }
+
+    public function test_admin_can_save_pbf_supplier_and_search_it_from_purchase_order_form(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.produk-pbf.suppliers.store'), [
+                'name' => 'PT Supplier Obat Sehat',
+                'address' => 'Jl. Distributor No. 10, Jakarta',
+            ])
+            ->assertRedirect(route('admin.produk-pbf.index'))
+            ->assertSessionHas('status', 'Supplier berhasil ditambahkan.');
+
+        $this->assertDatabaseHas('pbf_suppliers', [
+            'name' => 'PT Supplier Obat Sehat',
+            'address' => 'Jl. Distributor No. 10, Jakarta',
+        ]);
+
+        $this->get(route('admin.produk-pbf.index'))
+            ->assertOk()
+            ->assertSee('Tambah Supplier')
+            ->assertSee('Kelola Supplier')
+            ->assertSee('id="supplierManagerBackdrop"', false)
+            ->assertSee('id="supplierManagerSearch"', false)
+            ->assertSee('data-supplier-search="pt supplier obat sehat jl. distributor no. 10, jakarta"', false)
+            ->assertSee('supplierManagerSearch.addEventListener(\'input\'', false)
+            ->assertSee('.supplier-modal-body { flex:1; min-height:0; overflow-y:auto;', false)
+            ->assertSee('id="pbfOrderDistributor"', false)
+            ->assertSee('id="pbfSupplierMenu" role="listbox"', false)
+            ->assertSee('autocomplete="off"', false)
+            ->assertSee('"name":"PT Supplier Obat Sehat","address":"Jl. Distributor No. 10, Jakarta"', false)
+            ->assertSee('supplierAddress.value = selected.address', false)
+            ->assertSee('class="pbf-supplier-option${index === activeSupplierIndex', false)
+            ->assertSee(route('admin.produk-pbf.suppliers.update', 1), false)
+            ->assertSee(route('admin.produk-pbf.suppliers.destroy', 1), false)
+            ->assertDontSee('<datalist', false);
+    }
+
+    public function test_admin_can_update_and_delete_pbf_supplier(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $supplier = \App\Models\PbfSupplier::create([
+            'name' => 'Supplier Lama',
+            'address' => 'Alamat Lama',
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.produk-pbf.suppliers.update', $supplier), [
+                'name' => 'Supplier Baru',
+                'address' => 'Alamat Baru',
+            ])
+            ->assertRedirect(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
+            ->assertSessionHas('status', 'Supplier berhasil diperbarui.');
+
+        $this->assertDatabaseHas('pbf_suppliers', [
+            'id' => $supplier->id,
+            'name' => 'Supplier Baru',
+            'address' => 'Alamat Baru',
+        ]);
+
+        $this->delete(route('admin.produk-pbf.suppliers.destroy', $supplier))
+            ->assertRedirect(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
+            ->assertSessionHas('status', 'Supplier berhasil dihapus.');
+
+        $this->assertDatabaseMissing('pbf_suppliers', ['id' => $supplier->id]);
+    }
+
+    public function test_pbf_supplier_requires_name_and_address(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->from(route('admin.produk-pbf.index'))
+            ->post(route('admin.produk-pbf.suppliers.store'), [
+                'name' => '',
+                'address' => '',
+            ])
+            ->assertRedirect(route('admin.produk-pbf.index'))
+            ->assertSessionHasErrors(['name', 'address']);
+
+        $this->assertDatabaseCount('pbf_suppliers', 0);
+    }
+
+    public function test_cart_page_uses_pbf_purchase_order_popup_without_changing_regular_checkout(): void
+    {
+        $this->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('id="pbfPopupBackdrop"', false)
+            ->assertSee('id="pbfPopupDistributor"', false)
+            ->assertSee('id="pbfPopupAddress"', false)
+            ->assertSee('id="pbfPopupSigner"', false)
+            ->assertSee('id="pbfInvoiceBackdrop"', false)
+            ->assertSee('if (activeCtx.adminPbfOrder)', false)
+            ->assertSee('openPbfPurchaseOrderPopup();', false)
+            ->assertSee('window.location.href = \'' . route('checkout.index') . '\'', false)
+            ->assertSee('is_pbf_purchase_order: true', false)
+            ->assertSee("invoiceBase.replace('__ORDER__', window.createdPbfOrderId)", false);
+    }
+
+    public function test_admin_pbf_purchase_order_requires_signatory_details(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $medicine = Medicine::create([
+            'nama_obat' => 'Obat untuk Surat Pesanan',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 700,
+            'harga_modal' => 500,
+            'stok' => 0,
+            'deskripsi' => 'Produk pengadaan test',
+        ]);
+
+        $this->actingAs($admin)->postJson(route('orders.history.store'), [
+            'buyer_type' => 'apotik',
+            'requester_name' => 'Apoteker',
+            'pbf_name' => 'PBF Contoh',
+            'pbf_address' => 'Alamat PBF',
+            'is_pbf_purchase_order' => true,
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 1, 'harga' => 500],
+            ],
+            'total' => 500,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('pbf_name');
+
+        $this->assertDatabaseCount('purchase_histories', 0);
     }
 
     public function test_guest_cannot_create_admin_pbf_purchase_order(): void
@@ -299,6 +578,42 @@ class MedicineUnitPackagingTest extends TestCase
         $this->get(route('products.apotek'))
             ->assertOk()
             ->assertSee($medicine->nama_obat);
+    }
+
+    public function test_b2c_catalog_excludes_pbf_products_and_products_without_a_b2c_price(): void
+    {
+        Medicine::create([
+            'nama_obat' => 'Produk Retail B2C',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 0,
+            'harga_retail' => 12000,
+            'harga_grosir' => 8000,
+            'stok' => 10,
+            'deskripsi' => 'Produk retail untuk pelanggan B2C.',
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Produk PBF',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 0,
+            'kelompok' => 'PBF',
+            'harga_retail' => 12000,
+            'stok' => 10,
+            'deskripsi' => 'Produk khusus distributor.',
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Produk Tanpa Harga B2C',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 0,
+            'harga_grosir' => 8000,
+            'stok' => 10,
+            'deskripsi' => 'Produk yang hanya memiliki harga B2B.',
+        ]);
+
+        $this->get(route('products.apotek'))
+            ->assertOk()
+            ->assertSee('Produk Retail B2C')
+            ->assertDontSee('Produk PBF')
+            ->assertDontSee('Produk Tanpa Harga B2C');
     }
 
     public function test_admin_can_create_products_with_zero_one_or_two_images_and_gallery_is_capped_at_two(): void

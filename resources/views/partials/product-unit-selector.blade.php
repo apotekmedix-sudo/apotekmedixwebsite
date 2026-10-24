@@ -1,36 +1,48 @@
 @php
     $priceChannel = $priceChannel ?? 'b2c';
+    $showUnitChoices = $showUnitChoices ?? true;
+    $unitKeys = $showUnitChoices ? ['box', 'strip', 'tablet'] : ['box'];
     $unitPriceValues = [
-        'tablet' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'tablet')),
-        'strip' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'strip')),
         'box' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'box')),
     ];
     $unitBasePriceValues = [
-        'tablet' => $medicine->getChannelBasePrice($priceChannel, 'tablet'),
-        'strip' => $medicine->getChannelBasePrice($priceChannel, 'strip'),
         'box' => $medicine->getChannelBasePrice($priceChannel, 'box'),
     ];
     $unitFactors = [
-        'tablet' => 1,
-        'strip' => (int) $medicine->tablets_per_strip,
         'box' => $medicine->units_per_box,
     ];
     $unitLabels = [
-        'tablet' => 'Tablet',
-        'strip' => 'Strip',
         'box' => $medicine->package_unit_label,
     ];
+    if ($showUnitChoices) {
+        $unitPriceValues = [
+            'tablet' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'tablet')),
+            'strip' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'strip')),
+        ] + $unitPriceValues;
+        $unitBasePriceValues = [
+            'tablet' => $medicine->getChannelBasePrice($priceChannel, 'tablet'),
+            'strip' => $medicine->getChannelBasePrice($priceChannel, 'strip'),
+        ] + $unitBasePriceValues;
+        $unitFactors = [
+            'tablet' => 1,
+            'strip' => (int) $medicine->tablets_per_strip,
+        ] + $unitFactors;
+        $unitLabels = [
+            'tablet' => 'Tablet',
+            'strip' => 'Strip',
+        ] + $unitLabels;
+    }
     $availableUnits = $medicine->unit_packaging_enabled
         ? array_filter(
-            ['box', 'strip', 'tablet'],
+            $unitKeys,
             fn ($unit) => $unitBasePriceValues[$unit] > 0 && $unitFactors[$unit] > 0
         )
         : ($unitBasePriceValues['box'] > 0 ? ['box'] : []);
-    $stockUnits = max(0, (int) ($medicine->stock_base_units ?? $medicine->stok));
+    $stockUnits = max(0, (int) ($medicine->available_stock_units ?? $medicine->stock_base_units ?? $medicine->stok));
     $promoPercent = $medicine->getPromoPercent($priceChannel);
 @endphp
 
-<select id="{{ $unitSelectId }}" class="product-unit-data" aria-hidden="true" tabindex="-1"
+<select id="{{ $unitSelectId }}" class="product-unit-data" data-stock-product-id="{{ $medicine->id }}" aria-hidden="true" tabindex="-1"
         data-unit-prices="{{ json_encode($unitPriceValues) }}"
         data-unit-factors="{{ json_encode($unitFactors) }}"
         data-unit-labels="{{ json_encode($unitLabels) }}"
@@ -42,7 +54,7 @@
 
 @if($availableUnits)
     <div class="product-unit-section">
-        <span class="product-unit-heading">Beli per satuan &amp; jumlah</span>
+        <span class="product-unit-heading">{{ $showUnitChoices ? 'Beli per satuan & jumlah' : 'Harga per kemasan & jumlah' }}</span>
         <div class="product-unit-grid product-unit-grid-{{ count($availableUnits) }}">
             @foreach($availableUnits as $unit)
                 @php
@@ -51,6 +63,8 @@
                 @endphp
                 <div class="product-unit-card" data-cart-unit="{{ $unit }}">
                     <button type="button" class="product-unit-choice" aria-pressed="false"
+                            data-unit-price="{{ $unitPriceValues[$unit] }}"
+                            data-price-target="{{ $priceTargetId ?? '' }}"
                             onclick="selectProductCardUnit(this)">
                         <span class="product-unit-name">{{ $unitLabels[$unit] }}</span>
                         @if($promoPercent > 0 && $unitBasePrice > $unitPriceValues[$unit])
@@ -62,7 +76,7 @@
                         <button type="button" aria-label="Kurangi {{ $unitLabels[$unit] }}"
                                 onclick="adjustProductCardQty(this, -1)" disabled>−</button>
                         <input type="number" min="0" max="{{ $availableQuantity }}" step="1" value="0"
-                               data-cart-quantity
+                               data-cart-quantity data-stock-unit="{{ $unit }}"
                                aria-label="Jumlah {{ $unitLabels[$unit] }}"
                                oninput="updateProductCardQty(this)" disabled>
                         <button type="button" aria-label="Tambah {{ $unitLabels[$unit] }}"

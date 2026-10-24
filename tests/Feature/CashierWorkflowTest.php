@@ -56,7 +56,11 @@ class CashierWorkflowTest extends TestCase
         $this->assertSame(2000, $order->items[0]['harga']);
         $this->assertSame(400, $order->items[0]['potongan']);
         $this->assertSame(10, $order->items[0]['promo_percent']);
-        $this->assertDatabaseHas('medicines', ['id' => $medicine->id, 'stok' => 6]);
+        $this->assertDatabaseHas('medicines', ['id' => $medicine->id, 'stok' => 8]);
+        $this->assertDatabaseHas('purchase_stock_reservations', [
+            'medicine_id' => $medicine->id,
+            'quantity_units' => 2,
+        ]);
     }
 
     public function test_internal_shopping_requires_access_code(): void
@@ -147,17 +151,46 @@ class CashierWorkflowTest extends TestCase
             'is_cashier' => true,
             'password' => Hash::make('cashier-password'),
         ]);
+        $medicine = Medicine::create([
+            'nama_obat' => 'Obat Transaksi Selesai',
+            'kategori' => 'MEDIX',
+            'harga' => 1000,
+            'stok' => 5,
+            'terjual' => 2,
+            'grade' => 'A',
+            'deskripsi' => 'Produk untuk verifikasi penjualan',
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Obat Pembanding Terlaris',
+            'kategori' => 'MEDIX',
+            'harga' => 1000,
+            'stok' => 5,
+            'terjual' => 3,
+            'grade' => 'A',
+            'deskripsi' => 'Produk pembanding penjualan',
+        ]);
         $order = PurchaseHistory::create([
             'buyer_type' => 'umum',
             'buyer_name' => 'Pembeli',
             'phone' => '081234567890',
-            'items' => [],
+            'items' => [[
+                'id' => $medicine->id,
+                'quantity' => 2,
+                'sale_unit' => 'box',
+            ]],
             'total' => 10000,
             'original_total' => 10000,
             'discounted_total' => 10000,
             'transaction_channel' => 'offline',
             'payment_status' => 'pending',
             'payment_method' => 'Tunai',
+            'stock_committed' => false,
+        ]);
+        \App\Models\PurchaseStockReservation::create([
+            'purchase_history_id' => $order->id,
+            'medicine_id' => $medicine->id,
+            'quantity_units' => 2,
+            'sale_quantity' => 2,
         ]);
 
         $this->post(route('cashier.login.post'), [
@@ -187,6 +220,14 @@ class CashierWorkflowTest extends TestCase
             'cashier_id' => $cashier->id,
         ]);
         $this->assertNotNull($order->fresh()->paid_at);
+        $this->assertSame(3, $medicine->fresh()->stok);
+        $this->assertSame(4, $medicine->fresh()->terjual);
+        $this->assertDatabaseMissing('purchase_stock_reservations', [
+            'purchase_history_id' => $order->id,
+        ]);
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertViewHas('featuredProducts', fn ($products) => $products->first()->is($medicine->fresh()));
 
         $this->post(route('cashier.orders.printed', $order))
             ->assertRedirect();
@@ -278,6 +319,45 @@ class CashierWorkflowTest extends TestCase
 
         $this->post(route('cashier.orders.cancel', $order))->assertRedirect();
         $this->assertSame(8, $medicine->fresh()->stock_base_units);
+    }
+
+    public function test_cancelling_a_reserved_pending_order_releases_reserved_stock(): void
+    {
+        $cashier = User::factory()->create(['role' => 'user', 'is_cashier' => true]);
+        $medicine = Medicine::create([
+            'nama_obat' => 'Obat Reservasi Batal',
+            'kategori' => 'MEDIX',
+            'harga' => 1000,
+            'stok' => 6,
+            'deskripsi' => 'Produk untuk uji pelepasan reservasi',
+        ]);
+        $order = PurchaseHistory::create([
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pembeli',
+            'items' => [['id' => $medicine->id, 'quantity' => 2, 'sale_unit' => 'box']],
+            'total' => 2000,
+            'transaction_channel' => 'online',
+            'payment_status' => 'pending',
+            'stock_committed' => false,
+        ]);
+        \App\Models\PurchaseStockReservation::create([
+            'purchase_history_id' => $order->id,
+            'medicine_id' => $medicine->id,
+            'quantity_units' => 2,
+            'sale_quantity' => 2,
+        ]);
+
+        $this->actingAs($cashier)
+            ->post(route('cashier.orders.cancel', $order))
+            ->assertRedirect();
+
+        $this->assertSame(6, $medicine->fresh()->stok);
+        $this->assertDatabaseMissing('purchase_stock_reservations', [
+            'purchase_history_id' => $order->id,
+        ]);
+        $this->getJson(route('products.stock-availability', ['ids' => [$medicine->id]]))
+            ->assertOk()
+            ->assertJsonPath("stock.{$medicine->id}.units", 6);
     }
 
     public function test_credit_term_order_verification_does_not_mark_payment_as_paid(): void
@@ -374,6 +454,32 @@ class CashierWorkflowTest extends TestCase
         $this->assertTrue(ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_INTERNAL)->firstOrFail()->verify($replacementCode));
     }
 
+    public function test_admin_access_code_page_handles_codes_encrypted_with_an_old_key(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $accessCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
+            'code_hash' => Hash::make('12345'),
+            'code_value' => 'invalid-encrypted-value',
+            'expires_at' => now()->addDays(30),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.access-codes.index'))
+            ->assertOk()
+            ->assertSee('Kode tidak dapat dibaca — buat ulang')
+            ->assertSee('Tidak dapat ditampilkan — buat ulang');
+
+        $this->assertNull($accessCode->readCode());
+        $this->assertTrue($accessCode->verify('12345'));
+
+        $this->post(route('admin.access-codes.generate', ShoppingAccessCode::CHANNEL_INTERNAL))
+            ->assertRedirect(route('admin.access-codes.index'));
+
+        $accessCode->refresh();
+        $this->assertMatchesRegularExpression('/^[0-9]{5}$/', $accessCode->readCode());
+    }
+
     public function test_admin_can_manage_channel_discounts_and_homepage_shows_b2c_promotions(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -417,7 +523,7 @@ class CashierWorkflowTest extends TestCase
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('Produk Promo')
+            ->assertSee('Promo B2C')
             ->assertSee('Vitamin Promo Medix')
             ->assertSee('Diskon 30%');
     }
@@ -559,6 +665,7 @@ class CashierWorkflowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin)->get(route('admin.customers.index'))
             ->assertOk()
+            ->assertSee('Export Customer per Kanal')
             ->assertSee('Pembeli Internal')
             ->assertSee('Apotek Mitra')
             ->assertSee('Pembeli Online')

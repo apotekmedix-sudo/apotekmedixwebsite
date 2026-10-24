@@ -11,7 +11,7 @@ class PurchaseHistoryTest extends TestCase
 {
     use RefreshDatabase, WithoutMiddleware;
 
-    public function test_checkout_decrements_product_stock(): void
+    public function test_checkout_reserves_stock_until_transaction_is_completed(): void
     {
         $medicine = Medicine::create([
             'nama_obat' => 'Paracetamol',
@@ -35,8 +35,31 @@ class PurchaseHistoryTest extends TestCase
         $response->assertOk();
         $this->assertDatabaseHas('medicines', [
             'id' => $medicine->id,
-            'stok' => 7,
+            'stok' => 10,
         ]);
+        $this->assertDatabaseHas('purchase_stock_reservations', [
+            'purchase_history_id' => $response->json('id'),
+            'medicine_id' => $medicine->id,
+            'quantity_units' => 3,
+        ]);
+        $this->assertDatabaseHas('purchase_histories', [
+            'id' => $response->json('id'),
+            'stock_committed' => false,
+        ]);
+
+        $this->getJson(route('products.stock-availability', ['ids' => [$medicine->id]]))
+            ->assertOk()
+            ->assertJsonPath("stock.{$medicine->id}.units", 7);
+
+        $this->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pembeli Kedua',
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 8, 'harga' => 15000],
+            ],
+            'total' => 120000,
+        ])->assertUnprocessable();
+        $this->assertDatabaseCount('purchase_stock_reservations', 1);
     }
 
     public function test_purchase_history_can_be_stored_via_public_endpoint(): void

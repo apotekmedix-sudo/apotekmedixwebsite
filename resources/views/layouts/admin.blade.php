@@ -625,7 +625,7 @@
                 <li>
                     <a href="{{ route('admin.produk-pbf.index') }}" class="@if(Route::current()->getName() === 'admin.produk-pbf.index') active @endif">
                         <span>📦</span>
-                        <span>Produk Pemesanan PBF</span>
+                        <span>Pesan ke PBF</span>
                     </a>
                 </li>
                 <li>

@@ -409,17 +409,17 @@
                                 @endif
                             </div>
                             @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => 'b2c'])
-                            @php $stock = (int) ($medicine->stock_base_units ?? $medicine->stok); @endphp
-                            <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
+                            @php $stock = (int) $medicine->available_stock_units; @endphp
+                            <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-                                {{ $stock > 0 ? 'Stok: ' . $medicine->stock_breakdown : 'Stok habis' }}
+                                {{ $stock > 0 ? 'Stok: ' . $medicine->getStockBreakdownForUnits($stock) : 'Stok habis' }}
                             </span>
                             @if($medicine->sediaan_label)
                                 <div class="medicine-meta" style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.6rem;">
                                     <i class="fa-solid fa-cube"></i> <span>Sediaan: {{ $medicine->sediaan_label }}</span>
                                 </div>
                             @endif
-                            <button class="btn-cart"
+                            <button class="btn-cart" data-stock-cart @disabled($stock <= 0)
                                     data-product-id="{{ $medicine->id }}"
                                     data-package-unit-label="{{ $medicine->package_unit_label }}"
                                     data-product-name="{{ $medicine->nama_obat }}"

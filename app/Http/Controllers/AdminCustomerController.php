@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\XlsxWriter;
 use App\Models\Customer;
 use App\Support\CustomerIdentity;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -58,6 +60,20 @@ class AdminCustomerController extends Controller
         ];
 
         return view('admin.customers.index', compact('customers', 'filters', 'summary'));
+    }
+
+    public function export()
+    {
+        $sheets = [
+            $this->customerSheet('Internal', fn (Builder $query) => $query->where('transaction_channel', 'offline')),
+            $this->customerSheet('B2B', fn (Builder $query) => $this->applyB2bFilter($query)),
+            $this->customerSheet('B2C', fn (Builder $query) => $this->applyB2cFilter($query)),
+        ];
+
+        return XlsxWriter::downloadWorkbook(
+            'data-customer-per-kanal-'.now()->format('Ymd-His').'.xlsx',
+            $sheets
+        );
     }
 
     public function create(): View
@@ -151,5 +167,34 @@ class AdminCustomerController extends Controller
         return $query->where('transaction_channel', 'online')
             ->where('buyer_type', 'umum')
             ->where(fn ($orders) => $orders->whereNull('pbf_name')->orWhere('pbf_name', ''));
+    }
+
+    private function customerSheet(string $channel, callable $filter): array
+    {
+        $columns = array_merge(
+            \Illuminate\Support\Facades\Schema::getColumnListing('customers'),
+            ['jumlah_pesanan', 'pesanan_terakhir']
+        );
+        $customers = Customer::query()
+            ->whereHas('purchaseHistories', $filter)
+            ->withCount(['purchaseHistories as jumlah_pesanan' => $filter])
+            ->withMax(['purchaseHistories as pesanan_terakhir' => $filter], 'created_at')
+            ->orderBy('id')
+            ->get();
+
+        $rows = $customers->map(function (Customer $customer) use ($columns): array {
+            return array_map(
+                fn (string $column) => $column === 'pesanan_terakhir'
+                    ? $customer->pesanan_terakhir
+                    : $customer->getAttribute($column),
+                $columns
+            );
+        })->all();
+
+        return [
+            'name' => 'Customer '.$channel,
+            'headers' => array_map('strtoupper', $columns),
+            'rows' => $rows,
+        ];
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Banner;
 use App\Models\Medicine;
 use App\Models\PromoProduct;
+use App\Support\StockAvailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -14,6 +15,8 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         $featuredProducts = Medicine::nonPbf()
+                                    ->availableForB2c()
+                                    ->where('grade', 'A')
                                     ->orderByDesc('terjual')
                                     ->orderBy('nama_obat')
                                     ->limit(8)
@@ -34,11 +37,14 @@ class HomeController extends Controller
         $promoProducts = Schema::hasTable('promo_products') ? PromoProduct::aktif()->get() : collect();
         $banners = Schema::hasTable('banners') ? Banner::aktif()->get() : collect();
         $discountedProducts = Medicine::nonPbf()
+            ->availableForB2c()
             ->where('promo_b2c_percent', '>', 0)
             ->orderByDesc('promo_b2c_percent')
             ->orderByDesc('terjual')
             ->limit(8)
             ->get();
+
+        StockAvailability::annotate($featuredProducts->concat($discountedProducts)->unique('id'));
 
         return view('home', compact('featuredProducts', 'kategoryCounts', 'totalProducts', 'promoProducts', 'discountedProducts', 'banners'));
     }

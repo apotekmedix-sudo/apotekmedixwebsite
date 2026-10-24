@@ -39,7 +39,7 @@ class AdminShoppingAccessCodeController extends Controller
         $duplicate = ShoppingAccessCode::query()
             ->where('id', '!=', $accessCode->id)
             ->get()
-            ->contains(fn (ShoppingAccessCode $existing) => $existing->readCode() === $code);
+            ->contains(fn (ShoppingAccessCode $existing) => $existing->matchesCode($code));
 
         if ($duplicate) {
             return back()->withErrors([

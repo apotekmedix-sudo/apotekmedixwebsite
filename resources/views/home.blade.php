@@ -662,6 +662,54 @@
 .btn-cart { border-color:#0052cc;color:#0052cc; }
 .btn-cart:hover { background:#eff6ff; }
 .sec-link { color:#0052cc; }
+.featured-track .product-unit-section { margin:.55rem 0; text-align:left; }
+.featured-track .product-unit-heading { color:#64748b; font-size:.7rem; }
+.featured-track .product-unit-grid { grid-template-columns:repeat(auto-fit,minmax(74px,1fr)); }
+.featured-track .product-unit-grid-1 { grid-template-columns:minmax(92px,1fr); }
+.featured-track .product-unit-card { gap:.35rem; padding:.45rem; }
+.featured-track .product-unit-card.is-selected { border-color:#1e88e5; background:#eff6ff; box-shadow:0 0 0 1px #1e88e5; }
+.featured-track .product-unit-choice { min-height:2.7rem; }
+.featured-track .product-unit-name,.featured-track .product-unit-price { font-size:.72rem; }
+.featured-track .product-unit-quantity { border-color:#dbe3ec; }
+.featured-track .product-unit-quantity button { width:1.35rem; height:1.35rem; cursor:pointer; }
+.featured-track .product-unit-quantity input { width:2.2rem; }
+.featured-track .prod-body { gap:.35rem; }
+.featured-track .prod-name { min-height:2.4em; }
+.featured-track .product-stock { align-self:flex-start; margin:.15rem 0; }
+.home-product-section-description { margin:.35rem 0 0; color:#64748b; font-size:.82rem; }
+.discounted-products-section { padding:2.75rem 0; background:#f8fafc; border-block:1px solid #e2e8f0; }
+.discounted-products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(205px,1fr)); gap:1rem; align-items:stretch; }
+.discounted-product-card { position:relative; display:flex; min-width:0; flex-direction:column; overflow:hidden; border:1px solid #e2e8f0; border-radius:14px; background:#fff; box-shadow:0 5px 16px rgba(15,23,42,.06); transition:transform .2s,box-shadow .2s,border-color .2s; }
+.discounted-product-card:hover { transform:translateY(-3px); border-color:#bfdbfe; box-shadow:0 12px 26px rgba(15,23,42,.1); }
+.discounted-product-image { position:relative; display:flex; height:155px; align-items:center; justify-content:center; overflow:hidden; background:linear-gradient(135deg,#eff6ff,#ecfeff); }
+.discounted-product-image img { width:100%; height:100%; object-fit:contain; padding:1rem; }
+.discounted-product-badge { position:absolute; top:.65rem; left:.65rem; z-index:1; padding:.3rem .55rem; border-radius:999px; background:#ef4444; color:#fff; font-size:.72rem; font-weight:800; }
+.discounted-product-body { display:flex; flex:1; flex-direction:column; padding:.85rem; }
+.discounted-product-brand { overflow:hidden; margin-bottom:.35rem; color:#1d4ed8; font-size:.7rem; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+.discounted-product-name { min-height:2.5em; margin:0 0 .3rem; color:#1e293b; font-size:.9rem; line-height:1.35; }
+.discounted-product-prices { display:flex; align-items:baseline; gap:.45rem; flex-wrap:wrap; margin:.1rem 0 .25rem; }
+.discounted-product-old-price { color:#94a3b8; font-size:.74rem; text-decoration:line-through; }
+.discounted-product-current-price { color:#087f9c; font-size:1rem; font-weight:800; }
+.discounted-product-body .product-unit-section { margin:.4rem 0; }
+.discounted-product-body .product-unit-grid { grid-template-columns:repeat(auto-fit,minmax(68px,1fr)); }
+.discounted-product-body .product-unit-grid-1 { grid-template-columns:minmax(92px,1fr); }
+.discounted-product-body .product-unit-choice { min-height:2.5rem; }
+.discounted-product-body .product-unit-name,.discounted-product-body .product-unit-price { font-size:.7rem; }
+.discounted-product-body .product-stock { align-self:flex-start; margin:.35rem 0 .55rem; }
+.discounted-product-actions { display:grid; gap:.45rem; margin-top:auto; }
+.discounted-product-actions a,.discounted-product-actions button { display:flex; min-height:38px; align-items:center; justify-content:center; gap:.4rem; padding:.55rem; border:0; border-radius:8px; font-size:.78rem; font-weight:700; text-align:center; text-decoration:none; cursor:pointer; }
+.discounted-product-actions a { color:#1d4ed8; background:#eff6ff; }
+.discounted-product-actions a:hover { background:#dbeafe; }
+.discounted-product-actions button { color:#fff; background:#0f172a; }
+.discounted-product-actions button:hover { background:#1e293b; }
+@media(max-width:600px) {
+    .discounted-products-section { padding:2rem 0; }
+    .discounted-products-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; }
+    .discounted-product-image { height:125px; }
+    .discounted-product-body { padding:.65rem; }
+    .discounted-product-name { font-size:.82rem; }
+    .discounted-product-body .product-unit-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
 @media(max-width:768px) {
     .home-brand-hero { margin:.25rem .8rem .5rem;padding:1.75rem 1.25rem; }
     .home-brand-hero-mark { width:150px;height:150px;flex-basis:150px; }
@@ -688,6 +736,7 @@
     .promo-photo-card { width:235px;height:136px; }
 }
 </style>
+@include('partials.product-card-styles')
 @endsection
 
 @section('content')
@@ -1525,8 +1574,9 @@
   <div class="container">
     <div class="featured-header">
       <div class="sec-head-left">
-        <span class="sec-tag">🔥 Terlaris</span>
-        <h2 class="sec-title" style="margin:0;">Produk Unggulan</h2>
+        <span class="sec-tag">🔥 Terlaris B2C</span>
+        <h2 class="sec-title" style="margin:0;">Produk Terlaris</h2>
+        <p class="home-product-section-description">Produk pilihan untuk belanja retail B2C.</p>
       </div>
       <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
         @php $totalPages = ceil($featuredProducts->count() / 10); @endphp
@@ -1541,7 +1591,7 @@
           </button>
         </div>
         @endif
-        <a href="{{ route('products.index') }}" class="sec-link">Lihat Semua <i class="fa-solid fa-arrow-right"></i></a>
+        <a href="{{ route('products.apotek') }}" class="sec-link">Belanja B2C <i class="fa-solid fa-arrow-right"></i></a>
       </div>
     </div>
 
@@ -1568,13 +1618,13 @@
             @endphp
             <div class="prod-price" id="home-price-a-{{ $med->id }}">
               @if($med->getPromoPercent('b2c') > 0)<small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($homeBasePrice, 0, ',', '.') }}</small>@endif
-              Rp {{ number_format($homePromoPrice, 0, ',', '.') }}
+              <span id="home-price-current-a-{{ $med->id }}">Rp {{ number_format($homePromoPrice, 0, ',', '.') }}</span>
             </div>
-            @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-a-' . $med->id, 'priceTargetId' => 'home-price-a-' . $med->id, 'priceChannel' => 'b2c'])
-            @php $stock = (int) ($med->stock_base_units ?? $med->stok); @endphp
-            <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
+            @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-a-' . $med->id, 'priceTargetId' => 'home-price-current-a-' . $med->id, 'priceChannel' => 'b2c'])
+            @php $stock = (int) $med->available_stock_units; @endphp
+            <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $med->id }}">
               <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-              {{ $stock > 0 ? 'Stok: ' . $med->stock_breakdown : 'Stok habis' }}
+              {{ $stock > 0 ? 'Stok: ' . $med->getStockBreakdownForUnits($stock) : 'Stok habis' }}
             </span>
             @if($med->sediaan_label)
               <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.35rem;">
@@ -1582,7 +1632,7 @@
               </div>
             @endif
             <a href="{{ route('medicines.show', $med->id) }}" class="btn-detail">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-            <button class="btn-cart" data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $homePromoPrice }},'{{ $med->image_url ?: '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this,'home-unit-a-{{ $med->id }}')">
+            <button class="btn-cart" data-stock-cart @disabled($stock <= 0) data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $homePromoPrice }},'{{ $med->image_url ?: '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this,'home-unit-a-{{ $med->id }}')">
               <i class="fa-solid fa-cart-plus"></i> Keranjang
             </button>
           </div>
@@ -1608,8 +1658,8 @@
     @endif
 
     <div class="featured-cta">
-      <a href="{{ route('products.index') }}" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 2.25rem;background:linear-gradient(135deg,#1E88E5,#1565C0);color:#fff;border-radius:50px;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.25s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-        <i class="fa-solid fa-pills"></i> Lihat Semua Produk
+      <a href="{{ route('products.apotek') }}" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 2.25rem;background:linear-gradient(135deg,#1E88E5,#1565C0);color:#fff;border-radius:50px;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.25s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+        <i class="fa-solid fa-store"></i> Lihat Semua Produk B2C
       </a>
     </div>
   </div>
@@ -1675,39 +1725,54 @@
 
 {{-- PROMO HARGA PRODUK --}}
 @if(isset($discountedProducts) && $discountedProducts->isNotEmpty())
-<section class="discounted-products-section" style="padding:2.5rem 0;background:#f0fdfa;border-block:1px solid #ccfbf1;">
+<section class="discounted-products-section">
   <div class="container">
     <div class="featured-header">
       <div class="sec-head-left">
-        <span class="sec-tag" style="background:#ccfbf1;color:#0f766e;">🏷️ Promo Spesial</span>
-        <h2 class="sec-title" style="margin:0;">Produk Promo</h2>
-        <p style="margin:.35rem 0 0;color:#64748b;">Harga promo B2C yang diatur oleh admin Apotek Medix.</p>
+        <span class="sec-tag">🏷️ Promo B2C</span>
+        <h2 class="sec-title" style="margin:0;">Promo Produk</h2>
+        <p class="home-product-section-description">Harga retail spesial untuk belanja B2C.</p>
       </div>
-      <a href="{{ route('products.apotek') }}" class="sec-link">Belanja Sekarang <i class="fa-solid fa-arrow-right"></i></a>
+      <a href="{{ route('products.apotek') }}" class="sec-link">Lihat Semua Promo <i class="fa-solid fa-arrow-right"></i></a>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;">
+    <div class="discounted-products-grid">
       @foreach($discountedProducts as $promoMedicine)
         @php
           $promoBasePrice = $promoMedicine->getChannelBasePrice('b2c');
           $promoPrice = $promoMedicine->getChannelPromoPrice('b2c');
+          $promoUnitId = 'home-promo-unit-' . $promoMedicine->id;
         @endphp
-        <article style="position:relative;overflow:hidden;border:1px solid #d1fae5;border-radius:14px;background:#fff;box-shadow:0 5px 16px rgba(15,23,42,.06);">
-          <span style="position:absolute;z-index:1;top:.65rem;left:.65rem;padding:.3rem .55rem;border-radius:999px;background:#ef4444;color:#fff;font-size:.75rem;font-weight:800;">Diskon {{ $promoMedicine->getPromoPercent('b2c') }}%</span>
-          <a href="{{ route('medicines.show', $promoMedicine->id) }}" style="position:relative;display:block;height:145px;overflow:hidden;background:#f8fafc;">
+        <article class="discounted-product-card">
+          <span class="discounted-product-badge">Diskon {{ $promoMedicine->getPromoPercent('b2c') }}%</span>
+          <a class="discounted-product-image" href="{{ route('medicines.show', $promoMedicine->id) }}" aria-label="Lihat {{ $promoMedicine->nama_obat }}">
             @if($promoMedicine->gambar)
-              <img src="{{ $promoMedicine->image_url }}" alt="{{ $promoMedicine->nama_obat }}" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:1rem;transition:opacity .24s ease,transform .35s ease;">
+              <img src="{{ $promoMedicine->image_url }}" alt="{{ $promoMedicine->nama_obat }}" loading="lazy">
               @if(count($promoMedicine->image_gallery) > 1)
                 <img src="{{ url('storage/' . $promoMedicine->image_gallery[1]) }}" alt="{{ $promoMedicine->nama_obat }} - foto kedua" loading="lazy" class="promo-gallery-secondary">
               @endif
             @else
-              <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:1.5rem;">
+              <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix" loading="lazy">
             @endif
           </a>
-          <div style="padding:.85rem;">
-            <h3 style="min-height:2.6em;margin:0 0 .55rem;color:#1e293b;font-size:.9rem;line-height:1.4;">{{ $promoMedicine->nama_obat }}</h3>
-            <div style="font-size:.76rem;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($promoBasePrice, 0, ',', '.') }}</div>
-            <strong style="color:#0f766e;font-size:1rem;">Rp {{ number_format($promoPrice, 0, ',', '.') }}</strong>
-            <a href="{{ route('medicines.show', $promoMedicine->id) }}" style="display:block;margin-top:.65rem;padding:.55rem;text-align:center;border-radius:8px;background:#0052cc;color:#fff;text-decoration:none;font-size:.8rem;font-weight:700;">Lihat Produk</a>
+          <div class="discounted-product-body">
+            @if($promoMedicine->brand ?: $promoMedicine->kategori)
+              <span class="discounted-product-brand">{{ $promoMedicine->brand ?: $promoMedicine->kategori }}</span>
+            @endif
+            <h3 class="discounted-product-name">{{ $promoMedicine->nama_obat }}</h3>
+            <div class="discounted-product-prices">
+              <span class="discounted-product-old-price">Rp {{ number_format($promoBasePrice, 0, ',', '.') }}</span>
+              <strong class="discounted-product-current-price" id="home-price-b-{{ $promoMedicine->id }}">Rp {{ number_format($promoPrice, 0, ',', '.') }}</strong>
+            </div>
+            @include('partials.product-unit-selector', ['medicine' => $promoMedicine, 'unitSelectId' => $promoUnitId, 'priceTargetId' => 'home-price-b-' . $promoMedicine->id, 'priceChannel' => 'b2c'])
+            @php $promoStock = (int) $promoMedicine->available_stock_units; @endphp
+            <span class="product-stock {{ $promoStock <= 0 ? 'empty' : ($promoStock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $promoMedicine->id }}">
+              <i class="fa-solid {{ $promoStock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
+              {{ $promoStock > 0 ? 'Stok: ' . $promoMedicine->getStockBreakdownForUnits($promoStock) : 'Stok habis' }}
+            </span>
+            <div class="discounted-product-actions">
+              <a href="{{ route('medicines.show', $promoMedicine->id) }}">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
+              <button class="btn-cart" data-stock-cart @disabled($promoStock <= 0) data-package-unit-label="{{ $promoMedicine->package_unit_label }}" onclick="addToCart({{ $promoMedicine->id }}, '{{ addslashes($promoMedicine->nama_obat) }}', {{ $promoPrice }}, '{{ $promoMedicine->image_url ?: '' }}', '{{ addslashes($promoMedicine->brand ?: $promoMedicine->kategori) }}', this, '{{ $promoUnitId }}')"><i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang</button>
+            </div>
           </div>
         </article>
       @endforeach
