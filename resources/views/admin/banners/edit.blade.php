@@ -1,6 +1,6 @@
 ﻿@extends('layouts.admin')
 @section('title', 'Edit Banner - Admin Apotek Medix')
-@section('page-title', 'ðŸ–¼ï¸ Edit Banner Promo')
+@section('page-title', '🖼️ Edit Banner Promo')
 
 @section('styles')
 <style>
@@ -65,7 +65,7 @@
             <p class="form-hint" style="margin-bottom:0.5rem;">Gambar saat ini:</p>
             <img src="{{ url('storage/'.$banner->gambar) }}" alt="{{ $banner->judul }}" class="current-img" id="currentImg">
             <input type="file" name="gambar" id="gambarInput" accept="image/*" class="form-control" onchange="previewImg(this)">
-            <p class="form-hint">Kosongkan jika tidak ingin mengganti gambar. Ukuran: 3998Ã—1224px</p>
+            <p class="form-hint">Kosongkan jika tidak ingin mengganti gambar. Ukuran: 3998×1224px</p>
             <img id="imgPreview" class="img-preview" src="#" alt="Preview Baru">
         </div>
 

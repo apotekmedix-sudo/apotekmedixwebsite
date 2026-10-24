@@ -31,8 +31,14 @@ class HomeController extends Controller
 
         // Promo produk aktif
         $promoProducts = Schema::hasTable('promo_products') ? PromoProduct::aktif()->get() : collect();
+        $discountedProducts = Medicine::nonPbf()
+            ->where('promo_b2c_percent', '>', 0)
+            ->orderByDesc('promo_b2c_percent')
+            ->orderByDesc('terjual')
+            ->limit(8)
+            ->get();
 
-        return view('home', compact('featuredProducts', 'kategoryCounts', 'totalProducts', 'promoProducts'));
+        return view('home', compact('featuredProducts', 'kategoryCounts', 'totalProducts', 'promoProducts', 'discountedProducts'));
     }
 
     // Halaman Tentang Kami

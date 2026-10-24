@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\AdminProdukImportController;
+use App\Http\Controllers\AdminProdukController;
 use App\Http\Controllers\HomeController;
 use App\Models\Medicine;
+use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -17,16 +19,43 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
     {
         parent::setUp();
 
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->rememberToken();
+            $table->string('role')->default('customer');
+            $table->timestamps();
+        });
+
         Schema::create('medicines', function (Blueprint $table) {
             $table->id();
             $table->string('sku')->nullable();
+            $table->string('distributor')->nullable();
             $table->string('nama_obat');
+            $table->string('logo')->nullable();
+            $table->string('golongan')->nullable();
+            $table->string('satuan')->nullable();
+            $table->string('kemasan')->nullable();
             $table->string('sediaan')->nullable();
             $table->string('kelompok')->nullable();
             $table->string('kategori')->nullable();
             $table->string('brand')->nullable();
             $table->string('kategori_produk')->nullable();
             $table->decimal('harga', 12, 2)->default(0);
+            $table->decimal('harga_internal', 12, 2)->nullable();
+            $table->decimal('harga_modal', 12, 2)->default(0);
+            $table->decimal('harga_grosir', 12, 2)->default(0);
+            $table->decimal('harga_retail', 12, 2)->default(0);
+            $table->boolean('unit_packaging_enabled')->default(false);
+            $table->unsignedInteger('tablets_per_strip')->nullable();
+            $table->unsignedInteger('strips_per_box')->nullable();
+            $table->decimal('price_tablet', 12, 2)->nullable();
+            $table->decimal('price_strip', 12, 2)->nullable();
+            $table->decimal('price_box', 12, 2)->nullable();
+            $table->unsignedInteger('stock_base_units')->nullable();
             $table->integer('stok')->default(0);
             $table->integer('terjual')->default(0);
             $table->string('grade')->nullable();
@@ -34,6 +63,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             $table->text('komposisi')->nullable();
             $table->text('indikasi')->nullable();
             $table->string('gambar')->nullable();
+            $table->json('gambar_tambahan')->nullable();
             $table->timestamps();
         });
     }
@@ -41,6 +71,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
     protected function tearDown(): void
     {
         Schema::dropIfExists('medicines');
+        Schema::dropIfExists('users');
         parent::tearDown();
     }
 
@@ -92,4 +123,213 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertCount(1, $featuredProducts);
         $this->assertSame('Obat Grade A', $featuredProducts->first()->nama_obat);
     }
+
+    public function test_import_maps_channel_prices_and_package_units_from_new_template(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'import');
+        file_put_contents($path, implode("\n", [
+            'NO,PRINCIPLE,NAMA PRODUK,LOGO,GOLONGAN,KOMPOSISI,INDIKASI,SATUAN,KEMASAN,SEDIAAN,STOK SATUAN,PER STRIP,PER TABLET,MODAL,HARGA JUAL INTERNAL,HARGA JUAL B2B,HARGA JUAL B2C,HARGA JUAL PER STRIP,HARGA JUAL PER TABLET',
+            '1,PT KALBE FARMA,Promag Tablet,HIJAU,Obat Bebas,"Antasida, Simetikon","Meredakan sakit maag, dan perih",BOX,10 blister @ 6 tablet,TABLET,2,10,60,100000,123000,130000,140000,16000,1600',
+        ]) . "\n");
+
+        $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        $response = (new AdminProdukImportController())->import($request);
+
+        $this->assertTrue($response->isRedirect());
+        $errors = $response->getSession()->get('errors');
+        $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
+
+        $product = Medicine::where('nama_obat', 'Promag Tablet')->firstOrFail();
+        $this->assertSame('HIJAU', $product->logo);
+        $this->assertSame('Obat Bebas', $product->golongan);
+        $this->assertSame('Antasida, Simetikon', $product->komposisi);
+        $this->assertSame(123000.0, $product->getChannelBasePrice('internal'));
+        $this->assertSame(130000.0, $product->getChannelBasePrice('b2b'));
+        $this->assertSame(16000.0, $product->getChannelBasePrice('b2c', 'strip'));
+        $this->assertSame(120, (int) $product->stock_base_units);
+
+        @unlink($path);
+    }
+
+    public function test_downloaded_excel_template_can_be_imported_as_is(): void
+    {
+        $controller = new AdminProdukImportController();
+        $template = $controller->downloadTemplate();
+        $path = tempnam(sys_get_temp_dir(), 'template');
+        file_put_contents($path, $template->getContent());
+
+        $file = new UploadedFile(
+            $path,
+            'template_produk.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        $response = $controller->import($request);
+
+        $this->assertTrue($response->isRedirect());
+        $errors = $response->getSession()->get('errors');
+        $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
+        $this->assertDatabaseHas('medicines', [
+            'nama_obat' => 'Promag Tablet',
+            'harga_grosir' => 135437,
+            'harga_retail' => 153102,
+            'price_box' => 153102,
+            'price_strip' => 16841,
+            'price_tablet' => 15463,
+            'golongan' => 'Obat Bebas',
+        ]);
+        $this->assertDatabaseHas('medicines', [
+            'nama_obat' => 'Anakod Sirup',
+            'satuan' => 'BOTOL',
+            'unit_packaging_enabled' => false,
+        ]);
+
+        @unlink($path);
+    }
+
+    public function test_reimporting_xlsx_updates_existing_unassigned_product_and_keeps_each_price_column_aligned(): void
+    {
+        $product = Medicine::create([
+            'nama_obat' => 'Promag Tablet',
+            'kategori' => 'PT KALBE FARMA',
+            'harga' => 123660,
+            'harga_retail' => 15310230000000000,
+            'harga_internal' => 123660,
+            'harga_grosir' => 135437,
+            'kelompok' => null,
+            'stok' => 1,
+        ]);
+        $template = (new AdminProdukImportController())->downloadTemplate();
+        $path = tempnam(sys_get_temp_dir(), 'template');
+        file_put_contents($path, $template->getContent());
+
+        $file = new UploadedFile(
+            $path,
+            'template_produk.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        $response = (new AdminProdukImportController())->import($request);
+
+        $errors = $response->getSession()->get('errors');
+        $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
+        $this->assertSame(1, Medicine::where('nama_obat', 'Promag Tablet')->count());
+        $product->refresh();
+        $this->assertSame(153102.0, (float) $product->harga_retail);
+        $this->assertSame(153102.0, (float) $product->price_box);
+        $this->assertSame(16841.0, (float) $product->price_strip);
+        $this->assertSame(15463.0, (float) $product->price_tablet);
+        $this->assertSame(153102.0, $product->getChannelBasePrice('b2c', 'box'));
+        $this->assertSame(16841.0, $product->getChannelBasePrice('b2c', 'strip'));
+        $this->assertSame(15463.0, $product->getChannelBasePrice('b2c', 'tablet'));
+
+        @unlink($path);
+    }
+
+    public function test_product_crud_saves_all_template_fields_and_channel_prices(): void
+    {
+        $payload = [
+            'nama_obat' => 'Produk CRUD',
+            'kategori' => 'PT Kalbe Farma',
+            'logo' => 'HIJAU',
+            'golongan' => 'Obat Bebas',
+            'satuan' => 'BOX',
+            'kemasan' => '10 strip @ 10 tablet',
+            'sediaan' => 'TABLET',
+            'komposisi' => 'Komposisi contoh',
+            'indikasi' => 'Indikasi contoh',
+            'harga_modal' => 117771,
+            'harga_internal' => 123660,
+            'harga_grosir' => 135437,
+            'harga_retail' => 153102,
+            'stok' => 10,
+            'strips_per_box' => 10,
+            'tablets_per_box' => 100,
+            'price_strip' => 16841,
+            'price_tablet' => 15463,
+        ];
+        $controller = new AdminProdukController();
+        $payload['gambar'] = [
+            UploadedFile::fake()->create('produk-utama.jpg', 100, 'image/jpeg'),
+            UploadedFile::fake()->create('produk-kedua.png', 100, 'image/png'),
+        ];
+        $response = $controller->store(Request::create('/', 'POST', $payload, [], [
+            'gambar' => $payload['gambar'],
+        ]));
+
+        $this->assertTrue($response->isRedirect());
+        $product = Medicine::where('nama_obat', 'Produk CRUD')->firstOrFail();
+        $this->assertCount(2, $product->image_gallery);
+        $this->assertSame('OBAT', $product->kategori_produk);
+        $this->assertSame('HIJAU', $product->logo);
+        $this->assertSame('Obat Bebas', $product->golongan);
+        $this->assertSame('10 strip @ 10 tablet', $product->kemasan);
+        $this->assertSame(10, (int) $product->strips_per_box);
+        $this->assertSame(10, (int) $product->tablets_per_strip);
+        $this->assertSame(1000, (int) $product->stock_base_units);
+        $this->assertSame(123660.0, $product->getChannelBasePrice('internal'));
+        $this->assertSame(135437.0, $product->getChannelBasePrice('b2b'));
+        $this->assertSame(153102.0, $product->getChannelBasePrice('b2c'));
+
+        $product->forceFill([
+            'kelompok' => 'PBF',
+            'sku' => 'CRUD-001',
+            'grade' => 'A',
+            'terjual' => 4,
+            'distributor' => 'Distributor Lama',
+        ])->save();
+        $payload['nama_obat'] = 'Produk CRUD Diperbarui';
+        $payload['logo'] = 'MERAH';
+        unset($payload['gambar']);
+        $controller->update(Request::create('/', 'PUT', $payload), $product);
+        $product->refresh();
+        $this->assertSame('Produk CRUD Diperbarui', $product->nama_obat);
+        $this->assertSame('MERAH', $product->logo);
+        $this->assertSame('PBF', $product->kelompok);
+        $this->assertSame('CRUD-001', $product->sku);
+        $this->assertSame('A', $product->grade);
+        $this->assertSame(4, (int) $product->terjual);
+        $this->assertSame('Distributor Lama', $product->distributor);
+
+        $controller->updateInline(new Request([
+            'harga_modal' => 120000,
+            'harga_internal' => 124000,
+            'harga_grosir' => 136000,
+            'harga_retail' => 154000,
+            'stok' => 9,
+        ]), $product);
+        $product->refresh();
+        $this->assertSame(124000.0, $product->getChannelBasePrice('internal'));
+        $this->assertSame(136000.0, $product->getChannelBasePrice('b2b'));
+
+        foreach ($product->image_gallery as $image) {
+            \App\Helpers\ImageHelper::deleteProductImage($image);
+        }
+        $this->assertSame(154000.0, $product->getChannelBasePrice('b2c'));
+    }
+
+    public function test_admin_product_index_loads_without_missing_company_class(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.produk.index'))
+            ->assertOk()
+            ->assertSee('Produk Kami');
+    }
+
 }

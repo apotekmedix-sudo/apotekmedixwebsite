@@ -1,7 +1,7 @@
 ﻿@extends('layouts.admin')
 
 @section('title', 'Tambah Produk - Admin Apotek Medix')
-@section('page-title', 'âž• Tambah Produk')
+@section('page-title', '➕ Tambah Produk')
 
 @section('styles')
 <style>
@@ -33,7 +33,7 @@
     .btn-save:hover { background:#1565C0; transform:translateY(-1px); }
     .btn-cancel { display:inline-flex; align-items:center; gap:0.4rem; padding:0.6rem 1.25rem; background:white; color:#6b7280; border:1px solid #e5e7eb; border-radius:0.5rem; font-size:0.9rem; font-weight:600; text-decoration:none; transition:all 0.2s; }
     .btn-cancel:hover { background:#f9fafb; color:#374151; }
-    .two-col-layout { display:grid; grid-template-columns:1fr 340px; gap:1.25rem; align-items:start; }
+    .two-col-layout { display:grid; grid-template-columns:1fr; gap:1.25rem; align-items:start; }
     /* Kategori selector cards */
     .kat-selector { display:grid; grid-template-columns:repeat(3,1fr); gap:0.6rem; }
     .kat-card { border:2px solid #e5e7eb; border-radius:0.6rem; padding:0.75rem 0.5rem; text-align:center; cursor:pointer; transition:all 0.2s; background:white; }
@@ -43,7 +43,6 @@
     .kat-card .kat-icon { font-size:1.5rem; display:block; margin-bottom:0.3rem; }
     .kat-card .kat-label { font-size:0.72rem; font-weight:700; color:#374151; line-height:1.3; }
     .kat-card.selected .kat-label { color:#1565C0; }
-    @media (max-width:900px) { .two-col-layout { grid-template-columns:1fr; } }
     @media (max-width:600px) { .form-grid { grid-template-columns:1fr; } .form-body { padding:1rem; } .form-footer { padding:1rem; } .kat-selector { grid-template-columns:1fr 1fr; } }
 </style>
 @endsection
@@ -51,7 +50,7 @@
 @section('content')
 
 <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:#9ca3af;margin-bottom:1.25rem;">
-    <a href="{{ route('admin.produk.index') }}" style="color:#1E88E5;text-decoration:none;font-weight:600;">ðŸ›’ Produk Kami</a>
+    <a href="{{ route('admin.produk.index') }}" style="color:#1E88E5;text-decoration:none;font-weight:600;">🛒 Produk Kami</a>
     <i class="fa-solid fa-chevron-right" style="font-size:0.65rem;"></i>
     <span style="color:#374151;font-weight:600;">Tambah Produk</span>
 </div>
@@ -60,7 +59,6 @@
     @csrf
     <div class="two-col-layout">
 
-        {{-- Kiri: Info --}}
         <div class="form-card">
             <div class="form-card-header">
                 <div class="header-icon"><i class="fa-solid fa-circle-info"></i></div>
@@ -69,21 +67,25 @@
             <div class="form-body">
 
                 <div class="form-group">
-                    <label class="form-label">Distributor</label>
-                    <input type="text" name="distributor" class="form-input {{ $errors->has('distributor') ? 'is-invalid' : '' }}"
-                           placeholder="Contoh: PT. Kimia Farma" value="{{ old('distributor') }}">
-                    @error('distributor')
-                        <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
                     <label class="form-label">Principle / Pabrik <span class="req">*</span></label>
                     <input type="text" name="kategori" class="form-input {{ $errors->has('kategori') ? 'is-invalid' : '' }}"
                            placeholder="Contoh: KIMIA FARMA / WARDAH / OMRON" value="{{ old('kategori') }}" required>
                     @error('kategori')
                         <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                     @enderror
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Logo / Penanda</label>
+                        <input type="text" name="logo" class="form-input" placeholder="Contoh: HIJAU" value="{{ old('logo') }}">
+                        @error('logo')<div class="form-error">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Golongan</label>
+                        <input type="text" name="golongan" class="form-input" placeholder="Contoh: Obat Bebas" value="{{ old('golongan') }}">
+                        @error('golongan')<div class="form-error">{{ $message }}</div>@enderror
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -96,33 +98,29 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Satuan / Sediaan</label>
+                    @include('admin.partials.product-image-uploader', ['medicine' => null])
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Satuan Kemasan</label>
+                        <input type="text" id="product-package-unit" name="satuan" class="form-input" placeholder="Contoh: BOX, BOTOL, TUBE" value="{{ old('satuan') }}">
+                        @error('satuan')<div class="form-error">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Kemasan</label>
+                        <input type="text" name="kemasan" class="form-input" placeholder="Contoh: 10 blister @ 10 tablet" value="{{ old('kemasan') }}">
+                        @error('kemasan')<div class="form-error">{{ $message }}</div>@enderror
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Sediaan</label>
                     <input type="text" name="sediaan"
                            class="form-input {{ $errors->has('sediaan') ? 'is-invalid' : '' }}"
                            placeholder="Contoh: fls, box, tube, pcs atau ketik bebas"
                            value="{{ old('sediaan') }}">
                     @error('sediaan')
-                        <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Kelompok</label>
-                    <select name="kelompok" class="form-input {{ $errors->has('kelompok') ? 'is-invalid' : '' }}">
-                        <option value="">â€” Pilih Kelompok â€”</option>
-                        <option value="PBF"    {{ old('kelompok') == 'PBF'    ? 'selected' : '' }}>PBF</option>
-                        <option value="APOTEK" {{ old('kelompok') == 'APOTEK' ? 'selected' : '' }}>APOTEK</option>
-                    </select>
-                    @error('kelompok')
-                        <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Deskripsi Produk</label>
-                    <textarea name="deskripsi" class="form-input {{ $errors->has('deskripsi') ? 'is-invalid' : '' }}" rows="3"
-                              placeholder="Contoh: Obat pereda demam dan nyeri ringan.">{{ old('deskripsi') }}</textarea>
-                    @error('deskripsi')
                         <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                     @enderror
                 </div>
@@ -133,53 +131,33 @@
                         <input type="number" name="harga_modal" class="form-input" placeholder="4000" step="1" min="0" value="{{ old('harga_modal') }}">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Harga Retail / box (Rp)</label>
-                        <input type="number" name="harga" class="form-input {{ $errors->has('harga') ? 'is-invalid' : '' }}"
-                               placeholder="5000" step="1" min="0" value="{{ old('harga') }}">
-                        @error('harga')
+                        <label class="form-label">Harga Jual Internal (Rp) <span class="req">*</span></label>
+                        <input type="number" name="harga_internal" class="form-input {{ $errors->has('harga_internal') ? 'is-invalid' : '' }}"
+                               placeholder="5000" step="1" min="0" value="{{ old('harga_internal', old('harga')) }}">
+                        @error('harga_internal')
                             <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                         @enderror
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Stok (box) <span class="req">*</span></label>
+                        <label class="form-label">Harga Jual B2B (Rp)</label>
+                        <input type="number" name="harga_grosir" class="form-input" step="1" min="0" value="{{ old('harga_grosir') }}">
+                        @error('harga_grosir')<div class="form-error">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Harga Jual B2C (Rp)</label>
+                        <input type="number" name="harga_retail" class="form-input" step="1" min="0" value="{{ old('harga_retail') }}">
+                        @error('harga_retail')<div class="form-error">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Stok (<span data-stock-unit-label>{{ old('satuan') ?: 'kemasan' }}</span>) <span class="req">*</span></label>
                         <input type="number" name="stok" class="form-input {{ $errors->has('stok') ? 'is-invalid' : '' }}"
-                               placeholder="100" min="0" step="0.000001" value="{{ old('stok') }}" required>
-                        <small>Stok dicatat dalam box; sisa satuan kecil tampil setelah terjadi penjualan.</small>
+                               placeholder="100" min="0" step="1" value="{{ old('stok') }}" required>
+                        <small>Jumlah mengikuti satuan kemasan di atas, misalnya box, botol, atau tube.</small>
                         @error('stok')
                             <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                         @enderror
                     </div>
                     @include('admin.partials.packaging-fields', ['medicine' => null])
-                </div>
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">SKU</label>
-                        <input type="text" name="sku" class="form-input {{ $errors->has('sku') ? 'is-invalid' : '' }}"
-                               placeholder="Contoh: SKU-001" value="{{ old('sku') }}">
-                        @error('sku')
-                            <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Terjual</label>
-                        <input type="number" name="terjual" class="form-input {{ $errors->has('terjual') ? 'is-invalid' : '' }}"
-                               placeholder="0" min="0" value="{{ old('terjual', 0) }}">
-                        @error('terjual')
-                            <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Grade</label>
-                        <input type="text" name="grade" class="form-input {{ $errors->has('grade') ? 'is-invalid' : '' }}"
-                               placeholder="Contoh: A / B / C" value="{{ old('grade') }}">
-                        @error('grade')
-                            <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
-                        @enderror
-                    </div>
                 </div>
 
                 <div class="form-group">
@@ -194,27 +172,6 @@
                               placeholder="Contoh: Meredakan demam dan nyeri ringan hingga sedang...">{{ old('indikasi') }}</textarea>
                 </div>
 
-                {{-- Kategori Produk --}}
-                <div class="form-group">
-                    <label class="form-label">Kategori Produk / Resep <span class="req">*</span></label>
-                    <div class="kat-selector" id="katSelector">
-                        @foreach($kategoriOptions as $kat)
-                            @php
-                                $icon = match($kat) { 'OBAT' => 'ðŸ’Š', 'SKINCARE & KOSMETIK' => 'âœ¨', 'ALAT KESEHATAN' => 'ðŸ©º', default => 'ðŸ“¦' };
-                                $isSelected = old('kategori_produk', 'OBAT') === $kat;
-                            @endphp
-                            <label class="kat-card {{ $isSelected ? 'selected' : '' }}" onclick="selectKat(this)">
-                                <input type="radio" name="kategori_produk" value="{{ $kat }}" {{ $isSelected ? 'checked' : '' }}>
-                                <span class="kat-icon">{{ $icon }}</span>
-                                <span class="kat-label">{{ $kat }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                    @error('kategori_produk')
-                        <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
-                    @enderror
-                </div>
-
             </div>
             <div class="form-footer">
                 <button type="submit" class="btn-save">
@@ -226,63 +183,18 @@
             </div>
         </div>
 
-        {{-- Kanan: Foto --}}
-        <div class="form-card">
-            <div class="form-card-header">
-                <div class="header-icon"><i class="fa-solid fa-image"></i></div>
-                <h3>Logo (LOGO)</h3>
-            </div>
-            <div class="form-body">
-                <div class="upload-zone" id="dropZone" onclick="document.getElementById('gambar').click()">
-                    <div class="upload-icon">ðŸ“¸</div>
-                    <p>Klik atau drag & drop gambar di sini</p>
-                    <button type="button" class="btn-choose" onclick="event.stopPropagation();document.getElementById('gambar').click()">
-                        <i class="fa-solid fa-folder-open"></i> Pilih File
-                    </button>
-                    <small>JPG, PNG, GIF â€” Maks. 10MB</small>
-                </div>
-                <input type="file" id="gambar" name="gambar" accept="image/*" style="display:none;">
-                @error('gambar')
-                    <div class="form-error" style="margin-top:0.5rem;"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
-                @enderror
-                <div class="img-preview-wrap" id="imgPreviewWrap">
-                    <span class="img-preview-label">Preview</span>
-                    <img id="previewImg" src="" alt="Preview">
-                </div>
-                <div style="margin-top:1rem;padding:0.75rem;background:#f8faff;border-radius:0.5rem;border:1px solid #e3f2fd;">
-                    <p style="font-size:0.78rem;color:#6b7280;margin:0;line-height:1.6;">
-                        <i class="fa-solid fa-circle-info" style="color:#1E88E5;margin-right:0.3rem;"></i>
-                        Foto opsional. Jika tidak diupload, akan ditampilkan ikon default.
-                    </p>
-                </div>
-            </div>
-        </div>
-
     </div>
 </form>
 
+@endsection
+
+@section('scripts')
 <script>
-function selectKat(el) {
-    document.querySelectorAll('.kat-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    el.querySelector('input[type=radio]').checked = true;
-}
-const input = document.getElementById('gambar');
-const dropZone = document.getElementById('dropZone');
-const previewWrap = document.getElementById('imgPreviewWrap');
-const previewImg = document.getElementById('previewImg');
-function showPreview(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => { previewImg.src = e.target.result; previewWrap.style.display = 'block'; };
-    reader.readAsDataURL(file);
-}
-input.addEventListener('change', e => showPreview(e.target.files[0]));
-['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('drag-over'); }));
-['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('drag-over'); }));
-dropZone.addEventListener('drop', e => {
-    const file = e.dataTransfer.files[0];
-    if (file) { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; showPreview(file); }
-});
+    document.getElementById('product-package-unit')?.addEventListener('input', function () {
+        const label = this.value.trim() || 'kemasan';
+        document.querySelectorAll('[data-stock-unit-label]').forEach((element) => {
+            element.textContent = label;
+        });
+    });
 </script>
 @endsection

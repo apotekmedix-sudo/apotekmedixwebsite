@@ -84,6 +84,12 @@
         height: 100%;
         object-fit: cover;
     }
+    .detail-image img.detail-gallery-main { transition:opacity .2s ease; }
+    .detail-image img.detail-gallery-main { object-fit:contain; }
+    .detail-gallery-thumbnails { display:flex; flex-wrap:wrap; justify-content:center; gap:.55rem; max-width:340px; width:100%; }
+    .detail-gallery-thumb { width:58px; height:58px; padding:0; overflow:hidden; border:2px solid transparent; border-radius:10px; background:#fff; cursor:pointer; transition:border-color .2s,transform .2s; }
+    .detail-gallery-thumb:hover,.detail-gallery-thumb.active { transform:translateY(-2px); border-color:#1E88E5; }
+    .detail-gallery-thumb img { width:100%; height:100%; object-fit:cover; }
 
     .detail-info {
         padding: 2rem;
@@ -361,12 +367,21 @@
             <!-- Image Column -->
             <div class="detail-image-col">
                 <div class="detail-image">
-                    @if($medicine->gambar)
-                        <img src="{{ url('storage/' . $medicine->gambar) }}" alt="{{ $medicine->nama_obat }}">
+                    @if($medicine->image_gallery)
+                        <img class="detail-gallery-main" id="detailGalleryMain" src="{{ $medicine->image_url }}" alt="{{ $medicine->nama_obat }}">
                     @else
                         <i class="fa-solid fa-pills" style="color:#90caf9;font-size:4rem;"></i>
                     @endif
                 </div>
+                @if(count($medicine->image_gallery) > 1)
+                    <div class="detail-gallery-thumbnails" aria-label="Foto produk lainnya">
+                        @foreach($medicine->image_gallery as $index => $path)
+                            <button type="button" class="detail-gallery-thumb {{ $index === 0 ? 'active' : '' }}" data-image-url="{{ $index === 0 ? $medicine->image_url : url('storage/' . $path) }}" aria-label="Tampilkan foto produk {{ $index + 1 }}">
+                                <img src="{{ $index === 0 ? $medicine->image_url : url('storage/' . $path) }}" alt="Foto {{ $index + 1 }} {{ $medicine->nama_obat }}">
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
 
                 @if($medicine->deskripsi)
                 <div class="detail-desc">
@@ -469,9 +484,17 @@
 </div>
 
 @endsection
-
 @section('scripts')
 <script>
+document.querySelectorAll('.detail-gallery-thumb').forEach(button => {
+    button.addEventListener('click', () => {
+        const mainImage = document.getElementById('detailGalleryMain');
+        if (!mainImage) return;
+        mainImage.src = button.dataset.imageUrl;
+        document.querySelectorAll('.detail-gallery-thumb').forEach(thumb => thumb.classList.toggle('active', thumb === button));
+    });
+});
+
     const hargaSatuan = {{ $medicine->harga }};
     const stokMax     = 999999;
     const namaObat    = @json($medicine->nama_obat);
@@ -520,7 +543,7 @@
             'Alamat Pengiriman:\n' + alamat + '\n\n' +
             'Mohon konfirmasi info pengiriman. Terima kasih!';
 
-        window.open('https://wa.me/6285890007359?text=' + encodeURIComponent(pesan), '_blank');
+        window.open('https://wa.me/6285882717844?text=' + encodeURIComponent(pesan), '_blank', 'noopener');
     }
 
     document.querySelector('.detail-info a[href]').addEventListener('mouseover', function() {

@@ -28,13 +28,17 @@ class AuthController extends Controller
 
             if (!$user->isAdmin()) {
                 Auth::logout();
-                return back()->with('error', 'Anda tidak memiliki akses ke admin panel');
+                return back()
+                    ->with('error', 'Anda tidak memiliki akses ke admin panel')
+                    ->withInput($request->only('email', 'password'));
             }
 
             return redirect()->route('admin.dashboard')->with('success', 'Selamat datang Admin!');
         }
 
-        return back()->with('error', 'Email atau password salah');
+        return back()
+            ->with('error', 'Email atau password salah')
+            ->withInput($request->only('email', 'password'));
     }
 
     public function logout()

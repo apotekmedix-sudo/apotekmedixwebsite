@@ -416,13 +416,14 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            min-height: 100dvh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #F8FAFC;
             color: var(--dark);
         }
 
         main {
-            flex: 1;
+            flex: 1 0 auto;
         }
 
         /* Semua konten di atas canvas */
@@ -682,16 +683,46 @@
             background: #0F172A !important;
             color: white;
             padding: 3rem 0;
-            margin-top: 4rem;
+            margin-top: auto;
+            margin-bottom: -1.5rem;
             position: relative;
             z-index: 1;
         }
 
         .footer-content {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
+            grid-template-columns: minmax(220px, 1.25fr) repeat(2, minmax(150px, .8fr)) minmax(240px, 1fr);
+            gap: clamp(1.25rem, 3vw, 2.5rem);
+            margin-bottom: 2.25rem;
+        }
+
+        .footer .container { max-width: 1280px; }
+        .footer-content > div { min-width: 0; }
+        .footer-content > div:first-child > p { max-width: 34ch; }
+        .footer ul { margin: 0; padding: 0; }
+        .footer ul li { line-height: 1.6; }
+        .footer ul a.footer-contact-link { color:#d1d5db;text-decoration:none;display:flex;align-items:flex-start;gap:.65rem;overflow-wrap:anywhere; }
+        .footer ul a.footer-contact-link:hover { color:#fff; }
+        .footer-contact-link i { color:#10B981;margin-top:.25rem;flex:0 0 1rem;text-align:center; }
+        .footer-address-link { align-items:flex-start; }
+        .footer-bottom { padding-top:1.35rem; }
+
+        @media (max-width: 900px) {
+            .footer-content { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 560px) {
+            .footer { padding:2.25rem 0 1.5rem; }
+            .footer-content { grid-template-columns:1fr 1fr;gap:1.5rem 1rem;margin-bottom:1.5rem; }
+            .footer-content > div:first-child { grid-column:1 / -1; }
+            .footer-content > div:first-child > p { max-width:42ch; }
+            .footer .footer-content h3 { margin-bottom:.75rem;font-size:1rem; }
+            .footer ul li { font-size:.88rem; }
+            .footer-contact-link { font-size:.85rem; }
+            .footer-bottom { padding-top:1rem;font-size:.85rem; }
+        }
+        @media (max-width: 360px) {
+            .footer-content { grid-template-columns:1fr; }
+            .footer-content > div:first-child { grid-column:auto; }
         }
 
         .footer h3 {
@@ -824,6 +855,48 @@
 
     @yield('styles')
     <style>
+        .medicine-image,
+        .product-img,
+        .prod-img,
+        .ordering-image {
+            position: relative;
+            overflow: hidden;
+        }
+        .product-gallery-link {
+            position: absolute;
+            inset: 0;
+            display: block;
+            overflow: hidden;
+            color: inherit;
+        }
+        .product-gallery-photo,
+        .product-gallery-link .product-placeholder-logo {
+            position: absolute;
+            inset: 0;
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain !important;
+            transition: opacity .7s cubic-bezier(.22, 1, .36, 1);
+            will-change: opacity;
+        }
+        .product-gallery-photo {
+            pointer-events: none;
+            transform: none !important;
+        }
+        .product-gallery-primary { opacity: 1; }
+        .product-gallery-secondary { opacity: 0; }
+        .product-gallery-link:hover .product-gallery-primary,
+        .product-gallery-link:focus-visible .product-gallery-primary { opacity: 0; }
+        .product-gallery-link:hover .product-gallery-secondary,
+        .product-gallery-link:focus-visible .product-gallery-secondary { opacity: 1; }
+        .medicine-name a,.prod-name a,.product-name a { color:inherit; text-decoration:none; }
+        .medicine-name a:hover,.prod-name a:hover,.product-name a:hover { color:#1d4ed8; }
+        .promo-gallery-secondary { position:absolute; inset:0; width:100%; height:100%; padding:1rem; object-fit:contain; opacity:0; transition:opacity .7s cubic-bezier(.22,1,.36,1); will-change:opacity; pointer-events:none; }
+        a:hover .promo-gallery-secondary,a:focus-visible .promo-gallery-secondary { opacity:1; }
+        @media (prefers-reduced-motion: reduce) {
+            .product-gallery-photo,.promo-gallery-secondary { transition-duration:.01ms; }
+        }
         body { color: #1E293B; background: #F8FAFC; }
         .navbar { background: #0F172A !important; border-bottom-color: #06B6D4 !important; }
         .navbar-menu.active { background: #0F172A !important; }
@@ -988,7 +1061,6 @@
             <ul class="navbar-menu" id="navbarMenu">
                 <li><a href="{{ route('home') }}"><i class="fa-solid fa-house"></i> Home</a></li>
                 <li><a href="{{ route('products.index') }}"><i class="fa-solid fa-pills"></i> Produk Kami</a></li>
-                <li><a href="{{ route('kiosk') }}"><i class="fa-solid fa-store"></i> Pesan di Toko</a></li>
                 <li><a href="{{ route('about') }}"><i class="fa-solid fa-circle-info"></i> Tentang Kami</a></li>
                 <li><a href="{{ route('contact') }}"><i class="fa-solid fa-headset"></i> Hubungi Kami</a></li>
 
@@ -1001,20 +1073,7 @@
                                 <button type="submit" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
                             </form>
                         </li>
-                    @elseif(auth()->user()->isUser())
-                        <li><a href="{{ route('customer.account') }}"><i class="fa-solid fa-user"></i> Akun Saya</a></li>
-                        <li>
-                            <form action="{{ route('customer.logout') }}" method="POST" style="margin: 0;">
-                                @csrf
-                                <button type="submit" class="logout-btn">
-                                    <i class="fa-solid fa-right-from-bracket"></i> Keluar
-                                </button>
-                            </form>
-                        </li>
                     @endif
-                @else
-                    <li><a href="{{ route('customer.login') }}"><i class="fa-solid fa-right-to-bracket"></i> Masuk</a></li>
-                    <li><a href="{{ route('customer.register') }}"><i class="fa-solid fa-user-plus"></i> Daftar</a></li>
                 @endauth
             </ul>
 
@@ -1058,7 +1117,7 @@
                     <div style="display:flex; gap:0.75rem;">
                         <a href="https://facebook.com/apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#1877f2'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-facebook-f"></i></a>
                         <a href="https://www.instagram.com/apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#e1306c'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="https://wa.me/6285890007359" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#25d366'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-whatsapp"></i></a>
+                        <a href="https://wa.me/6285882717844" aria-label="WhatsApp Apotek Medix" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#25d366'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-whatsapp"></i></a>
                         <a href="https://pin.it/69pbGoR2f" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#e60023'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" title="Pinterest"><i class="fa-brands fa-pinterest-p"></i></a>
                         <a href="https://www.youtube.com/@apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#ff0000'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
                     </div>
@@ -1083,22 +1142,22 @@
                     <h3>Kontak</h3>
                     <ul>
                         <li style="margin-bottom:0.75rem;">
-                            <a href="tel:+6285890007359" style="color:#d1d5db;text-decoration:none;display:flex;align-items:flex-start;gap:0.6rem;">
-                                <i class="fa-solid fa-phone" style="color:#10B981;margin-top:3px;flex-shrink:0;"></i>
-                                <span>0858 9000 7359</span>
+                            <a href="tel:+6285882717844" class="footer-contact-link">
+                                <i class="fa-solid fa-phone"></i>
+                                <span>0858 8271 7844</span>
                             </a>
                         </li>
                         <li style="margin-bottom:0.75rem;">
-                            <a href="mailto:hello@apotekmedix.com" style="color:#d1d5db;text-decoration:none;display:flex;align-items:flex-start;gap:0.6rem;">
-                                <i class="fa-solid fa-envelope" style="color:#10B981;margin-top:3px;flex-shrink:0;"></i>
-                                <span>hello@apotekmedix.com</span>
+                            <a href="mailto:apotekmedix@gmail.com" class="footer-contact-link">
+                                <i class="fa-solid fa-envelope"></i>
+                                <span>apotekmedix@gmail.com</span>
                             </a>
                         </li>
                         <li>
-                            <span style="color:#d1d5db;display:flex;align-items:flex-start;gap:0.6rem;">
-                                <i class="fa-solid fa-location-dot" style="color:#10B981;margin-top:3px;flex-shrink:0;"></i>
-                                <span>Jl. Letjen Suprapto No.1, Sumur Batu, Kec. Kemayoran, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10640</span>
-                            </span>
+                            <a href="https://share.google/bUEmuBOhbhyQWmrmD" target="_blank" rel="noopener noreferrer" class="footer-contact-link footer-address-link">
+                                <i class="fa-solid fa-location-dot"></i>
+                                <span>Jl. Raya Ciawi Prapatan No.256 C, RT.04/RW.04, Sindangsari, Kec. Bogor Timur, Kota Bogor, Jawa Barat 16146</span>
+                            </a>
                         </li>
                     </ul>
                 </div>
@@ -1128,7 +1187,7 @@
     </style>
 
     <div class="float-wrap">
-        <a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20ingin%20bertanya%20tentang%20produk%20obat."
+        <a href="https://wa.me/6285882717844?text=Halo%20Apotek%20Medix%2C%20saya%20ingin%20bertanya%20tentang%20produk%20obat."
            target="_blank" rel="noopener" class="float-btn-wa" aria-label="Chat WhatsApp Apotek Medix">
             <i class="fa-brands fa-whatsapp"></i>
         </a>

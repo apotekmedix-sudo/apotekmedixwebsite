@@ -6,6 +6,7 @@ use App\Models\Medicine;
 use App\Constants\Companies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AdminProdukImportController extends Controller
 {
@@ -33,13 +34,19 @@ class AdminProdukImportController extends Controller
 
     public function downloadTemplate()
     {
-        $columns = ['NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'RESEP', 'KOMPOSISI', 'SATUAN', 'STOK', 'MODAL', 'HARGA RETAIL'];
-        $widths  = [8, 25, 30, 15, 12, 30, 12, 10, 15, 18];
+        $columns = [
+            'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
+            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
+            'MODAL', 'HARGA JUAL INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
+            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET',
+        ];
+        $widths = [8, 25, 28, 12, 18, 28, 28, 12, 22, 12, 12, 12, 12, 15, 20, 18, 18, 20, 20];
 
         $rows = [
-            ['1', 'PT KIMIA FARMA', 'Paracetamol 500mg', '', 'BEBAS', 'Paracetamol 500 mg', 'fls', '100', '4000', '5000'],
-            ['2', 'PT WARDAH', 'Pelembab Wajah SPF30', '', 'BEBAS', 'Aqua, Glycerin, SPF', 'box', '80', '70000', '85000'],
-            ['3', 'PT OMRON', 'Tensimeter Digital', '', 'BEBAS', 'Mengukur tekanan darah', 'pcs', '20', '300000', '350000'],
+            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '10', '100', '117771', '123660', '135437', '153102', '16841', '15463'],
+            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '1', '4', '200000', '200000', '205000', '220000', '55000', '0'],
+            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '0', '0', '12000', '12000', '12500', '14000', '0', '0'],
+            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '0', '0', '50000', '49000', '51000', '55000', '0', '0'],
         ];
 
         return \App\Helpers\XlsxWriter::download('template_produk.xlsx', $columns, $rows, $widths);
@@ -141,8 +148,7 @@ class AdminProdukImportController extends Controller
 
         $rows = [];
         foreach ($sheet->sheetData->row as $row) {
-            $rowData    = [];
-            $lastColIdx = -1;
+            $rowData = [];
 
             foreach ($row->c as $cell) {
                 // Hitung index kolom dari atribut r (A=0, B=1, AA=26, dst)
@@ -155,12 +161,6 @@ class AdminProdukImportController extends Controller
                 }
                 $colIdx--; // 0-based
 
-                // Isi kolom yang dilewati dengan string kosong (sparse cells)
-                while ($lastColIdx < $colIdx - 1) {
-                    $rowData[] = '';
-                    $lastColIdx++;
-                }
-
                 $type  = (string) $cell['t'];
                 $value = (string) $cell->v;
 
@@ -170,12 +170,15 @@ class AdminProdukImportController extends Controller
                     $value = (string) $cell->is->t;
                 }
 
-                $rowData[]  = trim($value);
-                $lastColIdx = $colIdx;
+                $rowData[$colIdx] = trim($value);
             }
 
-            if (!empty(array_filter($rowData))) {
-                $rows[] = $rowData;
+            if (!empty(array_filter($rowData, fn ($value) => $value !== ''))) {
+                $rowValues = [];
+                for ($column = 0, $lastColumn = max(array_keys($rowData)); $column <= $lastColumn; $column++) {
+                    $rowValues[] = $rowData[$column] ?? '';
+                }
+                $rows[] = $rowValues;
             }
         }
 
@@ -201,9 +204,13 @@ class AdminProdukImportController extends Controller
         }
 
         $rows = [];
+        $firstLine = $lines[0];
+        $delimiter = substr_count($firstLine, ';') > substr_count($firstLine, ',')
+            ? ';'
+            : (str_contains($firstLine, "\t") ? "\t" : ',');
         foreach ($lines as $line) {
-            $row    = preg_split('/[;,\t]/', $line);
-            $row    = array_map(fn($v) => trim(preg_replace('/[^\x20-\x7E\xA0-\xFF]/', '', $v)), $row);
+            $row    = str_getcsv($line, $delimiter);
+            $row    = array_map(fn($v) => trim((string) $v), $row);
             $rows[] = $row;
         }
 
@@ -244,6 +251,7 @@ class AdminProdukImportController extends Controller
         $imported      = 0;
         $skipped       = 0;
         $validKategori = Companies::LIST;
+        $medicineColumns = array_flip(Schema::getColumnListing('medicines'));
 
         DB::beginTransaction();
         try {
@@ -261,14 +269,27 @@ class AdminProdukImportController extends Controller
                     continue;
                 }
 
-                $hargaRetail = $this->parseHarga($this->getValue($data, ['HARGA RETAIL', 'HARGA', 'RETAIL']));
+                $hargaRaw = $data['HARGA'] ?? '0';
+                $legacyRetail = $this->parseHarga($this->getValue($data, ['HARGA RETAIL', 'HARGA', 'RETAIL']));
                 $hargaModal = $this->parseHarga($this->getValue($data, ['MODAL', 'HARGA MODAL']));
-                $stok = max(0, (int) preg_replace('/[^0-9]/', '', (string) ($data['STOK'] ?? '0')));
+                $hasHargaInternal = isset($data['HARGA_JUAL_INTERNAL']) && $data['HARGA_JUAL_INTERNAL'] !== '';
+                $hargaInternal = $hasHargaInternal
+                    ? $this->parseHarga($data['HARGA_JUAL_INTERNAL'])
+                    : $legacyRetail;
+                $hargaB2b = $this->parseHarga($data['HARGA_JUAL_B2B'] ?? '');
+                $hasHargaB2c = isset($data['HARGA_JUAL_B2C']) && $data['HARGA_JUAL_B2C'] !== '';
+                $hargaB2c = $hasHargaB2c
+                    ? $this->parseHarga($data['HARGA_JUAL_B2C'])
+                    : $legacyRetail;
+                $hargaBox = $hasHargaB2c ? $hargaB2c : $hargaInternal;
+                $hargaStored = $hasHargaInternal
+                    ? $hargaInternal
+                    : ($legacyRetail ?: $this->parseHarga($hargaRaw));
+                $stok = max(0, (int) preg_replace('/[^0-9]/', '', (string) ($data['STOK_SATUAN'] ?? $data['STOK'] ?? '0')));
 
                 $katRaw    = strtoupper(trim((string) ($data['KATEGORI'] ?? '')));
                 $katProduk = in_array($katRaw, $validKategori) ? $katRaw : 'OBAT';
 
-                $hargaRaw = $data['HARGA'] ?? '0';
                 $sku      = trim((string) ($data['SKU'] ?? ''));
                 $distributor = trim((string) ($data['DISTRIBUTOR'] ?? ''));
                 $brand    = trim((string) $this->getValue($data, ['BRAND', 'MERK']));
@@ -281,14 +302,32 @@ class AdminProdukImportController extends Controller
                     $grade = trim($grade);
                 }
 
-                // Sediaan
-                $sediaan = null;
-                if (isset($data['SEDIAAN']) && !empty($data['SEDIAAN'])) {
-                    $sediaan = strtolower(trim($data['SEDIAAN']));
-                    if (!in_array($sediaan, ['fls', 'box'])) {
-                        $sediaan = null;
-                    }
+                $sediaan = trim((string) ($data['SEDIAAN'] ?? $data['SATUAN'] ?? ''));
+                $sediaan = $sediaan === '' ? null : strtolower($sediaan);
+                if ($sediaan === null && !empty($data['KEMASAN'])) {
+                    $oldUnit = strtolower(trim((string) $data['KEMASAN']));
+                    $sediaan = in_array($oldUnit, ['fls', 'box', 'tube', 'tablet', 'pcs'], true) ? $oldUnit : null;
                 }
+                $satuan = trim((string) ($data['SATUAN'] ?? ''));
+                $logo = trim((string) ($data['LOGO'] ?? ''));
+                $golongan = trim((string) ($data['GOLONGAN'] ?? ''));
+
+                $stripsPerBox = max(0, (int) preg_replace('/[^0-9]/', '', (string) ($data['PER_STRIP'] ?? '0')));
+                $tabletsPerBox = max(0, (int) preg_replace('/[^0-9]/', '', (string) ($data['PER_TABLET'] ?? '0')));
+                $parsedPackaging = $this->parsePackaging((string) ($data['KEMASAN'] ?? ''));
+                if ($stripsPerBox === 0) {
+                    $stripsPerBox = $parsedPackaging['strips'];
+                }
+                $tabletsPerStrip = $stripsPerBox > 0 && $tabletsPerBox > 0 && $tabletsPerBox % $stripsPerBox === 0
+                    ? intdiv($tabletsPerBox, $stripsPerBox)
+                    : $parsedPackaging['tablets_per_strip'];
+                if ($tabletsPerBox === 0 && $stripsPerBox > 0 && $tabletsPerStrip > 0) {
+                    $tabletsPerBox = $stripsPerBox * $tabletsPerStrip;
+                }
+                $packagingEnabled = $stripsPerBox > 0 && $tabletsPerStrip > 0;
+                $hasPackagingColumns = array_key_exists('PER_STRIP', $data)
+                    || array_key_exists('PER_TABLET', $data)
+                    || array_key_exists('KEMASAN', $data);
 
                 // Kelompok: PBF atau APOTEK — harus diketahui sebelum menentukan $match
                 $kelompok = null;
@@ -301,9 +340,9 @@ class AdminProdukImportController extends Controller
 
                 // Match key: sertakan kelompok agar PBF dan APOTEK tersimpan sebagai record terpisah
                 if (!empty($sku)) {
-                    $match = ['sku' => $sku, 'kelompok' => $kelompok ?? ''];
+                    $match = ['sku' => $sku, 'kelompok' => $kelompok];
                 } else {
-                    $match = ['nama_obat' => $namaProduk, 'kelompok' => $kelompok ?? ''];
+                    $match = ['nama_obat' => $namaProduk, 'kelompok' => $kelompok];
                 }
 
                 // Susun deskripsi dari DESKRIPSI, KOMPOSISI, INDIKASI — fallback ke nama produk
@@ -316,28 +355,50 @@ class AdminProdukImportController extends Controller
                     ? implode(' | ', $deskripsiBagian)
                     : $namaProduk;
 
-                Medicine::updateOrCreate(
-                    $match,
-                    [
+                $attributes = [
                         'sku'              => $sku ?: null,
                         'distributor'      => $distributor ?: null,
                         'nama_obat'        => $namaProduk,
+                        'logo'             => $logo ?: null,
+                        'golongan'         => $golongan ?: null,
+                        'satuan'           => $satuan ?: null,
+                        'kemasan'          => trim((string) ($data['KEMASAN'] ?? '')) ?: null,
                         'sediaan'          => $sediaan,
                         'kelompok'         => $kelompok,
                         'kategori'         => $data['PABRIK'] ?? ($data['BRAND'] ?? ''),
                         'brand'            => $brand ?: null,
                         'kategori_produk'  => $katProduk,
-                        'harga'            => $hargaRetail ?: $this->parseHarga($hargaRaw),
+                        'harga'            => $hargaStored,
                         'harga_modal'     => $hargaModal,
-                        'harga_retail'    => $hargaRetail ?: $this->parseHarga($hargaRaw),
+                        'harga_retail'    => $hargaBox,
                         'stok'             => $stok,
                         'terjual'          => $terjual,
                         'grade'            => $grade ?: null,
                         'deskripsi'        => $deskripsiValue,
                         'komposisi'        => ($data['KOMPOSISI'] ?? '') ?: null,
                         'indikasi'         => ($data['INDIKASI'] ?? '') ?: null,
-                    ]
-                );
+                    ];
+                if (array_key_exists('HARGA_JUAL_B2B', $data) && $data['HARGA_JUAL_B2B'] !== '') {
+                    $attributes['harga_grosir'] = $hargaB2b;
+                }
+                if ($hasHargaInternal) {
+                    $attributes['harga_internal'] = $hargaInternal;
+                }
+                if ($hasPackagingColumns) {
+                    $attributes += [
+                        'unit_packaging_enabled' => $packagingEnabled,
+                        'strips_per_box' => $packagingEnabled ? $stripsPerBox : null,
+                        'tablets_per_strip' => $packagingEnabled ? $tabletsPerStrip : null,
+                        'price_box' => $packagingEnabled ? $hargaBox : null,
+                        'price_strip' => $packagingEnabled ? $this->parseHarga($data['HARGA_JUAL_PER_STRIP'] ?? '') : null,
+                        'price_tablet' => $packagingEnabled ? $this->parseHarga($data['HARGA_JUAL_PER_TABLET'] ?? '') : null,
+                        'stock_base_units' => $stok * ($packagingEnabled ? $stripsPerBox * $tabletsPerStrip : 1),
+                    ];
+                }
+
+                $match = array_intersect_key($match, $medicineColumns);
+                $attributes = array_intersect_key($attributes, $medicineColumns);
+                Medicine::updateOrCreate($match, $attributes);
                 $imported++;
             }
             DB::commit();
@@ -363,6 +424,18 @@ class AdminProdukImportController extends Controller
             'HARGA' => ['HARGA', 'RETAIL', 'PRICE'],
             'MODAL' => ['MODAL', 'HARGAMODAL', 'COST'],
             'HARGA RETAIL' => ['HARGARETAIL', 'RETAILPRICE'],
+            'LOGO' => ['LOGO'],
+            'GOLONGAN' => ['GOLONGAN', 'CLASSIFICATION'],
+            'SATUAN' => ['SATUAN', 'UNIT'],
+            'KEMASAN' => ['KEMASAN', 'PACKAGING'],
+            'STOK_SATUAN' => ['STOKSATUAN', 'STOCKUNIT'],
+            'PER_STRIP' => ['PERSTRIP', 'STRIPPERBOX', 'STRIPS'],
+            'PER_TABLET' => ['PERTABLET', 'TABLETPERBOX', 'TABLETS'],
+            'HARGA_JUAL_INTERNAL' => ['HARGAJUALINTERNAL', 'HARGAINTERNAL'],
+            'HARGA_JUAL_B2B' => ['HARGAJUALB2B', 'HARGAB2B'],
+            'HARGA_JUAL_B2C' => ['HARGAJUALB2C', 'HARGAB2C'],
+            'HARGA_JUAL_PER_STRIP' => ['HARGAJUALPERSTRIP', 'HARGAPERSTRIP'],
+            'HARGA_JUAL_PER_TABLET' => ['HARGAJUALPERTABLET', 'HARGAPERTABLET'],
             'STOK' => ['STOK', 'STOCK', 'STOCKQTY', 'QTY', 'JUMLAH'],
             'TERJUAL' => ['TERJUAL', 'SALES', 'TERJUALSALES', 'TOTALTERJUAL'],
             'GRADE' => ['GRADE', 'KELAS', 'CLASS'],
@@ -370,7 +443,7 @@ class AdminProdukImportController extends Controller
             'KOMPOSISI' => ['KOMPOSISI', 'COMPOSITION'],
             'INDIKASI' => ['INDIKASI', 'INDICATION', 'MANFAAT'],
             'KATEGORI' => ['KATEGORI', 'KATEGORIPRODUK', 'CATEGORY', 'TIPE', 'JENIS'],
-            'SEDIAAN' => ['SEDIAAN', 'SATUAN', 'KEMASAN', 'PACKAGING'],
+            'SEDIAAN' => ['SEDIAAN'],
             'KELOMPOK' => ['KELOMPOK', 'GROUP', 'GRUP'],
         ];
 
@@ -403,29 +476,38 @@ class AdminProdukImportController extends Controller
     private function parseHarga($value): float
     {
         $value = trim((string) $value);
-        if ($value === '') return 0;
+        if ($value === '') {
+            return 0;
+        }
 
-        $value = str_replace(['Rp', 'rp', ' '], '', $value);
-        $dotParts = explode('.', $value);
+        $value = str_ireplace(['Rp', ' ', "\u{00A0}"], '', $value);
 
         if (str_contains($value, ',')) {
             $value = str_replace('.', '', $value);
             $value = str_replace(',', '.', $value);
-        } elseif (count($dotParts) === 2 && strlen($dotParts[1]) <= 2) {
-            // Excel may send a decimal value such as 5000.00.
-            $value = str_replace(',', '.', $value);
-        } else {
-            // Dots between three-digit groups are thousands separators.
+        } elseif (preg_match('/^\d{1,3}(?:\.\d{3})+$/', $value)) {
             $value = str_replace('.', '', $value);
         }
 
+        if (!is_numeric($value)) {
+            throw new \InvalidArgumentException("Format harga '{$value}' tidak valid.");
+        }
+
         $parsed = (float) $value;
-        if ($parsed > 1000000000 && count($dotParts) > 2) {
-            // Reject malformed concatenated groups such as 78.967.010.000.000.000.
-            $parsed = (float) (($dotParts[0] * 1000) + (int) ($dotParts[1] ?? 0));
+        if ($parsed < 0 || $parsed > 9999999999.99) {
+            throw new \InvalidArgumentException('Harga harus berada dalam rentang Rp 0 hingga Rp 9.999.999.999,99.');
         }
 
         return $parsed;
+    }
+
+    private function parsePackaging(string $value): array
+    {
+        if (preg_match('/(\d+)\s*(?:blister|strip|strips?)\s*@\s*(\d+)\s*(?:tab|tablet)/i', $value, $matches)) {
+            return ['strips' => (int) $matches[1], 'tablets_per_strip' => (int) $matches[2]];
+        }
+
+        return ['strips' => 0, 'tablets_per_strip' => 0];
     }
 
 }

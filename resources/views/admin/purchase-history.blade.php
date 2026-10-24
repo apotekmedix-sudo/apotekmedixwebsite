@@ -1,7 +1,7 @@
 ﻿@extends('layouts.admin')
 
 @section('title', 'Riwayat Pembelian - Admin Apotek Medix')
-@section('page-title', 'ðŸ§¾ Riwayat Pembelian')
+@section('page-title', '🧾 Riwayat Pembelian')
 
 @section('content')
 
@@ -70,7 +70,7 @@
                             @if($order->payment_method)
                                 <span style="background:#eff6ff;color:#1d4ed8;padding:0.2rem 0.55rem;border-radius:20px;font-size:0.78rem;font-weight:600;">{{ $paymentLabel }}</span>
                             @else
-                                <span style="color:#d1d5db;font-size:0.8rem;font-style:italic;">â€”</span>
+                                <span style="color:#d1d5db;font-size:0.8rem;font-style:italic;">—</span>
                             @endif
                         </td>
                         <td>
@@ -114,7 +114,7 @@
                                         @endphp
                                         <li>
                                             {{ $item['nama_obat'] ?? $item['name'] ?? 'N/A' }}
-                                            <span style="color:#6b7280;font-weight:500;">(Ã—{{ $item['quantity'] ?? $item['qty'] ?? 0 }} {{ strtolower($item['unit_label'] ?? 'box') }})</span>
+                                            <span style="color:#6b7280;font-weight:500;">(×{{ $item['quantity'] ?? $item['qty'] ?? 0 }} {{ strtolower($item['unit_label'] ?? 'box') }})</span>
                                             @if($potongan > 0)
                                                 <span style="display:inline-block;margin-left:0.3rem;padding:0.15rem 0.45rem;border-radius:999px;background:#fee2e2;color:#b91c1c;font-size:0.72rem;font-weight:700;">Potongan Rp {{ number_format($potongan, 0, ',', '.') }}</span>
                                             @endif

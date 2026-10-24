@@ -672,11 +672,7 @@
                         @foreach($medicines as $med)
                         <div class="product-card">
                             <div class="product-img">
-                                @if($med->gambar)
-                                    <img src="{{ url('storage/'.$med->gambar) }}" alt="{{ $med->nama_obat }}">
-                                @else
-                                    <i class="fa-solid fa-pills no-img-icon"></i>
-                                @endif
+                                @include('partials.product-gallery-image', ['medicine' => $med])
                                 @if($med->kategori_produk)
                                     <span class="product-badge">{{ strtoupper(substr($med->kategori_produk, 0, 1)) }}</span>
                                 @endif
@@ -686,7 +682,7 @@
                                 @if($med->kategori)
                                     <span class="product-brand">{{ $med->kategori }}</span>
                                 @endif
-                                <h3 class="product-name">{{ $med->nama_obat }}</h3>
+                                <h3 class="product-name"><a href="{{ route('medicines.show', $med->id) }}">{{ $med->nama_obat }}</a></h3>
                                 
                                 <div class="product-price">{{ $med->getFormattedPrice() }}</div>
                                 @php $stock = (int) ($med->stock_base_units ?? $med->stok); @endphp
@@ -703,7 +699,7 @@
                                     <a href="{{ route('medicines.show', $med->id) }}" class="btn-detail">Lihat Detail</a>
                                     <div id="category-price-{{ $med->id }}">{{ $med->getFormattedCatalogPrice('harga_retail') }}</div>
                                     @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'category-unit-' . $med->id, 'priceTargetId' => 'category-price-' . $med->id])
-                                    <button class="btn-add-cart" onclick="addToCart({{ $med->id }}, '{{ addslashes($med->nama_obat) }}', {{ $med->harga_retail ?: $med->harga }}, '{{ $med->gambar ? url('storage/'.$med->gambar) : '' }}', '{{ addslashes($med->brand ?: $med->kategori) }}', this, 'category-unit-{{ $med->id }}')">
+                                    <button class="btn-add-cart" data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }}, '{{ addslashes($med->nama_obat) }}', {{ $med->harga_retail ?: $med->harga }}, '{{ $med->gambar ? url('storage/'.$med->gambar) : '' }}', '{{ addslashes($med->brand ?: $med->kategori) }}', this, 'category-unit-{{ $med->id }}')">
                                         <i class="fa-solid fa-cart-plus"></i> Keranjang
                                     </button>
                                 </div>

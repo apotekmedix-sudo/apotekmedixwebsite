@@ -84,6 +84,34 @@
             box-shadow: 0 0 0 3px rgba(30,136,229,0.1);
         }
 
+        .password-field {
+            position: relative;
+        }
+
+        .password-field .form-control {
+            padding-right: 5.5rem;
+        }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 0.5rem;
+            transform: translateY(-50%);
+            border: 0;
+            border-radius: 0.35rem;
+            padding: 0.45rem 0.55rem;
+            background: transparent;
+            color: #0052cc;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .toggle-password:focus-visible {
+            outline: 2px solid #0052cc;
+            outline-offset: 2px;
+        }
+
         .form-errors {
             color: #ef4444;
             font-size: 0.875rem;
@@ -201,14 +229,19 @@
 
             <div class="form-group">
                 <label class="form-label" for="password">Password</label>
-                <input 
-                    type="password" 
-                    id="password"
-                    name="password" 
-                    class="form-control @error('password') is-invalid @enderror"
-                    placeholder="••••••••"
-                    required
-                >
+                <div class="password-field">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="form-control @error('password') is-invalid @enderror"
+                        placeholder="••••••••"
+                        value="{{ old('password') }}"
+                        autocomplete="current-password"
+                        required
+                    >
+                    <button class="toggle-password" type="button" aria-label="Tampilkan password" aria-pressed="false" aria-controls="password">Lihat</button>
+                </div>
                 @error('password')
                     <span class="form-errors">{{ $message }}</span>
                 @enderror
@@ -223,5 +256,16 @@
             </p>
         </div>
     </div>
+    <script>
+        document.querySelector('.toggle-password').addEventListener('click', (event) => {
+            const button = event.currentTarget;
+            const password = document.getElementById(button.getAttribute('aria-controls'));
+            const isVisible = password.type === 'text';
+            password.type = isVisible ? 'password' : 'text';
+            button.textContent = isVisible ? 'Lihat' : 'Sembunyikan';
+            button.setAttribute('aria-label', isVisible ? 'Tampilkan password' : 'Sembunyikan password');
+            button.setAttribute('aria-pressed', String(!isVisible));
+        });
+    </script>
 </body>
 </html>

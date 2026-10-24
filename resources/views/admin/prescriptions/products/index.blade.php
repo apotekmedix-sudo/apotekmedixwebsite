@@ -274,7 +274,7 @@
                             <img src="{{ url('storage/' . $medicine->gambar) }}"
                                  alt="{{ $medicine->nama_obat }}" class="med-img">
                         @else
-                            <div class="med-img-placeholder">ðŸ’Š</div>
+                            <div class="med-img-placeholder">💊</div>
                         @endif
                     </td>
                     <td>
@@ -332,13 +332,13 @@
 
         <div class="pagination-wrap">
             <div class="pagination-info">
-                Menampilkan {{ $medicines->firstItem() }}â€“{{ $medicines->lastItem() }} dari {{ $medicines->total() }} produk
+                Menampilkan {{ $medicines->firstItem() }}–{{ $medicines->lastItem() }} dari {{ $medicines->total() }} produk
             </div>
             <div class="pagination-pages">
                 @if($medicines->onFirstPage())
-                    <span class="page-btn disabled">â€¹</span>
+                    <span class="page-btn disabled">‹</span>
                 @else
-                    <a href="{{ $medicines->previousPageUrl() }}" class="page-btn">â€¹</a>
+                    <a href="{{ $medicines->previousPageUrl() }}" class="page-btn">‹</a>
                 @endif
 
                 @foreach($medicines->getUrlRange(1, $medicines->lastPage()) as $page => $url)
@@ -349,14 +349,14 @@
                             <a href="{{ $url }}" class="page-btn">{{ $page }}</a>
                         @endif
                     @elseif(abs($page - $medicines->currentPage()) == 3)
-                        <span class="page-btn disabled" style="border:none;background:none;">â€¦</span>
+                        <span class="page-btn disabled" style="border:none;background:none;">…</span>
                     @endif
                 @endforeach
 
                 @if($medicines->hasMorePages())
-                    <a href="{{ $medicines->nextPageUrl() }}" class="page-btn">â€º</a>
+                    <a href="{{ $medicines->nextPageUrl() }}" class="page-btn">›</a>
                 @else
-                    <span class="page-btn disabled">â€º</span>
+                    <span class="page-btn disabled">›</span>
                 @endif
             </div>
         </div>
@@ -365,14 +365,14 @@
 @else
     <div class="empty-state">
         @if($search || $kategori)
-            <div class="empty-icon">ðŸ”</div>
+            <div class="empty-icon">🔍</div>
             <h3>Tidak ada hasil</h3>
             <p>Tidak ada produk yang cocok dengan <strong>"{{ $search ?: $kategori }}"</strong>.</p>
             <a href="{{ route('admin.prescription-products.index') }}" class="btn-icon btn-icon-outline">
                 <i class="fa-solid fa-xmark"></i> Hapus Filter
             </a>
         @else
-            <div class="empty-icon">ðŸ’Š</div>
+            <div class="empty-icon">💊</div>
             <h3>Belum ada produk resep</h3>
             <p>Mulai tambahkan produk resep atau import dari file Excel/CSV.</p>
             <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;">

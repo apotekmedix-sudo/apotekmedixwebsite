@@ -27,7 +27,7 @@
     .info-box h3 { color:#1d4ed8; margin:0 0 0.75rem; font-size:0.95rem; font-weight:700; }
     .info-box ol { color:#1e40af; margin:0; padding-left:1.25rem; line-height:1.8; font-size:0.9rem; }
     .template-table { margin-top:1rem; background:#f9fafb; border-radius:0.5rem; padding:1rem; overflow-x:auto; }
-    .template-table table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+    .template-table table { min-width:2200px; border-collapse:collapse; font-size:0.8rem; }
     .template-table thead tr { background:#e5e7eb; }
     .template-table th { padding:0.4rem 0.75rem; text-align:left; border:1px solid #d1d5db; font-weight:700; color:#374151; }
     .template-table td { padding:0.4rem 0.75rem; border:1px solid #d1d5db; color:#6b7280; }
@@ -47,13 +47,14 @@
     <ol>
         <li>Download Template Excel (.xlsx) di bawah</li>
         <li>Isi data produk sesuai kolom yang tersedia</li>
-        <li>Isi stok pada kolom <strong>STOK</strong> dan harga pada kolom <strong>MODAL</strong> dan <strong>HARGA RETAIL</strong></li>
+        <li>Isi stok pada kolom <strong>STOK SATUAN</strong> dan harga pada kolom <strong>MODAL</strong> serta harga jual Internal, B2B, dan B2C</li>
+        <li><strong>PER STRIP</strong> adalah jumlah strip per satuan kemasan, sedangkan <strong>PER TABLET</strong> adalah jumlah tablet total per satuan kemasan. Harga per strip/tablet dapat diisi 0 jika tidak dijual satuan.</li>
         <li>Upload file <strong>.csv</strong>, <strong>.xls</strong>, atau <strong>.xlsx</strong></li>
         <li>Data yang sudah ada (SKU atau nama produk sama) akan diperbarui, data baru akan ditambahkan</li>
         <li>Struktur file tidak harus persis sama; selama header yang dikenali ada, data tetap bisa dimasukkan</li>
     </ol>
     <p style="color:#059669;margin:0.75rem 0 0;font-size:0.875rem;font-weight:600;">
-        ✅ Format: <strong>NO | PRINCIPLE | NAMA PRODUK | LOGO | RESEP | KOMPOSISI | SATUAN | STOK | MODAL | HARGA RETAIL</strong>
+        ✅ Format baru terdiri dari 19 kolom, termasuk golongan, kemasan, harga per kanal, dan harga per unit
     </p>
 </div>
 
@@ -77,41 +78,79 @@
                         <th>PRINCIPLE</th>
                         <th>NAMA PRODUK</th>
                         <th>LOGO</th>
-                        <th>RESEP</th>
+                        <th>GOLONGAN</th>
                         <th>KOMPOSISI</th>
+                        <th>INDIKASI</th>
                         <th>SATUAN</th>
-                        <th>STOK</th>
+                        <th>KEMASAN</th>
+                        <th>SEDIAAN</th>
+                        <th>STOK SATUAN</th>
+                        <th>PER STRIP</th>
+                        <th>PER TABLET</th>
                         <th>MODAL</th>
-                        <th>HARGA RETAIL</th>
+                        <th>HARGA JUAL INTERNAL</th>
+                        <th>HARGA JUAL B2B</th>
+                        <th>HARGA JUAL B2C</th>
+                        <th>HARGA JUAL PER STRIP</th>
+                        <th>HARGA JUAL PER TABLET</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>1</td>
-                        <td>PT KIMIA FARMA</td>
-                        <td>Paracetamol 500mg</td>
-                        <td></td>
-                        <td>BEBAS</td>
-                        <td>Paracetamol 500 mg</td>
-                        <td>fls</td><td>100</td><td>4000</td><td>5000</td>
+                        <td>PT KALBE FARMA</td>
+                        <td>Promag Tablet</td>
+                        <td>HIJAU</td>
+                        <td>Obat Bebas</td>
+                        <td>Antasida &amp; Simetikon</td>
+                        <td>Membantu meredakan sakit maag</td>
+                        <td>BOX</td>
+                        <td>10 blister @ 10 tablet</td>
+                        <td>TABLET</td>
+                        <td>10</td><td>10</td><td>100</td><td>117771</td>
+                        <td>123660</td><td>135437</td><td>153102</td><td>16841</td><td>15463</td>
                     </tr>
                     <tr>
                         <td>2</td>
-                        <td>PT WARDAH</td>
-                        <td>Pelembab Wajah SPF30</td>
-                        <td></td>
-                        <td>BEBAS</td>
-                        <td>Aqua, Glycerin, SPF30</td>
-                        <td>box</td><td>80</td><td>70000</td><td>85000</td>
+                        <td>PT PFIZER</td>
+                        <td>Viagra 100mg</td>
+                        <td>MERAH</td>
+                        <td>Obat Keras</td>
+                        <td>Sildenafil</td>
+                        <td>Disfungsi ereksi</td>
+                        <td>BOX</td>
+                        <td>1 blister @ 4 tablet</td>
+                        <td>TABLET</td>
+                        <td>1</td><td>1</td><td>4</td><td>200000</td>
+                        <td>200000</td><td>205000</td><td>220000</td><td>55000</td><td>0</td>
                     </tr>
                     <tr>
                         <td>3</td>
-                        <td>PT OMRON</td>
-                        <td>Tensimeter Digital</td>
+                        <td>KONIMEX</td>
+                        <td>Anakod Sirup</td>
+                        <td>BIRU</td>
+                        <td>Bebas Terbatas</td>
+                        <td>Paracetamol</td>
+                        <td>Membantu meredakan batuk dan flu</td>
+                        <td>BOTOL</td>
                         <td></td>
-                        <td>BEBAS</td>
-                        <td>-</td>
-                        <td>pcs</td><td>20</td><td>300000</td><td>350000</td>
+                        <td>SIRUP</td>
+                        <td>1</td><td>0</td><td>0</td><td>12000</td>
+                        <td>12000</td><td>12500</td><td>14000</td><td>0</td><td>0</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>GSK</td>
+                        <td>Voltaren Gel</td>
+                        <td>MERAH</td>
+                        <td>Obat Keras</td>
+                        <td>Diclofenac</td>
+                        <td>Membantu meredakan nyeri otot</td>
+                        <td>TUBE</td>
+                        <td></td>
+                        <td>KRIM</td>
+                        <td>5</td><td>0</td><td>0</td><td>50000</td>
+                        <td>49000</td><td>51000</td><td>55000</td><td>0</td><td>0</td>
                     </tr>
                 </tbody>
             </table>
@@ -191,4 +230,3 @@ function submitForm() {
 }
 </script>
 @endsection
-

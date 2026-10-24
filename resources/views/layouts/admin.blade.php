@@ -635,21 +635,21 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('cashier.dashboard') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'cashier.')) active @endif">
+                        <i class="fa-solid fa-cash-register"></i>
+                        <span>Dashboard Kasir</span>
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.customers.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.customers')) active @endif">
                         <i class="fa-solid fa-users"></i>
                         <span>Data Customer</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.cashiers.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.cashiers')) active @endif">
-                        <i class="fa-solid fa-cash-register"></i>
-                        <span>Kelola Kasir</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('kiosk') }}" target="_blank" rel="noopener">
-                        <i class="fa-solid fa-store"></i>
-                        <span>Buka Kios Toko</span>
+                    <a href="{{ route('admin.access-codes.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.access-codes')) active @endif">
+                        <i class="fa-solid fa-key"></i>
+                        <span>Aktivasi Kode Belanja</span>
                     </a>
                 </li>
                 <li>
@@ -659,9 +659,9 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.promo-products.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.promo-products')) active @endif">
-                        <span>🏷️</span>
-                        <span>Promo Produk</span>
+                    <a href="{{ route('admin.promotions.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.promotions')) active @endif">
+                        <i class="fa-solid fa-percent"></i>
+                        <span>Diskon per Kanal</span>
                     </a>
                 </li>
                 <li>

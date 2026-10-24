@@ -1,7 +1,7 @@
 ﻿@extends('layouts.admin')
 
 @section('title', 'Dashboard - Admin Apotek Medix')
-@section('page-title', 'ðŸ“Š Dashboard')
+@section('page-title', '📊 Dashboard')
 
 @section('content')
 
@@ -28,7 +28,7 @@
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;">
     @foreach($perKategori as $kat => $jumlah)
         @php
-            $icon  = match($kat) { 'OBAT' => 'ðŸ’Š', 'SKINCARE & KOSMETIK' => 'âœ¨', 'ALAT KESEHATAN' => 'ðŸ©º', default => 'ðŸ“¦' };
+            $icon  = match($kat) { 'OBAT' => '💊', 'SKINCARE & KOSMETIK' => '✨', 'ALAT KESEHATAN' => '🩺', default => '📦' };
             $color = match($kat) { 'OBAT' => '#1E88E5', 'SKINCARE & KOSMETIK' => '#c2185b', 'ALAT KESEHATAN' => '#2e7d32', default => '#6b7280' };
         @endphp
         <div class="stat-card" style="border-top-color:{{ $color }};">
@@ -52,8 +52,8 @@
 {{-- Produk Terbaru --}}
 <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-        <div class="card-title" style="margin:0;">ðŸ†• Produk Terbaru</div>
-        <a href="{{ route('admin.produk.index') }}" style="font-size:0.8rem;color:#1E88E5;text-decoration:none;">Lihat semua â†’</a>
+        <div class="card-title" style="margin:0;">🆕 Produk Terbaru</div>
+        <a href="{{ route('admin.produk.index') }}" style="font-size:0.8rem;color:#1E88E5;text-decoration:none;">Lihat semua →</a>
     </div>
     <div class="table-container">
         <table class="table">
@@ -73,7 +73,7 @@
                     <tr>
                         <td><strong>{{ $p->nama_obat }}</strong></td>
                         <td>
-                            @php $icon = match($p->kategori_produk) { 'SKINCARE & KOSMETIK' => 'âœ¨', 'ALAT KESEHATAN' => 'ðŸ©º', default => 'ðŸ’Š' }; @endphp
+                            @php $icon = match($p->kategori_produk) { 'SKINCARE & KOSMETIK' => '✨', 'ALAT KESEHATAN' => '🩺', default => '💊' }; @endphp
                             <span style="font-size:0.82rem;">{{ $icon }} {{ $p->kategori_produk }}</span>
                         </td>
                         <td style="font-size:0.82rem;color:#6b7280;">{{ $p->kategori }}</td>
@@ -101,8 +101,8 @@
 {{-- Riwayat Pembelian Terbaru --}}
 <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-        <div class="card-title" style="margin:0;">ðŸ§¾ Riwayat Pembelian</div>
-        <a href="{{ route('admin.purchase-history.index') }}" style="font-size:0.8rem;color:#1E88E5;text-decoration:none;">Lihat semua â†’</a>
+        <div class="card-title" style="margin:0;">🧾 Riwayat Pembelian</div>
+        <a href="{{ route('admin.purchase-history.index') }}" style="font-size:0.8rem;color:#1E88E5;text-decoration:none;">Lihat semua →</a>
     </div>
     <div class="table-container">
         <table class="table">
@@ -134,7 +134,7 @@
 
 {{-- Quick Actions --}}
 <div class="card">
-    <div class="card-title">âš¡ Aksi Cepat</div>
+    <div class="card-title">⚡ Aksi Cepat</div>
     <div class="quick-actions-grid" style="display:flex;gap:0.75rem;flex-wrap:wrap;">
         <a href="{{ route('admin.produk.create') }}" class="btn btn-primary">
             <i class="fa-solid fa-plus"></i> Tambah Produk

@@ -442,7 +442,7 @@
 
 /* CATEGORY GRID */
 .cat-section { padding: 1.5rem 0 1rem; }
-.cat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem; }
+.cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
 .cat-card {
     display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
     padding: 1rem 0.5rem; background: #fff; border-radius: 14px;
@@ -681,7 +681,6 @@
     .home-hero-search button span { display:inline; }
     .home-brand-hero-actions { grid-template-columns:1fr 1fr; }
     .home-brand-hero-actions a { min-height:50px;font-size:.74rem; }
-    .home-brand-hero-actions a:nth-child(n+3) { display:none; }
     .category-grid { grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem; }
     .category-icon-btn { padding:.65rem .25rem;gap:.4rem;font-size:.72rem; }
     .category-icon { width:46px;height:46px;font-size:1.3rem; }
@@ -707,9 +706,9 @@
             <button type="submit"><i class="fa-solid fa-magnifying-glass"></i><span>Cari</span></button>
         </form>
         <div class="home-brand-hero-actions">
-            <a href="{{ route('products.index') }}"><i class="fa-solid fa-prescription-bottle-medical"></i> Beli Obat</a>
-            <a href="{{ route('products.index', ['search' => 'vitamin']) }}"><i class="fa-solid fa-capsules"></i> Vitamin & Suplemen</a>
-            <a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20ingin%20chat%20apoteker." target="_blank" rel="noopener"><i class="fa-solid fa-user-doctor"></i> Chat Apoteker</a>
+            <a href="{{ route('shopping.internal') }}"><i class="fa-solid fa-cash-register"></i> Belanja Internal</a>
+            <a href="{{ route('products.pbf') }}"><i class="fa-solid fa-truck-ramp-box"></i> Belanja B2B</a>
+            <a href="{{ route('products.apotek') }}"><i class="fa-solid fa-prescription-bottle-medical"></i> Belanja B2C</a>
         </div>
     </div>
     <div class="home-brand-hero-mark" aria-hidden="true">
@@ -729,7 +728,7 @@
     </div>
     <div class="home-trust-item">
         <span class="home-trust-icon"><i class="fa-solid fa-user-doctor"></i></span>
-        <div><strong>Hubungi Customer Services</strong><a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20perlu%20bantuan." target="_blank" rel="noopener">Hubungi CS <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></div>
+        <div><strong>Hubungi Customer Services</strong><a href="https://wa.me/6285882717844?text=Halo%20Apotek%20Medix%2C%20saya%20perlu%20bantuan." target="_blank" rel="noopener">Hubungi CS <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></div>
     </div>
 </section>
 
@@ -1143,11 +1142,10 @@
   <div class="container">
     <div class="quick-row">
       <a href="{{ route('products.index') }}" class="quick-btn active"><i class="fa-solid fa-th-large"></i><span>Semua</span></a>
-      <a href="{{ route('products.pbf') }}" class="quick-btn"><i class="fa-solid fa-box" style="color:#f59e0b;"></i><span>PBF</span></a>
-      <a href="{{ route('products.apotek') }}" class="quick-btn"><i class="fa-solid fa-store" style="color:#059669;"></i><span>Apotek</span></a>
       <a href="{{ route('products.index') }}?kategori_produk=OBAT" class="quick-btn"><i class="fa-solid fa-pills" style="color:#1E88E5;"></i><span>Obat</span></a>
-      <a href="{{ route('products.index') }}?kategori_produk=SKINCARE+%26+KOSMETIK" class="quick-btn"><i class="fa-solid fa-spa" style="color:#e91e8c;"></i><span>Skincare</span></a>
-      <a href="{{ route('products.index') }}?kategori_produk=ALAT+KESEHATAN" class="quick-btn"><i class="fa-solid fa-stethoscope" style="color:#0288d1;"></i><span>ALKES</span></a>
+      <a href="{{ route('products.index', ['search' => 'vitamin']) }}" class="quick-btn"><i class="fa-solid fa-capsules" style="color:#00a98f;"></i><span>Vitamin & Suplemen</span></a>
+      <a href="{{ route('products.index') }}?kategori_produk=SKINCARE+%26+KOSMETIK" class="quick-btn"><i class="fa-solid fa-spa" style="color:#1E88E5;"></i><span>Skincare & Kosmetik</span></a>
+      <a href="{{ route('products.index') }}?kategori_produk=ALAT+KESEHATAN" class="quick-btn"><i class="fa-solid fa-stethoscope" style="color:#1E88E5;"></i><span>Alat Kesehatan</span></a>
     </div>
   </div>
 </div>
@@ -1159,20 +1157,49 @@
                 <span class="home-section-eyebrow">Pilih kebutuhan Anda</span>
                 <h2 id="homeCategoryTitle">Kategori Produk</h2>
             </div>
-            <a href="{{ route('products.index') }}">Semua produk <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+            <div class="home-category-controls">
+                <a href="{{ route('products.index') }}">Semua produk <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                <button type="button" class="home-category-scroll" data-direction="-1" aria-label="Kategori sebelumnya">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="home-category-scroll" data-direction="1" aria-label="Kategori berikutnya">
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
         </div>
-        <div class="home-category-grid">
-            <a href="{{ route('products.index', ['kategori_produk' => 'OBAT']) }}" class="home-category-card">
-                <span><i class="fa-solid fa-pills" aria-hidden="true"></i></span><strong>Obat</strong>
+        <div class="home-category-grid" id="homeCategoryGrid">
+            <a href="{{ route('products.index', ['kategori_pilihan' => 'obat-resep']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-prescription-bottle-medical" aria-hidden="true"></i></span><strong>Obat Resep</strong>
             </a>
-            <a href="{{ route('products.index', ['search' => 'vitamin']) }}" class="home-category-card">
-                <span><i class="fa-solid fa-capsules" aria-hidden="true"></i></span><strong>Vitamin & Suplemen</strong>
+            <a href="{{ route('products.index', ['kategori_pilihan' => 'otc']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-pills" aria-hidden="true"></i></span><strong>OTC</strong>
             </a>
-            <a href="{{ route('products.index', ['kategori_produk' => 'SKINCARE & KOSMETIK']) }}" class="home-category-card">
-                <span><i class="fa-solid fa-spa" aria-hidden="true"></i></span><strong>Skincare & Kosmetik</strong>
+            <a href="{{ route('products.index', ['kategori_pilihan' => 'pil-kb-hormonal']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-tablets" aria-hidden="true"></i></span><strong>Pil KB &amp; Hormonal</strong>
             </a>
-            <a href="{{ route('products.index', ['kategori_produk' => 'ALAT KESEHATAN']) }}" class="home-category-card">
+            <a href="{{ route('products.index', ['kategori_pilihan' => 'alat-kesehatan']) }}" class="home-category-card">
                 <span><i class="fa-solid fa-stethoscope" aria-hidden="true"></i></span><strong>Alat Kesehatan</strong>
+            </a>
+            <a href="{{ route('products.index', ['kategori_pilihan' => 'vitamin-suplemen']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-capsules" aria-hidden="true"></i></span><strong>Vitamin &amp; Suplement</strong>
+            </a>
+            <a href="{{ route('products.index', ['kategori_pilihan' => 'flu-batuk']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-head-side-cough" aria-hidden="true"></i></span><strong>Flu &amp; Batuk</strong>
+            </a>
+            <a href="{{ route('products.index', ['kategori_pilihan' => 'ibu-anak']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-baby" aria-hidden="true"></i></span><strong>Ibu &amp; Anak</strong>
+            </a>
+            <a href="{{ route('products.index', ['kategori_pilihan' => 'obat-herbal']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-leaf" aria-hidden="true"></i></span><strong>Obat Herbal</strong>
+            </a>
+            <a href="{{ route('products.index', ['kategori_pilihan' => 'obat-diabetes']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-droplet" aria-hidden="true"></i></span><strong>Obat Diabetes</strong>
+            </a>
+            <a href="{{ route('products.index', ['kategori_pilihan' => 'obat-hipertensi']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i></span><strong>Obat Hipertensi</strong>
+            </a>
+            <a href="{{ route('products.index', ['kategori_pilihan' => 'obat-kolesterol']) }}" class="home-category-card">
+                <span><i class="fa-solid fa-heart-circle-check" aria-hidden="true"></i></span><strong>Obat Kolesterol</strong>
             </a>
         </div>
     </div>
@@ -1282,20 +1309,26 @@
         @foreach($featuredProducts as $med)
         <div class="prod-card">
           <div class="prod-img">
-            @if($med->gambar)
-              <img src="{{ url('storage/'.$med->gambar) }}" alt="{{ $med->nama_obat }}" loading="lazy">
-            @else
-              <img class="product-placeholder-logo" src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix">
-            @endif
+            @include('partials.product-gallery-image', ['medicine' => $med])
             @if($med->kategori_produk)
               <span class="prod-badge-label">{{ $med->kategori_produk==='SKINCARE & KOSMETIK'?'✨':($med->kategori_produk==='ALAT KESEHATAN'?'🩺':'💊') }}</span>
+            @endif
+            @if($med->getPromoPercent('b2c') > 0)
+              <span style="position:absolute;top:.65rem;right:.65rem;padding:.3rem .5rem;border-radius:999px;background:#ef4444;color:#fff;font-size:.7rem;font-weight:800;">-{{ $med->getPromoPercent('b2c') }}%</span>
             @endif
           </div>
           <div class="prod-body">
             @if($med->kategori)<span class="prod-brand-tag">{{ $med->kategori }}</span>@endif
-            <h3 class="prod-name">{{ $med->nama_obat }}</h3>
-            <div class="prod-price" id="home-price-a-{{ $med->id }}">{{ $med->getFormattedCatalogPrice('harga_retail') }}</div>
-            @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-a-' . $med->id, 'priceTargetId' => 'home-price-a-' . $med->id])
+            <h3 class="prod-name"><a href="{{ route('medicines.show', $med->id) }}">{{ $med->nama_obat }}</a></h3>
+            @php
+              $homeBasePrice = $med->getChannelBasePrice('b2c');
+              $homePromoPrice = $med->getChannelPromoPrice('b2c');
+            @endphp
+            <div class="prod-price" id="home-price-a-{{ $med->id }}">
+              @if($med->getPromoPercent('b2c') > 0)<small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($homeBasePrice, 0, ',', '.') }}</small>@endif
+              Rp {{ number_format($homePromoPrice, 0, ',', '.') }}
+            </div>
+            @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-a-' . $med->id, 'priceTargetId' => 'home-price-a-' . $med->id, 'priceChannel' => 'b2c'])
             @php $stock = (int) ($med->stock_base_units ?? $med->stok); @endphp
             <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
               <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
@@ -1307,7 +1340,7 @@
               </div>
             @endif
             <a href="{{ route('medicines.show', $med->id) }}" class="btn-detail">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-            <button class="btn-cart" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $med->harga_retail ?: $med->harga }},'{{ $med->gambar ? url('storage/'.$med->gambar) : '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this,'home-unit-a-{{ $med->id }}')">
+            <button class="btn-cart" data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $homePromoPrice }},'{{ $med->gambar ? url('storage/'.$med->gambar) : '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this,'home-unit-a-{{ $med->id }}')">
               <i class="fa-solid fa-cart-plus"></i> Keranjang
             </button>
           </div>
@@ -1397,6 +1430,49 @@
 
 @endif
 
+
+{{-- PROMO HARGA PRODUK --}}
+@if(isset($discountedProducts) && $discountedProducts->isNotEmpty())
+<section class="discounted-products-section" style="padding:2.5rem 0;background:#f0fdfa;border-block:1px solid #ccfbf1;">
+  <div class="container">
+    <div class="featured-header">
+      <div class="sec-head-left">
+        <span class="sec-tag" style="background:#ccfbf1;color:#0f766e;">🏷️ Promo Spesial</span>
+        <h2 class="sec-title" style="margin:0;">Produk Promo</h2>
+        <p style="margin:.35rem 0 0;color:#64748b;">Harga promo B2C yang diatur oleh admin Apotek Medix.</p>
+      </div>
+      <a href="{{ route('products.apotek') }}" class="sec-link">Belanja Sekarang <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;">
+      @foreach($discountedProducts as $promoMedicine)
+        @php
+          $promoBasePrice = $promoMedicine->getChannelBasePrice('b2c');
+          $promoPrice = $promoMedicine->getChannelPromoPrice('b2c');
+        @endphp
+        <article style="position:relative;overflow:hidden;border:1px solid #d1fae5;border-radius:14px;background:#fff;box-shadow:0 5px 16px rgba(15,23,42,.06);">
+          <span style="position:absolute;z-index:1;top:.65rem;left:.65rem;padding:.3rem .55rem;border-radius:999px;background:#ef4444;color:#fff;font-size:.75rem;font-weight:800;">Diskon {{ $promoMedicine->getPromoPercent('b2c') }}%</span>
+          <a href="{{ route('medicines.show', $promoMedicine->id) }}" style="position:relative;display:block;height:145px;overflow:hidden;background:#f8fafc;">
+            @if($promoMedicine->gambar)
+              <img src="{{ $promoMedicine->image_url }}" alt="{{ $promoMedicine->nama_obat }}" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:1rem;transition:opacity .24s ease,transform .35s ease;">
+              @if(count($promoMedicine->image_gallery) > 1)
+                <img src="{{ url('storage/' . $promoMedicine->image_gallery[1]) }}" alt="{{ $promoMedicine->nama_obat }} - foto kedua" loading="lazy" class="promo-gallery-secondary">
+              @endif
+            @else
+              <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:1.5rem;">
+            @endif
+          </a>
+          <div style="padding:.85rem;">
+            <h3 style="min-height:2.6em;margin:0 0 .55rem;color:#1e293b;font-size:.9rem;line-height:1.4;">{{ $promoMedicine->nama_obat }}</h3>
+            <div style="font-size:.76rem;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($promoBasePrice, 0, ',', '.') }}</div>
+            <strong style="color:#0f766e;font-size:1rem;">Rp {{ number_format($promoPrice, 0, ',', '.') }}</strong>
+            <a href="{{ route('medicines.show', $promoMedicine->id) }}" style="display:block;margin-top:.65rem;padding:.55rem;text-align:center;border-radius:8px;background:#0052cc;color:#fff;text-decoration:none;font-size:.8rem;font-weight:700;">Lihat Produk</a>
+          </div>
+        </article>
+      @endforeach
+    </div>
+  </div>
+</section>
+@endif
 
 {{-- PROMO PRODUK --}}
 @if(isset($promoProducts) && $promoProducts->count())
@@ -1856,79 +1932,6 @@
   </div>
 </section>
 
-{{-- CTA WHATSAPP --}}
-<div class="cta-section">
-  <div class="container">
-    <div class="cta-box">
-      <div>
-        <h3>💬 Mau pesan via WhatsApp?</h3>
-        <p>Tim kami siap bantu proses pesanan Anda dengan cepat & mudah.</p>
-      </div>
-      <a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20ingin%20memesan%20produk." target="_blank" class="btn-wa">
-        <i class="fa-brands fa-whatsapp" style="font-size:1.3rem;"></i> Chat WhatsApp
-      </a>
-    </div>
-  </div>
-</div>
-
-{{-- KATEGORI --}}
-<section class="cat-section">
-  <div class="container">
-    <div class="sec-head">
-      <div class="sec-head-left">
-        <span class="sec-tag">🗂️ Kategori</span>
-        <h2 class="sec-title">Belanja Berdasarkan Kategori</h2>
-      </div>
-    </div>
-    <div class="cat-grid">
-      <a href="{{ route('products.apotek') }}" class="cat-card">
-        <div class="cat-icon" style="background:#d1fae5;"><i class="fa-solid fa-store" style="color:#059669;"></i></div>
-        <span>Apotek</span>
-      </a>
-      <a href="{{ route('products.index') }}?kategori_produk=OBAT" class="cat-card">
-        <div class="cat-icon" style="background:#e3f2fd;"><i class="fa-solid fa-pills" style="color:#1E88E5;"></i></div>
-        <span>Obat</span>
-      </a>
-      <a href="{{ route('products.index') }}?kategori_produk=SKINCARE+%26+KOSMETIK" class="cat-card">
-        <div class="cat-icon" style="background:#fce4ec;"><i class="fa-solid fa-spa" style="color:#e91e8c;"></i></div>
-        <span>Skincare & Kosmetik</span>
-      </a>
-      <a href="{{ route('products.index') }}?kategori_produk=ALAT+KESEHATAN" class="cat-card">
-        <div class="cat-icon" style="background:#e8f5e9;"><i class="fa-solid fa-stethoscope" style="color:#2e7d32;"></i></div>
-        <span>ALKES</span>
-      </a>
-      <a href="{{ route('products.index') }}" class="cat-card">
-        <div class="cat-icon" style="background:#fff3e0;"><i class="fa-solid fa-capsules" style="color:#e65100;"></i></div>
-        <span>Obat Bebas</span>
-      </a>
-      <a href="{{ route('products.index') }}" class="cat-card">
-        <div class="cat-icon" style="background:#ede7f6;"><i class="fa-solid fa-tablets" style="color:#7b1fa2;"></i></div>
-        <span>Vitamin & Suplemen</span>
-      </a>
-    </div>
-  </div>
-</section>
-
-{{-- TENTANG SINGKAT --}}
-<div class="about-strip">
-  <div class="container">
-    <div class="about-box">
-      <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix" class="about-logo">
-      <div class="about-info">
-        <h3>Apotek Medix — Distributor Farmasi Terpercaya</h3>
-        <p>Sejak 2016 melayani kebutuhan medis masyarakat & praktisi kesehatan di seluruh Indonesia. Produk original, harga distributor, pengiriman cepat.</p>
-        <a href="{{ route('about') }}" class="btn-about"><i class="fa-solid fa-circle-info"></i> Selengkapnya Tentang Kami</a>
-      </div>
-      <div class="about-stats">
-        <div class="about-stat-item"><span class="n">15+</span><span class="l">Tahun Pengalaman</span></div>
-        <div class="about-stat-item"><span class="n">100+</span><span class="l">Brand Partner</span></div>
-        <div class="about-stat-item"><span class="n">50+</span><span class="l">Kota Jangkauan</span></div>
-        <div class="about-stat-item"><span class="n">24/7</span><span class="l">Layanan Aktif</span></div>
-      </div>
-    </div>
-  </div>
-</div>
-
 @endsection
 
 <style>
@@ -1948,12 +1951,16 @@
 .home-category-heading h2 { margin:.2rem 0 0;color:#1e293b;font-size:clamp(1.3rem,2vw,1.7rem); }
 .home-section-eyebrow { color:#0052cc;font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase; }
 .home-category-heading > a { color:#0052cc;font-size:.85rem;font-weight:700;text-decoration:none;white-space:nowrap; }
-.home-category-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem; }
-.home-category-card { display:flex;min-height:108px;flex-direction:column;align-items:center;justify-content:center;gap:.65rem;padding:.75rem;border:1px solid #e2e8f0;border-radius:14px;background:#fff;color:#1e293b;text-align:center;text-decoration:none;transition:border-color .2s,transform .2s,box-shadow .2s; }
+.home-category-controls { display:flex;align-items:center;gap:.5rem; }
+.home-category-controls > a { margin-right:.35rem;color:#0052cc;font-size:.85rem;font-weight:700;text-decoration:none;white-space:nowrap; }
+.home-category-scroll { display:inline-grid;width:36px;height:36px;place-items:center;border:1px solid #cbd5e1;border-radius:50%;background:#fff;color:#0052cc;cursor:pointer; }
+.home-category-scroll:hover { border-color:#0052cc;background:#0052cc;color:#fff; }
+.home-category-grid { display:grid;grid-auto-columns:minmax(145px,1fr);grid-auto-flow:column;gap:.8rem;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#bfdbfe transparent;padding:.15rem .1rem .65rem; }
+.home-category-card { display:flex;min-height:154px;flex-direction:column;align-items:center;justify-content:center;gap:.65rem;padding:.75rem;border:1px solid #e2e8f0;border-radius:14px;background:#fff;color:#1e293b;text-align:center;text-decoration:none;transition:border-color .2s,transform .2s,box-shadow .2s;scroll-snap-align:start; }
 .home-category-card:hover { transform:translateY(-2px);border-color:#93c5fd;box-shadow:0 8px 18px rgba(0,82,204,.08); }
-.home-category-card > span { display:grid;width:44px;height:44px;place-items:center;border-radius:13px;background:#eff6ff;color:#0052cc;font-size:1.2rem; }
-.home-category-card strong { font-size:.78rem;line-height:1.3; }
-.home-category-card:focus-visible,.home-category-heading > a:focus-visible { outline:3px solid #00d1b2;outline-offset:3px;border-radius:5px; }
+.home-category-card > span { display:grid;width:76px;height:76px;place-items:center;border-radius:50%;background:#0052cc;color:#fff;font-size:1.8rem; }
+.home-category-card strong { max-width:145px;font-size:.9rem;line-height:1.35;font-weight:600; }
+.home-category-card:focus-visible,.home-category-heading a:focus-visible,.home-category-scroll:focus-visible { outline:3px solid #00d1b2;outline-offset:3px;border-radius:5px; }
 .category-selection-section,.cat-section { background:#fff; }
 .category-icon { background:#eff6ff!important; }
 .category-icon i,.cat-icon i { color:#0052cc!important; }
@@ -1963,8 +1970,8 @@
 .prod-section,.prod-grid { background:#f8fafc; }
 @media(max-width:768px) {
     .home-trust-strip { grid-template-columns:1fr; }
-    .home-category-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem; }
-    .home-category-card { min-height:100px; }
+    .home-category-grid { grid-auto-columns:minmax(130px,38vw);gap:.6rem; }
+    .home-category-card { min-height:140px; }
     .promo-products-controls { display:flex;gap:.5rem; }
     .promo-scroll-button { width:38px;height:38px; }
 }
@@ -1972,8 +1979,12 @@
     .home-trust-strip { width:calc(100% - 1.3rem); }
     .home-hero-search button span { display:inline; }
     .home-category-heading { align-items:center; }
-    .home-category-card { min-height:92px;padding:.6rem .35rem; }
-    .home-category-card strong { font-size:.7rem; }
+    .home-category-controls > a { display:none; }
+    .home-category-scroll { width:32px;height:32px; }
+    .home-category-grid { grid-auto-columns:minmax(122px,42vw); }
+    .home-category-card { min-height:132px;padding:.6rem .35rem; }
+    .home-category-card > span { width:64px;height:64px;font-size:1.5rem; }
+    .home-category-card strong { font-size:.78rem; }
 }
 @media(prefers-reduced-motion:reduce) {
     .promo-scroll-button { transition:none; }
@@ -1985,6 +1996,21 @@
 @include('partials.cart')
 <script>
 (() => {
+    const categoryGrid = document.getElementById('homeCategoryGrid');
+    if (categoryGrid) {
+        document.querySelectorAll('[data-direction]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const card = categoryGrid.querySelector('.home-category-card');
+                const gap = Number.parseFloat(getComputedStyle(categoryGrid).gap) || 0;
+                const step = card ? card.getBoundingClientRect().width + gap : categoryGrid.clientWidth;
+                categoryGrid.scrollBy({
+                    left: step * Number(button.dataset.direction),
+                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+                });
+            });
+        });
+    }
+
     const wrap = document.getElementById('promoTrackWrap');
     const track = document.getElementById('promoTrack');
     if (!wrap || !track) return;

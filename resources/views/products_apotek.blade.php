@@ -1,6 +1,6 @@
 ﻿@extends('layouts.frontend')
 
-@section('title', 'Produk Apotek - Apotek Medix')
+@section('title', 'Belanja B2C - Apotek Medix')
 
 @section('styles')
 <style>
@@ -310,9 +310,9 @@
         <div class="breadcrumb-custom">
             <a href="{{ route('home') }}"><i class="fa-solid fa-house"></i> Home</a>
             <span>/</span>
-            <span class="current">Produk Apotek</span>
+            <span class="current">Belanja B2C</span>
         </div>
-        <h1><i class="fa-solid fa-store"></i> Produk Apotek</h1>
+        <h1><i class="fa-solid fa-store"></i> Belanja B2C</h1>
         <p>{{ $total }} produk tersedia dari berbagai perusahaan farmasi terpercaya</p>
     </div>
     <i class="fa-solid fa-pills header-deco-icon header-deco-icon-1"></i>
@@ -383,19 +383,23 @@
                 @foreach($medicines as $medicine)
                     <div class="medicine-card">
                         <div class="medicine-image">
-                            @if($medicine->gambar)
-                                <img src="{{ url('storage/' . $medicine->gambar) }}" alt="{{ $medicine->nama_obat }}">
-                            @else
-                                <img class="product-placeholder-logo" src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix">
-                            @endif
+                            @include('partials.product-gallery-image', ['medicine' => $medicine])
                         </div>
                         <div class="medicine-body">
                             
                             <span class="medicine-company">{{ $medicine->kategori }}</span>
-                            <h3 class="medicine-name">{{ $medicine->nama_obat }}</h3>
+                            <h3 class="medicine-name"><a href="{{ route('medicines.show', $medicine->id) }}">{{ $medicine->nama_obat }}</a></h3>
                             
-                            <div class="medicine-price" id="apotik-price-{{ $medicine->id }}">{{ $medicine->getFormattedCatalogPrice('harga_retail') }}</div>
-                            @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceTargetId' => 'apotik-price-' . $medicine->id])
+                            @php
+                                $basePrice = $medicine->getChannelBasePrice('b2c');
+                                $promoPrice = $medicine->getChannelPromoPrice('b2c');
+                                $promoPercent = $medicine->getPromoPercent('b2c');
+                            @endphp
+                            <div class="medicine-price" id="apotik-price-{{ $medicine->id }}">
+                                @if($promoPercent > 0)<small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($basePrice, 0, ',', '.') }}</small>@endif
+                                Rp {{ number_format($promoPrice, 0, ',', '.') }}
+                            </div>
+                            @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceTargetId' => 'apotik-price-' . $medicine->id, 'priceChannel' => 'b2c'])
                             @php $stock = (int) ($medicine->stock_base_units ?? $medicine->stok); @endphp
                             <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
@@ -409,7 +413,7 @@
                             <a href="{{ route('medicines.show', $medicine->id) }}" class="medicine-btn">
                                 Lihat Detail <i class="fa-solid fa-arrow-right"></i>
                             </a>
-                            <button class="btn-cart" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $medicine->harga_retail ?: $medicine->harga }}, '{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this, 'apotik-unit-{{ $medicine->id }}')">
+                            <button class="btn-cart" data-package-unit-label="{{ $medicine->package_unit_label }}" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $promoPrice }}, '{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this, 'apotik-unit-{{ $medicine->id }}')">
                                 <i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang
                             </button>
                         </div>

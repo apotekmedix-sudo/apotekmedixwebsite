@@ -240,7 +240,7 @@
 
                 <div class="form-group">
                     <label class="form-label">Sediaan</label>
-                    <input type="text" name="sediaan"
+                    <input type="text" id="medicine-package-unit" name="sediaan"
                            class="form-input {{ $errors->has('sediaan') ? 'is-invalid' : '' }}"
                            placeholder="Contoh: fls, box, tube, pcs atau ketik bebas"
                            value="{{ old('sediaan') }}">
@@ -252,7 +252,7 @@
                 <div class="form-group">
                     <label class="form-label">Kelompok</label>
                     <select name="kelompok" class="form-input {{ $errors->has('kelompok') ? 'is-invalid' : '' }}">
-                        <option value="">â€” Pilih Kelompok â€”</option>
+                        <option value="">— Pilih Kelompok —</option>
                         <option value="PBF" {{ old('kelompok') == 'PBF' ? 'selected' : '' }}>PBF</option>
                         <option value="APOTEK" {{ old('kelompok') == 'APOTEK' ? 'selected' : '' }}>APOTEK</option>
                     </select>
@@ -265,7 +265,7 @@
                     <label class="form-label">Pabrik <span class="req">*</span></label>
                     <select name="kategori"
                             class="form-input {{ $errors->has('kategori') ? 'is-invalid' : '' }}" required>
-                        <option value="">â€” Pilih Pabrik â€”</option>
+                        <option value="">— Pilih Pabrik —</option>
                         @foreach($categories as $category)
                             <option value="{{ $category }}" {{ old('kategori') == $category ? 'selected' : '' }}>
                                 {{ $category }}
@@ -286,12 +286,12 @@
                         @enderror
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Stok (box) <span class="req">*</span></label>
+                        <label class="form-label">Stok (<span data-stock-unit-label>{{ old('sediaan') ?: 'kemasan' }}</span>) <span class="req">*</span></label>
                         <input type="number" name="stok"
                                class="form-input {{ $errors->has('stok') ? 'is-invalid' : '' }}"
                                placeholder="100" min="0" step="0.000001"
                                value="{{ old('stok') }}" required>
-                        <small>Stok dicatat dalam box; sisa satuan kecil tampil setelah terjadi penjualan.</small>
+                        <small>Stok mengikuti satuan sediaan, misalnya box, botol, atau tube.</small>
                         @error('stok')
                             <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                         @enderror
@@ -325,7 +325,7 @@
                     <label class="form-label">Golongan <span class="req">*</span></label>
                     <select name="golongan"
                             class="form-input {{ $errors->has('golongan') ? 'is-invalid' : '' }}" required>
-                        <option value="">â€” Pilih Golongan â€”</option>
+                        <option value="">— Pilih Golongan —</option>
                         <option value="BEBAS" {{ old('golongan') == 'BEBAS' ? 'selected' : '' }}>BEBAS</option>
                         <option value="KERAS" {{ old('golongan') == 'KERAS' ? 'selected' : '' }}>KERAS</option>
                     </select>
@@ -355,12 +355,12 @@
             </div>
             <div class="form-body">
                 <div class="upload-zone" id="dropZone" onclick="document.getElementById('gambar').click()">
-                    <div class="upload-icon">ðŸ“¸</div>
+                    <div class="upload-icon">📸</div>
                     <p>Klik atau drag & drop gambar di sini</p>
                     <button type="button" class="btn-choose" onclick="event.stopPropagation();document.getElementById('gambar').click()">
                         <i class="fa-solid fa-folder-open"></i> Pilih File
                     </button>
-                    <small>JPG, PNG, GIF â€” Maks. 10MB</small>
+                    <small>JPG, PNG, GIF — Maks. 10MB</small>
                 </div>
                 <input type="file" id="gambar" name="gambar" accept="image/*" style="display:none;">
                 @error('gambar')
@@ -419,6 +419,17 @@
             input.files = dt.files;
             showPreview(file);
         }
+    });
+</script>
+@endsection
+
+@section('scripts')
+<script>
+    document.getElementById('medicine-package-unit')?.addEventListener('input', function () {
+        const label = this.value.trim() || 'kemasan';
+        document.querySelectorAll('[data-stock-unit-label]').forEach((element) => {
+            element.textContent = label;
+        });
     });
 </script>
 @endsection

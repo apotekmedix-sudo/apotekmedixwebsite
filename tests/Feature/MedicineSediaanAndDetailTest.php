@@ -64,4 +64,34 @@ class MedicineSediaanAndDetailTest extends TestCase
         $response->assertSee('Sediaan');
         $response->assertSee('Box');
     }
+
+    public function test_prescription_and_otc_category_choices_filter_products(): void
+    {
+        $prescriptionMedicine = Medicine::create([
+            'nama_obat' => 'Obat Resep Contoh',
+            'kategori_produk' => 'OBAT',
+            'harga' => 10000,
+            'stok' => 5,
+            'deskripsi' => 'Obat resep untuk pengujian',
+        ]);
+        $prescriptionMedicine->forceFill(['is_resep' => true])->save();
+
+        Medicine::create([
+            'nama_obat' => 'Obat OTC Contoh',
+            'kategori_produk' => 'OBAT',
+            'harga' => 8000,
+            'stok' => 5,
+            'deskripsi' => 'Obat bebas untuk pengujian',
+        ]);
+
+        $this->get(route('products.index', ['kategori_pilihan' => 'obat-resep']))
+            ->assertOk()
+            ->assertSee('Obat Resep Contoh')
+            ->assertDontSee('Obat OTC Contoh');
+
+        $this->get(route('products.index', ['kategori_pilihan' => 'otc']))
+            ->assertOk()
+            ->assertSee('Obat OTC Contoh')
+            ->assertDontSee('Obat Resep Contoh');
+    }
 }

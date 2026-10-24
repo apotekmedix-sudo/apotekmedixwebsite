@@ -1,0 +1,77 @@
+﻿
+
+<?php $__env->startSection('title', 'Produk Pemesanan PBF - Admin Apotek Medix'); ?>
+<?php $__env->startSection('page-title', '📦 Produk Pemesanan PBF'); ?>
+
+<?php $__env->startSection('styles'); ?>
+<style>
+    .ordering-head { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin-bottom:1.25rem; }
+    .ordering-head h2 { margin:0 0 .25rem; color:#1f2937; font-size:1.15rem; }
+    .ordering-head p { margin:0; color:#6b7280; font-size:.85rem; }
+    .ordering-search { display:flex; gap:.55rem; max-width:430px; width:100%; }
+    .ordering-search input { flex:1; min-width:0; padding:.65rem .8rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.88rem; }
+    .ordering-search button { border:0; border-radius:.5rem; padding:.65rem 1rem; background:#1e88e5; color:white; font-weight:700; cursor:pointer; }
+    .ordering-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:1rem; }
+    .ordering-card { background:white; border:1px solid #e5e7eb; border-radius:.75rem; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.06); display:flex; flex-direction:column; }
+    .ordering-image { height:145px; background:linear-gradient(135deg,#e3f2fd,#f3f8fc); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .ordering-image img { width:100%; height:100%; object-fit:cover; }
+    .ordering-image i { font-size:2.8rem; color:#90caf9; }
+    .ordering-body { padding:.85rem; display:flex; flex:1; flex-direction:column; }
+    .ordering-principle { color:#6b7280; font-size:.72rem; font-weight:700; text-transform:uppercase; }
+    .ordering-name { margin:.25rem 0 .5rem; font-size:.92rem; color:#1f2937; line-height:1.3; }
+    .ordering-price { color:#1e88e5; font-size:1.05rem; font-weight:800; margin-top:auto; }
+    .ordering-button { border:0; border-radius:.5rem; padding:.6rem; background:#25d366; color:white; font-weight:700; cursor:pointer; width:100%; }
+    .ordering-empty { padding:4rem 1rem; text-align:center; color:#6b7280; background:white; border-radius:.75rem; border:1px solid #e5e7eb; }
+    .ordering-pages { margin-top:1.25rem; display:flex; justify-content:center; gap:.35rem; }
+    .ordering-pages a, .ordering-pages span { min-width:32px; padding:.45rem .65rem; text-align:center; border:1px solid #e5e7eb; border-radius:.4rem; text-decoration:none; color:#374151; background:white; }
+    .ordering-pages .active { background:#1e88e5; color:white; border-color:#1e88e5; }
+    .ordering-cart-button { position:fixed; right:22px; bottom:22px; z-index:2100; display:inline-flex; align-items:center; gap:.4rem; border:0; border-radius:999px; padding:.65rem .85rem; background:#1e88e5; color:white; box-shadow:0 6px 18px rgba(30,136,229,.35); font-weight:700; cursor:pointer; font-size:.82rem; white-space:nowrap; }
+    .ordering-cart-button .cart-badge { position:static; display:inline-flex; align-items:center; justify-content:center; flex:0 0 20px; width:20px; height:20px; margin:0; padding:0; border-radius:50% !important; background:#ef4444; color:#fff; font-size:.7rem; line-height:20px; }
+    @media(max-width:520px) { .ordering-search { max-width:none; } .ordering-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; } .ordering-image { height:115px; } .ordering-body { padding:.65rem; } .ordering-name { font-size:.8rem; } }
+</style>
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startSection('content'); ?>
+<div class="ordering-head">
+    <div><h2>Produk Pemesanan</h2><p><?php echo e($total); ?> produk dengan harga modal untuk pemesanan PBF</p></div>
+    <form class="ordering-search" method="GET" action="<?php echo e(route('admin.produk-pbf.index')); ?>">
+        <input name="search" value="<?php echo e($search); ?>" placeholder="Cari nama produk atau principle..."><button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
+    </form>
+</div>
+<?php if($medicines->count()): ?>
+    <div class="ordering-grid">
+        <?php $__currentLoopData = $medicines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $medicine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <article class="ordering-card">
+                <div class="ordering-image"><?php if($medicine->gambar): ?><img src="<?php echo e(url('storage/' . $medicine->gambar)); ?>" alt="<?php echo e($medicine->nama_obat); ?>"><?php else: ?><i class="fa-solid fa-pills"></i><?php endif; ?></div>
+                <div class="ordering-body">
+                    <span class="ordering-principle"><?php echo e($medicine->brand ?: $medicine->kategori ?: 'Produk'); ?></span>
+                    <h3 class="ordering-name"><?php echo e($medicine->nama_obat); ?></h3>
+                    <div class="ordering-price"><?php echo e($medicine->getFormattedCatalogPrice('harga_modal')); ?></div>
+                    <button class="ordering-button" data-package-unit-label="<?php echo e($medicine->package_unit_label); ?>" onclick="addToCart(<?php echo e($medicine->id); ?>, '<?php echo e(addslashes($medicine->nama_obat)); ?>', <?php echo e($medicine->harga_modal); ?>, '<?php echo e($medicine->gambar ? url('storage/'.$medicine->gambar) : ''); ?>', '<?php echo e(addslashes($medicine->brand ?: $medicine->kategori)); ?>', this)"><i class="fa-solid fa-cart-plus"></i> Tambah Pesanan</button>
+                </div>
+            </article>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+    </div>
+    <div class="ordering-pages">
+        <?php if($medicines->onFirstPage()): ?><span>Previous</span><?php else: ?><a href="<?php echo e($medicines->previousPageUrl()); ?>">Previous</a><?php endif; ?>
+        <?php $__currentLoopData = $medicines->getUrlRange(1, $medicines->lastPage()); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $page => $url): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <?php if($page === 1 || $page === $medicines->lastPage() || abs($page - $medicines->currentPage()) <= 2): ?>
+                <?php if($page === $medicines->currentPage()): ?><span class="active"><?php echo e($page); ?></span><?php else: ?><a href="<?php echo e($url); ?>"><?php echo e($page); ?></a><?php endif; ?>
+            <?php elseif($page === 2 || $page === $medicines->lastPage() - 1): ?>
+                <span>...</span>
+            <?php endif; ?>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        <?php if($medicines->hasMorePages()): ?><a href="<?php echo e($medicines->nextPageUrl()); ?>">Next</a><?php else: ?><span>Next</span><?php endif; ?>
+    </div>
+<?php else: ?>
+    <div class="ordering-empty"><i class="fa-solid fa-box-open" style="font-size:2.5rem"></i><p>Belum ada produk dengan harga modal.</p></div>
+<?php endif; ?>
+<button class="ordering-cart-button" onclick="openCart()"><i class="fa-solid fa-cart-shopping"></i> Keranjang <span class="cart-badge" id="adminCartBadge">0</span></button>
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startSection('scripts'); ?>
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_pbf_admin', receiptStoreName: 'APOTEK MEDIX', receiptStoreAddress: 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat', receiptFilePrefix: 'surat-pesanan-pbf', adminPbfOrder: true, adminPurchaseOrderBase: '<?php echo e(str_replace('/0/', '/__ORDER__/', route('admin.purchase-history.purchase-order', ['order' => 0]))); ?>' };</script>
+<?php echo $__env->make('partials.cart', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views\admin\products-ordering.blade.php ENDPATH**/ ?>

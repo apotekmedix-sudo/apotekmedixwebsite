@@ -147,7 +147,7 @@
                     <label class="form-label">Pabrik <span class="req">*</span></label>
                     <select name="kategori"
                             class="form-input {{ $errors->has('kategori') ? 'is-invalid' : '' }}" required>
-                        <option value="">â€” Pilih Pabrik â€”</option>
+                        <option value="">— Pilih Pabrik —</option>
                         @foreach($categories as $category)
                             <option value="{{ $category }}" {{ old('kategori') == $category ? 'selected' : '' }}>
                                 {{ $category }}
@@ -208,7 +208,7 @@
                     <label class="form-label">Golongan <span class="req">*</span></label>
                     <select name="golongan"
                             class="form-input {{ $errors->has('golongan') ? 'is-invalid' : '' }}" required>
-                        <option value="">â€” Pilih Golongan â€”</option>
+                        <option value="">— Pilih Golongan —</option>
                         <option value="BEBAS" {{ old('golongan') == 'BEBAS' ? 'selected' : '' }}>BEBAS</option>
                         <option value="KERAS" {{ old('golongan') == 'KERAS' ? 'selected' : '' }}>KERAS</option>
                     </select>
@@ -235,12 +235,12 @@
             </div>
             <div class="form-body">
                 <div class="upload-zone" id="dropZone" onclick="document.getElementById('gambar').click()">
-                    <div class="upload-icon">ðŸ“¸</div>
+                    <div class="upload-icon">📸</div>
                     <p>Klik atau drag & drop gambar di sini</p>
                     <button type="button" class="btn-choose" onclick="event.stopPropagation();document.getElementById('gambar').click()">
                         <i class="fa-solid fa-folder-open"></i> Pilih File
                     </button>
-                    <small>JPG, PNG, GIF â€” Maks. 10MB</small>
+                    <small>JPG, PNG, GIF — Maks. 10MB</small>
                 </div>
                 <input type="file" id="gambar" name="gambar" accept="image/*" style="display:none;">
                 @error('gambar')

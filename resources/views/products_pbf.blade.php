@@ -1,6 +1,6 @@
 ﻿@extends('layouts.frontend')
 
-@section('title', 'Apotek Medix - Produk PBF')
+@section('title', 'Belanja B2B - Apotek Medix')
 
 @section('styles')
 <style>
@@ -88,11 +88,6 @@
     }
     .products-header .brand-copy h1 { margin-bottom: 0.6rem; line-height: 1.08; letter-spacing: -0.02em; font-size: 2.5rem; font-weight: 800; color: #ffffff; }
     .products-header .brand-copy p { margin: 0 0 0.75rem; color: rgba(255,255,255,0.96); font-size: 1.08rem; line-height: 1.65; font-weight: 400; }
-    .products-header .brand-copy .brand-address { margin-top: 0.75rem; margin-bottom: 0.5rem; font-size: 0.93rem; color: rgba(255,255,255,0.85); line-height: 1.55; max-width: 100%; font-weight: 400; }
-    .products-header .partner-logos { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; margin-top: -0.8rem; justify-content: flex-start; width: 100%; }
-    .products-header .partner-logo-desktop { display: block; max-height: 380px; max-width: 120%; width: auto; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.16)); }
-    .products-header .partner-card { display: none; width: 110%; max-width: 280px; background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.22); border-radius: 26px; padding: 0.6rem; align-items: center; justify-content: center; box-shadow: 0 18px 40px rgba(0,0,0,0.14); }
-    .products-header .partner-card img { max-height: 80px; width: 30%; display: block; filter: drop-shadow(0 14px 32px rgba(0,0,0,0.18)); }
     .products-main { background: transparent; padding: 2.5rem 0 5rem; min-height: 60vh; }
 
     .filter-bar {
@@ -361,22 +356,6 @@
         .products-header .brand-copy {
             max-width: none;
         }
-        .products-header .partner-logos {
-            justify-content: center;
-            margin-top: 1.2rem;
-        }
-        .products-header .partner-card {
-            display: flex;
-            margin: 0 auto;
-            max-width: 280px;
-        }
-        .products-header .partner-card img {
-            max-height: 170px;
-            width: auto;
-        }
-        .products-header .partner-logo-desktop {
-            display: none;
-        }
         .products-header .header-deco-icon-1,
         .products-header .header-deco-icon-2,
         .products-header .header-deco-icon-3 {
@@ -442,22 +421,15 @@
 <div class="products-header">
     <div class="container">
         <div class="hero-panel">
-            <img src="{{ asset('LOGO SURYA SHARONE.png') }}" alt="Apotek Medix" class="brand-logo" />
+            <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix" class="brand-logo" />
             <div class="brand-copy">
                 <div class="breadcrumb-custom" style="margin:0 0 0.75rem;">
                     <a href="{{ route('home') }}"><i class="fa-solid fa-house"></i> Home</a>
                     <span>/</span>
-                    <span class="current">Apotek Medix</span>
+                    <span class="current">Belanja B2B</span>
                 </div>
-                <h1><i class="fa-solid fa-box"></i> Katalog Produk PBF</h1>
+                <h1><i class="fa-solid fa-box"></i> Belanja B2B</h1>
                 <p>{{ $total }} produk PBF tersedia dari Apotek Medix untuk mitra apotek dan distributor yang membutuhkan stok terpercaya.</p>
-                <p class="brand-address">Jl. Pendawa Jl. Sersan Muis No.99, 2 Ilir, Kec. Ilir Tim. II, Kota Palembang, Sumatera Selatan 30118</p>
-                <div class="partner-logos">
-                    <img src="{{ asset('LOGO 5 PABRIK.png') }}" alt="Mitra 5 Pabrik" class="partner-logo-desktop" />
-                    <div class="partner-card">
-                        <img src="{{ asset('LOGO 5 PABRIK.png') }}" alt="Mitra 5 Pabrik" />
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -553,18 +525,26 @@
                 @foreach($medicines as $medicine)
                     <div class="medicine-card">
                         <div class="medicine-image">
-                            @if($medicine->gambar)
-                                <img src="{{ url('storage/' . $medicine->gambar) }}" alt="{{ $medicine->nama_obat }}">
-                            @else
-                                <img class="product-placeholder-logo" src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix">
-                            @endif
+                            @include('partials.product-gallery-image', ['medicine' => $medicine])
                         </div>
                         <div class="medicine-body">
                             
                             <span class="medicine-company">{{ $medicine->kategori }}</span>
-                            <h3 class="medicine-name">{{ $medicine->nama_obat }}</h3>
+                            <h3 class="medicine-name"><a href="{{ route('medicines.show', $medicine->id) }}">{{ $medicine->nama_obat }}</a></h3>
                             
-                            <div class="medicine-price">{{ $medicine->getFormattedCatalogPrice('harga_modal') }}</div>
+                            @php
+                                $basePrice = $medicine->getChannelBasePrice('b2b');
+                                $promoPrice = $medicine->getChannelPromoPrice('b2b');
+                                $promoPercent = $medicine->getPromoPercent('b2b');
+                            @endphp
+                            <div class="medicine-price">
+                                @if($promoPercent > 0)<small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($basePrice, 0, ',', '.') }}</small>@endif
+                                @if($basePrice > 0)
+                                    Rp {{ number_format($promoPrice, 0, ',', '.') }}
+                                @else
+                                    <span style="color:#b45309;font-size:.82rem;">Harga B2B belum diatur</span>
+                                @endif
+                            </div>
                             @php $stock = (int) $medicine->stok; @endphp
                             <span class="stock-badge {{ $stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available') }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
@@ -578,9 +558,15 @@
                             <a href="{{ route('medicines.show', $medicine->id) }}" class="medicine-btn">
                                 Lihat Detail <i class="fa-solid fa-arrow-right"></i>
                             </a>
-                            <button class="btn-cart" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ (float) ($medicine->harga_modal ?: $medicine->harga) }}, '{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this)">
-                                <i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang
-                            </button>
+                            @if($basePrice > 0)
+                                <button class="btn-cart" data-package-unit-label="{{ $medicine->package_unit_label }}" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $promoPrice }}, '{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this)">
+                                    <i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang
+                                </button>
+                            @else
+                                <button class="btn-cart" type="button" disabled style="opacity:.55;cursor:not-allowed;">
+                                    Harga belum tersedia
+                                </button>
+                            @endif
                         </div>
                     </div>
                 @endforeach

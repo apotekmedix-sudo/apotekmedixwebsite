@@ -1,30 +1,22 @@
 @php
     $medicine = $medicine ?? null;
     $packagingFormId = 'packaging-fields-' . ($medicine?->id ?? 'new');
-    $packagingEnabled = old('unit_packaging_enabled', $medicine?->unit_packaging_enabled ?? false);
 @endphp
 <div class="form-group" style="padding:1rem;border:1px solid #bae6fd;border-radius:.65rem;background:#f0f9ff;">
-    <label style="display:flex;align-items:center;gap:.55rem;font-weight:700;color:#075985;">
-        <input type="hidden" name="unit_packaging_enabled" value="0">
-        <input type="checkbox" name="unit_packaging_enabled" value="1" data-packaging-toggle="{{ $packagingFormId }}" @checked($packagingEnabled)>
-        Izinkan penjualan per tablet, strip, dan box
-    </label>
-    <small style="display:block;margin:.4rem 0 .85rem;color:#475569;">Stok diisi sebagai jumlah box. Isi kemasan dan harga setiap satuan diatur untuk produk ini.</small>
+    <strong style="display:block;color:#075985;">Isi Kemasan dan Harga Satuan</strong>
+    <small style="display:block;margin:.4rem 0 .85rem;color:#475569;">Isi PER STRIP dan PER TABLET jika produk dapat dijual per strip/tablet. Kosongkan atau isi 0 jika tidak berlaku.</small>
     <div id="{{ $packagingFormId }}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.75rem;">
-        <label>Tablet per strip
-            <input type="number" name="tablets_per_strip" min="1" step="1" value="{{ old('tablets_per_strip', $medicine?->tablets_per_strip) }}" data-packaging-input>
+        <label>PER STRIP (strip per kemasan)
+            <input type="number" name="strips_per_box" min="0" step="1" value="{{ old('strips_per_box', $medicine?->unit_packaging_enabled ? $medicine->strips_per_box : 0) }}">
         </label>
-        <label>Strip per box
-            <input type="number" name="strips_per_box" min="1" step="1" value="{{ old('strips_per_box', $medicine?->strips_per_box) }}" data-packaging-input>
+        <label>PER TABLET (tablet per kemasan)
+            <input type="number" name="tablets_per_box" min="0" step="1" value="{{ old('tablets_per_box', $medicine?->unit_packaging_enabled ? $medicine->units_per_box : 0) }}">
         </label>
-        <label>Harga / tablet (Rp)
+        <label>Harga jual per tablet (Rp)
             <input type="number" name="price_tablet" min="0" step="1" value="{{ old('price_tablet', $medicine?->price_tablet) }}" data-packaging-input>
         </label>
-        <label>Harga / strip (Rp)
+        <label>Harga jual per strip (Rp)
             <input type="number" name="price_strip" min="0" step="1" value="{{ old('price_strip', $medicine?->price_strip) }}" data-packaging-input>
-        </label>
-        <label>Harga / box (Rp)
-            <input type="number" name="price_box" min="0" step="1" value="{{ old('price_box', $medicine?->price_box) }}" data-packaging-input>
         </label>
     </div>
 </div>
@@ -32,19 +24,3 @@
     #{{ $packagingFormId }} label { display:flex;flex-direction:column;gap:.35rem;font-size:.8rem;font-weight:700;color:#334155; }
     #{{ $packagingFormId }} input { width:100%;min-width:0;padding:.55rem .65rem;border:1px solid #cbd5e1;border-radius:.45rem;background:#fff;color:#1e293b; }
 </style>
-<script>
-(() => {
-    const toggle = document.querySelector('[data-packaging-toggle="{{ $packagingFormId }}"]');
-    const fields = document.getElementById('{{ $packagingFormId }}');
-    if (!toggle || !fields) return;
-    const syncPackagingFields = () => {
-        fields.querySelectorAll('[data-packaging-input]').forEach(input => {
-            input.disabled = !toggle.checked;
-            input.required = toggle.checked;
-        });
-        fields.style.opacity = toggle.checked ? '1' : '.55';
-    };
-    toggle.addEventListener('change', syncPackagingFields);
-    syncPackagingFields();
-})();
-</script>

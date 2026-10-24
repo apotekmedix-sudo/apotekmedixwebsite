@@ -86,6 +86,93 @@ class PurchaseHistoryTest extends TestCase
         $this->assertSame(5000, $history->items[0]['potongan']);
     }
 
+    public function test_checkout_applies_the_configured_channel_discount_to_catalog_prices(): void
+    {
+        $medicine = Medicine::create([
+            'nama_obat' => 'Vitamin B2C Promo',
+            'kategori' => 'MEDIX',
+            'harga' => 1000,
+            'harga_retail' => 2500,
+            'harga_modal' => 1500,
+            'promo_b2c_percent' => 20,
+            'stok' => 10,
+            'deskripsi' => 'Produk promo B2C',
+        ]);
+
+        $response = $this->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pembeli Promo',
+            'transaction_channel' => 'online',
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 2, 'harga' => 1],
+            ],
+            'total' => 2,
+        ])->assertOk();
+
+        $history = \App\Models\PurchaseHistory::findOrFail($response->json('id'));
+        $this->assertSame(5000, $history->original_total);
+        $this->assertSame(4000, $history->total);
+        $this->assertSame(1000, $history->items[0]['potongan']);
+        $this->assertSame(20, $history->items[0]['promo_percent']);
+    }
+
+    public function test_pbf_checkout_uses_the_b2b_promo_and_wholesale_price(): void
+    {
+        $medicine = Medicine::create([
+            'nama_obat' => 'Produk B2B Promo',
+            'kategori' => 'MEDIX',
+            'kelompok' => 'PBF',
+            'harga' => 1000,
+            'harga_retail' => 4000,
+            'harga_modal' => 2000,
+            'harga_grosir' => 5000,
+            'promo_b2b_percent' => 25,
+            'stok' => 10,
+            'deskripsi' => 'Produk promo B2B',
+        ]);
+
+        $response = $this->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Mitra Promo',
+            'transaction_channel' => 'online',
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 1, 'harga' => 1],
+            ],
+            'total' => 1,
+        ])->assertOk();
+
+        $history = \App\Models\PurchaseHistory::findOrFail($response->json('id'));
+        $this->assertSame(5000, $history->original_total);
+        $this->assertSame(3750, $history->total);
+        $this->assertSame(1250, $history->items[0]['potongan']);
+        $this->assertSame(25, $history->items[0]['promo_percent']);
+    }
+
+    public function test_b2b_checkout_does_not_fall_back_to_modal_or_internal_price(): void
+    {
+        $medicine = Medicine::create([
+            'nama_obat' => 'Produk Tanpa Harga B2B',
+            'kategori' => 'MEDIX',
+            'kelompok' => 'PBF',
+            'harga' => 1000,
+            'harga_internal' => 1500,
+            'harga_modal' => 2000,
+            'stok' => 10,
+            'deskripsi' => 'Harga B2B belum dikonfigurasi',
+        ]);
+
+        $this->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Mitra',
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 1, 'harga' => 1],
+            ],
+            'total' => 1,
+        ])->assertUnprocessable();
+
+        $this->assertSame(10, $medicine->fresh()->stok);
+    }
+
     public function test_purchase_history_can_store_pbf_buyer_type(): void
     {
         $response = $this->postJson('/orders/history', [

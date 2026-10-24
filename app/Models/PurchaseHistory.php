@@ -9,6 +9,7 @@ class PurchaseHistory extends Model
     protected $fillable = [
         'buyer_type',
         'user_id',
+        'customer_id',
         'buyer_name',
         'requester_name',
         'outlet_name',
@@ -31,9 +32,14 @@ class PurchaseHistory extends Model
         'payment_method',
         'payment_term_days',
         'transaction_channel',
+        'is_pbf_purchase_order',
         'payment_status',
+        'receipt_status',
         'cashier_id',
         'paid_at',
+        'verified_at',
+        'printed_at',
+        'cancelled_at',
     ];
 
     protected $casts = [
@@ -42,7 +48,11 @@ class PurchaseHistory extends Model
         'original_total' => 'integer',
         'discounted_total' => 'integer',
         'payment_term_days' => 'integer',
+        'is_pbf_purchase_order' => 'boolean',
         'paid_at' => 'datetime',
+        'verified_at' => 'datetime',
+        'printed_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     protected $appends = ['effective_total', 'approval_label'];
@@ -55,6 +65,11 @@ class PurchaseHistory extends Model
     public function customer()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function customerProfile()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 
     public function getEffectiveTotalAttribute(): int

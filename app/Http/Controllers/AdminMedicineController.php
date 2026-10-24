@@ -93,7 +93,7 @@ class AdminMedicineController extends Controller
         }
 
         $medicine = new Medicine($validated);
-        $medicine->setStockInBoxes((float) $validated['stok']);
+        $medicine->setStockInPackages((float) $validated['stok']);
         $medicine->save();
 
         return redirect()->route('admin.medicines.index')
@@ -160,10 +160,10 @@ class AdminMedicineController extends Controller
             $validated['gambar'] = null;
         }
 
-        $stockBoxes = (float) $validated['stok'];
+        $stockPackages = (float) $validated['stok'];
         unset($validated['stok']);
         $medicine->fill($validated);
-        $medicine->setStockInBoxes($stockBoxes);
+        $medicine->setStockInPackages($stockPackages);
         $medicine->save();
 
         $queryParams = $this->buildIndexQueryParams($request);
@@ -205,7 +205,7 @@ class AdminMedicineController extends Controller
             'stok' => ['required', 'numeric', 'min:0', 'max:10000000'],
         ]);
 
-        $medicine->setStockInBoxes((float) $validated['stok']);
+        $medicine->setStockInPackages((float) $validated['stok']);
         $medicine->save();
 
         return back()->with('success', 'Stok berhasil diupdate!');

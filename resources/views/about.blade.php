@@ -371,7 +371,7 @@
                 <div style="padding:.85rem 1.1rem;background:#eff6ff;border-radius:12px;border-left:4px solid #1E88E5;font-size:.88rem;color:#374151;">
                     <i class="fa-solid fa-envelope" style="color:#1E88E5;margin-right:.4rem;"></i>
                     <strong>Email:</strong>
-                    <a href="mailto:hello@apotekmedix.com" style="color:#1E88E5;text-decoration:none;font-weight:600;">hello@apotekmedix.com</a>
+                    <a href="mailto:apotekmedix@gmail.com" style="color:#1E88E5;text-decoration:none;font-weight:600;">apotekmedix@gmail.com</a>
                 </div>
             </div>
             <div class="who-img-wrap">
@@ -525,7 +525,7 @@
             <h2>Ada Pertanyaan?<br>Hubungi Kami Sekarang</h2>
             <p>Tim kami siap membantu Anda menemukan produk yang tepat dan menjawab setiap pertanyaan Anda kapan saja.</p>
             <div>
-                <a href="https://wa.me/6285890007359" target="_blank" class="btn-cta-wa">
+                <a href="https://wa.me/6285882717844" target="_blank" rel="noopener" class="btn-cta-wa">
                     <i class="fa-brands fa-whatsapp" style="font-size:1.2rem;"></i> Chat via WhatsApp
                 </a>
                 <a href="{{ route('contact') }}" class="btn-cta-produk">

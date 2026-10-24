@@ -38,8 +38,8 @@
     .btn-reset { padding:0.55rem 0.9rem; background:white; color:#6b7280; border:1px solid #e5e7eb; border-radius:0.5rem; font-size:0.875rem; font-weight:600; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem; transition:all 0.2s; }
     .btn-reset:hover { background:#f9fafb; color:#374151; }
 
-    .data-table-wrap { background:white; border-radius:0.75rem; box-shadow:0 1px 4px rgba(0,0,0,0.06); border:1px solid #f0f0f0; overflow:hidden; }
-    .data-table { width:100%; border-collapse:collapse; font-size:0.875rem; }
+    .data-table-wrap { background:white; border-radius:0.75rem; box-shadow:0 1px 4px rgba(0,0,0,0.06); border:1px solid #f0f0f0; overflow-x:auto; }
+    .data-table { width:100%; min-width:1700px; border-collapse:collapse; font-size:0.875rem; }
     .data-table thead tr { background:#f8faff; border-bottom:2px solid #e5e7eb; }
     .data-table th { padding:0.85rem 1rem; text-align:left; font-size:0.75rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap; }
     .data-table td { padding:0.85rem 1rem; border-bottom:1px solid #f3f4f6; color:#374151; vertical-align:middle; }
@@ -216,13 +216,16 @@
                     <th style="width:48px;"><i class="fa-regular fa-square-check" aria-label="Pilih produk"></i></th>
                     <th style="width:140px;">Foto</th>
                     <th>Nama Produk</th>
+                    <th>Principle / Logo / Golongan</th>
+                    <th>Komposisi / Indikasi</th>
+                    <th>Satuan / Kemasan</th>
                     <th>Sediaan</th>
-                    <th>Isi Kemasan</th>
                     <th>Kategori</th>
-                    <th>Pabrik/Merek</th>
                     <th>Modal</th>
-                    <th>Retail</th>
-                    <th>Stok</th>
+                    <th>Harga Internal</th>
+                    <th>Harga B2B</th>
+                    <th>Harga B2C</th>
+                    <th>Stok (Satuan Kemasan)</th>
                     <th>Ditambahkan</th>
                     <th style="width:130px;">Aksi</th>
                 </tr>
@@ -242,7 +245,24 @@
                             </div>
                         @endif
                     </td>
-                    <td><div class="med-name">{{ $medicine->nama_obat }}</div></td>
+                    <td>
+                        <div class="med-name">{{ $medicine->nama_obat }}</div>
+                        @if($medicine->kemasan)<div class="med-meta">{{ $medicine->kemasan }}</div>@endif
+                    </td>
+                    <td>
+                        <div>{{ $medicine->kategori ?: '-' }}</div>
+                        <div class="med-meta">Logo: {{ $medicine->logo ?: '-' }} | Golongan: {{ $medicine->golongan ?: '-' }}</div>
+                    </td>
+                    <td>
+                        <div class="med-desc">{{ $medicine->komposisi ?: '-' }}</div>
+                        <div class="med-meta">{{ $medicine->indikasi ?: '-' }}</div>
+                    </td>
+                    <td>
+                        <div>{{ $medicine->satuan ?: '-' }}</div>
+                        @if($medicine->unit_packaging_enabled)
+                            <small class="med-meta">{{ $medicine->strips_per_box }} strip / {{ $medicine->tablets_per_strip * $medicine->strips_per_box }} tablet per {{ strtolower($medicine->package_unit_label) }}</small>
+                        @endif
+                    </td>
                     <td>
                         @if($medicine->sediaan)
                             <span style="display:inline-block;padding:0.25rem 0.5rem;background:#e0f2fe;color:#0369a1;border-radius:4px;font-size:0.75rem;font-weight:600;text-transform:uppercase;">
@@ -250,14 +270,6 @@
                             </span>
                         @else
                             <span style="font-size:0.75rem;color:#9ca3af;">-</span>
-                        @endif
-                    </td>
-                    <td style="font-size:.78rem;color:#475569;">
-                        @if($medicine->unit_packaging_enabled)
-                            1 strip = {{ $medicine->tablets_per_strip }} tablet<br>
-                            1 box = {{ $medicine->strips_per_box }} strip
-                        @else
-                            <span style="color:#9ca3af;">Satuan lama</span>
                         @endif
                     </td>
                     <td>
@@ -270,24 +282,27 @@
                         @endphp
                         <span class="kat-badge {{ $cls }}">{{ $medicine->kategori_produk }}</span>
                     </td>
-                    <td><span style="font-size:0.82rem;color:#6b7280;">{{ $medicine->kategori }}</span></td>
                     <td>
                         <input class="inline-number" type="number" name="harga_modal" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->harga_modal ?: $medicine->harga }}" min="0" step="0.01" aria-label="Harga modal {{ $medicine->nama_obat }}">
                     </td>
                     <td>
-                        <input class="inline-number" type="number" name="harga_retail" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_box ?? ($medicine->harga_retail ?: $medicine->harga) }}" min="0" step="0.01" aria-label="Harga retail {{ $medicine->nama_obat }}">
+                        <input class="inline-number" type="number" name="harga_internal" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->getChannelBasePrice('internal') }}" min="0" step="0.01" aria-label="Harga jual internal {{ $medicine->nama_obat }}">
+                    </td>
+                    <td>
+                        <input class="inline-number" type="number" name="harga_grosir" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->harga_grosir ?: $medicine->harga_modal ?: $medicine->harga }}" min="0" step="0.01" aria-label="Harga jual B2B {{ $medicine->nama_obat }}">
+                    </td>
+                    <td>
+                        <input class="inline-number" type="number" name="harga_retail" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_box ?? ($medicine->harga_retail ?: $medicine->harga) }}" min="0" step="0.01" aria-label="Harga jual B2C {{ $medicine->nama_obat }}">
                         @if($medicine->unit_packaging_enabled)
                             <small style="display:block;margin-top:.25rem;color:#64748b;">
-                                Tablet Rp {{ number_format($medicine->price_tablet, 0, ',', '.') }} ·
-                                Strip Rp {{ number_format($medicine->price_strip, 0, ',', '.') }}
+                                Strip Rp {{ number_format($medicine->price_strip, 0, ',', '.') }} ·
+                                Tablet Rp {{ number_format($medicine->price_tablet, 0, ',', '.') }}
                             </small>
                         @endif
                     </td>
                     <td>
-                        <input class="inline-number" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ number_format($medicine->stock_boxes, 6, '.', '') }}" min="0" step="0.000001" aria-label="Stok box {{ $medicine->nama_obat }}">
-                        @if($medicine->unit_packaging_enabled)
-                            <small style="display:block;margin-top:.25rem;color:#64748b;">{{ $medicine->stock_breakdown }}</small>
-                        @endif
+                        <input class="inline-number" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ number_format($medicine->stock_packages, 6, '.', '') }}" min="0" step="0.000001" aria-label="Stok {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
+                        <small style="display:block;margin-top:.25rem;color:#64748b;">{{ $medicine->stock_breakdown }}</small>
                     </td>
                     <td style="font-size:0.82rem;color:#9ca3af;">{{ $medicine->created_at->format('d M Y') }}</td>
                     <td>

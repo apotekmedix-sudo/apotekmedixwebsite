@@ -8,8 +8,9 @@ use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerAccountController;
 use App\Http\Controllers\AdminCustomerController;
-use App\Http\Controllers\AdminCashierController;
+use App\Http\Controllers\AdminShoppingAccessCodeController;
 use App\Http\Controllers\CashierController;
+use App\Http\Controllers\InternalShoppingAccessController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminMedicineController;
 use App\Http\Controllers\AdminMedicineImportController;
@@ -20,7 +21,7 @@ use App\Http\Controllers\AdminPrescriptionProductImportController;
 use App\Http\Controllers\AdminProdukController;
 use App\Http\Controllers\AdminProdukImportController;
 use App\Http\Controllers\AdminBannerController;
-use App\Http\Controllers\AdminPromoProductController;
+use App\Http\Controllers\AdminMedicinePromotionController;
 use App\Http\Controllers\PurchaseHistoryController;
 use App\Http\Controllers\GassRoomController;
 
@@ -44,10 +45,17 @@ Route::get('/storage/{folder}/{filename}', function (string $folder, string $fil
 
 // Products routes
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-Route::get('/kiosk', [ProductController::class, 'index'])->name('kiosk');
+Route::get('/belanja-internal/akses', [InternalShoppingAccessController::class, 'show'])->name('shopping.internal.access');
+Route::post('/belanja-internal/akses', [InternalShoppingAccessController::class, 'verify'])
+    ->middleware('throttle:5,1')
+    ->name('shopping.internal.verify');
+Route::post('/belanja-internal/keluar', [InternalShoppingAccessController::class, 'logout'])->name('shopping.internal.logout');
+Route::get('/belanja-internal', [ProductController::class, 'index'])
+    ->middleware('internal.access')
+    ->name('shopping.internal');
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/products-pbf', [ProductController::class, 'pbf'])->name('products.pbf');
-Route::post('/products-pbf/verify', [ProductController::class, 'pbfVerify'])->name('products.pbf.verify');
+Route::post('/products-pbf/verify', [ProductController::class, 'pbfVerify'])->middleware('throttle:5,1')->name('products.pbf.verify');
 Route::post('/products-pbf/logout', [ProductController::class, 'pbfLogout'])->name('products.pbf.logout');
 Route::get('/products-apotek', [ProductController::class, 'apotek'])->name('products.apotek');
 Route::post('/orders/history', [PurchaseHistoryController::class, 'store'])->name('orders.history.store');
@@ -69,13 +77,6 @@ Route::get('/prescriptions/{id}', [PrescriptionController::class, 'show'])->name
 Route::get('/login', [AuthController::class, 'loginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-Route::get('/customer/login', [CustomerAccountController::class, 'showLogin'])->name('customer.login');
-Route::post('/customer/login', [CustomerAccountController::class, 'login'])->middleware('throttle:5,1')->name('customer.login.post');
-Route::get('/customer/verify-email', [CustomerAccountController::class, 'showEmailVerification'])->name('customer.email-verification');
-Route::post('/customer/verify-email', [CustomerAccountController::class, 'verifyEmail'])->middleware('throttle:10,1')->name('customer.email-verification.verify');
-Route::post('/customer/verify-email/resend', [CustomerAccountController::class, 'resendEmailVerification'])->middleware('throttle:3,1')->name('customer.email-verification.resend');
-Route::get('/customer/register', [CustomerAccountController::class, 'showRegister'])->name('customer.register');
-Route::post('/customer/register', [CustomerAccountController::class, 'register'])->middleware('throttle:5,1')->name('customer.register.post');
 Route::get('/customer/locations/search', [CustomerAccountController::class, 'searchLocations'])->middleware(['auth', 'throttle:10,1'])->name('customer.locations.search');
 Route::get('/customer/account', [CustomerAccountController::class, 'showProfile'])->name('customer.account');
 Route::put('/customer/account', [CustomerAccountController::class, 'updateProfile'])->name('customer.account.update');
@@ -84,9 +85,13 @@ Route::get('/cashier/login', [CashierController::class, 'showLogin'])->name('cas
 Route::post('/cashier/login', [CashierController::class, 'login'])->middleware('throttle:10,1')->name('cashier.login.post');
 Route::post('/cashier/logout', [CashierController::class, 'logout'])->middleware(['auth', 'cashier'])->name('cashier.logout');
 
-Route::middleware(['auth', 'cashier'])->prefix('cashier')->name('cashier.')->group(function () {
+Route::middleware(['auth', 'staff'])->prefix('cashier')->name('cashier.')->group(function () {
     Route::get('/dashboard', [CashierController::class, 'dashboard'])->name('dashboard');
-    Route::post('/orders/{order}/paid', [CashierController::class, 'markPaid'])->name('orders.paid');
+    Route::get('/updates', [CashierController::class, 'updates'])->name('updates');
+    Route::get('/orders/{order}/receipt', [CashierController::class, 'receipt'])->name('orders.receipt');
+    Route::post('/orders/{order}/verify', [CashierController::class, 'verifyAndPrint'])->name('orders.verify');
+    Route::post('/orders/{order}/printed', [CashierController::class, 'markPrinted'])->name('orders.printed');
+    Route::post('/orders/{order}/cancel', [CashierController::class, 'cancel'])->name('orders.cancel');
 });
 
 // GASS shared file room
@@ -116,9 +121,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/purchase-history/{order}/approval', [AdminDashboardController::class, 'updateApprovalStatus'])->name('purchase-history.approval');
     Route::delete('/purchase-history/{order}', [AdminDashboardController::class, 'destroy'])->name('purchase-history.destroy');
     Route::delete('/purchase-history', [AdminDashboardController::class, 'destroyAll'])->name('purchase-history.destroyAll');
-    Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
-    Route::get('/cashiers', [AdminCashierController::class, 'index'])->name('cashiers.index');
-    Route::post('/cashiers', [AdminCashierController::class, 'store'])->name('cashiers.store');
+    Route::resource('customers', AdminCustomerController::class)->except('show');
+    Route::get('/access-codes', [AdminShoppingAccessCodeController::class, 'index'])->name('access-codes.index');
+    Route::post('/access-codes/{channel}/generate', [AdminShoppingAccessCodeController::class, 'generate'])
+        ->middleware('throttle:10,1')
+        ->name('access-codes.generate');
+    Route::put('/access-codes/{accessCode}', [AdminShoppingAccessCodeController::class, 'update'])
+        ->middleware('throttle:10,1')
+        ->name('access-codes.update');
+    Route::delete('/access-codes/{accessCode}', [AdminShoppingAccessCodeController::class, 'destroy'])
+        ->name('access-codes.destroy');
 
     // Medicines management
     Route::resource('medicines', AdminMedicineController::class);
@@ -155,7 +167,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('banners', AdminBannerController::class);
     Route::post('banners/{banner}/toggle', [AdminBannerController::class, 'toggleAktif'])->name('banners.toggle');
 
-    // Promo Produk management
-    Route::resource('promo-products', AdminPromoProductController::class);
-    Route::post('promo-products/{promoProduct}/toggle', [AdminPromoProductController::class, 'toggleAktif'])->name('promo-products.toggle');
+    // Channel-specific medicine discounts
+    Route::get('promotions', [AdminMedicinePromotionController::class, 'index'])->name('promotions.index');
+    Route::put('promotions/{medicine}', [AdminMedicinePromotionController::class, 'update'])->name('promotions.update');
 });

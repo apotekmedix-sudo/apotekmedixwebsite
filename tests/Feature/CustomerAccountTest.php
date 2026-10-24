@@ -2,181 +2,78 @@
 
 namespace Tests\Feature;
 
-use App\Mail\CustomerLoginCode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\MessageBag;
-use Illuminate\Support\ViewErrorBag;
-use App\Models\PurchaseHistory;
 use Tests\TestCase;
 
 class CustomerAccountTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_customer_registration_requires_email_verification_before_login(): void
+    public function test_customer_login_registration_and_otp_pages_are_unavailable(): void
     {
-        Mail::fake();
+        $this->get('/customer/login')->assertNotFound();
+        $this->post('/customer/login')->assertNotFound();
+        $this->get('/customer/register')->assertNotFound();
+        $this->post('/customer/register')->assertNotFound();
+        $this->get('/customer/verify-email')->assertNotFound();
+        $this->post('/customer/verify-email')->assertNotFound();
+        $this->post('/customer/verify-email/resend')->assertNotFound();
+    }
 
-        $this->get(route('customer.register'))
+    public function test_guest_navigation_has_no_customer_login_or_registration_links(): void
+    {
+        $this->get(route('home'))
             ->assertOk()
-            ->assertSee('Buat akun pelanggan');
+            ->assertDontSee('customer/login')
+            ->assertDontSee('customer/register')
+            ->assertDontSee('> Masuk</a>', false)
+            ->assertDontSee('> Daftar</a>', false);
+    }
 
-        $this->post(route('customer.register.post'), [
-            'name' => 'Pelanggan Medix',
-            'email' => 'pelanggan@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-        ])->assertRedirect(route('customer.email-verification'));
-
-        $customer = User::where('email', 'pelanggan@example.com')->firstOrFail();
-        $code = null;
-        Mail::assertSent(CustomerLoginCode::class, function (CustomerLoginCode $mail) use (&$code): bool {
-            $code = $mail->code;
-
-            return $mail->hasTo('pelanggan@example.com') && preg_match('/^[0-9]{6}$/', $code) === 1;
-        });
-
-        $this->assertSame('user', $customer->role);
-        $this->assertGuest();
-
-        $this->get(route('customer.email-verification'))
+    public function test_public_footer_uses_google_maps_contact_details_and_requested_email(): void
+    {
+        $this->get(route('home'))
             ->assertOk()
-            ->assertSee('pelanggan@example.com')
-            ->assertSee('Enam digit kode OTP')
-            ->assertSee('Kirim ulang kode dalam');
-        $this->post(route('customer.email-verification.verify'), [
-            'code_digits' => str_split($code),
-        ])
-            ->assertRedirect(route('customer.account'));
+            ->assertSee('0858 8271 7844')
+            ->assertSee('apotekmedix@gmail.com')
+            ->assertSee('Jl. Raya Ciawi Prapatan No.256 C')
+            ->assertDontSee('hello@apotekmedix.com')
+            ->assertDontSee('0858 9000 7359');
 
-        $this->assertAuthenticatedAs($customer);
-        $this->assertNotNull($customer->fresh()->email_verified_at);
-        $this->get(route('customer.account'))->assertOk()->assertSee('Ini alamat default saya');
-    }
-
-    public function test_customer_login_requires_the_email_code_and_rejects_admin_accounts(): void
-    {
-        Mail::fake();
-        $customer = User::factory()->create(['role' => 'user']);
-
-        $this->post(route('customer.login.post'), ['email' => $customer->email])
-            ->assertRedirect(route('customer.email-verification'));
-        $this->assertGuest();
-
-        $code = null;
-        Mail::assertSent(CustomerLoginCode::class, function (CustomerLoginCode $mail) use (&$code, $customer): bool {
-            $code = $mail->code;
-
-            return $mail->hasTo($customer->email) && preg_match('/^[0-9]{6}$/', $code) === 1;
-        });
-        $wrongCode = $code === '000000' ? '000001' : '000000';
-
-        $this->post(route('customer.email-verification.verify'), ['code' => $wrongCode])
-            ->assertSessionHasErrors('code');
-        $this->assertGuest();
-
-        $this->post(route('customer.email-verification.verify'), ['code' => $code])
-            ->assertRedirect(route('customer.account'));
-        $this->assertAuthenticatedAs($customer);
-
-        Auth::logout();
-        $admin = User::factory()->create([
-            'role' => 'admin',
-            'password' => Hash::make('admin-password'),
-        ]);
-
-        $this->post(route('customer.login.post'), [
-            'email' => $admin->email,
-        ])->assertRedirect(route('customer.email-verification'));
-        $this->assertGuest();
-        Mail::assertSent(CustomerLoginCode::class, 1);
-    }
-
-    public function test_customer_login_email_error_is_shown_once_without_mail_transport_details(): void
-    {
-        $message = 'Kode verifikasi belum dapat dikirim. Silakan coba lagi nanti.';
-        $errors = new ViewErrorBag();
-        $errors->put('default', new MessageBag(['email' => $message]));
-
-        $this->withSession(['errors' => $errors])
-            ->get(route('customer.login'))
+        $this->get(route('contact'))
             ->assertOk()
-            ->assertSee('<p class="customer-auth-error" role="alert">' . $message . '</p>', false)
-            ->assertDontSee('<div class="alert alert-error" role="alert">' . $message . '</div>', false)
-            ->assertDontSee('SMTP')
-            ->assertDontSee('.env')
-            ->assertDontSee('dikonfigurasi');
+            ->assertSee('0858 8271 7844')
+            ->assertSee('apotekmedix@gmail.com')
+            ->assertSee('Sindangsari');
     }
 
-    public function test_customer_can_resend_a_code_after_the_cooldown_and_old_code_is_invalidated(): void
+    public function test_shopping_channels_open_their_respective_pages(): void
     {
-        Mail::fake();
-        $customer = User::factory()->create(['role' => 'user']);
+        $this->get('/kiosk')->assertNotFound();
 
-        $this->post(route('customer.login.post'), [
-            'email' => $customer->email,
-        ])->assertRedirect(route('customer.email-verification'));
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Belanja Internal')
+            ->assertSee('Belanja B2B')
+            ->assertSee('Belanja B2C')
+            ->assertDontSee('Pesan di Toko')
+            ->assertDontSee('Buka Kios Toko');
 
-        $firstCode = Mail::sent(CustomerLoginCode::class)->last()->code;
-        $this->post(route('customer.email-verification.resend'))
-            ->assertSessionHasErrors('code');
+        $this->get(route('shopping.internal'))
+            ->assertOk()
+            ->assertSee('Belanja Internal')
+            ->assertSee('Pilih produk untuk transaksi internal')
+            ->assertSee('apotekmedix_cart_internal');
 
-        $this->travel(61)->seconds();
-        $this->post(route('customer.email-verification.resend'))
-            ->assertRedirect(route('customer.email-verification'));
+        $this->get(route('products.index'))
+            ->assertOk()
+            ->assertSee('Katalog Produk')
+            ->assertDontSee('Pesan di Toko');
 
-        Mail::assertSent(CustomerLoginCode::class, 2);
-        $newCode = Mail::sent(CustomerLoginCode::class)->last()->code;
-        $this->assertMatchesRegularExpression('/^[0-9]{6}$/', $newCode);
-
-        $this->post(route('customer.email-verification.verify'), ['code' => $firstCode])
-            ->assertSessionHasErrors('code');
-        $this->post(route('customer.email-verification.verify'), ['code' => $newCode])
-            ->assertRedirect(route('customer.account'));
-        $this->assertAuthenticatedAs($customer);
-    }
-
-    public function test_customer_verification_code_expires_after_ten_minutes(): void
-    {
-        Mail::fake();
-        $customer = User::factory()->create(['role' => 'user']);
-
-        $this->post(route('customer.login.post'), [
-            'email' => $customer->email,
-        ])->assertRedirect(route('customer.email-verification'));
-
-        $this->travel(11)->minutes();
-        $this->get(route('customer.email-verification'))
-            ->assertRedirect(route('customer.login'))
-            ->assertSessionHasErrors('email');
-        $this->assertGuest();
-    }
-
-    public function test_customer_verification_stops_after_five_incorrect_codes(): void
-    {
-        Mail::fake();
-        $customer = User::factory()->create(['role' => 'user']);
-
-        $this->post(route('customer.login.post'), [
-            'email' => $customer->email,
-        ])->assertRedirect(route('customer.email-verification'));
-
-        $code = Mail::sent(CustomerLoginCode::class)->last()->code;
-        $wrongCode = $code === '000000' ? '000001' : '000000';
-
-        for ($attempt = 1; $attempt <= 5; $attempt++) {
-            $this->post(route('customer.email-verification.verify'), ['code' => $wrongCode])
-                ->assertSessionHasErrors('code');
-        }
-
-        $this->assertGuest();
-        $this->get(route('customer.email-verification'))
-            ->assertRedirect(route('customer.login'));
+        $this->get(route('products.pbf'))->assertOk()->assertSee('Belanja B2B');
+        $this->get(route('products.apotek'))->assertOk()->assertSee('Belanja B2C');
     }
 
     public function test_customer_can_save_a_default_shipping_address_used_at_checkout(): void
@@ -215,10 +112,10 @@ class CustomerAccountTest extends TestCase
             ->assertSee('value="10110"', false);
     }
 
-    public function test_guest_is_sent_to_customer_login_for_account_page(): void
+    public function test_guest_is_redirected_home_from_customer_account(): void
     {
         $this->get(route('customer.account'))
-            ->assertRedirect(route('customer.login'));
+            ->assertRedirect(route('home'));
     }
 
     public function test_customer_can_search_indonesian_addresses_and_select_location_details(): void
@@ -250,6 +147,23 @@ class CustomerAccountTest extends TestCase
         Http::assertSent(fn ($request) => str_starts_with($request->url(), 'https://nominatim.openstreetmap.org/search')
             && $request['countrycodes'] === 'id'
             && $request->hasHeader('User-Agent'));
+    }
+
+    public function test_guest_can_place_an_online_order_without_a_customer_account(): void
+    {
+        $response = $this->postJson(route('orders.history.store'), [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pelanggan Tamu',
+            'phone' => '081234567890',
+            'address' => 'Alamat tamu',
+            'items' => [],
+            'total' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('purchase_histories', [
+            'id' => $response->json('id'),
+            'user_id' => null,
+        ]);
     }
 
     public function test_online_purchase_created_while_customer_is_signed_in_is_shown_on_profile(): void

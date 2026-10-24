@@ -283,15 +283,15 @@
                         <div class="info-icon icon-blue"><i class="fa-solid fa-location-dot"></i></div>
                         <div class="info-text">
                             <h4>Alamat</h4>
-                            <p>Jl. Letjen Suprapto No.1, Sumur Batu, Kec. Kemayoran,<br>
-                               Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10640</p>
+                            <p>Jl. Raya Ciawi Prapatan No.256 C, RT.04/RW.04, Sindangsari,<br>
+                               Kec. Bogor Timur, Kota Bogor, Jawa Barat 16146</p>
                         </div>
                     </div>
                     <div class="info-item">
                         <div class="info-icon icon-green"><i class="fa-brands fa-whatsapp"></i></div>
                         <div class="info-text">
                             <h4>WhatsApp</h4>
-                            <a href="https://wa.me/6285890007359" target="_blank">0858 9000 7359</a>
+                            <a href="https://wa.me/6285882717844" target="_blank" rel="noopener">0858 8271 7844</a>
                             <p style="margin-top:0.2rem;font-size:0.8rem;">Klik untuk chat langsung</p>
                         </div>
                     </div>
@@ -299,7 +299,7 @@
                         <div class="info-icon icon-orange"><i class="fa-solid fa-phone"></i></div>
                         <div class="info-text">
                             <h4>Telepon</h4>
-                            <a href="tel:+6285890007359">0858 9000 7359</a>
+                            <a href="tel:+6285882717844">0858 8271 7844</a>
                             <p style="margin-top:0.2rem;font-size:0.8rem;">Sen–Jum 08:00–18:00 · Sab–Min 09:00–17:00</p>
                         </div>
                     </div>
@@ -307,7 +307,7 @@
                         <div class="info-icon icon-purple"><i class="fa-solid fa-envelope"></i></div>
                         <div class="info-text">
                             <h4>Email</h4>
-                            <a href="mailto:hello@apotekmedix.com">hello@apotekmedix.com</a>
+                            <a href="mailto:apotekmedix@gmail.com">apotekmedix@gmail.com</a>
                         </div>
                     </div>
                 </div>
@@ -317,7 +317,7 @@
                     <div class="social-row">
                         <a href="#" class="social-btn" style="background:#1877f2;" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
                         <a href="https://www.instagram.com/apotekmedix" target="_blank" rel="noopener" class="social-btn" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="https://wa.me/6285890007359" target="_blank" class="social-btn" style="background:#25D366;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+                        <a href="https://wa.me/6285882717844" target="_blank" rel="noopener" class="social-btn" style="background:#25D366;" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
                         <a href="https://pin.it/69pbGoR2f" target="_blank" rel="noopener" class="social-btn" style="background:#E60023;" title="Pinterest"><i class="fa-brands fa-pinterest-p"></i></a>
                         <a href="https://www.youtube.com/@apotekmedix" target="_blank" rel="noopener" class="social-btn" style="background:#FF0000;" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
                     </div>
@@ -411,7 +411,7 @@ function kirimWA() {
 💬 *Pesan*:
 ${pesan}`;
 
-    window.open('https://wa.me/6285890007359?text=' + encodeURIComponent(teks), '_blank');
+    window.open('https://wa.me/6285882717844?text=' + encodeURIComponent(teks), '_blank', 'noopener');
 }
 </script>
 @endsection

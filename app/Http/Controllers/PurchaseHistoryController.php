@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\PurchaseHistory;
 use App\Models\Medicine;
+use App\Models\Customer;
+use App\Models\ShoppingAccessCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -13,6 +15,23 @@ class PurchaseHistoryController extends Controller
 {
     public function store(Request $request)
     {
+        $isPbfPurchaseOrder = $request->boolean('is_pbf_purchase_order');
+        if ($isPbfPurchaseOrder) {
+            abort_unless(Auth::check() && Auth::user()->isAdmin(), 403);
+        }
+
+        if ($request->input('transaction_channel') === 'offline') {
+            abort_unless(
+                (int) $request->session()->get('internal_shopping_expires_at', 0) > now()->timestamp
+                    && ShoppingAccessCode::matchesSession(
+                        ShoppingAccessCode::CHANNEL_INTERNAL,
+                        $request->session()->get('internal_shopping_code_hash')
+                    ),
+                403,
+                'Kode akses belanja internal diperlukan untuk membuat transaksi.'
+            );
+        }
+
         $data = $request->validate([
             'buyer_type'      => ['required', 'string', 'in:umum,apotik,dokter,pbf'],
             'buyer_name'      => ['required_unless:buyer_type,apotik,dokter', 'nullable', 'string', 'max:255'],
@@ -48,14 +67,28 @@ class PurchaseHistoryController extends Controller
             'payment_method'  => ['nullable', 'string', 'max:255'],
             'payment_term_days' => ['nullable', 'integer', 'min:1'],
             'transaction_channel' => ['nullable', 'string', 'in:online,offline'],
+            'is_pbf_purchase_order' => ['nullable', 'boolean'],
         ]);
 
         $channel = $data['transaction_channel'] ?? 'online';
+        if ($isPbfPurchaseOrder && (
+            $data['buyer_type'] !== 'apotik'
+            || empty($data['pbf_name'])
+            || empty($data['pbf_address'])
+            || empty($data['items'])
+            || collect($data['items'])->contains(fn ($item) => empty($item['id']) || empty($item['quantity']))
+        )) {
+            return response()->json([
+                'message' => 'Data pemesanan PBF tidak lengkap.',
+                'errors' => ['pbf_name' => ['Nama dan alamat PBF wajib diisi.']],
+            ], 422);
+        }
+
         if ($channel === 'offline') {
             if ($data['buyer_type'] !== 'umum' || empty($data['buyer_name']) || empty($data['phone'])) {
                 return response()->json([
-                    'message' => 'Nama dan nomor telepon wajib diisi untuk pesanan kios.',
-                    'errors' => ['buyer_name' => ['Nama dan nomor telepon wajib diisi untuk pesanan kios.']],
+                    'message' => 'Nama dan nomor telepon wajib diisi untuk pesanan internal.',
+                    'errors' => ['buyer_name' => ['Nama dan nomor telepon wajib diisi untuk pesanan internal.']],
                 ], 422);
             }
             $data['payment_method'] = 'Tunai';
@@ -98,46 +131,42 @@ class PurchaseHistoryController extends Controller
                 ], 422);
             }
 
-            $usePackagePrice = $product
-                && $product->unit_packaging_enabled
-                && ($channel === 'offline' || (
-                    $product->kelompok !== 'PBF'
-                    && $data['buyer_type'] !== 'pbf'
-                    && empty($data['pbf_name'])
-                ));
+            $promoChannel = $channel === 'offline'
+                ? 'internal'
+                : (($product && $product->kelompok === 'PBF') || $data['buyer_type'] === 'pbf' || !empty($data['pbf_name'])
+                    ? 'b2b'
+                    : 'b2c');
 
-            if ($usePackagePrice) {
-                $unitPrice = $product->getSaleUnitPrice($unit);
-                if ($unitPrice === null) {
+            if ($product) {
+                $price = $isPbfPurchaseOrder
+                    ? (int) round((float) $product->harga_modal)
+                    : (int) round($product->getChannelBasePrice($promoChannel, $unit));
+                if ($price <= 0) {
                     return response()->json([
-                        'message' => "Harga satuan {$unit} belum diatur untuk produk {$product->nama_obat}.",
-                        'errors' => ['items' => ["Harga satuan {$unit} belum diatur untuk produk {$product->nama_obat}."]],
+                        'message' => "Harga {$promoChannel} untuk produk {$product->nama_obat} belum diatur.",
+                        'errors' => ['items' => ["Harga produk {$product->nama_obat} belum diatur untuk kanal ini."]],
                     ], 422);
                 }
-                $price = (int) round($unitPrice);
-            } elseif ($channel === 'offline' && $product) {
-                $price = (int) round((float) ($product->harga_retail ?: $product->harga));
             }
-            if ($data['buyer_type'] === 'apotik' && !empty($item['id']) && $price <= 0) {
-                $price = (int) round((float) (Medicine::whereKey($item['id'])->value('harga_modal') ?? 0));
-            }
-            $discount = $channel === 'offline'
-                ? 0
-                : min((int) ($item['potongan'] ?? $item['discount'] ?? 0), $qty * $price);
             $subtotal = $qty * $price;
+            $promoPercent = $isPbfPurchaseOrder ? 0 : ($product?->getPromoPercent($promoChannel) ?? 0);
+            $promoDiscount = (int) round($price * $promoPercent / 100) * $qty;
+            $manualDiscount = $channel === 'offline' || $isPbfPurchaseOrder
+                ? 0
+                : (int) ($item['potongan'] ?? $item['discount'] ?? 0);
+            $discount = min($promoDiscount + $manualDiscount, $subtotal);
             $originalTotal += $subtotal;
             $discountedTotal += max(0, $subtotal - $discount);
 
             $items[$index]['harga'] = $price;
             $items[$index]['potongan'] = $discount;
+            $items[$index]['promo_percent'] = $promoPercent;
             $items[$index]['sale_unit'] = $unit;
-            $items[$index]['unit_label'] = $product && !$product->unit_packaging_enabled
-                ? ($product->sediaan_label ?: 'Pcs')
-                : match ($unit) {
-                    'tablet' => 'Tablet',
-                    'strip' => 'Strip',
-                    default => 'Box',
-                };
+            $items[$index]['unit_label'] = match ($unit) {
+                'tablet' => 'Tablet',
+                'strip' => 'Strip',
+                default => $product?->package_unit_label ?? 'Satuan',
+            };
         }
 
         $data['items'] = $items;
@@ -146,6 +175,7 @@ class PurchaseHistoryController extends Controller
         $data['total'] = $discountedTotal;
         $data['approval_status'] = $data['approval_status'] ?? 'pending';
         $data['transaction_channel'] = $channel;
+        $data['is_pbf_purchase_order'] = $isPbfPurchaseOrder;
         $data['user_id'] = Auth::check() && Auth::user()->isUser() && $channel === 'online'
             ? Auth::id()
             : null;
@@ -153,7 +183,7 @@ class PurchaseHistoryController extends Controller
         $data['cashier_id'] = null;
         $data['paid_at'] = null;
 
-        $history = DB::transaction(function () use ($data, $items) {
+        $history = DB::transaction(function () use ($data, $items, $isPbfPurchaseOrder) {
             $productIds = collect($items)->pluck('id')->filter()->map(fn ($id) => (int) $id)->unique()->sort()->values();
             $products = Medicine::whereIn('id', $productIds)
                 ->orderBy('id')
@@ -175,24 +205,32 @@ class PurchaseHistoryController extends Controller
                 $requiredUnits[$productId] = ($requiredUnits[$productId] ?? 0) + ((int) $item['quantity'] * $unitFactor);
             }
 
-            foreach ($requiredUnits as $productId => $quantity) {
-                $product = $products->get($productId);
-                if (!$product || (int) $product->stock_base_units < $quantity) {
-                    $productName = $product?->nama_obat ?? 'Produk #' . $productId;
-                    return ['error' => "Stok {$productName} tidak mencukupi. Stok tersisa: " . ($product?->stock_breakdown ?? '0 box') . '.'];
+            if (!$isPbfPurchaseOrder) {
+                foreach ($requiredUnits as $productId => $quantity) {
+                    $product = $products->get($productId);
+                    if (!$product || (int) $product->stock_base_units < $quantity) {
+                        $productName = $product?->nama_obat ?? 'Produk #' . $productId;
+                        return ['error' => "Stok {$productName} tidak mencukupi. Stok tersisa: " . ($product?->stock_breakdown ?? '0 satuan') . '.'];
+                    }
                 }
             }
 
-            foreach ($requiredUnits as $productId => $quantity) {
-                $product = $products->get($productId);
-                $remainingUnits = (int) $product->stock_base_units - $quantity;
-                $product->update([
-                    'stock_base_units' => $remainingUnits,
-                    'stok' => intdiv($remainingUnits, $product->units_per_box),
-                ]);
+            if (!$isPbfPurchaseOrder) {
+                foreach ($requiredUnits as $productId => $quantity) {
+                    $product = $products->get($productId);
+                    $remainingUnits = (int) $product->stock_base_units - $quantity;
+                    $product->update([
+                        'stock_base_units' => $remainingUnits,
+                        'stok' => intdiv($remainingUnits, $product->units_per_box),
+                    ]);
+                }
             }
 
-            return ['history' => PurchaseHistory::create($data)];
+            $history = PurchaseHistory::create($data);
+            $customer = Customer::syncFromOrder($history);
+            $history->update(['customer_id' => $customer->id]);
+
+            return ['history' => $history];
         });
 
         if (isset($history['error'])) {

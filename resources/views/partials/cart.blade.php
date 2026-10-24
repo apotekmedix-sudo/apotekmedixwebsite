@@ -106,7 +106,7 @@
 <div class="modal-overlay" id="orderOverlay" onclick="closeOrder()"></div>
 <div class="modal-box" id="orderModal">
   <div class="modal-head">
-    <div><h3><i class="fa-solid {{ $isKioskOrder ? 'fa-store' : 'fa-file-invoice' }}"></i> {{ $isKioskOrder ? 'Pesanan di Toko' : 'Form Pemesanan' }}</h3><p>{{ $isKioskOrder ? 'Tunjukkan struk pesanan kepada kasir untuk pembayaran.' : 'Lengkapi data untuk melanjutkan' }}</p></div>
+    <div><h3><i class="fa-solid {{ $isKioskOrder ? 'fa-store' : 'fa-file-invoice' }}"></i> {{ $isKioskOrder ? 'Pesanan Internal' : 'Form Pemesanan' }}</h3><p>{{ $isKioskOrder ? 'Tunjukkan struk pesanan kepada kasir untuk pembayaran.' : 'Lengkapi data untuk melanjutkan' }}</p></div>
     <button class="modal-close" onclick="closeOrder()">&#x2715;</button>
   </div>
   <div class="modal-summary">
@@ -218,11 +218,11 @@
 {{-- ===== CART JAVASCRIPT ===== --}}
 <script>
 // Keranjang disimpan per konteks halaman melalui CART_CONFIG.storageKey.
-const WA = '6285890007359';
+const WA = '6285882717844';
 const CART_DEFAULT_SETTINGS = {
   storageKey: 'apotekmedix_cart',
   receiptStoreName: 'APOTEK MEDIX',
-  receiptStoreAddress: 'Jl. Letjen Suprapto No.1, Sumur Batu, Kec. Kemayoran, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10640',
+  receiptStoreAddress: 'Jl. Raya Ciawi Prapatan No.256 C, RT.04/RW.04, Sindangsari, Kec. Bogor Timur, Kota Bogor, Jawa Barat 16146',
   receiptFilePrefix: 'struk-apotekmedix'
 };
 const CART_CONFIG = Object.assign({}, CART_DEFAULT_SETTINGS, window.cartSettings || {});
@@ -259,18 +259,29 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
   const saleUnit = unitSelect?.value || 'box';
   const unitPrices = unitSelect ? JSON.parse(unitSelect.dataset.unitPrices || '{}') : null;
   const unitFactors = unitSelect ? JSON.parse(unitSelect.dataset.unitFactors || '{}') : null;
+  const fallbackUnitLabel = btn?.dataset.packageUnitLabel || 'Box';
+  const unitLabels = unitSelect
+    ? JSON.parse(unitSelect.dataset.unitLabels || '{}')
+    : { box: fallbackUnitLabel };
+  const unitLabel = unitLabels?.[saleUnit] || saleUnit.charAt(0).toUpperCase() + saleUnit.slice(1);
   const unitPrice = selectedOption ? Number(selectedOption.dataset.price) : Number(price);
   const unitFactor = unitFactors?.[saleUnit] || 1;
   const availableQty = unitSelect ? Math.floor(Number(unitSelect.dataset.stockUnits || 0) / unitFactor) : null;
   const ex = cart.find(i => i.id === id && (i.saleUnit || 'box') === saleUnit);
   console.log('addToCart:', { id, name, brand, img });
   if (availableQty !== null && (!availableQty || (ex?.qty || 0) + 1 > availableQty)) {
-    alert('Stok untuk satuan ' + saleUnit + ' tidak mencukupi.');
+    alert('Stok untuk satuan ' + unitLabel + ' tidak mencukupi.');
     return;
   }
-  if (ex) { ex.qty++; ex.brand = brand; } else cart.push({
+  if (ex) {
+    ex.qty++;
+    ex.brand = brand;
+    ex.unitLabels = unitLabels;
+    ex.unitLabel = unitLabel;
+  } else cart.push({
     id, name, price: unitPrice, img, brand: brand || '', qty: 1, note: '', discount: 0,
-    saleUnit, unitPrices, unitFactors, availableQty, stockUnits: unitSelect ? Number(unitSelect.dataset.stockUnits || 0) : null
+    saleUnit, unitLabel, unitLabels, unitPrices, unitFactors, availableQty,
+    stockUnits: unitSelect ? Number(unitSelect.dataset.stockUnits || 0) : null
   });
   console.log('Cart item:', cart.find(i => i.id === id && (i.saleUnit || 'box') === saleUnit));
   save(); render();
@@ -294,7 +305,7 @@ function changeQty(id, d, unit = 'box') {
   if (!it) return;
   const nextQty = it.qty + d;
   if (d > 0 && it.availableQty != null && nextQty > it.availableQty) {
-    alert('Stok untuk satuan ' + unit + ' tidak mencukupi.');
+    alert('Stok untuk satuan ' + (it.unitLabel || unit) + ' tidak mencukupi.');
     return;
   }
   it.qty = nextQty;
@@ -367,7 +378,7 @@ function render() {
   let html = '', total = 0;
   cart.forEach(it => {
     const unit = it.saleUnit || 'box';
-    const unitLabel = unit.charAt(0).toUpperCase() + unit.slice(1);
+    const unitLabel = it.unitLabel || it.unitLabels?.[unit] || unit.charAt(0).toUpperCase() + unit.slice(1);
     const key = `${it.id}-${unit}`;
     total += (it.price * it.qty) - (it.discount || 0);
     const imgHtml = it.img
@@ -379,7 +390,7 @@ function render() {
         <div class="cart-item-name">${it.name}</div>
           <div class="cart-item-price">${rp(it.price)} / ${unitLabel}</div>
           ${it.unitPrices ? `<select onchange="changeCartUnit(${it.id}, '${unit}', this.value)" style="width:100%;margin-top:.4rem;padding:.4rem;border:1px solid #cbd5e1;border-radius:8px;">
-            ${Object.entries(it.unitPrices).map(([value, unitPrice]) => `<option value="${value}" ${value === unit ? 'selected' : ''}>${value.charAt(0).toUpperCase() + value.slice(1)} · ${rp(unitPrice)}</option>`).join('')}
+            ${Object.entries(it.unitPrices).map(([value, unitPrice]) => `<option value="${value}" ${value === unit ? 'selected' : ''}>${it.unitLabels?.[value] || value.charAt(0).toUpperCase() + value.slice(1)} · ${rp(unitPrice)}</option>`).join('')}
           </select>` : ''}
           <div class="cart-qty-row">
             <button class="qty-btn" onclick="changeQty(${it.id},-1,'${unit}')">−</button>
@@ -432,6 +443,8 @@ function changeCartUnit(id, oldUnit, newUnit) {
   }
   const existing = cart.find(i => i.id === id && (i.saleUnit || 'box') === newUnit);
   if (existing) {
+    existing.unitLabel = item.unitLabels?.[newUnit] || newUnit.charAt(0).toUpperCase() + newUnit.slice(1);
+    existing.unitLabels = item.unitLabels;
     existing.qty += item.qty;
     existing.availableQty = available;
     existing.discount = Math.min((existing.discount || 0) + (item.discount || 0), existing.price * existing.qty);
@@ -442,6 +455,7 @@ function changeCartUnit(id, oldUnit, newUnit) {
     cart = cart.filter(i => i !== item);
   } else {
     item.saleUnit = newUnit;
+    item.unitLabel = item.unitLabels?.[newUnit] || newUnit.charAt(0).toUpperCase() + newUnit.slice(1);
     item.price = Number(item.unitPrices[newUnit]);
     item.availableQty = available;
     if (available !== null && item.qty > available) {
@@ -480,7 +494,8 @@ function openOrder() {
     const disc = it.discount || 0;
     const afterDisc = sub - disc;
     total += afterDisc;
-    const unitLabel = (it.saleUnit || 'box').charAt(0).toUpperCase() + (it.saleUnit || 'box').slice(1);
+    const unit = it.saleUnit || 'box';
+    const unitLabel = it.unitLabel || it.unitLabels?.[unit] || unit.charAt(0).toUpperCase() + unit.slice(1);
     html += `<div style="padding:0.35rem 0;border-bottom:1px solid #f3f4f6;font-size:0.83rem;">
       <div style="display:flex;justify-content:space-between;gap:0.75rem;">
         <span>${i+1}. ${it.name} <span style="color:#9ca3af;">&times;${it.qty} ${unitLabel}</span></span>
@@ -659,7 +674,8 @@ function buildReceiptPdf(orderData) {
       const textX = leftMargin + (idx === 0 ? 0 : 8);
       doc.text(ln, textX, y);
       if (idx === 0) {
-        doc.text(`${it.qty} ${it.saleUnit || 'box'}`, qtyX, y, { align: 'right' });
+        const unit = it.saleUnit || 'box';
+        doc.text(`${it.qty} ${it.unitLabel || it.unitLabels?.[unit] || unit.charAt(0).toUpperCase() + unit.slice(1)}`, qtyX, y, { align: 'right' });
         doc.text(`x ${rp(it.price)}`, unitPriceX, y, { align: 'right' });
         doc.text(rp(afterDiscount), subtotalX, y, { align: 'right' });
       }
@@ -729,6 +745,7 @@ async function submitOrder() {
     payment_method: paymentMethod,
     payment_term_days: paymentMethod === 'Tempo' ? paymentTermDays : null,
     transaction_channel: CART_CONFIG.kioskOrder ? 'offline' : 'online',
+    is_pbf_purchase_order: Boolean(CART_CONFIG.adminPbfOrder),
   };
 
   if (CART_CONFIG.adminPbfOrder) {
@@ -844,7 +861,9 @@ function openWhatsAppOrder() {
     const disc = it.discount || 0;
     const afterDisc = sub - disc;
     total += afterDisc;
-    msg += `${i+1}. *${it.name}*\n   Qty: ${it.qty} ${it.saleUnit || 'box'} x ${rp(it.price)} = ${rp(sub)}\n`;
+    const unit = it.saleUnit || 'box';
+    const unitLabel = it.unitLabel || it.unitLabels?.[unit] || unit.charAt(0).toUpperCase() + unit.slice(1);
+    msg += `${i+1}. *${it.name}*\n   Qty: ${it.qty} ${unitLabel} x ${rp(it.price)} = ${rp(sub)}\n`;
     if (disc > 0) msg += `   Potongan: -${rp(disc)} → *${rp(afterDisc)}*\n`;
     if (it.note) msg += `   Catatan: ${it.note}\n`;
   });
