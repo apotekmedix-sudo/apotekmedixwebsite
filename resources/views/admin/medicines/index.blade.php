@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Manajemen Obat - Admin Apotek Medix')
 @section('page-title', 'Manajemen Obat')
@@ -321,7 +321,7 @@
                 <label>Cari Obat</label>
                 <div class="search-input-wrap">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" name="search" value="{{ $search }}" placeholder="Nama obat, deskripsi...">
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Nama obat, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan...">
                 </div>
             </div>
             <div class="search-field" style="max-width:220px;">
@@ -346,6 +346,7 @@
                 @endif
             </div>
         </div>
+        @include('partials.product-attribute-filters', ['resetUrl' => route('admin.medicines.index')])
     </form>
 </div>
 

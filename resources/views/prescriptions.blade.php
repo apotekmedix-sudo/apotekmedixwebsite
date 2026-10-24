@@ -277,7 +277,7 @@
             <div class="filter-group" style="flex: 2; min-width: 200px;">
                 <label class="filter-label"><i class="fa-solid fa-magnifying-glass"></i> Cari Produk</label>
                 <input type="text" name="search" class="filter-input"
-                       placeholder="Nama obat atau deskripsi..."
+                       placeholder="Nama obat, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan..."
                        value="{{ $search }}">
             </div>
             <div class="filter-group">
@@ -302,10 +302,11 @@
                 <button type="submit" class="btn-filter">
                     <i class="fa-solid fa-magnifying-glass"></i> Cari
                 </button>
-                @if($search || $perusahaan || $sort !== 'terbaru')
+                @if($search || $perusahaan || $sort !== 'terbaru' || request('indikasi') || request('komposisi') || request('sediaan') || request('dosis') || request('golongan'))
                     <a href="{{ route('prescriptions') }}" class="btn-reset">✕ Reset</a>
                 @endif
             </div>
+            @include('partials.product-attribute-filters', ['resetUrl' => route('prescriptions')])
         </form>
 
         <div class="result-info">

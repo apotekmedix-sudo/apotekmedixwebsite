@@ -401,8 +401,16 @@
                     <div class="price">{{ $medicine->getFormattedPrice() }}</div>
                 </div>
 
+                @if(!empty($medicine->golongan))
+                    <div style="margin-bottom:0.85rem;"><strong>Golongan:</strong> <span style="color:#374151;">{{ $medicine->golongan }}</span></div>
+                @endif
+
                 @if(!empty($medicine->sediaan))
                     <div style="margin-bottom:0.85rem;"><strong>Sediaan:</strong> <span style="color:#374151;">{{ $medicine->sediaan_label }}</span></div>
+                @endif
+
+                @if(!empty($medicine->dosis))
+                    <div style="margin-bottom:0.85rem;"><strong>Dosis / Aturan Pakai:</strong> <span style="color:#374151;">{{ $medicine->dosis }}</span></div>
                 @endif
 
                 @if(!empty($medicine->komposisi))

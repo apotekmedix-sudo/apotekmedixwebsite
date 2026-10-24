@@ -269,6 +269,68 @@
     font-size: 0.9rem;
     pointer-events: none;
   }
+  .co-help-wrap {
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 0.95rem;
+    cursor: pointer;
+    z-index: 5;
+  }
+  .co-help-wrap:hover,
+  .co-help-wrap:focus {
+    color: #0F172A;
+    outline: none;
+  }
+  .co-help-tooltip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: -12px;
+    width: 215px;
+    background: #18181b;
+    color: #ffffff;
+    font-size: 0.76rem;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: center;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: all 0.16s ease;
+    pointer-events: none;
+  }
+  .co-help-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 16px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: #18181b transparent transparent transparent;
+  }
+  .co-help-wrap:hover .co-help-tooltip,
+  .co-help-wrap:focus .co-help-tooltip,
+  .co-field:focus-within .co-help-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  .co-billing-panel {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 1rem;
+  }
+  .co-billing-panel .co-input {
+    background: #ffffff;
+  }
   .co-row-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -424,8 +486,11 @@
   .co-radio-group {
     border: 1.5px solid #cbd5e1;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
     background: #ffffff;
+  }
+  .co-radio-row:first-child {
+    border-radius: 10px 10px 0 0;
   }
   .co-radio-row {
     display: flex;
@@ -798,7 +863,11 @@
             </div>
 
             <div class="co-field" style="margin-bottom:0;">
-              <input type="tel" id="co_phone" class="co-input" placeholder="Nomor HP / WhatsApp" value="<?php echo e($defaultShippingAddress?->phone); ?>">
+              <input type="tel" id="co_phone" class="co-input" placeholder="Nomor HP / WhatsApp" value="<?php echo e($defaultShippingAddress?->phone); ?>" style="padding-right:2.5rem;">
+              <span class="co-help-wrap" tabindex="0" aria-label="Info nomor telepon">
+                <i class="fa-regular fa-circle-question"></i>
+                <span class="co-help-tooltip">Jika kami ingin menghubungi Anda terkait pesanan</span>
+              </span>
             </div>
 
             <h3 class="co-sub-title">Alamat penagihan</h3>
@@ -811,11 +880,21 @@
                 <input type="radio" name="billing_addr_mode" value="different" onchange="onBillingModeChange()">
                 <span>Pakai alamat penagihan lain</span>
               </label>
-            </div>
 
-            <div id="coBillingCustomFields" style="display:none;margin-top:0.75rem;">
-              <div class="co-field" style="margin-bottom:0;">
-                <input type="text" id="co_billing_address" class="co-input" placeholder="Alamat penagihan lengkap">
+              <div id="coBillingCustomFields" class="co-billing-panel" style="display:none;border-radius:0 0 10px 10px;">
+                <div class="co-field">
+                  <input type="text" id="co_billing_name" class="co-input" placeholder="Nama lengkap">
+                </div>
+                <div class="co-field">
+                  <input type="text" id="co_billing_address" class="co-input" placeholder="Alamat penagihan lengkap">
+                </div>
+                <div class="co-field" style="margin-bottom:0;">
+                  <input type="tel" id="co_billing_phone" class="co-input" placeholder="No. Telepon (opsional)" style="padding-right:2.5rem;">
+                  <span class="co-help-wrap" tabindex="0" aria-label="Info nomor telepon">
+                    <i class="fa-regular fa-circle-question"></i>
+                    <span class="co-help-tooltip">Jika kami ingin menghubungi Anda terkait pesanan</span>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -865,10 +944,11 @@
 
         <div id="coSummaryItems"></div>
 
-        <div class="co-disc-row">
-          <input type="text" id="coDiscountCodeInput" class="co-disc-inp" placeholder="Kode diskon (contoh: MEDIX10)">
-          <button type="button" class="co-disc-btn" onclick="applyCheckoutDiscount()">Pakai</button>
+        <div class="co-disc-row" style="margin-bottom:0.5rem;">
+          <input type="text" id="coDiscountCodeInput" class="co-disc-inp" placeholder="Masukkan kode diskon" style="text-transform:uppercase;">
+          <button type="button" id="coDiscountApplyBtn" class="co-disc-btn" onclick="applyCheckoutDiscount()">Pakai</button>
         </div>
+        <div id="coDiscountMsgBox" style="display:none;font-size:0.8rem;font-weight:600;margin-bottom:1rem;padding:0.55rem 0.75rem;border-radius:8px;"></div>
 
         <div class="co-totals-line">
           <span>Subtotal &middot; <span id="coTotalItemsCount">0</span> item</span>
@@ -973,6 +1053,7 @@
 
   let deliveryMode = activeCtx.kioskOrder ? 'pickup' : 'ship';
   let extraVoucherDiscount = 0;
+  let appliedVoucher = null;
 
   function resolveProductImage(item) {
     const catalogEntry = PRODUCT_CATALOG[item.id] || PRODUCT_CATALOG[String(item.id)];
@@ -1087,24 +1168,87 @@
     grandEl.textContent = formatIdrDecimal(grandTotal);
   }
 
-  function applyCheckoutDiscount() {
-    const val = document.getElementById('coDiscountCodeInput').value.trim();
+  async function applyCheckoutDiscount() {
+    const inp = document.getElementById('coDiscountCodeInput');
+    const btn = document.getElementById('coDiscountApplyBtn');
+    const msgBox = document.getElementById('coDiscountMsgBox');
+    const val = (inp?.value || '').trim().toUpperCase();
+
     if (!val) {
       extraVoucherDiscount = 0;
+      appliedVoucher = null;
+      if (msgBox) msgBox.style.display = 'none';
       renderCheckoutSummary();
       return;
     }
-    const numeric = parseInt(val.replace(/[^0-9]/g, ''), 10);
-    if (val.toUpperCase() === 'MEDIX10' || val.toUpperCase() === 'HEMAT10') {
-      const sub = checkoutCart.reduce((s, i) => s + (i.price * i.qty), 0);
-      extraVoucherDiscount = Math.round(sub * 0.1);
-    } else if (!isNaN(numeric) && numeric > 0) {
-      extraVoucherDiscount = numeric;
-    } else {
-      alert('Kode diskon tidak ditemukan. Anda juga dapat memasukkan nominal potongan (angka).');
-      return;
+
+    const subtotalAfterItemDisc = checkoutCart.reduce((s, i) => {
+      const sub = Number(i.price || 0) * Number(i.qty || 1);
+      const disc = activeCtx.kioskOrder ? 0 : Number(i.discount || 0);
+      return s + Math.max(0, sub - disc);
+    }, 0);
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '...';
     }
-    renderCheckoutSummary();
+
+    try {
+      const res = await fetch('<?php echo e(route("checkout.validate-discount")); ?>', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          code: val,
+          subtotal: subtotalAfterItemDisc
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        extraVoucherDiscount = 0;
+        appliedVoucher = null;
+        if (msgBox) {
+          msgBox.style.display = 'block';
+          msgBox.style.background = '#fef2f2';
+          msgBox.style.border = '1px solid #fecaca';
+          msgBox.style.color = '#991b1b';
+          msgBox.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${escapeHtml(data.message || 'Kode diskon tidak valid.')}`;
+        }
+        renderCheckoutSummary();
+        return;
+      }
+
+      appliedVoucher = data;
+      extraVoucherDiscount = Number(data.discount_amount || 0);
+      if (msgBox) {
+        const quotaInfo = data.is_unlimited
+          ? 'Tanpa batas kuota'
+          : `Sisa kuota: ${data.remaining_quota} user`;
+        msgBox.style.display = 'block';
+        msgBox.style.background = '#ecfdf5';
+        msgBox.style.border = '1px solid #a7f3d0';
+        msgBox.style.color = '#065f46';
+        msgBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${escapeHtml(data.message)} <span style="font-weight:500;color:#047857;">(${quotaInfo})</span>`;
+      }
+      renderCheckoutSummary();
+    } catch (e) {
+      if (msgBox) {
+        msgBox.style.display = 'block';
+        msgBox.style.background = '#fef2f2';
+        msgBox.style.border = '1px solid #fecaca';
+        msgBox.style.color = '#991b1b';
+        msgBox.textContent = 'Gagal memeriksa kode diskon.';
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Pakai';
+      }
+    }
   }
 
   function setDeliveryMode(mode) {
@@ -1188,14 +1332,14 @@
       : document.getElementById('co_payment_method').value;
     const paymentTermDays = Number(document.getElementById('co_payment_term_days')?.value || 0);
 
-    const mappedItems = checkoutCart.map((it, idx) => ({
+    const mappedItems = checkoutCart.map((it) => ({
       id: it.id,
       nama_obat: it.name,
       quantity: Number(it.qty || 1),
       harga: Number(it.price || 0),
       sale_unit: it.saleUnit || 'box',
       catatan: it.note || '',
-      potongan: (Number(it.discount || 0)) + (idx === 0 ? extraVoucherDiscount : 0)
+      potongan: Number(it.discount || 0)
     }));
 
     const payload = {
@@ -1204,6 +1348,7 @@
       total: discountedTotal,
       original_total: originalTotal,
       discounted_total: discountedTotal,
+      discount_code: appliedVoucher ? appliedVoucher.code : null,
       approval_status: 'pending',
       payment_method: paymentMethod,
       payment_term_days: paymentMethod === 'Tempo' ? paymentTermDays : null,
@@ -1229,16 +1374,33 @@
     } else {
       const addressVal = document.getElementById('co_address').value.trim();
       const billingMode = document.querySelector('input[name="billing_addr_mode"]:checked')?.value || 'same';
+      const billingNameVal = billingMode === 'different'
+        ? (document.getElementById('co_billing_name')?.value.trim() || '')
+        : '';
       const billingAddrVal = billingMode === 'different'
         ? (document.getElementById('co_billing_address')?.value.trim() || '')
         : '';
+      const billingPhoneVal = billingMode === 'different'
+        ? (document.getElementById('co_billing_phone')?.value.trim() || '')
+        : '';
       const baseAddress = deliveryMode === 'pickup' ? 'Ambil di Apotek Medix' : addressVal;
+      const billingDetails = [
+        billingNameVal,
+        billingAddrVal,
+        billingPhoneVal ? `Telp: ${billingPhoneVal}` : ''
+      ].filter(Boolean).join(', ');
 
       payload.buyer_name = fullName;
       payload.phone = phoneVal;
       payload.address = activeCtx.kioskOrder
         ? ''
-        : (billingAddrVal ? `${baseAddress} (Alamat Penagihan: ${billingAddrVal})` : baseAddress);
+        : (billingDetails ? `${baseAddress} (Alamat Penagihan: ${billingDetails})` : baseAddress);
+
+      if (billingMode === 'different' && (!billingNameVal || !billingAddrVal)) {
+        errBox.textContent = 'Nama lengkap dan alamat penagihan wajib diisi jika memakai alamat penagihan lain.';
+        errBox.style.display = 'block';
+        return;
+      }
 
       if (jenis === 'apotik' || jenis === 'dokter' || activeCtx.wholesaleOrder) {
         payload.requester_name = fullName;

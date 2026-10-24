@@ -693,6 +693,253 @@
 @section('content')
 
 {{-- ============================================================
+     BANNER PROMO SLIDESHOW (OTOMATIS BERGANTI JIKA >= 2 BANNER)
+     ============================================================ --}}
+@if(isset($banners) && $banners->count() > 0)
+<section class="home-banner-wrap" aria-label="Banner Promo Apotek Medix">
+    <div class="home-banner-slider" id="homeBannerSlider">
+        <div class="home-banner-track" id="homeBannerTrack">
+            @foreach($banners as $i => $banner)
+                <div class="home-banner-slide {{ $i === 0 ? 'active' : '' }}" data-index="{{ $i }}">
+                    @if(!empty($banner->url_tujuan))
+                        <a href="{{ $banner->url_tujuan }}" class="home-banner-link">
+                    @else
+                        <div class="home-banner-link">
+                    @endif
+                        <img src="{{ url('storage/' . $banner->gambar) }}"
+                             alt="{{ $banner->judul ?: 'Banner Promo ' . ($i + 1) }}"
+                             class="home-banner-img"
+                             loading="{{ $i === 0 ? 'eager' : 'lazy' }}">
+                        @if(!empty($banner->judul))
+                            <div class="home-banner-caption">
+                                <span class="home-banner-title">{{ $banner->judul }}</span>
+                            </div>
+                        @endif
+                    @if(!empty($banner->url_tujuan))
+                        </a>
+                    @else
+                        </div>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+
+        @if($banners->count() > 1)
+            <button type="button" class="home-banner-nav home-banner-prev" onclick="window.slideHomeBanner(-1)" aria-label="Banner sebelumnya">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button type="button" class="home-banner-nav home-banner-next" onclick="window.slideHomeBanner(1)" aria-label="Banner berikutnya">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+            <div class="home-banner-dots" id="homeBannerDots">
+                @foreach($banners as $i => $banner)
+                    <button type="button"
+                            class="home-banner-dot {{ $i === 0 ? 'active' : '' }}"
+                            onclick="window.goToHomeBanner({{ $i }})"
+                            aria-label="Pilih banner {{ $i + 1 }}"></button>
+                @endforeach
+            </div>
+        @endif
+    </div>
+</section>
+
+<style>
+.home-banner-wrap {
+    max-width: 1280px;
+    margin: 0.35rem auto 1rem;
+    padding: 0;
+}
+.home-banner-slider {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3998 / 1224;
+    border-radius: 22px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.14);
+}
+.home-banner-track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.65s cubic-bezier(0.25, 0.8, 0.25, 1);
+    will-change: transform;
+}
+.home-banner-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+.home-banner-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    text-decoration: none;
+}
+.home-banner-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+.home-banner-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 1.5rem 1.75rem 1.35rem;
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.72) 0%, rgba(15, 23, 42, 0.28) 60%, transparent 100%);
+    display: flex;
+    align-items: flex-end;
+    pointer-events: none;
+}
+.home-banner-title {
+    color: #ffffff;
+    font-size: clamp(1rem, 2vw, 1.45rem);
+    font-weight: 800;
+    line-height: 1.25;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+.home-banner-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: rgba(15, 23, 42, 0.42);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(6px);
+}
+.home-banner-nav:hover {
+    background: rgba(0, 82, 204, 0.88);
+    border-color: #ffffff;
+    transform: translateY(-50%) scale(1.06);
+}
+.home-banner-prev { left: 1rem; }
+.home-banner-next { right: 1rem; }
+.home-banner-dots {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    z-index: 10;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(4px);
+}
+.home-banner-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.55);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.home-banner-dot.active {
+    width: 24px;
+    background: #38bdf8;
+}
+@media (max-width: 768px) {
+    .home-banner-wrap { margin: 0.25rem 0.8rem 0.75rem; }
+    .home-banner-slider { border-radius: 16px; aspect-ratio: 16 / 7; }
+    .home-banner-nav { width: 32px; height: 32px; font-size: 0.8rem; }
+    .home-banner-prev { left: 0.5rem; }
+    .home-banner-next { right: 0.5rem; }
+    .home-banner-caption { padding: 1rem 1rem 1.2rem; }
+}
+@media (max-width: 480px) {
+    .home-banner-wrap { margin: 0.2rem 0.65rem 0.65rem; }
+    .home-banner-slider { border-radius: 14px; aspect-ratio: 16 / 8; }
+}
+</style>
+
+<script>
+(function () {
+    const slider = document.getElementById('homeBannerSlider');
+    const track = document.getElementById('homeBannerTrack');
+    if (!slider || !track) return;
+
+    const slides = slider.querySelectorAll('.home-banner-slide');
+    const dots = slider.querySelectorAll('.home-banner-dot');
+    const total = slides.length;
+    if (total <= 1) return;
+
+    let current = 0;
+    let timer = null;
+    const INTERVAL_MS = 4500; // 4.5 detik: pas, tidak terlalu cepat & tidak terlalu lambat
+
+    function updateSlide(index) {
+        current = (index + total) % total;
+        track.style.transform = 'translateX(-' + (current * 100) + '%)';
+        slides.forEach((s, i) => s.classList.toggle('active', i === current));
+        dots.forEach((d, i) => d.classList.toggle('active', i === current));
+    }
+
+    function startAutoSlide() {
+        stopAutoSlide();
+        timer = setInterval(function () {
+            updateSlide(current + 1);
+        }, INTERVAL_MS);
+    }
+
+    function stopAutoSlide() {
+        if (timer) {
+            clearInterval(timer);
+            timer = null;
+        }
+    }
+
+    window.slideHomeBanner = function (dir) {
+        updateSlide(current + dir);
+        startAutoSlide();
+    };
+
+    window.goToHomeBanner = function (index) {
+        updateSlide(index);
+        startAutoSlide();
+    };
+
+    slider.addEventListener('mouseenter', stopAutoSlide);
+    slider.addEventListener('mouseleave', startAutoSlide);
+
+    let touchStartX = 0;
+    slider.addEventListener('touchstart', function (e) {
+        touchStartX = e.touches[0].clientX;
+        stopAutoSlide();
+    }, { passive: true });
+
+    slider.addEventListener('touchend', function (e) {
+        const diff = touchStartX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 45) {
+            updateSlide(current + (diff > 0 ? 1 : -1));
+        }
+        startAutoSlide();
+    }, { passive: true });
+
+    startAutoSlide();
+})();
+</script>
+@endif
+
+{{-- ============================================================
      APOTEK MEDIX HERO
      ============================================================ --}}
 <section class="home-brand-hero" aria-labelledby="homeHeroTitle">
@@ -700,11 +947,6 @@
         <span class="home-brand-hero-label"><i class="fa-solid fa-heart-pulse"></i> Apotek Medix</span>
         <h1 id="homeHeroTitle">Solusi Kesehatan Terpercaya</h1>
         <p>Beli obat, suplemen, dan produk kesehatan dengan mudah. Tim Apotek Medix siap membantu Anda.</p>
-        <form method="GET" action="{{ route('products.index') }}" class="home-hero-search" role="search">
-            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-            <input type="search" name="search" aria-label="Cari produk kesehatan" placeholder="Cari obat, vitamin, skincare, atau alat kesehatan">
-            <button type="submit"><i class="fa-solid fa-magnifying-glass"></i><span>Cari</span></button>
-        </form>
         <div class="home-brand-hero-actions">
             <a href="{{ route('shopping.internal') }}"><i class="fa-solid fa-cash-register"></i> Belanja Internal</a>
             <a href="{{ route('products.pbf') }}"><i class="fa-solid fa-truck-ramp-box"></i> Belanja B2B</a>

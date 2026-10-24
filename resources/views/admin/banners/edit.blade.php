@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Edit Banner - Admin Apotek Medix')
 @section('page-title', '🖼️ Edit Banner Promo')
 
@@ -8,10 +8,10 @@
 .form-group { margin-bottom:1.25rem; }
 .form-label { display:block; font-size:0.82rem; font-weight:700; color:#374151; margin-bottom:0.4rem; }
 .form-label .req { color:#ef4444; }
+.form-label .opt { color:#9ca3af; font-weight:500; font-size:0.76rem; }
 .form-control { width:100%; padding:0.65rem 0.9rem; border:1.5px solid #e5e7eb; border-radius:0.5rem; font-size:0.9rem; color:#374151; transition:border-color 0.2s; background:#fafafa; }
 .form-control:focus { outline:none; border-color:#1E88E5; background:#fff; box-shadow:0 0 0 3px rgba(30,136,229,0.08); }
 .form-hint { font-size:0.75rem; color:#9ca3af; margin-top:0.3rem; }
-.form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 .toggle-wrap { display:flex; align-items:center; gap:0.75rem; padding:0.75rem 1rem; background:#f8faff; border-radius:0.5rem; border:1.5px solid #e5e7eb; }
 .toggle-switch { position:relative; width:44px; height:24px; }
 .toggle-switch input { opacity:0; width:0; height:0; }
@@ -26,7 +26,6 @@
 .btn-save:hover { background:#1565C0; transform:translateY(-1px); }
 .btn-back { padding:0.7rem 1.5rem; background:#fff; color:#374151; border:1.5px solid #e5e7eb; border-radius:0.5rem; font-size:0.9rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem; transition:all 0.2s; }
 .btn-back:hover { background:#f9fafb; color:#374151; }
-@media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
 </style>
 @endsection
 
@@ -51,50 +50,33 @@
         @csrf @method('PUT')
 
         <div class="form-group">
-            <label class="form-label">Judul Banner <span class="req">*</span></label>
-            <input type="text" name="judul" class="form-control" value="{{ old('judul', $banner->judul) }}" required>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Subjudul / Deskripsi Singkat</label>
-            <input type="text" name="subjudul" class="form-control" value="{{ old('subjudul', $banner->subjudul) }}">
+            <label class="form-label">Judul Banner <span class="opt">(opsional)</span></label>
+            <input type="text" name="judul" class="form-control" placeholder="Contoh: Promo Ramadan 50% (boleh dikosongkan)" value="{{ old('judul', $banner->judul) }}">
         </div>
 
         <div class="form-group">
             <label class="form-label">Gambar Banner</label>
             <p class="form-hint" style="margin-bottom:0.5rem;">Gambar saat ini:</p>
-            <img src="{{ url('storage/'.$banner->gambar) }}" alt="{{ $banner->judul }}" class="current-img" id="currentImg">
+            <img src="{{ url('storage/'.$banner->gambar) }}" alt="{{ $banner->judul ?: 'Banner' }}" class="current-img" id="currentImg">
             <input type="file" name="gambar" id="gambarInput" accept="image/*" class="form-control" onchange="previewImg(this)">
-            <p class="form-hint">Kosongkan jika tidak ingin mengganti gambar. Ukuran: 3998×1224px</p>
+            <p class="form-hint">Kosongkan jika tidak ingin mengganti gambar. Format Landscape (Rekomendasi: 3998×1224px)</p>
             <img id="imgPreview" class="img-preview" src="#" alt="Preview Baru">
         </div>
 
-        <div class="form-row">
-            <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">URL Tujuan (opsional)</label>
-                <input type="text" name="url_tujuan" class="form-control" value="{{ old('url_tujuan', $banner->url_tujuan) }}" placeholder="/products">
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Label Tombol</label>
-                <input type="text" name="label_tombol" class="form-control" value="{{ old('label_tombol', $banner->label_tombol) }}">
-            </div>
+        <div class="form-group">
+            <label class="form-label">URL Tujuan <span class="opt">(opsional)</span></label>
+            <input type="text" name="url_tujuan" class="form-control" value="{{ old('url_tujuan', $banner->url_tujuan) }}" placeholder="/products atau https://... (boleh dikosongkan)">
+            <p class="form-hint">Link ketika banner diklik</p>
         </div>
 
-        <div class="form-row" style="margin-top:1.25rem;">
-            <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Urutan Tampil</label>
-                <input type="number" name="urutan" class="form-control" min="0" value="{{ old('urutan', $banner->urutan) }}">
-                <p class="form-hint">Angka kecil tampil lebih dulu</p>
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Status</label>
-                <div class="toggle-wrap">
-                    <label class="toggle-switch">
-                        <input type="checkbox" name="aktif" value="1" {{ $banner->aktif ? 'checked' : '' }}>
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <label>Aktif (tampil di website)</label>
-                </div>
+        <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Status</label>
+            <div class="toggle-wrap">
+                <label class="toggle-switch">
+                    <input type="checkbox" name="aktif" value="1" {{ $banner->aktif ? 'checked' : '' }}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <label>Aktif (tampil di website)</label>
             </div>
         </div>
 
@@ -123,4 +105,3 @@ function previewImg(input) {
 }
 </script>
 @endsection
-

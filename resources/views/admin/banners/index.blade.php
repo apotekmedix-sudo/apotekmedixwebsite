@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Banner Promo - Admin Apotek Medix')
 @section('page-title', '🖼️ Banner Promo Slideshow')
 
@@ -15,12 +15,11 @@
 .banner-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.1); }
 .banner-img { width:100%; height:160px; object-fit:cover; display:block; background:#e3f2fd; }
 .banner-body { padding:1rem; }
-.banner-title { font-size:0.95rem; font-weight:700; color:#1f2937; margin:0 0 0.25rem; }
-.banner-sub   { font-size:0.8rem; color:#6b7280; margin:0 0 0.5rem; }
+.banner-title { font-size:0.95rem; font-weight:700; color:#1f2937; margin:0 0 0.45rem; }
+.banner-title-empty { color:#9ca3af; font-style:italic; font-weight:600; }
 .banner-meta  { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.85rem; }
 .badge-aktif   { padding:0.2rem 0.65rem; border-radius:20px; font-size:0.72rem; font-weight:700; background:#d1fae5; color:#065f46; }
 .badge-nonaktif{ padding:0.2rem 0.65rem; border-radius:20px; font-size:0.72rem; font-weight:700; background:#fee2e2; color:#991b1b; }
-.badge-urutan  { padding:0.2rem 0.65rem; border-radius:20px; font-size:0.72rem; font-weight:600; background:#e3f2fd; color:#1565C0; }
 .banner-actions { display:flex; gap:0.5rem; align-items:center; }
 .btn-edit { display:inline-flex; align-items:center; gap:0.3rem; padding:0.4rem 0.85rem; background:#e3f2fd; color:#1565C0; border-radius:0.4rem; font-size:0.78rem; font-weight:600; text-decoration:none; transition:all 0.2s; border:none; cursor:pointer; }
 .btn-edit:hover { background:#1E88E5; color:#fff; }
@@ -51,7 +50,7 @@
 <div class="page-header">
     <div>
         <h2>Kelola Banner Promo</h2>
-        <p>Banner ditampilkan sebagai slideshow di halaman utama website</p>
+        <p>Banner ditampilkan sebagai slideshow otomatis di halaman utama website</p>
     </div>
     <a href="{{ route('admin.banners.create') }}" class="btn-add">
         <i class="fa-solid fa-plus"></i> Tambah Banner
@@ -68,17 +67,21 @@
 <div class="banner-grid">
     @foreach($banners as $banner)
     <div class="banner-card">
-        <img src="{{ url('storage/'.$banner->gambar) }}" alt="{{ $banner->judul }}" class="banner-img">
+        <img src="{{ url('storage/'.$banner->gambar) }}" alt="{{ $banner->judul ?: 'Banner Promo' }}" class="banner-img">
         <div class="banner-body">
-            <h3 class="banner-title">{{ $banner->judul }}</h3>
-            @if($banner->subjudul)<p class="banner-sub">{{ $banner->subjudul }}</p>@endif
+            @if($banner->judul)
+                <h3 class="banner-title">{{ $banner->judul }}</h3>
+            @else
+                <h3 class="banner-title banner-title-empty">Banner #{{ $loop->iteration }} (Tanpa Judul)</h3>
+            @endif
             <div class="banner-meta">
                 <span class="{{ $banner->aktif ? 'badge-aktif' : 'badge-nonaktif' }}">
                     {{ $banner->aktif ? '● Aktif' : '○ Nonaktif' }}
                 </span>
-                <span class="badge-urutan">Urutan: {{ $banner->urutan }}</span>
                 @if($banner->url_tujuan)
-                <span style="font-size:0.72rem;color:#6b7280;"><i class="fa-solid fa-link"></i> Ada link</span>
+                <span style="font-size:0.72rem;color:#6b7280;" title="{{ $banner->url_tujuan }}">
+                    <i class="fa-solid fa-link"></i> {{ \Illuminate\Support\Str::limit($banner->url_tujuan, 32) }}
+                </span>
                 @endif
             </div>
             <div class="banner-actions">
@@ -90,7 +93,7 @@
                     <i class="fa-solid {{ $banner->aktif ? 'fa-eye-slash' : 'fa-eye' }}"></i>
                     {{ $banner->aktif ? 'Nonaktifkan' : 'Aktifkan' }}
                 </button>
-                <button class="btn-del" onclick="confirmDelete({{ $banner->id }}, '{{ addslashes($banner->judul) }}')">
+                <button class="btn-del" onclick="confirmDelete({{ $banner->id }}, '{{ addslashes($banner->judul ?: 'Banner #' . $loop->iteration) }}')">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
@@ -147,4 +150,3 @@ async function toggleBanner(id, btn) {
 }
 </script>
 @endsection
-

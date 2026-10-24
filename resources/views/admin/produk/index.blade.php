@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Produk Kami - Admin Apotek Medix')
 @section('page-title', 'Produk Kami')
@@ -172,20 +172,21 @@
                 <label>Cari Produk</label>
                 <div class="search-input-wrap">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" name="search" value="{{ $search }}" placeholder="Nama produk, pabrik, deskripsi...">
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Nama produk, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan...">
                 </div>
             </div>
             <div class="search-actions">
                 <button type="submit" class="btn-search">
                     <i class="fa-solid fa-magnifying-glass"></i> Cari
                 </button>
-                @if($search || $pabrik)
+                @if($search || $pabrik || request('indikasi') || request('komposisi') || request('sediaan') || request('dosis') || request('golongan'))
                     <a href="{{ route('admin.produk.index', $kategori_produk ? ['kategori_produk' => $kategori_produk] : []) }}" class="btn-reset">
                         <i class="fa-solid fa-xmark"></i> Reset
                     </a>
                 @endif
             </div>
         </div>
+        @include('partials.product-attribute-filters')
     </form>
 </div>
 
@@ -256,6 +257,7 @@
                     <td>
                         <div class="med-desc">{{ $medicine->komposisi ?: '-' }}</div>
                         <div class="med-meta">{{ $medicine->indikasi ?: '-' }}</div>
+                        @if($medicine->dosis)<div class="med-meta" style="color:#0369a1;font-weight:600;">Dosis: {{ $medicine->dosis }}</div>@endif
                     </td>
                     <td>
                         <div>{{ $medicine->satuan ?: '-' }}</div>

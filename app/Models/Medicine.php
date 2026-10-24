@@ -69,6 +69,7 @@ class Medicine extends Model
         'deskripsi',
         'komposisi',
         'indikasi',
+        'dosis',
         'gambar',
         'gambar_tambahan',
     ];
@@ -94,11 +95,245 @@ class Medicine extends Model
         'gambar_tambahan' => 'array',
     ];
 
+    /**
+     * Get existing columns for the medicines table safely.
+     */
+    public static function availableColumns(): array
+    {
+        return Schema::getColumnListing('medicines');
+    }
+
+    /**
+     * Expand dosage-like terms (e.g., "500mg" <-> "500 mg") so both variations match.
+     */
+    public static function expandSearchVariants(string $term): array
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return [];
+        }
+
+        $variants = [$term];
+        if (preg_match('/^(\d+(?:[.,]\d+)?)\s*(mg|ml|gr|g|mcg|iu|%)/i', $term, $m)) {
+            $variants[] = $m[1] . $m[2];
+            $variants[] = $m[1] . ' ' . $m[2];
+        }
+
+        return array_values(array_unique($variants));
+    }
+
+    /**
+     * Universal search across Nama Obat, Indikasi, Komposisi, Sediaan (Sirup/Tablet/dll),
+     * Dosis, Golongan, Kemasan, Satuan, Pabrik/Principle, Brand, SKU, dan Deskripsi.
+     */
     public function scopeSearch($query, $search)
     {
-        return $query->where('nama_obat', 'like', "%{$search}%")
-                     ->orWhere('kategori', 'like', "%{$search}%")
-                     ->orWhere('deskripsi', 'like', "%{$search}%");
+        $search = trim((string) $search);
+        if ($search === '') {
+            return $query;
+        }
+
+        $existing = array_flip(self::availableColumns());
+        $candidateColumns = [
+            'nama_obat',
+            'indikasi',
+            'komposisi',
+            'sediaan',
+            'dosis',
+            'golongan',
+            'satuan',
+            'kemasan',
+            'kategori',
+            'brand',
+            'sku',
+            'logo',
+            'deskripsi',
+        ];
+        $columns = array_values(array_filter($candidateColumns, fn ($col) => isset($existing[$col])));
+
+        if (empty($columns)) {
+            return $query;
+        }
+
+        $tokens = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [$search];
+
+        return $query->where(function ($outerQuery) use ($search, $tokens, $columns) {
+            // Exact phrase match across any column
+            $outerQuery->where(function ($phraseQuery) use ($search, $columns) {
+                foreach (self::expandSearchVariants($search) as $variant) {
+                    foreach ($columns as $col) {
+                        $phraseQuery->orWhere($col, 'like', '%' . $variant . '%');
+                    }
+                }
+            });
+
+            // Multi-word AND match across columns (e.g. "paracetamol sirup" or "demam 500mg")
+            if (count($tokens) > 1) {
+                $outerQuery->orWhere(function ($andQuery) use ($tokens, $columns) {
+                    foreach ($tokens as $token) {
+                        $variants = self::expandSearchVariants($token);
+                        $andQuery->where(function ($tokenQuery) use ($variants, $columns) {
+                            foreach ($variants as $variant) {
+                                foreach ($columns as $col) {
+                                    $tokenQuery->orWhere($col, 'like', '%' . $variant . '%');
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Dedicated filter scope for Indikasi, Komposisi, Sediaan, Dosis, and Golongan.
+     */
+    public function scopeFilterByAttributes($query, array $filters)
+    {
+        $existing = array_flip(self::availableColumns());
+        $pickCols = fn (array $cols) => array_values(array_filter($cols, fn ($c) => isset($existing[$c])));
+
+        $indikasi = trim((string) ($filters['indikasi'] ?? ''));
+        if ($indikasi !== '') {
+            $cols = $pickCols(['indikasi', 'deskripsi']);
+            if (!empty($cols)) {
+                $query->where(function ($q) use ($indikasi, $cols) {
+                    foreach ($cols as $col) {
+                        $q->orWhere($col, 'like', '%' . $indikasi . '%');
+                    }
+                });
+            }
+        }
+
+        $komposisi = trim((string) ($filters['komposisi'] ?? ''));
+        if ($komposisi !== '') {
+            $cols = $pickCols(['komposisi', 'nama_obat', 'deskripsi']);
+            if (!empty($cols)) {
+                $query->where(function ($q) use ($komposisi, $cols) {
+                    foreach (self::expandSearchVariants($komposisi) as $variant) {
+                        foreach ($cols as $col) {
+                            $q->orWhere($col, 'like', '%' . $variant . '%');
+                        }
+                    }
+                });
+            }
+        }
+
+        $sediaan = trim((string) ($filters['sediaan'] ?? ''));
+        if ($sediaan !== '') {
+            $cols = $pickCols(['sediaan', 'satuan', 'kemasan', 'nama_obat', 'deskripsi']);
+            if (!empty($cols)) {
+                $query->where(function ($q) use ($sediaan, $cols) {
+                    foreach ($cols as $col) {
+                        $q->orWhere($col, 'like', '%' . $sediaan . '%');
+                    }
+                });
+            }
+        }
+
+        $dosis = trim((string) ($filters['dosis'] ?? ''));
+        if ($dosis !== '') {
+            $cols = $pickCols(['dosis', 'komposisi', 'nama_obat', 'kemasan', 'deskripsi']);
+            if (!empty($cols)) {
+                $query->where(function ($q) use ($dosis, $cols) {
+                    foreach (self::expandSearchVariants($dosis) as $variant) {
+                        foreach ($cols as $col) {
+                            $q->orWhere($col, 'like', '%' . $variant . '%');
+                        }
+                    }
+                });
+            }
+        }
+
+        $golongan = trim((string) ($filters['golongan'] ?? ''));
+        if ($golongan !== '') {
+            $cols = $pickCols(['golongan', 'logo', 'deskripsi']);
+            if (!empty($cols)) {
+                $query->where(function ($q) use ($golongan, $cols) {
+                    foreach ($cols as $col) {
+                        $q->orWhere($col, 'like', '%' . $golongan . '%');
+                    }
+                });
+            }
+        }
+
+        return $query;
+    }
+
+    /**
+     * Common + database-derived options for Sediaan and Golongan filter dropdowns.
+     */
+    public static function getAttributeFilterOptions(): array
+    {
+        $existing = array_flip(self::availableColumns());
+
+        $defaultSediaan = [
+            'Tablet',
+            'Sirup',
+            'Kapsul',
+            'Kaplet',
+            'Krim',
+            'Salep',
+            'Gel',
+            'Drops',
+            'Suspensi',
+            'Sachet',
+            'Botol',
+            'Box',
+            'Strip',
+            'Tube',
+            'Fls',
+            'Ampul',
+            'Vial',
+            'Inhaler',
+        ];
+
+        $dbSediaan = [];
+        if (isset($existing['sediaan'])) {
+            $dbSediaan = self::query()
+                ->whereNotNull('sediaan')
+                ->where('sediaan', '!=', '')
+                ->distinct()
+                ->pluck('sediaan')
+                ->map(fn ($v) => ucfirst(strtolower(trim((string) $v))))
+                ->all();
+        }
+
+        $sediaanList = collect(array_merge($defaultSediaan, $dbSediaan))
+            ->filter()
+            ->unique(fn ($v) => strtolower($v))
+            ->values()
+            ->all();
+
+        $defaultGolongan = [
+            'Obat Bebas',
+            'Bebas Terbatas',
+            'Obat Keras',
+            'Vitamin & Suplemen',
+            'Obat Herbal / Jamu',
+        ];
+
+        $dbGolongan = [];
+        if (isset($existing['golongan'])) {
+            $dbGolongan = self::query()
+                ->whereNotNull('golongan')
+                ->where('golongan', '!=', '')
+                ->distinct()
+                ->pluck('golongan')
+                ->map(fn ($v) => trim((string) $v))
+                ->all();
+        }
+
+        $golonganList = collect(array_merge($defaultGolongan, $dbGolongan))
+            ->filter()
+            ->unique(fn ($v) => strtolower($v))
+            ->values()
+            ->all();
+
+        return [
+            'sediaanList' => $sediaanList,
+            'golonganList' => $golonganList,
+        ];
     }
 
     public function scopeByCategory($query, $kategori)
@@ -258,6 +493,16 @@ class Medicine extends Model
             'inhaler' => 'Inhaler / Nebules',
             'pen' => 'Pen',
             'pcs' => 'Pcs',
+            'sirup' => 'Sirup',
+            'tablet' => 'Tablet',
+            'kapsul' => 'Kapsul',
+            'kaplet' => 'Kaplet',
+            'krim' => 'Krim',
+            'salep' => 'Salep',
+            'gel' => 'Gel',
+            'drops' => 'Drops / Tetes',
+            'suspensi' => 'Suspensi',
+            'botol' => 'Botol',
         ];
 
         $key = strtolower(trim((string) $this->sediaan));

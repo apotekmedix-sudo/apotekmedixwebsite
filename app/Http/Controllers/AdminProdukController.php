@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Medicine;
 use App\Constants\Companies;
 use App\Helpers\ImageHelper;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class AdminProdukController extends Controller
@@ -16,7 +17,12 @@ class AdminProdukController extends Controller
         $kategori_produk = $request->get('kategori_produk', '');
         $pabrik          = $request->get('pabrik', '');
         $kelompok        = $request->get('kelompok', '');
-        $mode             = $request->get('mode', '');
+        $mode            = $request->get('mode', '');
+        $indikasi        = $request->get('indikasi', '');
+        $komposisi       = $request->get('komposisi', '');
+        $sediaan         = $request->get('sediaan', '');
+        $dosis           = $request->get('dosis', '');
+        $golongan        = $request->get('golongan', '');
 
         $query = Medicine::latest();
         if ($kelompok) {
@@ -26,13 +32,17 @@ class AdminProdukController extends Controller
             $query->where('harga_modal', '>', 0);
         }
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_obat', 'like', "%{$search}%")
-                  ->orWhere('kategori', 'like', "%{$search}%")
-                  ->orWhere('deskripsi', 'like', "%{$search}%");
-            });
+        if ($search !== '') {
+            $query->search($search);
         }
+
+        $query->filterByAttributes([
+            'indikasi'  => $indikasi,
+            'komposisi' => $komposisi,
+            'sediaan'   => $sediaan,
+            'dosis'     => $dosis,
+            'golongan'  => $golongan,
+        ]);
 
         if ($kategori_produk) {
             $query->where('kategori_produk', $kategori_produk);
@@ -45,29 +55,53 @@ class AdminProdukController extends Controller
         $medicines       = $query->paginate(15)->withQueryString();
         $total           = (clone $query)->reorder()->count();
         $kategoriOptions = Companies::LIST;
+        $attrOptions     = Medicine::getAttributeFilterOptions();
+        $sediaanList     = $attrOptions['sediaanList'];
+        $golonganList    = $attrOptions['golonganList'];
 
         return view('admin.produk.index', compact(
-            'medicines', 'search', 'kategori_produk', 'pabrik', 'kelompok', 'mode', 'total', 'kategoriOptions'
+            'medicines', 'search', 'kategori_produk', 'pabrik', 'kelompok', 'mode',
+            'indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan',
+            'sediaanList', 'golonganList', 'total', 'kategoriOptions'
         ));
     }
 
     public function indexPbf(Request $request)
     {
-        $search = $request->get('search', '');
+        $search    = $request->get('search', '');
+        $indikasi  = $request->get('indikasi', '');
+        $komposisi = $request->get('komposisi', '');
+        $sediaan   = $request->get('sediaan', '');
+        $dosis     = $request->get('dosis', '');
+        $golongan  = $request->get('golongan', '');
+
         $query = Medicine::where('harga_modal', '>', 0)->latest();
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_obat', 'like', "%{$search}%")
-                    ->orWhere('kategori', 'like', "%{$search}%")
-                    ->orWhere('deskripsi', 'like', "%{$search}%");
-            });
+        if ($search !== '') {
+            $query->search($search);
         }
 
+        $query->filterByAttributes([
+            'indikasi'  => $indikasi,
+            'komposisi' => $komposisi,
+            'sediaan'   => $sediaan,
+            'dosis'     => $dosis,
+            'golongan'  => $golongan,
+        ]);
+
+        $attrOptions = Medicine::getAttributeFilterOptions();
+
         return view('admin.products-ordering', [
-            'medicines' => $query->paginate(15)->withQueryString(),
-            'search' => $search,
-            'total' => Medicine::where('harga_modal', '>', 0)->count(),
+            'medicines'    => $query->paginate(15)->withQueryString(),
+            'search'       => $search,
+            'indikasi'     => $indikasi,
+            'komposisi'    => $komposisi,
+            'sediaan'      => $sediaan,
+            'dosis'        => $dosis,
+            'golongan'     => $golongan,
+            'sediaanList'  => $attrOptions['sediaanList'],
+            'golonganList' => $attrOptions['golonganList'],
+            'total'        => Medicine::where('harga_modal', '>', 0)->count(),
         ]);
     }
 
@@ -135,13 +169,23 @@ class AdminProdukController extends Controller
             'price_strip' => ['nullable', 'numeric', 'min:0'],
             'komposisi'       => ['nullable', 'string'],
             'indikasi'        => ['nullable', 'string'],
+            'dosis'           => ['nullable', 'string'],
         ]);
 
         $this->validateTabletPackaging($request, $validated);
         if (!empty(trim($validated['deskripsi'] ?? ''))) {
             $validated['deskripsi'] = trim($validated['deskripsi']);
         } else {
-            $validated['deskripsi'] = trim(($validated['komposisi'] ?? '') . ' | ' . ($validated['indikasi'] ?? ''));
+            $parts = array_filter([
+                trim((string) ($validated['komposisi'] ?? '')),
+                trim((string) ($validated['indikasi'] ?? '')),
+                trim((string) ($validated['dosis'] ?? '')),
+            ]);
+            $validated['deskripsi'] = implode(' | ', $parts);
+        }
+
+        if (!Schema::hasColumn('medicines', 'dosis')) {
+            unset($validated['dosis']);
         }
 
         $validated['kategori_produk'] = 'OBAT';
@@ -195,6 +239,7 @@ class AdminProdukController extends Controller
             'price_strip' => ['nullable', 'numeric', 'min:0'],
             'komposisi'       => ['nullable', 'string'],
             'indikasi'        => ['nullable', 'string'],
+            'dosis'           => ['nullable', 'string'],
         ]);
 
         $this->validateTabletPackaging($request, $validated);
@@ -234,7 +279,16 @@ class AdminProdukController extends Controller
         if (!empty(trim($validated['deskripsi'] ?? ''))) {
             $validated['deskripsi'] = trim($validated['deskripsi']);
         } else {
-            $validated['deskripsi'] = trim(($validated['komposisi'] ?? '') . ' | ' . ($validated['indikasi'] ?? ''));
+            $parts = array_filter([
+                trim((string) ($validated['komposisi'] ?? '')),
+                trim((string) ($validated['indikasi'] ?? '')),
+                trim((string) ($validated['dosis'] ?? '')),
+            ]);
+            $validated['deskripsi'] = implode(' | ', $parts);
+        }
+
+        if (!Schema::hasColumn('medicines', 'dosis')) {
+            unset($validated['dosis']);
         }
 
         $stockPackages = (float) $validated['stok'];
@@ -301,7 +355,7 @@ class AdminProdukController extends Controller
     {
         $params = [];
 
-        foreach (['search', 'kategori_produk', 'pabrik', 'kelompok', 'mode', 'page'] as $field) {
+        foreach (['search', 'kategori_produk', 'pabrik', 'kelompok', 'mode', 'indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan', 'page'] as $field) {
             $value = $request->query($field, $request->input($field));
             if ($value !== null && $value !== '') {
                 $params[$field] = $value;

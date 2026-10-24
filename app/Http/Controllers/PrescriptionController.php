@@ -18,12 +18,10 @@ class PrescriptionController extends Controller
         $query = Medicine::where('is_grosir', true);
 
         if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_obat', 'like', "%{$search}%")
-                  ->orWhere('kategori', 'like', "%{$search}%")
-                  ->orWhere('deskripsi', 'like', "%{$search}%");
-            });
+            $query->search($search);
         }
+
+        $query->filterByAttributes($request->only(['indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan']));
 
         if ($perusahaan) {
             $query->where('kategori', $perusahaan);

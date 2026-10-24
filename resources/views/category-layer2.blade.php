@@ -593,11 +593,14 @@
 <div class="search-filter-section">
     <div class="container">
         <div class="search-filter-row">
-            <form method="GET" class="search-box-category">
-                <input type="hidden" name="main" value="{{ $mainCategory }}">
-                <input type="hidden" name="sub" value="{{ $subCategory }}">
-                <input type="text" name="search" placeholder="Cari produk..." value="{{ request('search') }}">
-                <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+            <form method="GET" style="flex:1;width:100%;">
+                <div class="search-box-category" style="max-width:none;width:100%;">
+                    <input type="hidden" name="main" value="{{ $mainCategory }}">
+                    <input type="hidden" name="sub" value="{{ $subCategory }}">
+                    <input type="text" name="search" placeholder="Cari obat, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan..." value="{{ request('search') }}">
+                    <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+                @include('partials.product-attribute-filters', ['resetUrl' => route('category.layer2', ['main' => $mainCategory, 'sub' => $subCategory])])
             </form>
             <button class="cart-btn-header" onclick="if(typeof openCart==='function'){openCart();}">
                 <i class="fa-solid fa-cart-shopping"></i> Keranjang

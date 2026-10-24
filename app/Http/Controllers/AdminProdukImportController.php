@@ -377,6 +377,7 @@ class AdminProdukImportController extends Controller
                         'deskripsi'        => $deskripsiValue,
                         'komposisi'        => ($data['KOMPOSISI'] ?? '') ?: null,
                         'indikasi'         => ($data['INDIKASI'] ?? '') ?: null,
+                        'dosis'            => ($data['DOSIS'] ?? '') ?: null,
                     ];
                 if (array_key_exists('HARGA_JUAL_B2B', $data) && $data['HARGA_JUAL_B2B'] !== '') {
                     $attributes['harga_grosir'] = $hargaB2b;
@@ -442,6 +443,7 @@ class AdminProdukImportController extends Controller
             'DESKRIPSI' => ['DESKRIPSI', 'DESCRIPTION'],
             'KOMPOSISI' => ['KOMPOSISI', 'COMPOSITION'],
             'INDIKASI' => ['INDIKASI', 'INDICATION', 'MANFAAT'],
+            'DOSIS' => ['DOSIS', 'DOSAGE', 'ATURANPAKAI'],
             'KATEGORI' => ['KATEGORI', 'KATEGORIPRODUK', 'CATEGORY', 'TIPE', 'JENIS'],
             'SEDIAAN' => ['SEDIAAN'],
             'KELOMPOK' => ['KELOMPOK', 'GROUP', 'GRUP'],

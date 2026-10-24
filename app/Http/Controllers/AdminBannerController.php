@@ -19,7 +19,7 @@ class AdminBannerController extends Controller
             );
         }
 
-        $banners = Banner::orderBy("urutan")->orderBy("id")->get();
+        $banners = Banner::orderBy("id")->get();
         return view("admin.banners.index", compact("banners"));
     }
 
@@ -38,19 +38,19 @@ class AdminBannerController extends Controller
         }
 
         $data = $request->validate([
-            "judul"        => ["required", "string", "max:255"],
-            "subjudul"     => ["nullable", "string", "max:255"],
-            "gambar"       => ["required", "image", "mimes:jpeg,jpg,png,webp", new LandscapeImage],
-            "url_tujuan"   => ["nullable", "string", "max:255"],
-            "label_tombol" => ["nullable", "string", "max:50"],
-            "urutan"       => ["nullable", "integer", "min:0"],
-            "aktif"        => ["nullable"],
+            "judul"      => ["nullable", "string", "max:255"],
+            "gambar"     => ["required", "image", "mimes:jpeg,jpg,png,webp", new LandscapeImage],
+            "url_tujuan" => ["nullable", "string", "max:255"],
+            "aktif"      => ["nullable"],
         ]);
 
+        $data["judul"]        = filled($data["judul"] ?? null) ? trim($data["judul"]) : null;
+        $data["subjudul"]     = null;
         $data["gambar"]       = ImageHelper::storeBannerImage($request->file("gambar"));
+        $data["url_tujuan"]   = filled($data["url_tujuan"] ?? null) ? trim($data["url_tujuan"]) : null;
+        $data["label_tombol"] = null;
+        $data["urutan"]       = 0;
         $data["aktif"]        = $request->boolean("aktif", true);
-        $data["label_tombol"] = $data["label_tombol"] ?? "Lihat Sekarang";
-        $data["urutan"]       = $data["urutan"] ?? 0;
 
         Banner::create($data);
 
@@ -75,13 +75,10 @@ class AdminBannerController extends Controller
         }
 
         $data = $request->validate([
-            "judul"        => ["required", "string", "max:255"],
-            "subjudul"     => ["nullable", "string", "max:255"],
-            "gambar"       => ["nullable", "image", "mimes:jpeg,jpg,png,webp", new LandscapeImage],
-            "url_tujuan"   => ["nullable", "string", "max:255"],
-            "label_tombol" => ["nullable", "string", "max:50"],
-            "urutan"       => ["nullable", "integer", "min:0"],
-            "aktif"        => ["nullable"],
+            "judul"      => ["nullable", "string", "max:255"],
+            "gambar"     => ["nullable", "image", "mimes:jpeg,jpg,png,webp", new LandscapeImage],
+            "url_tujuan" => ["nullable", "string", "max:255"],
+            "aktif"      => ["nullable"],
         ]);
 
         if ($request->hasFile("gambar")) {
@@ -91,9 +88,12 @@ class AdminBannerController extends Controller
             unset($data["gambar"]);
         }
 
+        $data["judul"]        = filled($data["judul"] ?? null) ? trim($data["judul"]) : null;
+        $data["subjudul"]     = null;
+        $data["url_tujuan"]   = filled($data["url_tujuan"] ?? null) ? trim($data["url_tujuan"]) : null;
+        $data["label_tombol"] = null;
+        $data["urutan"]       = 0;
         $data["aktif"]        = $request->boolean("aktif", false);
-        $data["label_tombol"] = $data["label_tombol"] ?? "Lihat Sekarang";
-        $data["urutan"]       = $data["urutan"] ?? 0;
 
         $banner->update($data);
 

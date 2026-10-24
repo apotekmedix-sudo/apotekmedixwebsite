@@ -28,14 +28,11 @@ class CategoryController extends Controller
         // Filter berdasarkan kategori dan sub-kategori
         $query = $this->filterByCategory($query, $mainCategory, $subCategory);
 
-        // Filter berdasarkan search
+        // Filter berdasarkan search & atribut
         if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_obat', 'like', "%{$search}%")
-                  ->orWhere('kategori', 'like', "%{$search}%")
-                  ->orWhere('deskripsi', 'like', "%{$search}%");
-            });
+            $query->search($search);
         }
+        $query->filterByAttributes($request->only(['indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan']));
 
         $medicines = $query->latest()->paginate(12)->withQueryString();
 

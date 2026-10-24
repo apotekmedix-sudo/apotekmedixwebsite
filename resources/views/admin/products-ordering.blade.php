@@ -32,10 +32,15 @@
 @endsection
 
 @section('content')
-<div class="ordering-head">
-    <div><h2>Produk Pemesanan</h2><p>{{ $total }} produk dengan harga modal untuk pemesanan PBF</p></div>
-    <form class="ordering-search" method="GET" action="{{ route('admin.produk-pbf.index') }}">
-        <input name="search" value="{{ $search }}" placeholder="Cari nama produk atau principle..."><button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
+<div class="ordering-head" style="flex-direction:column;align-items:stretch;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;width:100%;">
+        <div><h2>Produk Pemesanan</h2><p>{{ $total }} produk dengan harga modal untuk pemesanan PBF</p></div>
+    </div>
+    <form method="GET" action="{{ route('admin.produk-pbf.index') }}" style="background:white;padding:1rem;border-radius:.75rem;border:1px solid #e5e7eb;width:100%;">
+        <div class="ordering-search" style="max-width:none;">
+            <input name="search" value="{{ $search }}" placeholder="Cari nama produk, principle, indikasi, komposisi, sediaan (sirup/tablet), dosis, atau golongan..."><button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
+        </div>
+        @include('partials.product-attribute-filters', ['resetUrl' => route('admin.produk-pbf.index')])
     </form>
 </div>
 @if($medicines->count())

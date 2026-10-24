@@ -463,14 +463,14 @@
                 <button type="submit" style="background:none;border:1.5px solid #f59e0b;color:#92400e;padding:0.35rem 0.9rem;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;transition:all 0.2s;">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar Akses
                 </button>
-            </form>
+        </form>
         </div>
 
         <form method="GET" action="{{ route('products.pbf') }}" class="filter-bar">
             <div class="filter-group" style="flex: 2; min-width: 200px;">
                 <label class="filter-label"><i class="fa-solid fa-magnifying-glass"></i> Cari Produk</label>
                 <input type="text" name="search" class="filter-input"
-                       placeholder="Nama produk atau deskripsi..."
+                       placeholder="Cari nama obat, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan..."
                        value="{{ $search }}">
             </div>
             <div class="filter-group">
@@ -505,10 +505,11 @@
                 <button type="submit" class="btn-filter">
                     <i class="fa-solid fa-magnifying-glass"></i> Cari
                 </button>
-                @if($search || ($kategori_produk ?? '') || $perusahaan || $sort !== 'terbaru')
+                @if($search || ($kategori_produk ?? '') || $perusahaan || ($indikasi ?? '') || ($komposisi ?? '') || ($sediaan ?? '') || ($dosis ?? '') || ($golongan ?? '') || $sort !== 'terbaru')
                     <a href="{{ route('products.pbf') }}" class="btn-reset">✕ Reset</a>
                 @endif
             </div>
+            @include('partials.product-attribute-filters')
         </form>
 
         <div class="result-info">
@@ -542,6 +543,12 @@
                                 <p><strong>Komposisi:</strong> {{ $medicine->komposisi ?: $medicine->nama_obat }}</p>
                                 @if($medicine->indikasi)
                                     <p><strong>Indikasi:</strong> {{ $medicine->indikasi }}</p>
+                                @endif
+                                @if($medicine->dosis)
+                                    <p><strong>Dosis:</strong> {{ $medicine->dosis }}</p>
+                                @endif
+                                @if($medicine->golongan)
+                                    <p><strong>Golongan:</strong> {{ $medicine->golongan }}</p>
                                 @endif
                             </div>
                             @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'pbf-unit-' . $medicine->id, 'priceChannel' => 'b2b'])

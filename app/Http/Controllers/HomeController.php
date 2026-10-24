@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Banner;
 use App\Models\Medicine;
 use App\Models\PromoProduct;
 use Illuminate\Http\Request;
@@ -29,8 +30,9 @@ class HomeController extends Controller
                                   ->groupBy($categoryColumn)
                                   ->pluck('total', $categoryColumn);
 
-        // Promo produk aktif
+        // Promo produk aktif & Banner aktif
         $promoProducts = Schema::hasTable('promo_products') ? PromoProduct::aktif()->get() : collect();
+        $banners = Schema::hasTable('banners') ? Banner::aktif()->get() : collect();
         $discountedProducts = Medicine::nonPbf()
             ->where('promo_b2c_percent', '>', 0)
             ->orderByDesc('promo_b2c_percent')
@@ -38,7 +40,7 @@ class HomeController extends Controller
             ->limit(8)
             ->get();
 
-        return view('home', compact('featuredProducts', 'kategoryCounts', 'totalProducts', 'promoProducts', 'discountedProducts'));
+        return view('home', compact('featuredProducts', 'kategoryCounts', 'totalProducts', 'promoProducts', 'discountedProducts', 'banners'));
     }
 
     // Halaman Tentang Kami

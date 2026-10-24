@@ -22,6 +22,7 @@ use App\Http\Controllers\AdminProdukController;
 use App\Http\Controllers\AdminProdukImportController;
 use App\Http\Controllers\AdminBannerController;
 use App\Http\Controllers\AdminMedicinePromotionController;
+use App\Http\Controllers\AdminDiscountCodeController;
 use App\Http\Controllers\PurchaseHistoryController;
 use App\Http\Controllers\GassRoomController;
 
@@ -61,6 +62,7 @@ Route::get('/products-apotek', [ProductController::class, 'apotek'])->name('prod
 Route::get('/keranjang', [ProductController::class, 'cart'])->name('cart.index');
 Route::get('/cart', [ProductController::class, 'cart'])->name('cart.page');
 Route::get('/checkout', [ProductController::class, 'checkout'])->name('checkout.index');
+Route::post('/checkout/validate-discount', [PurchaseHistoryController::class, 'validateDiscountCode'])->name('checkout.validate-discount');
 Route::post('/orders/history', [PurchaseHistoryController::class, 'store'])->name('orders.history.store');
 Route::get('/invoice/{order}', [PurchaseHistoryController::class, 'invoice'])
     ->middleware('signed')
@@ -173,4 +175,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Channel-specific medicine discounts
     Route::get('promotions', [AdminMedicinePromotionController::class, 'index'])->name('promotions.index');
     Route::put('promotions/{medicine}', [AdminMedicinePromotionController::class, 'update'])->name('promotions.update');
+    Route::get('discount-codes', [AdminDiscountCodeController::class, 'index'])->name('discount-codes.index');
+    Route::post('discount-codes', [AdminDiscountCodeController::class, 'store'])->name('discount-codes.store');
+    Route::put('discount-codes/{discountCode}', [AdminDiscountCodeController::class, 'update'])->name('discount-codes.update');
+    Route::post('discount-codes/{discountCode}/toggle', [AdminDiscountCodeController::class, 'toggle'])->name('discount-codes.toggle');
+    Route::delete('discount-codes/{discountCode}', [AdminDiscountCodeController::class, 'destroy'])->name('discount-codes.destroy');
 });

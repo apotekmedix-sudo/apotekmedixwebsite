@@ -24,11 +24,11 @@ class Banner extends Model
     ];
 
     /**
-     * Scope: hanya banner aktif, urut by urutan
+     * Scope: hanya banner aktif
      */
     public function scopeAktif($query)
     {
-        return $query->where('aktif', true)->orderBy('urutan')->orderBy('id');
+        return $query->where('aktif', true)->orderBy('id');
     }
 
     /**

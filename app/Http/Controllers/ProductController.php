@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 class ProductController extends Controller
 {
     /**
-     * Halaman Produk Kami (frontend)
+     * Halaman Produk Kami (frontend) & Belanja Internal
      */
     public function index(Request $request)
     {
@@ -18,6 +18,11 @@ class ProductController extends Controller
         $kategori_produk = $request->get('kategori_produk', '');
         $kategoriPilihan = $request->get('kategori_pilihan', '');
         $perusahaan      = $request->get('perusahaan', '');
+        $indikasi        = $request->get('indikasi', '');
+        $komposisi       = $request->get('komposisi', '');
+        $sediaan         = $request->get('sediaan', '');
+        $dosis           = $request->get('dosis', '');
+        $golongan        = $request->get('golongan', '');
         $sort            = $request->get('sort', 'terbaru');
         $internalOrder   = $request->routeIs('shopping.internal');
 
@@ -74,13 +79,17 @@ class ProductController extends Controller
             }
         }
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_obat', 'like', "%{$search}%")
-                  ->orWhere('kategori', 'like', "%{$search}%")
-                  ->orWhere('deskripsi', 'like', "%{$search}%");
-            });
+        if ($search !== '') {
+            $query->search($search);
         }
+
+        $query->filterByAttributes([
+            'indikasi'  => $indikasi,
+            'komposisi' => $komposisi,
+            'sediaan'   => $sediaan,
+            'dosis'     => $dosis,
+            'golongan'  => $golongan,
+        ]);
 
         if ($kategori_produk) {
             $query->where('kategori_produk', $kategori_produk);
@@ -100,7 +109,6 @@ class ProductController extends Controller
         $medicines       = $query->paginate(12)->withQueryString();
         $total           = (clone $catalogQuery)->count();
         $kategoriOptions = Companies::LIST;
-        // Ambil daftar perusahaan unik dari data yang ada di DB
         $perusahaanList  = (clone $catalogQuery)
                             ->select('kategori')
                             ->whereNotNull('kategori')
@@ -108,20 +116,27 @@ class ProductController extends Controller
                             ->distinct()
                             ->orderBy('kategori')
                             ->pluck('kategori');
+        $attrOptions     = Medicine::getAttributeFilterOptions();
 
         return view('products', [
-            'medicines' => $medicines,
-            'search' => $search,
+            'medicines'       => $medicines,
+            'search'          => $search,
             'kategori_produk' => $kategori_produk,
             'kategoriPilihan' => $kategoriPilihan,
-            'perusahaan' => $perusahaan,
-            'sort' => $sort,
-            'total' => $total,
+            'perusahaan'      => $perusahaan,
+            'indikasi'        => $indikasi,
+            'komposisi'       => $komposisi,
+            'sediaan'         => $sediaan,
+            'dosis'           => $dosis,
+            'golongan'        => $golongan,
+            'sediaanList'     => $attrOptions['sediaanList'],
+            'golonganList'    => $attrOptions['golonganList'],
+            'sort'            => $sort,
+            'total'           => $total,
             'kategoriOptions' => $kategoriOptions,
-            'perusahaanList' => $perusahaanList,
-            'internalOrder' => $internalOrder,
+            'perusahaanList'  => $perusahaanList,
+            'internalOrder'   => $internalOrder,
         ]);
-
     }
 
     public function update(Request $request, $id)
@@ -168,17 +183,26 @@ class ProductController extends Controller
         $search          = $request->get('search', '');
         $kategori_produk = $request->get('kategori_produk', '');
         $perusahaan      = $request->get('perusahaan', '');
+        $indikasi        = $request->get('indikasi', '');
+        $komposisi       = $request->get('komposisi', '');
+        $sediaan         = $request->get('sediaan', '');
+        $dosis           = $request->get('dosis', '');
+        $golongan        = $request->get('golongan', '');
         $sort            = $request->get('sort', 'terbaru');
 
         $query = Medicine::where('harga_grosir', '>', 0);
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_obat', 'like', "%{$search}%")
-                  ->orWhere('kategori', 'like', "%{$search}%")
-                  ->orWhere('deskripsi', 'like', "%{$search}%");
-            });
+        if ($search !== '') {
+            $query->search($search);
         }
+
+        $query->filterByAttributes([
+            'indikasi'  => $indikasi,
+            'komposisi' => $komposisi,
+            'sediaan'   => $sediaan,
+            'dosis'     => $dosis,
+            'golongan'  => $golongan,
+        ]);
 
         if ($kategori_produk) {
             $query->where('kategori_produk', $kategori_produk);
@@ -205,9 +229,14 @@ class ProductController extends Controller
                             ->distinct()
                             ->orderBy('kategori')
                             ->pluck('kategori');
+        $attrOptions     = Medicine::getAttributeFilterOptions();
+        $sediaanList     = $attrOptions['sediaanList'];
+        $golonganList    = $attrOptions['golonganList'];
 
         return view('products_pbf', compact(
             'medicines', 'search', 'kategori_produk', 'perusahaan',
+            'indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan',
+            'sediaanList', 'golonganList',
             'sort', 'total', 'kategoriOptions', 'perusahaanList'
         ))->with('catalogPrice', 'harga_modal');
     }
@@ -255,13 +284,18 @@ class ProductController extends Controller
     }
 
     /**
-     * Halaman Produk Apotek (frontend)
+     * Halaman Produk Apotek / Belanja B2C (frontend)
      */
     public function apotek(Request $request)
     {
         $search          = $request->get('search', '');
         $kategori_produk = $request->get('kategori_produk', '');
         $perusahaan      = $request->get('perusahaan', '');
+        $indikasi        = $request->get('indikasi', '');
+        $komposisi       = $request->get('komposisi', '');
+        $sediaan         = $request->get('sediaan', '');
+        $dosis           = $request->get('dosis', '');
+        $golongan        = $request->get('golongan', '');
         $sort            = $request->get('sort', 'terbaru');
 
         $catalogQuery = Medicine::where(function ($query) {
@@ -291,13 +325,17 @@ class ProductController extends Controller
         });
         $query = clone $catalogQuery;
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_obat', 'like', "%{$search}%")
-                  ->orWhere('kategori', 'like', "%{$search}%")
-                  ->orWhere('deskripsi', 'like', "%{$search}%");
-            });
+        if ($search !== '') {
+            $query->search($search);
         }
+
+        $query->filterByAttributes([
+            'indikasi'  => $indikasi,
+            'komposisi' => $komposisi,
+            'sediaan'   => $sediaan,
+            'dosis'     => $dosis,
+            'golongan'  => $golongan,
+        ]);
 
         if ($kategori_produk) {
             $query->where('kategori_produk', $kategori_produk);
@@ -324,9 +362,14 @@ class ProductController extends Controller
                             ->distinct()
                             ->orderBy('kategori')
                             ->pluck('kategori');
+        $attrOptions     = Medicine::getAttributeFilterOptions();
+        $sediaanList     = $attrOptions['sediaanList'];
+        $golonganList    = $attrOptions['golonganList'];
 
         return view('products_apotek', compact(
             'medicines', 'search', 'kategori_produk', 'perusahaan',
+            'indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan',
+            'sediaanList', 'golonganList',
             'sort', 'total', 'kategoriOptions', 'perusahaanList'
         ));
     }

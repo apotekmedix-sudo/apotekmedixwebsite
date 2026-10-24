@@ -371,7 +371,7 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
 
     save();
     render();
-    openCart();
+
     return;
   }
 
@@ -405,7 +405,16 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
   });
   console.log('Cart item:', cart.find(i => i.id === id && (i.saleUnit || 'box') === saleUnit));
   save(); render();
-  openCart();
+  if (btn && !btn.dataset.productId) {
+    const origHtml = btn.dataset.origHtml || btn.innerHTML;
+    btn.dataset.origHtml = origHtml;
+    btn.classList.add('added');
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Ditambahkan!';
+    setTimeout(() => {
+      btn.classList.remove('added');
+      btn.innerHTML = origHtml;
+    }, 1400);
+  }
 }
 
 function removeItem(id, unit = 'box') { cart = cart.filter(i => !(i.id === id && (i.saleUnit || 'box') === unit)); save(); render(); }

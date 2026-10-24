@@ -26,4 +26,14 @@ class LandscapeImage implements ValidationRule
             $fail('Foto harus dalam format landscape (lebar lebih besar dari tinggi).');
         }
     }
+
+    public function passes(string $attribute, mixed $value): bool
+    {
+        $passed = true;
+        $this->validate($attribute, $value, function () use (&$passed) {
+            $passed = false;
+        });
+
+        return $passed;
+    }
 }

@@ -10,8 +10,8 @@ use App\Helpers\ImageHelper;
 
 class AdminMedicineController extends Controller
 {
-    
     private array $companies = Companies::LIST;
+
     // List obat
     public function index(Request $request)
     {
@@ -22,12 +22,10 @@ class AdminMedicineController extends Controller
         $query = Medicine::where('is_grosir', false)->latest();
 
         if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_obat', 'like', "%{$search}%")
-                  ->orWhere('kategori', 'like', "%{$search}%")
-                  ->orWhere('deskripsi', 'like', "%{$search}%");
-            });
+            $query->search($search);
         }
+
+        $query->filterByAttributes($request->only(['indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan']));
 
         if ($kategori) {
             $query->where('kategori', $kategori);
@@ -151,9 +149,7 @@ class AdminMedicineController extends Controller
 
         // Handle upload gambar baru
         if ($request->hasFile('gambar')) {
-            // Hapus gambar lama
             ImageHelper::deleteProductImage($medicine->gambar);
-            // Upload gambar baru
             $validated['gambar'] = ImageHelper::storeProductImage($request->file('gambar'));
         } elseif ($request->input('delete_gambar') == '1' && $medicine->gambar) {
             ImageHelper::deleteProductImage($medicine->gambar);

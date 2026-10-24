@@ -6,6 +6,7 @@ use App\Models\PurchaseHistory;
 use App\Models\Medicine;
 use App\Models\Customer;
 use App\Models\ShoppingAccessCode;
+use App\Models\DiscountCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -68,6 +69,7 @@ class PurchaseHistoryController extends Controller
             'payment_term_days' => ['nullable', 'integer', 'min:1'],
             'transaction_channel' => ['nullable', 'string', 'in:online,offline'],
             'is_pbf_purchase_order' => ['nullable', 'boolean'],
+            'discount_code'   => ['nullable', 'string', 'max:64'],
         ]);
 
         $channel = $data['transaction_channel'] ?? 'online';
@@ -227,6 +229,26 @@ class PurchaseHistoryController extends Controller
             }
 
             $history = PurchaseHistory::create($data);
+            if (!empty($data['discount_code'])) {
+                $voucher = DiscountCode::where('code', strtoupper(trim((string) $data['discount_code'])))
+                    ->lockForUpdate()
+                    ->first();
+                if (!$voucher || !$voucher->is_active) {
+                    return ['error' => 'Kode diskon tidak ditemukan atau sudah tidak aktif.'];
+                }
+                if (!$voucher->isAvailable()) {
+                    return ['error' => "Kuota pemakaian kode diskon {$voucher->code} sudah habis."];
+                }
+                $voucherAmount = $voucher->calculateDiscount((int) $history->discounted_total);
+                $newDiscountedTotal = max(0, (int) $history->discounted_total - $voucherAmount);
+                $history->update([
+                    'discount_code' => $voucher->code,
+                    'discount_code_amount' => $voucherAmount,
+                    'discounted_total' => $newDiscountedTotal,
+                    'total' => $newDiscountedTotal,
+                ]);
+                $voucher->increment('used_count');
+            }
             $customer = Customer::syncFromOrder($history);
             $history->update(['customer_id' => $customer->id]);
 
@@ -248,6 +270,55 @@ class PurchaseHistoryController extends Controller
                 now()->addDays(30),
                 ['order' => $history['history']->id]
             ),
+        ]);
+    }
+
+    public function validateDiscountCode(Request $request)
+    {
+        $rawCode = strtoupper(preg_replace('/\s+/', '', (string) $request->input('code', '')));
+        $subtotal = max(0, (int) $request->input('subtotal', 0));
+
+        if ($rawCode === '') {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Masukkan kode diskon terlebih dahulu.',
+            ], 422);
+        }
+
+        $voucher = DiscountCode::where('code', $rawCode)->first();
+        if (!$voucher) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Kode diskon tidak ditemukan.',
+            ], 404);
+        }
+
+        if (!$voucher->is_active) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Kode diskon ini sedang tidak aktif.',
+            ], 422);
+        }
+
+        if (!$voucher->isAvailable()) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Kuota pemakaian kode diskon ini sudah habis.',
+            ], 422);
+        }
+
+        $discountAmount = $voucher->calculateDiscount($subtotal);
+
+        return response()->json([
+            'valid' => true,
+            'code' => $voucher->code,
+            'description' => $voucher->description,
+            'discount_type' => $voucher->discount_type,
+            'discount_value' => (int) $voucher->discount_value,
+            'discount_amount' => $discountAmount,
+            'is_unlimited' => (bool) $voucher->is_unlimited,
+            'remaining_quota' => $voucher->remainingQuota(),
+            'message' => "Kode diskon {$voucher->code} ({$voucher->formatted_value}) berhasil diterapkan.",
         ]);
     }
 

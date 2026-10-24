@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Edit Produk - Admin Apotek Medix')
 @section('page-title', '✏️ Edit: ' . $medicine->nama_obat)
@@ -120,15 +120,27 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Sediaan</label>
-                    <input type="text" name="sediaan"
-                           class="form-input {{ $errors->has('sediaan') ? 'is-invalid' : '' }}"
-                           placeholder="Contoh: fls, box, tube, pcs atau ketik bebas"
-                           value="{{ old('sediaan', $medicine->sediaan) }}">
-                    @error('sediaan')
-                        <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
-                    @enderror
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Sediaan</label>
+                        <input type="text" name="sediaan"
+                               class="form-input {{ $errors->has('sediaan') ? 'is-invalid' : '' }}"
+                               placeholder="Contoh: Sirup, Tablet, Kapsul, Krim, Fls, Box"
+                               value="{{ old('sediaan', $medicine->sediaan) }}">
+                        @error('sediaan')
+                            <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Dosis / Aturan Pakai</label>
+                        <input type="text" name="dosis"
+                               class="form-input {{ $errors->has('dosis') ? 'is-invalid' : '' }}"
+                               placeholder="Contoh: 500mg / 3x1 sehari 1 tablet"
+                               value="{{ old('dosis', $medicine->dosis) }}">
+                        @error('dosis')
+                            <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
+                        @enderror
+                    </div>
                 </div>
 
                 <div class="form-grid">

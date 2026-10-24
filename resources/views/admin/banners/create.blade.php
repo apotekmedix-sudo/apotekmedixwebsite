@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Tambah Banner - Admin Apotek Medix')
 @section('page-title', '🖼️ Tambah Banner Promo')
 
@@ -8,10 +8,10 @@
 .form-group { margin-bottom:1.25rem; }
 .form-label { display:block; font-size:0.82rem; font-weight:700; color:#374151; margin-bottom:0.4rem; }
 .form-label .req { color:#ef4444; }
+.form-label .opt { color:#9ca3af; font-weight:500; font-size:0.76rem; }
 .form-control { width:100%; padding:0.65rem 0.9rem; border:1.5px solid #e5e7eb; border-radius:0.5rem; font-size:0.9rem; color:#374151; transition:border-color 0.2s; background:#fafafa; }
 .form-control:focus { outline:none; border-color:#1E88E5; background:#fff; box-shadow:0 0 0 3px rgba(30,136,229,0.08); }
 .form-hint { font-size:0.75rem; color:#9ca3af; margin-top:0.3rem; }
-.form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 .toggle-wrap { display:flex; align-items:center; gap:0.75rem; padding:0.75rem 1rem; background:#f8faff; border-radius:0.5rem; border:1.5px solid #e5e7eb; }
 .toggle-wrap label { font-size:0.875rem; font-weight:600; color:#374151; cursor:pointer; }
 .toggle-switch { position:relative; width:44px; height:24px; }
@@ -28,7 +28,6 @@
 .btn-save:hover { background:#1565C0; transform:translateY(-1px); }
 .btn-back { padding:0.7rem 1.5rem; background:#fff; color:#374151; border:1.5px solid #e5e7eb; border-radius:0.5rem; font-size:0.9rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem; transition:all 0.2s; }
 .btn-back:hover { background:#f9fafb; color:#374151; }
-@media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
 </style>
 @endsection
 
@@ -61,13 +60,8 @@
         @csrf
 
         <div class="form-group">
-            <label class="form-label">Judul Banner <span class="req">*</span></label>
-            <input type="text" name="judul" class="form-control" placeholder="Contoh: Promo Ramadan 50%" value="{{ old('judul') }}" required @disabled(isset($bannerTableReady) && !$bannerTableReady)>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Subjudul / Deskripsi Singkat</label>
-            <input type="text" name="subjudul" class="form-control" placeholder="Contoh: Dapatkan diskon besar untuk semua produk vitamin" value="{{ old('subjudul') }}" @disabled(isset($bannerTableReady) && !$bannerTableReady)>
+            <label class="form-label">Judul Banner <span class="opt">(opsional)</span></label>
+            <input type="text" name="judul" class="form-control" placeholder="Contoh: Promo Ramadan 50% (boleh dikosongkan)" value="{{ old('judul') }}" @disabled(isset($bannerTableReady) && !$bannerTableReady)>
         </div>
 
         <div class="form-group">
@@ -76,38 +70,25 @@
             <div class="img-placeholder" onclick="document.getElementById('gambarInput').click()">
                 <i class="fa-solid fa-image" style="font-size:1.5rem;"></i>
                 <span>Klik untuk pilih gambar</span>
-                <span style="font-size:0.7rem;">JPG, PNG, WEBP — Ukuran: 3998×1224px (wajib)</span>
+                <span style="font-size:0.7rem;">JPG, PNG, WEBP — Format Landscape (Rekomendasi: 3998×1224px)</span>
             </div>
             <img id="imgPreview" class="img-preview" src="#" alt="Preview">
         </div>
 
-        <div class="form-row">
-            <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">URL Tujuan (opsional)</label>
-                <input type="text" name="url_tujuan" class="form-control" placeholder="/products atau https://..." value="{{ old('url_tujuan') }}" @disabled(isset($bannerTableReady) && !$bannerTableReady)>
-                <p class="form-hint">Link ketika banner diklik</p>
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Label Tombol</label>
-                <input type="text" name="label_tombol" class="form-control" placeholder="Lihat Sekarang" value="{{ old('label_tombol', 'Lihat Sekarang') }}" @disabled(isset($bannerTableReady) && !$bannerTableReady)>
-            </div>
+        <div class="form-group">
+            <label class="form-label">URL Tujuan <span class="opt">(opsional)</span></label>
+            <input type="text" name="url_tujuan" class="form-control" placeholder="/products atau https://... (boleh dikosongkan)" value="{{ old('url_tujuan') }}" @disabled(isset($bannerTableReady) && !$bannerTableReady)>
+            <p class="form-hint">Link ketika banner diklik</p>
         </div>
 
-        <div class="form-row" style="margin-top:1.25rem;">
-            <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Urutan Tampil</label>
-                <input type="number" name="urutan" class="form-control" placeholder="0" min="0" value="{{ old('urutan', 0) }}" @disabled(isset($bannerTableReady) && !$bannerTableReady)>
-                <p class="form-hint">Angka kecil tampil lebih dulu</p>
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-                <label class="form-label">Status</label>
-                <div class="toggle-wrap">
-                    <label class="toggle-switch">
-                        <input type="checkbox" name="aktif" value="1" checked @disabled(isset($bannerTableReady) && !$bannerTableReady)>
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <label>Aktif (tampil di website)</label>
-                </div>
+        <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Status</label>
+            <div class="toggle-wrap">
+                <label class="toggle-switch">
+                    <input type="checkbox" name="aktif" value="1" checked @disabled(isset($bannerTableReady) && !$bannerTableReady)>
+                    <span class="toggle-slider"></span>
+                </label>
+                <label>Aktif (tampil di website)</label>
             </div>
         </div>
 
@@ -136,4 +117,3 @@ function previewImg(input) {
 }
 </script>
 @endsection
-
