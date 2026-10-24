@@ -7889,3 +7889,7 @@ Content-Transfer-Encoding: quoted-printable
 #19 C:/Users/Ali Attaziri/APOTEK MEDIX/artisan(16): Illuminate/Foundation/Application->handleCommand(Object(Symfony/Component/Console/Input/ArgvInput))
 #20 {main}
 "} 
+[2026-10-24 07:13:35] local.ERROR: Namespace declaration statement has to be the very first statement or after any declare call in the script {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Namespace declaration statement has to be the very first statement or after any declare call in the script at C:/Users/Ali Attaziri/APOTEK MEDIX/database/seeders/NewsSeeder.php:3)
+[stacktrace]
+#0 {main}
+"} 
