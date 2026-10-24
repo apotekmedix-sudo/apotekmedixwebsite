@@ -20,25 +20,58 @@
         'strip' => 'Strip',
         'box' => $medicine->package_unit_label,
     ];
-    $availableUnits = array_filter(
-        ['tablet', 'strip', 'box'],
-        fn ($unit) => $unitBasePriceValues[$unit] > 0 && $unitFactors[$unit] > 0
-    );
+    $availableUnits = $medicine->unit_packaging_enabled
+        ? array_filter(
+            ['box', 'strip', 'tablet'],
+            fn ($unit) => $unitBasePriceValues[$unit] > 0 && $unitFactors[$unit] > 0
+        )
+        : ($unitBasePriceValues['box'] > 0 ? ['box'] : []);
+    $stockUnits = max(0, (int) ($medicine->stock_base_units ?? $medicine->stok));
+    $promoPercent = $medicine->getPromoPercent($priceChannel);
 @endphp
-@if($medicine->unit_packaging_enabled)
-    @if($availableUnits)
-    <label for="{{ $unitSelectId }}" style="display:block;margin:0.5rem 0 0.25rem;font-size:.78rem;font-weight:700;color:#475569;">Beli per satuan</label>
-    <select id="{{ $unitSelectId }}" onchange="updateCardUnitPrice('{{ $unitSelectId }}', '{{ $priceTargetId }}')"
-            data-unit-prices="{{ json_encode($unitPriceValues) }}"
-            data-unit-factors="{{ json_encode($unitFactors) }}"
-            data-unit-labels="{{ json_encode($unitLabels) }}"
-            data-stock-units="{{ (int) $medicine->stock_base_units }}"
-            style="width:100%;padding:.5rem;border:1px solid #cbd5e1;border-radius:.5rem;background:#fff;color:#1e293b;">
-        @foreach($availableUnits as $unit)
-            <option value="{{ $unit }}" data-price="{{ $unitPriceValues[$unit] }}" @selected($unit === 'box')>{{ $unitLabels[$unit] }} · Rp {{ number_format($unitPriceValues[$unit], 0, ',', '.') }}</option>
-        @endforeach
-    </select>
-    @else
-        <small style="display:block;margin-top:.5rem;color:#b45309;">Harga satuan produk belum tersedia.</small>
-    @endif
+
+<select id="{{ $unitSelectId }}" class="product-unit-data" aria-hidden="true" tabindex="-1"
+        data-unit-prices="{{ json_encode($unitPriceValues) }}"
+        data-unit-factors="{{ json_encode($unitFactors) }}"
+        data-unit-labels="{{ json_encode($unitLabels) }}"
+        data-stock-units="{{ $stockUnits }}">
+    @foreach($availableUnits as $unit)
+        <option value="{{ $unit }}" data-price="{{ $unitPriceValues[$unit] }}" @selected($unit === 'box')>{{ $unitLabels[$unit] }} · Rp {{ number_format($unitPriceValues[$unit], 0, ',', '.') }}</option>
+    @endforeach
+</select>
+
+@if($availableUnits)
+    <div class="product-unit-section">
+        <span class="product-unit-heading">Beli per satuan &amp; jumlah</span>
+        <div class="product-unit-grid product-unit-grid-{{ count($availableUnits) }}">
+            @foreach($availableUnits as $unit)
+                @php
+                    $availableQuantity = intdiv($stockUnits, $unitFactors[$unit]);
+                    $unitBasePrice = $unitBasePriceValues[$unit];
+                @endphp
+                <div class="product-unit-card" data-cart-unit="{{ $unit }}">
+                    <button type="button" class="product-unit-choice" aria-pressed="false"
+                            onclick="selectProductCardUnit(this)">
+                        <span class="product-unit-name">{{ $unitLabels[$unit] }}</span>
+                        @if($promoPercent > 0 && $unitBasePrice > $unitPriceValues[$unit])
+                            <small class="product-unit-old-price">Rp {{ number_format($unitBasePrice, 0, ',', '.') }}</small>
+                        @endif
+                        <strong class="product-unit-price">Rp {{ number_format($unitPriceValues[$unit], 0, ',', '.') }}</strong>
+                    </button>
+                    <div class="product-unit-quantity">
+                        <button type="button" aria-label="Kurangi {{ $unitLabels[$unit] }}"
+                                onclick="adjustProductCardQty(this, -1)" disabled>−</button>
+                        <input type="number" min="0" max="{{ $availableQuantity }}" step="1" value="0"
+                               data-cart-quantity
+                               aria-label="Jumlah {{ $unitLabels[$unit] }}"
+                               oninput="updateProductCardQty(this)" disabled>
+                        <button type="button" aria-label="Tambah {{ $unitLabels[$unit] }}"
+                                onclick="adjustProductCardQty(this, 1)" disabled>+</button>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+@else
+    <small class="product-unit-unavailable">Harga satuan produk belum tersedia.</small>
 @endif

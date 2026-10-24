@@ -414,6 +414,7 @@
         .medicine-btn, .btn-cart { font-size: 0.82rem; padding: 0.55rem; }
     }
 </style>
+@include('partials.product-card-styles')
 @endsection
 
 @section('content')
@@ -524,27 +525,26 @@
             <div class="medicines-grid">
                 @foreach($medicines as $medicine)
                     <div class="medicine-card">
+                        <div class="medicine-card-brand">Apotek Medix</div>
                         <div class="medicine-image">
                             @include('partials.product-gallery-image', ['medicine' => $medicine])
+                            @include('partials.product-logo-marker', ['medicine' => $medicine])
                         </div>
                         <div class="medicine-body">
-                            
-                            <span class="medicine-company">{{ $medicine->kategori }}</span>
+                            <div class="medicine-card-principal">{{ $medicine->brand ?: $medicine->kategori }}</div>
                             <h3 class="medicine-name"><a href="{{ route('medicines.show', $medicine->id) }}">{{ $medicine->nama_obat }}</a></h3>
-                            
+
                             @php
                                 $basePrice = $medicine->getChannelBasePrice('b2b');
                                 $promoPrice = $medicine->getChannelPromoPrice('b2b');
-                                $promoPercent = $medicine->getPromoPercent('b2b');
                             @endphp
-                            <div class="medicine-price">
-                                @if($promoPercent > 0)<small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($basePrice, 0, ',', '.') }}</small>@endif
-                                @if($basePrice > 0)
-                                    Rp {{ number_format($promoPrice, 0, ',', '.') }}
-                                @else
-                                    <span style="color:#b45309;font-size:.82rem;">Harga B2B belum diatur</span>
+                            <div class="medicine-card-details">
+                                <p><strong>Komposisi:</strong> {{ $medicine->komposisi ?: $medicine->nama_obat }}</p>
+                                @if($medicine->indikasi)
+                                    <p><strong>Indikasi:</strong> {{ $medicine->indikasi }}</p>
                                 @endif
                             </div>
+                            @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'pbf-unit-' . $medicine->id, 'priceChannel' => 'b2b'])
                             @php $stock = (int) $medicine->stok; @endphp
                             <span class="stock-badge {{ $stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available') }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
@@ -555,12 +555,16 @@
                                     <i class="fa-solid fa-cube"></i> <span>Sediaan: {{ $medicine->sediaan_label }}</span>
                                 </div>
                             @endif
-                            <a href="{{ route('medicines.show', $medicine->id) }}" class="medicine-btn">
-                                Lihat Detail <i class="fa-solid fa-arrow-right"></i>
-                            </a>
                             @if($basePrice > 0)
-                                <button class="btn-cart" data-package-unit-label="{{ $medicine->package_unit_label }}" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $promoPrice }}, '{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this)">
-                                    <i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang
+                                <button class="btn-cart"
+                                        data-product-id="{{ $medicine->id }}"
+                                        data-package-unit-label="{{ $medicine->package_unit_label }}"
+                                        data-product-name="{{ $medicine->nama_obat }}"
+                                        data-product-price="{{ $promoPrice }}"
+                                        data-product-image="{{ $medicine->gambar ? url('storage/'.$medicine->gambar) : '' }}"
+                                        data-product-brand="{{ $medicine->brand ?: $medicine->kategori }}"
+                                        onclick="addToCart({{ $medicine->id }}, this.dataset.productName, Number(this.dataset.productPrice), this.dataset.productImage, this.dataset.productBrand, this, 'pbf-unit-{{ $medicine->id }}')">
+                                    <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang
                                 </button>
                             @else
                                 <button class="btn-cart" type="button" disabled style="opacity:.55;cursor:not-allowed;">

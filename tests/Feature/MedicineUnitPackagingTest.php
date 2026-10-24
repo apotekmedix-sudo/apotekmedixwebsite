@@ -25,6 +25,7 @@ class MedicineUnitPackagingTest extends TestCase
             'nama_obat' => 'Obat Kemasan',
             'kategori_produk' => Companies::LIST[0],
             'kategori' => 'Pabrik Contoh',
+            'logo' => 'HIJAU',
             'satuan' => 'Botol',
             'harga_modal' => 5000,
             'harga_internal' => 8000,
@@ -59,7 +60,20 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertOk()
             ->assertSee('Beli per satuan')
             ->assertSee('Tablet · Rp 100', false)
-            ->assertSee('data-stock-units="200"', false);
+            ->assertSee('data-stock-units="200"', false)
+            ->assertSee('class="product-unit-choice" aria-pressed="false"', false)
+            ->assertSee('onclick="selectProductCardUnit(this)"', false)
+            ->assertSee('product-logo-marker--green', false)
+            ->assertSeeInOrder([
+                '<div class="medicine-card-principal">Pabrik Contoh</div>',
+                '<h3 class="medicine-name"><a href="' . route('medicines.show', $medicine->id) . '">Obat Kemasan</a></h3>',
+            ], false)
+            ->assertSee('data-product-id="' . $medicine->id . '"', false)
+            ->assertSee('function syncProductButtons()', false)
+            ->assertSee('Sudah di Keranjang', false)
+            ->assertDontSee('data-detail-url=', false)
+            ->assertDontSee('role="link"', false)
+            ->assertDontSee('class="medicine-btn"', false);
 
         $this->get(route('products.apotek'))
             ->assertOk()

@@ -236,6 +236,7 @@ function save() {
 
 function syncBadge() {
   const tot = cart.reduce((s, i) => s + i.qty, 0);
+  syncProductButtons();
   // Update semua elemen badge (navbar, home, dll)
   document.querySelectorAll('.cart-badge, #cartBadgeNav, #cartBadgeHome, #cartBadgeHeader').forEach(b => {
     if (!b) return;
@@ -251,10 +252,118 @@ function syncBadge() {
   }
 }
 
+function syncProductButtons() {
+  const cartProductIds = new Set(cart.filter(item => item.qty > 0).map(item => String(item.id)));
+  document.querySelectorAll('.btn-cart[data-product-id]').forEach(button => {
+    const added = cartProductIds.has(button.dataset.productId);
+    button.classList.toggle('added', added);
+    button.innerHTML = added
+      ? '<i class="fa-solid fa-check"></i> Sudah di Keranjang'
+      : '<i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang';
+  });
+}
+
 function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
+
+function selectProductCardUnit(button) {
+  const selectedCard = button.closest('.product-unit-card');
+  const unitSection = selectedCard?.closest('.product-unit-section');
+  if (!selectedCard || !unitSection) return;
+
+  unitSection.querySelectorAll('.product-unit-card').forEach(card => {
+    const selected = card === selectedCard;
+    card.classList.toggle('is-selected', selected);
+    card.querySelector('.product-unit-choice')?.setAttribute('aria-pressed', String(selected));
+    const quantityInput = card.querySelector('[data-cart-quantity]');
+    if (!quantityInput) return;
+    if (!selected) quantityInput.value = '0';
+    card.querySelectorAll('.product-unit-quantity button').forEach(control => {
+      control.disabled = !selected || Number(quantityInput.max) < 1;
+    });
+    quantityInput.disabled = !selected || Number(quantityInput.max) < 1;
+  });
+
+  const unitSelect = selectedCard.closest('.medicine-card')?.querySelector('.product-unit-data');
+  if (unitSelect) unitSelect.value = selectedCard.dataset.cartUnit;
+}
+
+function updateProductCardQty(input, adjustment = 0) {
+  const max = Math.max(0, Number(input.max) || 0);
+  const current = parseInt(input.value, 10) || 0;
+  input.value = Math.min(max, Math.max(0, current + adjustment));
+  input.closest('.product-unit-card')?.classList.toggle('has-quantity', Number(input.value) > 0);
+}
+
+function adjustProductCardQty(button, adjustment) {
+  const input = button.closest('.product-unit-card')?.querySelector('input[data-cart-quantity]');
+  if (input && !input.disabled) updateProductCardQty(input, adjustment);
+}
 
 function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
   const unitSelect = unitSelectId ? document.getElementById(unitSelectId) : null;
+  const productCard = btn?.closest('.medicine-card');
+  const cardUnits = productCard?.querySelectorAll('.product-unit-card[data-cart-unit]') || [];
+  if (cardUnits.length) {
+    const unitPrices = unitSelect ? JSON.parse(unitSelect.dataset.unitPrices || '{}') : {};
+    const unitFactors = unitSelect ? JSON.parse(unitSelect.dataset.unitFactors || '{}') : {};
+    const unitLabels = unitSelect ? JSON.parse(unitSelect.dataset.unitLabels || '{}') : {};
+    const stockUnits = unitSelect ? Number(unitSelect.dataset.stockUnits || 0) : 0;
+    const selectedCard = Array.from(cardUnits).find(card => card.classList.contains('is-selected'));
+
+    if (!selectedCard) {
+      alert('Pilih satuan produk terlebih dahulu.');
+      return;
+    }
+
+    const addition = {
+      unit: selectedCard.dataset.cartUnit,
+      qty: parseInt(selectedCard.querySelector('[data-cart-quantity]')?.value, 10) || 0
+    };
+    if (!addition.qty) {
+      alert('Pilih jumlah produk yang ingin dimasukkan ke keranjang.');
+      return;
+    }
+
+    const unit = addition.unit;
+    const unitLabel = unitLabels[unit] || unit.charAt(0).toUpperCase() + unit.slice(1);
+    const factor = Number(unitFactors[unit] || 0);
+    const availableQty = factor > 0 ? Math.floor(stockUnits / factor) : 0;
+    if (!availableQty || addition.qty > availableQty) {
+      alert('Stok untuk satuan ' + unitLabel + ' tidak mencukupi.');
+      return;
+    }
+
+    const existing = cart.find(item => item.id === id);
+    cart = cart.filter(item => item.id !== id);
+    if (existing) {
+      existing.name = name;
+      existing.price = Number(unitPrices[unit] || 0);
+      existing.qty = addition.qty;
+      existing.brand = brand;
+      existing.img = img;
+      existing.discount = 0;
+      existing.unitLabels = unitLabels;
+      existing.unitLabel = unitLabel;
+      existing.unitPrices = unitPrices;
+      existing.unitFactors = unitFactors;
+      existing.saleUnit = unit;
+      existing.availableQty = availableQty;
+      existing.stockUnits = stockUnits;
+      cart.push(existing);
+    } else {
+      cart.push({
+        id, name, price: Number(unitPrices[unit] || 0), img, brand: brand || '',
+        qty: addition.qty, note: '', discount: 0, saleUnit: unit, unitLabel,
+        unitLabels, unitPrices, unitFactors, availableQty, stockUnits
+      });
+    }
+
+    save();
+    render();
+    openCart();
+    return;
+  }
+
   const selectedOption = unitSelect?.selectedOptions?.[0];
   const saleUnit = unitSelect?.value || 'box';
   const unitPrices = unitSelect ? JSON.parse(unitSelect.dataset.unitPrices || '{}') : null;
@@ -285,14 +394,6 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
   });
   console.log('Cart item:', cart.find(i => i.id === id && (i.saleUnit || 'box') === saleUnit));
   save(); render();
-  if (btn) {
-    btn.classList.add('added');
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> Ditambahkan!';
-    setTimeout(() => {
-      btn.classList.remove('added');
-      btn.innerHTML = '<i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang';
-    }, 1500);
-  }
   openCart();
 }
 
