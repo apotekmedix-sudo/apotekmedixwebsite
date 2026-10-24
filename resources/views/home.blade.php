@@ -1602,6 +1602,7 @@
         <div class="prod-card">
           <div class="prod-img">
             @include('partials.product-gallery-image', ['medicine' => $med])
+            @include('partials.product-logo-marker', ['medicine' => $med])
             @if($med->kategori_produk)
               <span class="prod-badge-label">{{ $med->kategori_produk==='SKINCARE & KOSMETIK'?'✨':($med->kategori_produk==='ALAT KESEHATAN'?'🩺':'💊') }}</span>
             @endif
@@ -1745,6 +1746,7 @@
         <article class="discounted-product-card">
           <span class="discounted-product-badge">Diskon {{ $promoMedicine->getPromoPercent('b2c') }}%</span>
           <a class="discounted-product-image" href="{{ route('medicines.show', $promoMedicine->id) }}" aria-label="Lihat {{ $promoMedicine->nama_obat }}">
+            @include('partials.product-logo-marker', ['medicine' => $promoMedicine])
             @if($promoMedicine->gambar)
               <img src="{{ $promoMedicine->image_url }}" alt="{{ $promoMedicine->nama_obat }}" loading="lazy">
               @if(count($promoMedicine->image_gallery) > 1)

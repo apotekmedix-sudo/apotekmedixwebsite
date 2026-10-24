@@ -107,6 +107,21 @@ class Medicine extends Model
         return Schema::getColumnListing('medicines');
     }
 
+    public function isRedLogo(): bool
+    {
+        $logo = mb_strtolower(trim((string) $this->logo));
+        if (in_array($logo, ['merah', 'red', 'logo merah', 'k'], true)) {
+            return true;
+        }
+
+        $golongan = mb_strtolower(trim((string) $this->golongan));
+        if ($logo === '' && str_contains($golongan, 'keras')) {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * Expand dosage-like terms (e.g., "500mg" <-> "500 mg") so both variations match.
      */

@@ -676,6 +676,7 @@
                         <div class="product-card">
                             <div class="product-img">
                                 @include('partials.product-gallery-image', ['medicine' => $med])
+                                @include('partials.product-logo-marker', ['medicine' => $med])
                                 @if($med->kategori_produk)
                                     <span class="product-badge">{{ strtoupper(substr($med->kategori_produk, 0, 1)) }}</span>
                                 @endif

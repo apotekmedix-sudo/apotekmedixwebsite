@@ -46,6 +46,8 @@
         data-unit-prices="{{ json_encode($unitPriceValues) }}"
         data-unit-factors="{{ json_encode($unitFactors) }}"
         data-unit-labels="{{ json_encode($unitLabels) }}"
+        data-price-channel="{{ $priceChannel }}"
+        data-red-logo="{{ $medicine->isRedLogo() ? '1' : '0' }}"
         data-stock-units="{{ $stockUnits }}">
     @foreach($availableUnits as $unit)
         <option value="{{ $unit }}" data-price="{{ $unitPriceValues[$unit] }}" @selected($unit === 'box')>{{ $unitLabels[$unit] }} · Rp {{ number_format($unitPriceValues[$unit], 0, ',', '.') }}</option>

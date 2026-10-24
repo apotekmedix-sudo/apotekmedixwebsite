@@ -149,6 +149,196 @@
 </style>
 
 {{-- ===== CART DRAWER HTML ===== --}}
+<style>
+  .red-logo-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 4500;
+    background: rgba(15, 23, 42, 0.62);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .red-logo-modal-overlay.open {
+    display: flex;
+  }
+  .red-logo-modal-box {
+    width: min(440px, 100%);
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+    border: 1px solid #fee2e2;
+    overflow: hidden;
+    animation: redLogoPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes redLogoPopIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .red-logo-modal-head {
+    background: linear-gradient(135deg, #b91c1c, #dc2626);
+    padding: 1.25rem 1.4rem;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .red-logo-modal-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .red-logo-k-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #dc2626;
+    border: 2.5px solid #0f172a;
+    box-shadow: 0 0 0 3px #ffffff;
+    color: #0f172a;
+    font-weight: 900;
+    font-size: 1.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .red-logo-modal-head h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.25;
+  }
+  .red-logo-modal-head p {
+    margin: 0.15rem 0 0;
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.88);
+  }
+  .red-logo-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 1rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .red-logo-modal-close:hover {
+    background: rgba(255, 255, 255, 0.32);
+  }
+  .red-logo-modal-body {
+    padding: 1.35rem 1.4rem 1.4rem;
+    text-align: center;
+  }
+  .red-logo-alert-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    color: #7f1d1d;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    margin-bottom: 1.15rem;
+  }
+  .red-logo-alert-box strong {
+    color: #991b1b;
+    font-weight: 800;
+  }
+  .red-logo-btn-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+    margin-bottom: 0.75rem;
+  }
+  .red-logo-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.78rem 0.75rem;
+    border-radius: 11px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .red-logo-action-btn:hover {
+    transform: translateY(-2px);
+  }
+  .red-logo-btn-doctor {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.28);
+  }
+  .red-logo-btn-doctor:hover { color: #ffffff; }
+  .red-logo-btn-pharmacist {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.28);
+  }
+  .red-logo-btn-pharmacist:hover { color: #ffffff; }
+  .red-logo-dismiss-btn {
+    width: 100%;
+    padding: 0.6rem;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .red-logo-dismiss-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+  }
+  @media (max-width: 460px) {
+    .red-logo-btn-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="red-logo-modal-overlay" id="redLogoModalOverlay" onclick="if(event.target === this) closeRedLogoModal()" role="dialog" aria-modal="true" aria-labelledby="redLogoModalTitle">
+  <div class="red-logo-modal-box">
+    <div class="red-logo-modal-head">
+      <div class="red-logo-modal-title-wrap">
+        <span class="red-logo-k-badge" aria-hidden="true">K</span>
+        <div>
+          <h3 id="redLogoModalTitle">Harus dengan Resep Dokter</h3>
+          <p>Peringatan Obat Keras (Logo Merah)</p>
+        </div>
+      </div>
+      <button type="button" class="red-logo-modal-close" onclick="closeRedLogoModal()" aria-label="Tutup">&#x2715;</button>
+    </div>
+    <div class="red-logo-modal-body">
+      <div class="red-logo-alert-box">
+        Produk <strong id="redLogoProductName">Obat ini</strong> termasuk golongan <strong>Obat Keras (Logo Merah)</strong> yang pembeliannya <strong>harus dengan resep dokter</strong>.<br>
+        Silakan hubungi Dokter atau Apoteker kami untuk konsultasi dan pemesanan resep.
+      </div>
+      <div class="red-logo-btn-grid">
+        <a id="btnHubungiDokter" href="https://wa.me/6285882717844" target="_blank" rel="noopener" class="red-logo-action-btn red-logo-btn-doctor">
+          <i class="fa-solid fa-user-doctor"></i> Hubungi Dokter
+        </a>
+        <a id="btnHubungiApoteker" href="https://wa.me/6285882717844" target="_blank" rel="noopener" class="red-logo-action-btn red-logo-btn-pharmacist">
+          <i class="fa-solid fa-prescription-bottle-medical"></i> Hubungi Apoteker
+        </a>
+      </div>
+      <button type="button" class="red-logo-dismiss-btn" onclick="closeRedLogoModal()">Tutup</button>
+    </div>
+  </div>
+</div>
 <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
 <div class="cart-drawer" id="cartDrawer">
   <div class="cart-head">
@@ -518,9 +708,52 @@ function adjustProductCardQty(button, adjustment) {
   if (input && !input.disabled) updateProductCardQty(input, adjustment);
 }
 
+function openRedLogoModal(productName) {
+  const overlay = document.getElementById('redLogoModalOverlay');
+  if (!overlay) return;
+  const nameLabel = (productName || 'Obat ini').trim();
+  const nameEl = document.getElementById('redLogoProductName');
+  if (nameEl) nameEl.textContent = nameLabel;
+
+  const doctorBtn = document.getElementById('btnHubungiDokter');
+  if (doctorBtn) {
+    const doctorMsg = `Halo Dokter Apotek Medix, saya ingin berkonsultasi mengenai resep dokter untuk obat: ${nameLabel}`;
+    doctorBtn.href = `https://wa.me/${WA}?text=${encodeURIComponent(doctorMsg)}`;
+  }
+
+  const pharmacistBtn = document.getElementById('btnHubungiApoteker');
+  if (pharmacistBtn) {
+    const pharmacistMsg = `Halo Apoteker Apotek Medix, saya ingin berkonsultasi / menebus resep dokter untuk obat: ${nameLabel}`;
+    pharmacistBtn.href = `https://wa.me/${WA}?text=${encodeURIComponent(pharmacistMsg)}`;
+  }
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRedLogoModal() {
+  const overlay = document.getElementById('redLogoModalOverlay');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
-  const unitSelect = unitSelectId ? document.getElementById(unitSelectId) : null;
-  const productCard = btn?.closest('.medicine-card, .prod-card, .discounted-product-card');
+  var unitSelect = unitSelectId ? document.getElementById(unitSelectId) : null;
+  const productCard = btn?.closest('.medicine-card, .prod-card, .discounted-product-card, .product-card');
+  const isB2CChannel = !CART_CONFIG.kioskOrder
+    && !CART_CONFIG.wholesaleOrder
+    && !CART_CONFIG.adminPbfOrder
+    && (!unitSelect?.dataset.priceChannel || unitSelect.dataset.priceChannel === 'b2c');
+  const isRedLogoProduct = unitSelect?.dataset.redLogo === '1'
+    || btn?.dataset.redLogo === '1'
+    || Boolean(productCard?.querySelector('.product-logo-marker--red'));
+
+  if (isB2CChannel && isRedLogoProduct) {
+    openRedLogoModal(name || btn?.dataset.productName);
+    return;
+  }
+  var unitSelect = unitSelectId ? document.getElementById(unitSelectId) : null;
+
   const cardUnits = productCard?.querySelectorAll('.product-unit-card[data-cart-unit]') || [];
   if (cardUnits.length) {
     const unitPrices = unitSelect ? JSON.parse(unitSelect.dataset.unitPrices || '{}') : {};

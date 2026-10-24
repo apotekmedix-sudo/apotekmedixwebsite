@@ -1,9 +1,10 @@
 @php
-    $logoColor = match (mb_strtolower(trim((string) $medicine->logo))) {
-        'hijau', 'green' => 'green',
-        'merah', 'red' => 'red',
-        'biru', 'blue' => 'blue',
-        default => null,
+    $rawLogo = mb_strtolower(trim((string) $medicine->logo));
+    $logoColor = match ($rawLogo) {
+        'hijau', 'green', 'logo hijau' => 'green',
+        'merah', 'red', 'logo merah', 'k' => 'red',
+        'biru', 'blue', 'logo biru' => 'blue',
+        default => ($medicine->isRedLogo() ? 'red' : null),
     };
 @endphp
 @if($logoColor)
