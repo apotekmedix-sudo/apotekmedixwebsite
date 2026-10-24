@@ -544,7 +544,12 @@
                                     <p><strong>Indikasi:</strong> {{ $medicine->indikasi }}</p>
                                 @endif
                             </div>
-                            @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'pbf-unit-' . $medicine->id, 'priceChannel' => 'b2b'])
+                            @include('partials.product-unit-selector', [
+                                'medicine' => $medicine,
+                                'unitSelectId' => 'pbf-unit-' . $medicine->id,
+                                'priceChannel' => 'b2b',
+                                'showUnitChoices' => false,
+                            ])
                             @php $stock = (int) $medicine->stok; @endphp
                             <span class="stock-badge {{ $stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available') }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>

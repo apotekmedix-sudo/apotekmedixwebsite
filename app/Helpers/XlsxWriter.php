@@ -21,9 +21,10 @@ class XlsxWriter
         string $filename,
         array  $headers,
         array  $rows,
-        array  $widths = []
+        array  $widths = [],
+        ?array $numericColumns = null
     ) {
-        $xlsx = self::build($headers, $rows, $widths);
+        $xlsx = self::build($headers, $rows, $widths, $numericColumns);
 
         return response($xlsx, 200, [
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -38,7 +39,7 @@ class XlsxWriter
     /**
      * Build XLSX binary string.
      */
-    public static function build(array $headers, array $rows, array $widths = []): string
+    public static function build(array $headers, array $rows, array $widths = [], ?array $numericColumns = null): string
     {
         // ── 1. Build sheet XML ────────────────────────────────────────────────
         $sharedStrings = [];
@@ -95,7 +96,9 @@ class XlsxWriter
                     continue;
                 }
 
-                $isNumeric = ($v !== '' && is_numeric($v) && !preg_match('/^0\d/', $v));
+                $isNumeric = $numericColumns === null
+                    ? ($v !== '' && is_numeric($v) && !preg_match('/^0\d/', $v))
+                    : ($v !== '' && in_array($ci, $numericColumns, true) && is_numeric($v));
 
                 if ($isTotal) {
                     // Total row styles: 8=total-text, 9=total-currency
@@ -221,6 +224,179 @@ class XlsxWriter
         ];
 
         return self::buildZip($files);
+    }
+
+    public static function downloadWorkbook(string $filename, array $sheets)
+    {
+        $xlsx = self::buildWorkbook($sheets);
+
+        return response($xlsx, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Length' => strlen($xlsx),
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ]);
+    }
+
+    public static function buildWorkbook(array $sheets): string
+    {
+        if (!$sheets) {
+            throw new \InvalidArgumentException('Workbook must contain at least one worksheet.');
+        }
+
+        $files = [
+            '[Content_Types].xml' => '',
+            '_rels/.rels' => self::rootRels(),
+            'xl/workbook.xml' => '',
+            'xl/_rels/workbook.xml.rels' => '',
+            'xl/styles.xml' => self::workbookStyles(),
+        ];
+        $sheetDefinitions = [];
+        $sheetRelationships = [];
+        $contentTypeOverrides = [];
+        $usedNames = [];
+
+        foreach (array_values($sheets) as $index => $sheet) {
+            $sheetNumber = $index + 1;
+            $name = self::uniqueSheetName((string) ($sheet['name'] ?? 'Sheet ' . $sheetNumber), $usedNames);
+            $sheetId = 'rId' . $sheetNumber;
+            $sheetFile = 'xl/worksheets/sheet' . $sheetNumber . '.xml';
+            $headers = array_values($sheet['headers'] ?? []);
+            $rows = array_values($sheet['rows'] ?? []);
+
+            if (!$headers) {
+                throw new \InvalidArgumentException("Worksheet '{$name}' must have at least one column.");
+            }
+
+            $files[$sheetFile] = self::workbookSheet(
+                $headers,
+                $rows,
+                $sheet['widths'] ?? [],
+                $sheet['numeric_columns'] ?? []
+            );
+            $sheetDefinitions[] = '<sheet name="' . htmlspecialchars($name, ENT_XML1 | ENT_QUOTES) . '" sheetId="' . $sheetNumber . '" r:id="' . $sheetId . '"/>';
+            $sheetRelationships[] = '<Relationship Id="' . $sheetId . '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' . $sheetNumber . '.xml"/>';
+            $contentTypeOverrides[] = '<Override PartName="/xl/worksheets/sheet' . $sheetNumber . '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+        }
+
+        $sheetCount = count($sheetDefinitions);
+        $styleRelationshipId = 'rId' . ($sheetCount + 1);
+        $sheetRelationships[] = '<Relationship Id="' . $styleRelationshipId . '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>';
+
+        $files['xl/workbook.xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<sheets>' . implode('', $sheetDefinitions) . '</sheets></workbook>';
+        $files['xl/_rels/workbook.xml.rels'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . implode('', $sheetRelationships) . '</Relationships>';
+        $files['[Content_Types].xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            . '<Default Extension="xml" ContentType="application/xml"/>'
+            . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+            . implode('', $contentTypeOverrides)
+            . '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+            . '</Types>';
+
+        return self::buildZip($files);
+    }
+
+    private static function workbookSheet(array $headers, array $rows, array $widths, array $numericColumns): string
+    {
+        $columnCount = count($headers);
+        $rowCount = count($rows) + 1;
+        $sheetRows = '<row r="1" ht="20" customHeight="1">';
+
+        foreach ($headers as $column => $header) {
+            $sheetRows .= self::inlineStringCell(self::colLetter($column) . '1', (string) $header, 1);
+        }
+        $sheetRows .= '</row>';
+
+        foreach ($rows as $rowIndex => $row) {
+            $rowNumber = $rowIndex + 2;
+            $style = $rowIndex % 2 === 0 ? 3 : 4;
+            $sheetRows .= '<row r="' . $rowNumber . '">';
+
+            for ($column = 0; $column < $columnCount; $column++) {
+                $value = $row[$column] ?? '';
+                $cell = self::colLetter($column) . $rowNumber;
+                $stringValue = is_scalar($value) || $value === null
+                    ? (string) ($value ?? '')
+                    : json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+
+                if ($stringValue === '') {
+                    $sheetRows .= '<c r="' . $cell . '" s="' . $style . '"/>';
+                } elseif ((in_array($column, $numericColumns, true) || is_int($value) || is_float($value)) && is_numeric($stringValue)) {
+                    $sheetRows .= '<c r="' . $cell . '" s="2"><v>' . htmlspecialchars($stringValue, ENT_XML1 | ENT_QUOTES) . '</v></c>';
+                } else {
+                    $sheetRows .= self::inlineStringCell($cell, $stringValue, $style);
+                }
+            }
+            $sheetRows .= '</row>';
+        }
+
+        $columnDefinitions = '';
+        foreach ($headers as $column => $header) {
+            $width = max(8, min(60, (float) ($widths[$column] ?? 20)));
+            $columnNumber = $column + 1;
+            $columnDefinitions .= '<col min="' . $columnNumber . '" max="' . $columnNumber . '" width="' . $width . '" customWidth="1"/>';
+        }
+
+        $lastColumn = self::colLetter($columnCount - 1);
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<sheetViews><sheetView workbookViewId="0" showGridLines="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+            . '<sheetFormatPr defaultRowHeight="15"/><cols>' . $columnDefinitions . '</cols>'
+            . '<sheetData>' . $sheetRows . '</sheetData>'
+            . '<autoFilter ref="A1:' . $lastColumn . $rowCount . '"/>'
+            . '</worksheet>';
+    }
+
+    private static function inlineStringCell(string $reference, string $value, int $style): string
+    {
+        return '<c r="' . $reference . '" s="' . $style . '" t="inlineStr"><is><t xml:space="preserve">'
+            . htmlspecialchars($value, ENT_XML1 | ENT_QUOTES)
+            . '</t></is></c>';
+    }
+
+    private static function uniqueSheetName(string $name, array &$usedNames): string
+    {
+        $name = preg_replace('/[\\\\\/?*\[\]:]/', ' ', trim($name)) ?: 'Sheet';
+        $name = mb_substr($name, 0, 31);
+        $base = $name;
+        $suffix = 1;
+
+        while (in_array(mb_strtolower($name), $usedNames, true)) {
+            $ending = ' ' . $suffix++;
+            $name = mb_substr($base, 0, 31 - mb_strlen($ending)) . $ending;
+        }
+
+        $usedNames[] = mb_strtolower($name);
+
+        return $name;
+    }
+
+    private static function workbookStyles(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<fonts count="2"><font><sz val="10"/><name val="Calibri"/></font>'
+            . '<font><sz val="10"/><b/><name val="Calibri"/><color rgb="FFFFFFFF"/></font></fonts>'
+            . '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'
+            . '<fill><patternFill patternType="solid"><fgColor rgb="FF1565C0"/></patternFill></fill></fills>'
+            . '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border>'
+            . '<left style="thin"><color rgb="FFCFD8E3"/></left><right style="thin"><color rgb="FFCFD8E3"/></right>'
+            . '<top style="thin"><color rgb="FFCFD8E3"/></top><bottom style="thin"><color rgb="FFCFD8E3"/></bottom>'
+            . '<diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+            . '<cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+            . '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'
+            . '<xf numFmtId="3" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>'
+            . '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
     }
 
     // ── Helper: column letter (0→A, 25→Z, 26→AA ...) ─────────────────────────

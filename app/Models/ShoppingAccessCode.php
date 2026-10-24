@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ShoppingAccessCode extends Model
@@ -30,12 +32,19 @@ class ShoppingAccessCode extends Model
             return false;
         }
 
+        return $this->matchesCode($code);
+    }
+
+    public function matchesCode(string $code): bool
+    {
         $normalizedCode = strtoupper(trim($code));
-        if ($this->code_value) {
-            return hash_equals($this->readCode(), $normalizedCode);
+        if ($this->code_hash) {
+            return Hash::check($normalizedCode, $this->code_hash);
         }
 
-        return Hash::check($normalizedCode, $this->code_hash);
+        $storedCode = $this->readCode();
+
+        return $storedCode !== null && hash_equals($storedCode, $normalizedCode);
     }
 
     public function readCode(): ?string
@@ -44,7 +53,17 @@ class ShoppingAccessCode extends Model
             return null;
         }
 
-        return Crypt::decryptString($this->code_value);
+        try {
+            return Crypt::decryptString($this->code_value);
+        } catch (DecryptException $exception) {
+            Log::warning('Shopping access code could not be decrypted; regenerate the code.', [
+                'shopping_access_code_id' => $this->getKey(),
+                'channel' => $this->channel,
+                'exception' => $exception::class,
+            ]);
+
+            return null;
+        }
     }
 
     public function replaceCode(string $code): void
@@ -76,7 +95,7 @@ class ShoppingAccessCode extends Model
         do {
             $code = (string) random_int(10000, 99999);
             $isDuplicate = self::query()->get()->contains(
-                fn (self $existing) => $existing->readCode() === $code
+                fn (self $existing) => $existing->matchesCode($code)
             );
         } while ($isDuplicate);
 

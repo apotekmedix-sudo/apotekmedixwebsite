@@ -310,11 +310,15 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'harga_internal' => 124000,
             'harga_grosir' => 136000,
             'harga_retail' => 154000,
+            'price_strip' => 15400,
+            'price_tablet' => 1540,
             'stok' => 9,
         ]), $product);
         $product->refresh();
         $this->assertSame(124000.0, $product->getChannelBasePrice('internal'));
         $this->assertSame(136000.0, $product->getChannelBasePrice('b2b'));
+        $this->assertSame(15400.0, (float) $product->price_strip);
+        $this->assertSame(1540.0, (float) $product->price_tablet);
 
         foreach ($product->image_gallery as $image) {
             \App\Helpers\ImageHelper::deleteProductImage($image);
@@ -325,11 +329,27 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
     public function test_admin_product_index_loads_without_missing_company_class(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
+        Medicine::create([
+            'nama_obat' => 'Produk Satuan',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 10000,
+            'stok' => 2,
+            'stock_base_units' => 200,
+            'unit_packaging_enabled' => true,
+            'strips_per_box' => 10,
+            'tablets_per_strip' => 10,
+            'price_strip' => 1000,
+            'price_tablet' => 100,
+            'deskripsi' => 'Produk untuk tes harga strip dan tablet',
+        ]);
 
         $this->actingAs($admin)
             ->get(route('admin.produk.index'))
             ->assertOk()
-            ->assertSee('Produk Kami');
+            ->assertSee('Produk Kami')
+            ->assertSee('Harga Strip / Tablet')
+            ->assertSee('name="price_strip"', false)
+            ->assertSee('name="price_tablet"', false);
     }
 
 }

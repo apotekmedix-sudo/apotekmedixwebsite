@@ -1,28 +1,40 @@
 <?php
     $priceChannel = $priceChannel ?? 'b2c';
+    $showUnitChoices = $showUnitChoices ?? true;
+    $unitKeys = $showUnitChoices ? ['box', 'strip', 'tablet'] : ['box'];
     $unitPriceValues = [
-        'tablet' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'tablet')),
-        'strip' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'strip')),
         'box' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'box')),
     ];
     $unitBasePriceValues = [
-        'tablet' => $medicine->getChannelBasePrice($priceChannel, 'tablet'),
-        'strip' => $medicine->getChannelBasePrice($priceChannel, 'strip'),
         'box' => $medicine->getChannelBasePrice($priceChannel, 'box'),
     ];
     $unitFactors = [
-        'tablet' => 1,
-        'strip' => (int) $medicine->tablets_per_strip,
         'box' => $medicine->units_per_box,
     ];
     $unitLabels = [
-        'tablet' => 'Tablet',
-        'strip' => 'Strip',
         'box' => $medicine->package_unit_label,
     ];
+    if ($showUnitChoices) {
+        $unitPriceValues = [
+            'tablet' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'tablet')),
+            'strip' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'strip')),
+        ] + $unitPriceValues;
+        $unitBasePriceValues = [
+            'tablet' => $medicine->getChannelBasePrice($priceChannel, 'tablet'),
+            'strip' => $medicine->getChannelBasePrice($priceChannel, 'strip'),
+        ] + $unitBasePriceValues;
+        $unitFactors = [
+            'tablet' => 1,
+            'strip' => (int) $medicine->tablets_per_strip,
+        ] + $unitFactors;
+        $unitLabels = [
+            'tablet' => 'Tablet',
+            'strip' => 'Strip',
+        ] + $unitLabels;
+    }
     $availableUnits = $medicine->unit_packaging_enabled
         ? array_filter(
-            ['box', 'strip', 'tablet'],
+            $unitKeys,
             fn ($unit) => $unitBasePriceValues[$unit] > 0 && $unitFactors[$unit] > 0
         )
         : ($unitBasePriceValues['box'] > 0 ? ['box'] : []);
@@ -42,7 +54,7 @@
 
 <?php if($availableUnits): ?>
     <div class="product-unit-section">
-        <span class="product-unit-heading">Beli per satuan &amp; jumlah</span>
+        <span class="product-unit-heading"><?php echo e($showUnitChoices ? 'Beli per satuan &amp; jumlah' : 'Harga per kemasan &amp; jumlah'); ?></span>
         <div class="product-unit-grid product-unit-grid-<?php echo e(count($availableUnits)); ?>">
             <?php $__currentLoopData = $availableUnits; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $unit): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <?php

@@ -14,6 +14,8 @@
     .btn-icon-primary:hover { background:#1565C0; color:white; transform:translateY(-1px); }
     .btn-icon-outline { background:white; color:#374151; border:1px solid #d1d5db; }
     .btn-icon-outline:hover { background:#f9fafb; border-color:#9ca3af; color:#374151; }
+    .btn-icon-success { background:#e8f5e9; color:#2e7d32; border:1px solid #c8e6c9; }
+    .btn-icon-success:hover { background:#2e7d32; color:white; }
 
     /* Kategori tabs */
     .kat-tabs { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1.25rem; }
@@ -39,7 +41,7 @@
     .btn-reset:hover { background:#f9fafb; color:#374151; }
 
     .data-table-wrap { background:white; border-radius:0.75rem; box-shadow:0 1px 4px rgba(0,0,0,0.06); border:1px solid #f0f0f0; overflow-x:auto; }
-    .data-table { width:100%; min-width:1700px; border-collapse:collapse; font-size:0.875rem; }
+    .data-table { width:100%; min-width:1800px; border-collapse:collapse; font-size:0.875rem; }
     .data-table thead tr { background:#f8faff; border-bottom:2px solid #e5e7eb; }
     .data-table th { padding:0.85rem 1rem; text-align:left; font-size:0.75rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap; }
     .data-table td { padding:0.85rem 1rem; border-bottom:1px solid #f3f4f6; color:#374151; vertical-align:middle; }
@@ -65,6 +67,10 @@
     .stock-empty { background:#fee2e2; color:#991b1b; }
     .price-text  { font-weight:600; color:#1E88E5; }
     .inline-number { width:92px; padding:0.35rem 0.45rem; border:1px solid #dbe3ef; border-radius:0.4rem; color:#1E88E5; font-size:0.82rem; font-weight:600; background:#fff; }
+    .price-unit-fields { display:grid; gap:0.35rem; min-width:92px; }
+    .price-unit-field { display:grid; gap:0.15rem; }
+    .price-unit-field label { font-size:0.68rem; font-weight:600; color:#64748b; }
+    .inline-number.price-unit-input { width:78px; padding:0.28rem 0.35rem; font-size:0.75rem; }
     .inline-number:focus { outline:none; border-color:#1E88E5; box-shadow:0 0 0 3px rgba(30,136,229,0.1); }
     .inline-save { display:inline-flex; align-items:center; gap:0.3rem; margin-top:0.35rem; padding:0.3rem 0.55rem; border:0; border-radius:0.4rem; background:#e8f5e9; color:#2e7d32; font-size:0.72rem; font-weight:700; cursor:pointer; }
     .inline-save:hover { background:#2e7d32; color:#fff; }
@@ -129,6 +135,9 @@
     <div class="page-header-actions">
         <a href="{{ route('admin.produk.import') }}" class="btn-icon btn-icon-outline">
             <i class="fa-solid fa-file-import"></i> Import Excel
+        </a>
+        <a href="{{ route('admin.business-data.export') }}" class="btn-icon btn-icon-success">
+            <i class="fa-solid fa-database"></i> Backup Data Bisnis
         </a>
         <a href="{{ route('admin.produk.create') }}" class="btn-icon btn-icon-primary">
             <i class="fa-solid fa-plus"></i> Tambah Produk
@@ -225,6 +234,7 @@
                     <th>Harga Internal</th>
                     <th>Harga B2B</th>
                     <th>Harga B2C</th>
+                    <th>Harga Strip / Tablet</th>
                     <th>Stok (Satuan Kemasan)</th>
                     <th>Ditambahkan</th>
                     <th style="width:130px;">Aksi</th>
@@ -293,15 +303,25 @@
                     </td>
                     <td>
                         <input class="inline-number" type="number" name="harga_retail" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_box ?? ($medicine->harga_retail ?: $medicine->harga) }}" min="0" step="0.01" aria-label="Harga jual B2C {{ $medicine->nama_obat }}">
+                    </td>
+                    <td>
                         @if($medicine->unit_packaging_enabled)
-                            <small style="display:block;margin-top:.25rem;color:#64748b;">
-                                Strip Rp {{ number_format($medicine->price_strip, 0, ',', '.') }} ·
-                                Tablet Rp {{ number_format($medicine->price_tablet, 0, ',', '.') }}
-                            </small>
+                            <div class="price-unit-fields">
+                                <div class="price-unit-field">
+                                    <label for="price-strip-{{ $medicine->id }}">Strip</label>
+                                    <input id="price-strip-{{ $medicine->id }}" class="inline-number price-unit-input" type="number" name="price_strip" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_strip ?? 0 }}" min="0" step="0.01" aria-label="Harga strip {{ $medicine->nama_obat }}">
+                                </div>
+                                <div class="price-unit-field">
+                                    <label for="price-tablet-{{ $medicine->id }}">Tablet</label>
+                                    <input id="price-tablet-{{ $medicine->id }}" class="inline-number price-unit-input" type="number" name="price_tablet" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_tablet ?? 0 }}" min="0" step="0.01" aria-label="Harga tablet {{ $medicine->nama_obat }}">
+                                </div>
+                            </div>
+                        @else
+                            <small class="med-meta">Tidak aktif</small>
                         @endif
                     </td>
                     <td>
-                        <input class="inline-number" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ number_format($medicine->stock_packages, 6, '.', '') }}" min="0" step="0.000001" aria-label="Stok {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
+                        <input class="inline-number" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ rtrim(rtrim(number_format($medicine->stock_packages, 6, '.', ''), '0'), '.') }}" min="0" step="0.000001" aria-label="Stok {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
                         <small style="display:block;margin-top:.25rem;color:#64748b;">{{ $medicine->stock_breakdown }}</small>
                     </td>
                     <td style="font-size:0.82rem;color:#9ca3af;">{{ $medicine->created_at->format('d M Y') }}</td>

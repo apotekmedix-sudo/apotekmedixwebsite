@@ -51,12 +51,16 @@
                 <p>{{ $details['description'] }}</p>
                 @php
                     $channelCode = $codes[$channel] ?? null;
+                    $channelReadableCode = $channelCode?->readCode();
+                    $channelNeedsRegeneration = $channelCode !== null
+                        && $channelCode->expires_at?->isFuture() === true
+                        && $channelReadableCode === null;
                     $codeIsActive = $channelCode !== null
                         && $channelCode->expires_at?->isFuture() === true
-                        && $channelCode->readCode() !== null;
+                        && $channelReadableCode !== null;
                 @endphp
                 <span class="activation-status {{ $codeIsActive ? 'active' : '' }}">
-                    {{ $codeIsActive ? 'Kode aktif' : (isset($codes[$channel]) ? 'Kode lama / kedaluwarsa — perbarui' : 'Kode belum dibuat') }}
+                    {{ $codeIsActive ? 'Kode aktif' : ($channelNeedsRegeneration ? 'Kode tidak dapat dibaca — buat ulang' : (isset($codes[$channel]) ? 'Kode lama / kedaluwarsa — perbarui' : 'Kode belum dibuat')) }}
                 </span>
                 @if($codeIsActive)
                     <span class="activation-expiry">Berlaku sampai {{ $codes[$channel]->expires_at->format('d M Y, H:i') }}</span>
@@ -78,12 +82,13 @@
                 @forelse($codes as $code)
                     @php
                         $readableCode = $code->readCode();
+                        $isUnreadableCode = $readableCode === null && $code->expires_at?->isFuture() === true;
                         $codeIsActive = $code->expires_at?->isFuture() === true && $readableCode !== null;
                     @endphp
                     <tr>
                         <td><strong>{{ $code->channel === 'internal' ? 'Belanja Internal' : 'Belanja B2B' }}</strong></td>
                         <td><code class="code-value">{{ $readableCode ?: 'Tidak dapat ditampilkan — buat ulang' }}</code></td>
-                        <td><span class="activation-status {{ $codeIsActive ? 'active' : '' }}">{{ $codeIsActive ? 'Aktif' : 'Kedaluwarsa' }}</span></td>
+                        <td><span class="activation-status {{ $codeIsActive ? 'active' : '' }}">{{ $codeIsActive ? 'Aktif' : ($isUnreadableCode ? 'Tidak dapat dibaca — buat ulang' : 'Kedaluwarsa') }}</span></td>
                         <td>{{ $code->expires_at?->format('d M Y, H:i') ?: '-' }}</td>
                         <td>{{ $code->updated_at?->format('d M Y, H:i') ?: '-' }}</td>
                         <td>

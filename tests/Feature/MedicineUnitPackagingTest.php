@@ -131,6 +131,81 @@ class MedicineUnitPackagingTest extends TestCase
         ]);
     }
 
+    public function test_internal_and_b2b_catalogs_only_offer_channel_package_prices(): void
+    {
+        $medicine = Medicine::create([
+            'nama_obat' => 'Obat Harga Kanal',
+            'satuan' => 'Botol',
+            'kategori' => 'Pabrik Contoh',
+            'kelompok' => 'APOTEK',
+            'harga' => 1600,
+            'harga_internal' => 1200,
+            'harga_grosir' => 1400,
+            'harga_retail' => 1600,
+            'stok' => 10,
+            'stock_base_units' => 1000,
+            'unit_packaging_enabled' => true,
+            'tablets_per_strip' => 10,
+            'strips_per_box' => 10,
+            'price_tablet' => 100,
+            'price_strip' => 900,
+            'price_box' => 1600,
+            'deskripsi' => 'Produk untuk pengujian harga kanal',
+        ]);
+        $internalCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
+            'code_hash' => Hash::make('12345'),
+            'expires_at' => now()->addDays(30),
+        ]);
+
+        $this->withSession([
+            'internal_shopping_expires_at' => now()->addDays(30)->timestamp,
+            'internal_shopping_code_hash' => $internalCode->code_hash,
+        ])->get(route('shopping.internal'))
+            ->assertOk()
+            ->assertSee('Harga per kemasan')
+            ->assertSee('Botol · Rp 1.200', false)
+            ->assertDontSee('Tablet · Rp 100', false)
+            ->assertDontSee('Strip · Rp 900', false);
+
+        $b2bCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2B,
+            'code_hash' => Hash::make('54321'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $this->withSession([
+            'pbf_access_expires_at' => now()->addDays(30)->timestamp,
+            'pbf_access_code_hash' => $b2bCode->code_hash,
+        ])->get(route('products.pbf'))
+            ->assertOk()
+            ->assertSee('Harga per kemasan')
+            ->assertSee('Botol · Rp 1.400', false)
+            ->assertDontSee('Tablet · Rp 140', false)
+            ->assertDontSee('Strip · Rp 140', false);
+
+        $this->withSession([
+            'internal_shopping_expires_at' => now()->addDays(30)->timestamp,
+            'internal_shopping_code_hash' => $internalCode->code_hash,
+        ])->postJson(route('orders.history.store'), [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Petugas Internal',
+            'phone' => '081234567890',
+            'transaction_channel' => 'offline',
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 1, 'sale_unit' => 'tablet'],
+            ],
+            'total' => 0,
+        ])->assertUnprocessable();
+
+        $this->postJson(route('orders.history.store'), [
+            'buyer_type' => 'pbf',
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 1, 'sale_unit' => 'strip'],
+            ],
+            'total' => 0,
+        ])->assertUnprocessable();
+    }
+
     public function test_unpacked_product_stock_uses_its_package_unit_label(): void
     {
         $medicine = Medicine::create([

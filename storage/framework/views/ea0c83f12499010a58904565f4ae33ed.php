@@ -414,6 +414,7 @@
         .medicine-btn, .btn-cart { font-size: 0.82rem; padding: 0.55rem; }
     }
 </style>
+<?php echo $__env->make('partials.product-card-styles', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -525,28 +526,31 @@
             <div class="medicines-grid">
                 <?php $__currentLoopData = $medicines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $medicine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <div class="medicine-card">
+                        <div class="medicine-card-brand">Apotek Medix</div>
                         <div class="medicine-image">
                             <?php echo $__env->make('partials.product-gallery-image', ['medicine' => $medicine], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                            <?php echo $__env->make('partials.product-logo-marker', ['medicine' => $medicine], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                         </div>
                         <div class="medicine-body">
-                            
-                            <span class="medicine-company"><?php echo e($medicine->kategori); ?></span>
+                            <div class="medicine-card-principal"><?php echo e($medicine->brand ?: $medicine->kategori); ?></div>
                             <h3 class="medicine-name"><a href="<?php echo e(route('medicines.show', $medicine->id)); ?>"><?php echo e($medicine->nama_obat); ?></a></h3>
-                            
+
                             <?php
                                 $basePrice = $medicine->getChannelBasePrice('b2b');
                                 $promoPrice = $medicine->getChannelPromoPrice('b2b');
-                                $promoPercent = $medicine->getPromoPercent('b2b');
                             ?>
-                            <div class="medicine-price">
-                                <?php if($promoPercent > 0): ?><small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp <?php echo e(number_format($basePrice, 0, ',', '.')); ?></small><?php endif; ?>
-                                <?php if($basePrice > 0): ?>
-                                    Rp <?php echo e(number_format($promoPrice, 0, ',', '.')); ?>
-
-                                <?php else: ?>
-                                    <span style="color:#b45309;font-size:.82rem;">Harga B2B belum diatur</span>
+                            <div class="medicine-card-details">
+                                <p><strong>Komposisi:</strong> <?php echo e($medicine->komposisi ?: $medicine->nama_obat); ?></p>
+                                <?php if($medicine->indikasi): ?>
+                                    <p><strong>Indikasi:</strong> <?php echo e($medicine->indikasi); ?></p>
                                 <?php endif; ?>
                             </div>
+                            <?php echo $__env->make('partials.product-unit-selector', [
+                                'medicine' => $medicine,
+                                'unitSelectId' => 'pbf-unit-' . $medicine->id,
+                                'priceChannel' => 'b2b',
+                                'showUnitChoices' => false,
+                            ], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                             <?php $stock = (int) $medicine->stok; ?>
                             <span class="stock-badge <?php echo e($stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available')); ?>">
                                 <i class="fa-solid <?php echo e($stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
@@ -558,12 +562,16 @@
                                     <i class="fa-solid fa-cube"></i> <span>Sediaan: <?php echo e($medicine->sediaan_label); ?></span>
                                 </div>
                             <?php endif; ?>
-                            <a href="<?php echo e(route('medicines.show', $medicine->id)); ?>" class="medicine-btn">
-                                Lihat Detail <i class="fa-solid fa-arrow-right"></i>
-                            </a>
                             <?php if($basePrice > 0): ?>
-                                <button class="btn-cart" data-package-unit-label="<?php echo e($medicine->package_unit_label); ?>" onclick="addToCart(<?php echo e($medicine->id); ?>, '<?php echo e(addslashes($medicine->nama_obat)); ?>', <?php echo e($promoPrice); ?>, '<?php echo e($medicine->gambar ? url('storage/'.$medicine->gambar) : ''); ?>', '<?php echo e(addslashes($medicine->brand ?: $medicine->kategori)); ?>', this)">
-                                    <i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang
+                                <button class="btn-cart"
+                                        data-product-id="<?php echo e($medicine->id); ?>"
+                                        data-package-unit-label="<?php echo e($medicine->package_unit_label); ?>"
+                                        data-product-name="<?php echo e($medicine->nama_obat); ?>"
+                                        data-product-price="<?php echo e($promoPrice); ?>"
+                                        data-product-image="<?php echo e($medicine->gambar ? url('storage/'.$medicine->gambar) : ''); ?>"
+                                        data-product-brand="<?php echo e($medicine->brand ?: $medicine->kategori); ?>"
+                                        onclick="addToCart(<?php echo e($medicine->id); ?>, this.dataset.productName, Number(this.dataset.productPrice), this.dataset.productImage, this.dataset.productBrand, this, 'pbf-unit-<?php echo e($medicine->id); ?>')">
+                                    <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang
                                 </button>
                             <?php else: ?>
                                 <button class="btn-cart" type="button" disabled style="opacity:.55;cursor:not-allowed;">

@@ -31,6 +31,8 @@
     .template-table thead tr { background:#e5e7eb; }
     .template-table th { padding:0.4rem 0.75rem; text-align:left; border:1px solid #d1d5db; font-weight:700; color:#374151; }
     .template-table td { padding:0.4rem 0.75rem; border:1px solid #d1d5db; color:#6b7280; }
+    .import-mode { width:100%; max-width:620px; padding:0.7rem 0.85rem; border:1px solid #d1d5db; border-radius:0.5rem; color:#1f2937; background:#fff; font-size:0.9rem; }
+    .mode-description { margin:0.55rem 0 0; color:#6b7280; font-size:0.82rem; line-height:1.6; }
 </style>
 @endsection
 
@@ -45,13 +47,13 @@
 <div class="info-box">
     <h3><i class="fa-solid fa-circle-info"></i> Petunjuk Import</h3>
     <ol>
-        <li>Download Template Excel (.xlsx) di bawah</li>
-        <li>Isi data produk sesuai kolom yang tersedia</li>
+        <li>Pilih mode import sesuai tujuan: tambah/lengkapi produk atau edit massal dari hasil export</li>
+        <li>Untuk edit massal, download file Export Produk di bawah, edit kolomnya, lalu pilih mode Edit massal</li>
         <li>Isi stok pada kolom <strong>STOK SATUAN</strong> dan harga pada kolom <strong>MODAL</strong> serta harga jual Internal, B2B, dan B2C</li>
         <li><strong>PER STRIP</strong> adalah jumlah strip per satuan kemasan, sedangkan <strong>PER TABLET</strong> adalah jumlah tablet total per satuan kemasan. Harga per strip/tablet dapat diisi 0 jika tidak dijual satuan.</li>
         <li>Upload file <strong>.csv</strong>, <strong>.xls</strong>, atau <strong>.xlsx</strong></li>
-        <li>Data yang sudah ada (SKU atau nama produk sama) akan diperbarui, data baru akan ditambahkan</li>
-        <li>Struktur file tidak harus persis sama; selama header yang dikenali ada, data tetap bisa dimasukkan</li>
+        <li>Mode tambah/lengkapi mencocokkan nama produk: data yang kosong dilengkapi tanpa menimpa data yang sudah terisi; nama yang belum ada menjadi produk baru</li>
+        <li>Mode edit massal hanya memperbarui produk berdasarkan ID pada kolom NO; data tidak akan membuat produk baru</li>
     </ol>
     <p style="color:#059669;margin:0.75rem 0 0;font-size:0.875rem;font-weight:600;">
         ✅ Format baru terdiri dari 19 kolom, termasuk golongan, kemasan, harga per kanal, dan harga per unit
@@ -68,6 +70,9 @@
         <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
             <a href="{{ route('admin.produk.import.template') }}" class="btn-save" style="background:#10b981;text-decoration:none;">
                 <i class="fa-solid fa-download"></i> Download Template Excel
+            </a>
+            <a href="{{ route('admin.produk.export') }}" class="btn-save" style="background:#2563eb;text-decoration:none;">
+                <i class="fa-solid fa-file-export"></i> Download Export Produk untuk Edit Massal
             </a>
         </div>
         <div class="template-table">
@@ -165,6 +170,14 @@
         <h3>Upload File</h3>
     </div>
     <div class="form-body">
+        <label for="importMode" style="display:block;font-size:0.85rem;font-weight:700;color:#374151;margin-bottom:0.45rem;">Mode Import</label>
+        <select id="importMode" class="import-mode" onchange="updateImportMode()">
+            <option value="complete">1. Tambah / lengkapi produk</option>
+            <option value="bulk_edit">2. Edit massal dari hasil export</option>
+        </select>
+        <p class="mode-description" id="modeDescription">
+            Nama yang sama akan dicocokkan. Kolom yang sudah berisi data tidak ditimpa; kolom kosong akan dilengkapi. Nama baru akan ditambahkan sebagai produk baru.
+        </p>
         @if($errors->any())
             <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:0.5rem;padding:1rem;margin-bottom:1rem;color:#7f1d1d;font-size:0.875rem;">
                 <i class="fa-solid fa-circle-exclamation"></i> {{ $errors->first('file') }}
@@ -186,9 +199,10 @@
         <form action="{{ route('admin.produk.import.process') }}" method="POST" enctype="multipart/form-data" id="submitForm" style="display:none;">
             @csrf
             <input type="file" id="fileInputHidden" name="file" style="display:none;">
+            <input type="hidden" id="importModeHidden" name="mode" value="complete">
         </form>
         <button type="button" class="btn-save" id="submitBtn" onclick="submitForm()" disabled style="opacity:0.5;cursor:not-allowed;">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Import Sekarang
+            <i class="fa-solid fa-cloud-arrow-up"></i> Tambah / Lengkapi Produk
         </button>
         <a href="{{ route('admin.produk.index') }}" class="btn-cancel">
             <i class="fa-solid fa-xmark"></i> Batal
@@ -225,7 +239,20 @@ function submitForm() {
         const dt = new DataTransfer();
         dt.items.add(fileInput.files[0]);
         document.getElementById('fileInputHidden').files = dt.files;
+        document.getElementById('importModeHidden').value = document.getElementById('importMode').value;
         document.getElementById('submitForm').submit();
+    }
+}
+function updateImportMode() {
+    const mode = document.getElementById('importMode').value;
+    const description = document.getElementById('modeDescription');
+    const button = document.getElementById('submitBtn');
+    if (mode === 'bulk_edit') {
+        description.textContent = 'Gunakan file hasil Download Export Produk. Data dicocokkan dengan ID di kolom NO; nilai yang Anda edit akan diterapkan, dan baris dengan ID tidak dikenal akan ditolak.';
+        button.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Terapkan Edit Massal';
+    } else {
+        description.textContent = 'Nama yang sama akan dicocokkan. Kolom yang sudah berisi data tidak ditimpa; kolom kosong akan dilengkapi. Nama baru akan ditambahkan sebagai produk baru.';
+        button.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Tambah / Lengkapi Produk';
     }
 }
 </script>

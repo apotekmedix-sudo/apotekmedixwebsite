@@ -137,6 +137,13 @@ class PurchaseHistoryController extends Controller
                     ? 'b2b'
                     : 'b2c');
 
+            if ($product && in_array($promoChannel, ['internal', 'b2b'], true) && $unit !== 'box') {
+                return response()->json([
+                    'message' => "Kanal {$promoChannel} hanya mendukung pembelian per kemasan.",
+                    'errors' => ['items' => ["Produk {$product->nama_obat} hanya dapat dibeli per kemasan pada kanal ini."]],
+                ], 422);
+            }
+
             if ($product) {
                 $price = $isPbfPurchaseOrder
                     ? (int) round((float) $product->harga_modal)

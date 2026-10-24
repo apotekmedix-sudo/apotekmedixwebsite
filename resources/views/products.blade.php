@@ -420,7 +420,12 @@
                                     <p><strong>Indikasi:</strong> {{ $medicine->indikasi }}</p>
                                 @endif
                             </div>
-                            @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'product-unit-' . $medicine->id, 'priceChannel' => $priceChannel])
+                            @include('partials.product-unit-selector', [
+                                'medicine' => $medicine,
+                                'unitSelectId' => 'product-unit-' . $medicine->id,
+                                'priceChannel' => $priceChannel,
+                                'showUnitChoices' => !($internalOrder ?? false),
+                            ])
                             @php $stock = (int) ($medicine->stock_base_units ?? $medicine->stok); @endphp
                             <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>

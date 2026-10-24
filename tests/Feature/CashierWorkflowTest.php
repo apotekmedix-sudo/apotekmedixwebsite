@@ -374,6 +374,32 @@ class CashierWorkflowTest extends TestCase
         $this->assertTrue(ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_INTERNAL)->firstOrFail()->verify($replacementCode));
     }
 
+    public function test_admin_access_code_page_handles_codes_encrypted_with_an_old_key(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $accessCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
+            'code_hash' => Hash::make('12345'),
+            'code_value' => 'invalid-encrypted-value',
+            'expires_at' => now()->addDays(30),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.access-codes.index'))
+            ->assertOk()
+            ->assertSee('Kode tidak dapat dibaca — buat ulang')
+            ->assertSee('Tidak dapat ditampilkan — buat ulang');
+
+        $this->assertNull($accessCode->readCode());
+        $this->assertTrue($accessCode->verify('12345'));
+
+        $this->post(route('admin.access-codes.generate', ShoppingAccessCode::CHANNEL_INTERNAL))
+            ->assertRedirect(route('admin.access-codes.index'));
+
+        $accessCode->refresh();
+        $this->assertMatchesRegularExpression('/^[0-9]{5}$/', $accessCode->readCode());
+    }
+
     public function test_admin_can_manage_channel_discounts_and_homepage_shows_b2c_promotions(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -559,6 +585,7 @@ class CashierWorkflowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin)->get(route('admin.customers.index'))
             ->assertOk()
+            ->assertSee('Export Customer per Kanal')
             ->assertSee('Pembeli Internal')
             ->assertSee('Apotek Mitra')
             ->assertSee('Pembeli Online')

@@ -20,6 +20,7 @@ use App\Http\Controllers\AdminPrescriptionProductController;
 use App\Http\Controllers\AdminPrescriptionProductImportController;
 use App\Http\Controllers\AdminProdukController;
 use App\Http\Controllers\AdminProdukImportController;
+use App\Http\Controllers\AdminBusinessDataExportController;
 use App\Http\Controllers\AdminBannerController;
 use App\Http\Controllers\AdminMedicinePromotionController;
 use App\Http\Controllers\PurchaseHistoryController;
@@ -121,6 +122,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/purchase-history/{order}/approval', [AdminDashboardController::class, 'updateApprovalStatus'])->name('purchase-history.approval');
     Route::delete('/purchase-history/{order}', [AdminDashboardController::class, 'destroy'])->name('purchase-history.destroy');
     Route::delete('/purchase-history', [AdminDashboardController::class, 'destroyAll'])->name('purchase-history.destroyAll');
+    Route::get('/customers/export', [AdminCustomerController::class, 'export'])->name('customers.export');
     Route::resource('customers', AdminCustomerController::class)->except('show');
     Route::get('/access-codes', [AdminShoppingAccessCodeController::class, 'index'])->name('access-codes.index');
     Route::post('/access-codes/{channel}/generate', [AdminShoppingAccessCodeController::class, 'generate'])
@@ -156,6 +158,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('produk/bulk-delete', [AdminProdukController::class, 'destroyMany'])->name('produk.destroyMany');
     Route::get('produk-pbf', [AdminProdukController::class, 'indexPbf'])->name('produk-pbf.index');
     Route::get('produk-export', [AdminProdukController::class, 'export'])->name('produk.export');
+    Route::get('business-data-export', [AdminBusinessDataExportController::class, 'export'])->name('business-data.export');
     Route::resource('produk', AdminProdukController::class);
     Route::post('produk/{produk}/update-stock', [AdminProdukController::class, 'updateStock'])->name('produk.update-stock');
     Route::post('produk/{produk}/update-inline', [AdminProdukController::class, 'updateInline'])->name('produk.update-inline');
