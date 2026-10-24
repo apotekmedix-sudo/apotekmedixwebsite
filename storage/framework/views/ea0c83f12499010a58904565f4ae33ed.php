@@ -1,4 +1,4 @@
-﻿
+
 
 <?php $__env->startSection('title', 'Belanja B2B - Apotek Medix'); ?>
 
@@ -551,10 +551,10 @@
                                 'priceChannel' => 'b2b',
                                 'showUnitChoices' => false,
                             ], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-                            <?php $stock = (int) $medicine->stok; ?>
-                            <span class="stock-badge <?php echo e($stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available')); ?>">
+                            <?php $stock = (int) $medicine->available_stock_units; ?>
+                            <span class="stock-badge <?php echo e($stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($medicine->id); ?>">
                                 <i class="fa-solid <?php echo e($stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
-                                <?php echo e($stock > 0 ? 'Stok: ' . number_format($stock, 0, ',', '.') : 'Stok habis'); ?>
+                                <?php echo e($stock > 0 ? 'Stok: ' . $medicine->getStockBreakdownForUnits($stock) : 'Stok habis'); ?>
 
                             </span>
                             <?php if($medicine->sediaan_label): ?>
@@ -563,12 +563,12 @@
                                 </div>
                             <?php endif; ?>
                             <?php if($basePrice > 0): ?>
-                                <button class="btn-cart"
+                                <button class="btn-cart" data-stock-cart <?php if($stock <= 0): echo 'disabled'; endif; ?>
                                         data-product-id="<?php echo e($medicine->id); ?>"
                                         data-package-unit-label="<?php echo e($medicine->package_unit_label); ?>"
                                         data-product-name="<?php echo e($medicine->nama_obat); ?>"
                                         data-product-price="<?php echo e($promoPrice); ?>"
-                                        data-product-image="<?php echo e($medicine->gambar ? url('storage/'.$medicine->gambar) : ''); ?>"
+                                        data-product-image="<?php echo e($medicine->image_url ?: ''); ?>"
                                         data-product-brand="<?php echo e($medicine->brand ?: $medicine->kategori); ?>"
                                         onclick="addToCart(<?php echo e($medicine->id); ?>, this.dataset.productName, Number(this.dataset.productPrice), this.dataset.productImage, this.dataset.productBrand, this, 'pbf-unit-<?php echo e($medicine->id); ?>')">
                                     <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang

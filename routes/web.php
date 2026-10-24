@@ -46,6 +46,7 @@ Route::get('/storage/{folder}/{filename}', function (string $folder, string $fil
 
 // Products routes
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+Route::get('/products/stock-availability', [ProductController::class, 'stockAvailability'])->name('products.stock-availability');
 Route::get('/belanja-internal/akses', [InternalShoppingAccessController::class, 'show'])->name('shopping.internal.access');
 Route::post('/belanja-internal/akses', [InternalShoppingAccessController::class, 'verify'])
     ->middleware('throttle:5,1')
@@ -160,6 +161,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Produk management
     Route::delete('produk/bulk-delete', [AdminProdukController::class, 'destroyMany'])->name('produk.destroyMany');
     Route::get('produk-pbf', [AdminProdukController::class, 'indexPbf'])->name('produk-pbf.index');
+    Route::post('produk-pbf/suppliers', [AdminProdukController::class, 'storePbfSupplier'])->name('produk-pbf.suppliers.store');
+    Route::put('produk-pbf/suppliers/{supplier}', [AdminProdukController::class, 'updatePbfSupplier'])->name('produk-pbf.suppliers.update');
+    Route::delete('produk-pbf/suppliers/{supplier}', [AdminProdukController::class, 'destroyPbfSupplier'])->name('produk-pbf.suppliers.destroy');
     Route::get('produk-export', [AdminProdukController::class, 'export'])->name('produk.export');
     Route::get('business-data-export', [AdminBusinessDataExportController::class, 'export'])->name('business-data.export');
     Route::resource('produk', AdminProdukController::class);

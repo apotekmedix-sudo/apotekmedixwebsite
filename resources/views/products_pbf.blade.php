@@ -550,10 +550,10 @@
                                 'priceChannel' => 'b2b',
                                 'showUnitChoices' => false,
                             ])
-                            @php $stock = (int) $medicine->stok; @endphp
-                            <span class="stock-badge {{ $stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available') }}">
+                            @php $stock = (int) $medicine->available_stock_units; @endphp
+                            <span class="stock-badge {{ $stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-                                {{ $stock > 0 ? 'Stok: ' . number_format($stock, 0, ',', '.') : 'Stok habis' }}
+                                {{ $stock > 0 ? 'Stok: ' . $medicine->getStockBreakdownForUnits($stock) : 'Stok habis' }}
                             </span>
                             @if($medicine->sediaan_label)
                                 <div class="medicine-meta" style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.6rem;">
@@ -561,7 +561,7 @@
                                 </div>
                             @endif
                             @if($basePrice > 0)
-                                <button class="btn-cart"
+                                <button class="btn-cart" data-stock-cart @disabled($stock <= 0)
                                         data-product-id="{{ $medicine->id }}"
                                         data-package-unit-label="{{ $medicine->package_unit_label }}"
                                         data-product-name="{{ $medicine->nama_obat }}"

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\PurchaseHistory;
+use App\Models\PurchaseStockReservation;
+use App\Models\Medicine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -124,6 +126,36 @@ class CashierController extends Controller
                 return false;
             }
 
+            if (!$lockedOrder->stock_committed) {
+                $reservations = PurchaseStockReservation::where('purchase_history_id', $lockedOrder->id)
+                    ->orderBy('medicine_id')
+                    ->lockForUpdate()
+                    ->get();
+                $products = Medicine::whereIn('id', $reservations->pluck('medicine_id'))
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                foreach ($reservations as $reservation) {
+                    $product = $products->get($reservation->medicine_id);
+                    if (!$product || (int) ($product->stock_base_units ?? $product->stok) < $reservation->quantity_units) {
+                        throw ValidationException::withMessages([
+                            'order' => 'Stok produk tidak mencukupi untuk menyelesaikan transaksi ini.',
+                        ]);
+                    }
+                    $remainingUnits = (int) ($product->stock_base_units ?? $product->stok) - $reservation->quantity_units;
+                    $product->update([
+                        'stock_base_units' => $remainingUnits,
+                        'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
+                        'terjual' => (int) $product->terjual + $reservation->sale_quantity,
+                    ]);
+                }
+
+                PurchaseStockReservation::where('purchase_history_id', $lockedOrder->id)->delete();
+                $lockedOrder->stock_committed = true;
+            }
+
             $isCreditTerm = strcasecmp(trim((string) $lockedOrder->payment_method), 'Tempo') === 0;
             $lockedOrder->update([
                 'receipt_status' => 'verified',
@@ -182,41 +214,45 @@ class CashierController extends Controller
                 return false;
             }
 
-            $items = is_array($lockedOrder->items) ? $lockedOrder->items : [];
-            $productIds = collect($items)->pluck('id')->filter()->map(fn ($id) => (int) $id)->unique()->sort()->values();
-            $products = \App\Models\Medicine::whereIn('id', $productIds)
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('id');
-            $quantities = [];
-            foreach ($items as $item) {
-                if (empty($item['id'])) {
-                    if ((int) ($item['quantity'] ?? $item['qty'] ?? 0) > 0) {
-                        throw ValidationException::withMessages(['order' => 'Stok tidak dapat dikembalikan karena data produk pada pesanan tidak lengkap.']);
+            if (!$lockedOrder->stock_committed) {
+                PurchaseStockReservation::where('purchase_history_id', $lockedOrder->id)->delete();
+            } elseif (!$lockedOrder->is_pbf_purchase_order) {
+                $items = is_array($lockedOrder->items) ? $lockedOrder->items : [];
+                $productIds = collect($items)->pluck('id')->filter()->map(fn ($id) => (int) $id)->unique()->sort()->values();
+                $products = Medicine::whereIn('id', $productIds)
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+                $quantities = [];
+                foreach ($items as $item) {
+                    if (empty($item['id'])) {
+                        if ((int) ($item['quantity'] ?? $item['qty'] ?? 0) > 0) {
+                            throw ValidationException::withMessages(['order' => 'Stok tidak dapat dikembalikan karena data produk pada pesanan tidak lengkap.']);
+                        }
+                        continue;
                     }
-                    continue;
+                    $productId = (int) $item['id'];
+                    $product = $products->get($productId);
+                    if (!$product) {
+                        throw ValidationException::withMessages(['order' => "Produk #{$productId} tidak ditemukan; pembatalan dihentikan agar stok tidak salah."]);
+                    }
+                    $factor = $product->getSaleUnitFactor($item['sale_unit'] ?? 'box');
+                    $quantity = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
+                    if ($factor < 1 || $quantity < 1) {
+                        throw ValidationException::withMessages(['order' => 'Jumlah atau satuan produk tidak valid; pembatalan dihentikan.']);
+                    }
+                    $quantities[$productId] = ($quantities[$productId] ?? 0) + ($quantity * $factor);
                 }
-                $productId = (int) $item['id'];
-                $product = $products->get($productId);
-                if (!$product) {
-                    throw ValidationException::withMessages(['order' => "Produk #{$productId} tidak ditemukan; pembatalan dihentikan agar stok tidak salah."]);
-                }
-                $factor = $product->getSaleUnitFactor($item['sale_unit'] ?? 'box');
-                $quantity = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
-                if ($factor < 1 || $quantity < 1) {
-                    throw ValidationException::withMessages(['order' => 'Jumlah atau satuan produk tidak valid; pembatalan dihentikan.']);
-                }
-                $quantities[$productId] = ($quantities[$productId] ?? 0) + ($quantity * $factor);
-            }
 
-            foreach ($quantities as $productId => $quantity) {
-                $product = $products->get($productId);
-                $remainingUnits = (int) ($product->stock_base_units ?? $product->stok) + $quantity;
-                $product->update([
-                    'stock_base_units' => $remainingUnits,
-                    'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
-                ]);
+                foreach ($quantities as $productId => $quantity) {
+                    $product = $products->get($productId);
+                    $remainingUnits = (int) ($product->stock_base_units ?? $product->stok) + $quantity;
+                    $product->update([
+                        'stock_base_units' => $remainingUnits,
+                        'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
+                    ]);
+                }
             }
 
             $lockedOrder->update([

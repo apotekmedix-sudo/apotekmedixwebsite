@@ -467,6 +467,41 @@
     color: #ffffff;
     transform: translateY(-2px);
   }
+  .pbf-popup-backdrop,.pbf-invoice-backdrop { display:none; position:fixed; inset:0; z-index:4000; padding:20px; background:rgba(15,23,42,.72); }
+  .pbf-popup-backdrop.open,.pbf-invoice-backdrop.open { display:flex; align-items:center; justify-content:center; }
+  .pbf-popup { width:min(780px,100%); max-height:94vh; overflow:auto; border-radius:18px; background:#fff; box-shadow:0 24px 70px rgba(0,0,0,.35); }
+  .pbf-popup-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:22px 26px; color:#fff; background:linear-gradient(125deg,#0f4c81,#087f9c); }
+  .pbf-popup-kicker { display:block; margin-bottom:7px; color:#b8f2e6; font-size:.68rem; font-weight:800; letter-spacing:.12em; }
+  .pbf-popup-head h2 { margin:0; color:#fff; font-size:1.22rem; }
+  .pbf-popup-head p { margin:6px 0 0; color:rgba(255,255,255,.82); font-size:.84rem; }
+  .pbf-popup-close { flex:0 0 38px; width:38px; height:38px; border:0; border-radius:50%; color:#fff; background:rgba(255,255,255,.18); font-size:1.1rem; cursor:pointer; }
+  .pbf-popup-body { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); }
+  .pbf-popup-summary { padding:22px; background:#f3f8fb; border-right:1px solid #e2e8f0; }
+  .pbf-popup-section-title { margin:0 0 13px; color:#0f4c81; font-size:.82rem; font-weight:800; }
+  .pbf-popup-summary-item { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #dce7ed; color:#334155; font-size:.8rem; }
+  .pbf-popup-summary-item strong { flex:0 0 auto; color:#087f9c; text-align:right; }
+  .pbf-popup-total { display:flex; justify-content:space-between; gap:12px; margin-top:14px; padding-top:12px; border-top:2px solid #cbdbe5; color:#334155; font-size:.82rem; font-weight:800; }
+  .pbf-popup-total strong { color:#087f9c; font-size:1.05rem; }
+  .pbf-popup-form { padding:22px 24px; }
+  .pbf-popup-form label { display:block; margin:0 0 6px; color:#334155; font-size:.76rem; font-weight:800; }
+  .pbf-popup-form label span { color:#dc2626; }
+  .pbf-popup-form input,.pbf-popup-form textarea { width:100%; margin:0 0 13px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:9px; outline:none; color:#0f172a; font:inherit; font-size:.85rem; }
+  .pbf-popup-form input:focus,.pbf-popup-form textarea:focus { border-color:#0891b2; box-shadow:0 0 0 3px rgba(8,145,178,.12); }
+  .pbf-popup-form textarea { resize:vertical; }
+  .pbf-popup-fields-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .pbf-popup-error { display:none; margin:0 0 12px; padding:10px 12px; border-radius:8px; background:#fee2e2; color:#991b1b; font-size:.8rem; }
+  .pbf-popup-note { margin:0 0 14px; padding:10px; border-radius:8px; background:#ecfeff; color:#155e75; font-size:.75rem; line-height:1.5; }
+  .pbf-popup-submit { width:100%; padding:12px 15px; border:0; border-radius:10px; background:#087f9c; color:#fff; font-size:.9rem; font-weight:800; cursor:pointer; }
+  .pbf-popup-submit:disabled { opacity:.65; cursor:wait; }
+  .pbf-popup-result { padding:38px 28px; text-align:center; }
+  .pbf-popup-result i { color:#16a34a; font-size:3rem; }
+  .pbf-popup-result h3 { margin:10px 0; color:#0f172a; }
+  .pbf-popup-result p { margin:0 auto 20px; max-width:460px; color:#64748b; line-height:1.6; font-size:.9rem; }
+  .pbf-invoice-backdrop { z-index:4100; }
+  .pbf-invoice-panel { display:flex; flex-direction:column; width:min(1100px,100%); height:94vh; overflow:hidden; border-radius:14px; background:#fff; box-shadow:0 25px 60px rgba(0,0,0,.3); }
+  .pbf-invoice-toolbar { display:flex; flex:0 0 auto; justify-content:space-between; align-items:center; gap:12px; padding:10px 14px; color:#1e293b; font-weight:700; }
+  .pbf-invoice-toolbar button { padding:8px 12px; border:0; border-radius:8px; background:#e2e8f0; color:#1e293b; font-weight:700; cursor:pointer; }
+  .pbf-invoice-panel iframe { flex:1 1 auto; width:100%; min-height:0; border:0; }
 
   @media (max-width: 768px) {
     .cart-page-wrap {
@@ -516,6 +551,14 @@
     .cart-checkout-btn {
       width: 100%;
     }
+    .pbf-popup-backdrop,.pbf-invoice-backdrop { padding:0; }
+    .pbf-popup { width:100%; height:100%; max-height:100dvh; overflow:auto; border-radius:0; }
+    .pbf-popup-head { padding:18px; }
+    .pbf-popup-head h2 { font-size:1.05rem; }
+    .pbf-popup-body { grid-template-columns:1fr; }
+    .pbf-popup-summary { padding:16px 18px; border-right:0; border-bottom:1px solid #e2e8f0; }
+    .pbf-popup-form { padding:18px; }
+    .pbf-invoice-panel { width:100%; height:100dvh; border-radius:0; }
   }
 </style>
 @endsection
@@ -531,8 +574,8 @@
       <span>/</span>
       <span class="current">Keranjang Anda</span>
     </div>
-    <h1 class="cart-banner-title">Keranjang Belanja</h1>
-    <p class="cart-banner-sub">Periksa kembali daftar produk dan jumlah pesanan Anda sebelum melanjutkan ke pembayaran.</p>
+    <h1 class="cart-banner-title" id="cartBannerTitle">Keranjang Belanja</h1>
+    <p class="cart-banner-sub" id="cartBannerDescription">Periksa kembali daftar produk dan jumlah pesanan Anda sebelum melanjutkan ke pembayaran.</p>
   </div>
 </section>
 
@@ -559,10 +602,10 @@
           <span class="cart-est-label">Estimasi total</span>
           <span class="cart-est-value" id="cartPageGrandTotal">Rp0</span>
         </div>
-        <p class="cart-tax-note">
+        <p class="cart-tax-note" id="cartCheckoutNote">
           Pajak, diskon, dan <span>biaya pengiriman</span> dihitung saat checkout.
         </p>
-        <button type="button" class="cart-checkout-btn" onclick="goToCheckoutPage()">
+        <button id="cartCheckoutButton" type="button" class="cart-checkout-btn" onclick="goToCheckoutPage()">
           <span>Check out</span>
           <i class="fa-solid fa-shield-halved"></i>
         </button>
@@ -579,6 +622,56 @@
         <i class="fa-solid fa-bag-shopping"></i> Lanjutkan belanja
       </a>
     </div>
+  </div>
+</div>
+<div class="pbf-popup-backdrop" id="pbfPopupBackdrop" onclick="closePbfPopup(event)">
+  <section class="pbf-popup" role="dialog" aria-modal="true" aria-labelledby="pbfPopupTitle">
+    <header class="pbf-popup-head">
+      <div>
+        <span class="pbf-popup-kicker">PENGADAAN STOK APOTEK MEDIX</span>
+        <h2 id="pbfPopupTitle"><i class="fa-solid fa-file-signature"></i> Buat Surat Pesanan</h2>
+        <p>Isi data distributor dan penanggung jawab untuk pengadaan keluar Apotek Medix.</p>
+      </div>
+      <button class="pbf-popup-close" type="button" aria-label="Tutup" onclick="closePbfPopup()"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div id="pbfPopupFormView" class="pbf-popup-body">
+      <div class="pbf-popup-summary">
+        <h3 class="pbf-popup-section-title">Ringkasan pengadaan</h3>
+        <div id="pbfPopupItems"></div>
+        <div class="pbf-popup-total"><span>Estimasi harga modal</span><strong id="pbfPopupTotal">Rp0</strong></div>
+      </div>
+      <div class="pbf-popup-form">
+        <h3 class="pbf-popup-section-title">Tujuan distributor</h3>
+        <label for="pbfPopupDistributor">Nama distributor / PBF <span>*</span></label>
+        <input id="pbfPopupDistributor" type="text" placeholder="Nama distributor atau PBF tujuan" autocomplete="organization">
+        <label for="pbfPopupAddress">Alamat distributor <span>*</span></label>
+        <textarea id="pbfPopupAddress" rows="2" placeholder="Alamat lengkap distributor"></textarea>
+        <h3 class="pbf-popup-section-title" style="margin-top:6px;padding-top:14px;border-top:1px solid #e2e8f0;">Penanggung jawab Apotek Medix</h3>
+        <label for="pbfPopupSigner">Nama penandatangan <span>*</span></label>
+        <input id="pbfPopupSigner" type="text" value="Apt. Hendri Setiyono, S Farm">
+        <label for="pbfPopupTitleField">Jabatan <span>*</span></label>
+        <input id="pbfPopupTitleField" type="text" value="Apoteker">
+        <div class="pbf-popup-fields-row">
+          <div><label for="pbfPopupSia">No. SIA <span>*</span></label><input id="pbfPopupSia" type="text" value="13042600890450001"></div>
+          <div><label for="pbfPopupSipa">No. SIPA <span>*</span></label><input id="pbfPopupSipa" type="text" value="1/b.19/31.71.03.1007.4k-1.b/4/tm.09/e/2026"></div>
+        </div>
+        <div class="pbf-popup-error" id="pbfPopupError" role="alert"></div>
+        <p class="pbf-popup-note"><i class="fa-solid fa-circle-info"></i> Surat pesanan dibuat atas nama Apotek Medix, bukan sebagai pesanan pelanggan.</p>
+        <button class="pbf-popup-submit" id="pbfPopupSubmit" type="button" onclick="submitPbfPurchaseOrder()"><i class="fa-solid fa-file-signature"></i> Buat Surat Pesanan</button>
+      </div>
+    </div>
+    <div id="pbfPopupResult" class="pbf-popup-result" style="display:none;">
+      <i class="fa-solid fa-circle-check"></i>
+      <h3>Surat pesanan berhasil dibuat</h3>
+      <p>Buka surat untuk meninjau dan mencetak sebelum dikirim ke distributor.</p>
+      <button class="pbf-popup-submit" type="button" onclick="showPbfInvoice()"><i class="fa-solid fa-file-invoice"></i> Lihat Invoice</button>
+    </div>
+  </section>
+</div>
+<div class="pbf-invoice-backdrop" id="pbfInvoiceBackdrop" onclick="closePbfInvoice(event)">
+  <div class="pbf-invoice-panel">
+    <div class="pbf-invoice-toolbar"><span>Surat Pesanan Apotek Medix</span><button type="button" onclick="closePbfInvoice()">Kembali</button></div>
+    <iframe id="pbfInvoiceFrame" title="Surat Pesanan Apotek Medix"></iframe>
   </div>
 </div>
 @endsection
@@ -722,16 +815,18 @@ function renderCartPage() {
             </h3>
             <div class="cart-prod-price">${formatRp(item.price)}${unitLabel ? ' / ' + escapeHtml(unitLabel) : ''}</div>
             ${unitSelectorHtml}
-            <button type="button" class="cart-extra-toggle" onclick="toggleExtraBox('${extraId}')">
-              <i class="fa-regular fa-pen-to-square"></i>
-              <span>${hasExtraData ? 'Ubah catatan / potongan' : 'Tambah catatan produk'}</span>
-            </button>
-            <div id="${extraId}" class="cart-extra-box ${hasExtraData ? 'open' : ''}">
-              <input type="text" class="cart-extra-inp" placeholder="Catatan untuk produk ini..." value="${escapeHtml(item.note || '')}" onchange="updateItemNote(${item.id}, '${unit}', this.value)">
-              ${activeCtx.kioskOrder ? '' : `
+            ${activeCtx.adminPbfOrder ? '' : `
+              <button type="button" class="cart-extra-toggle" onclick="toggleExtraBox('${extraId}')">
+                <i class="fa-regular fa-pen-to-square"></i>
+                <span>${hasExtraData ? 'Ubah catatan / potongan' : 'Tambah catatan produk'}</span>
+              </button>
+              <div id="${extraId}" class="cart-extra-box ${hasExtraData ? 'open' : ''}">
+                <input type="text" class="cart-extra-inp" placeholder="Catatan untuk produk ini..." value="${escapeHtml(item.note || '')}" onchange="updateItemNote(${item.id}, '${unit}', this.value)">
+                ${activeCtx.kioskOrder ? '' : `
                 <input type="number" min="0" class="cart-extra-inp" placeholder="Ajuan potongan harga (Rp)" value="${disc > 0 ? disc : ''}" onchange="updateItemDiscount(${item.id}, '${unit}', this.value)">
-              `}
-            </div>
+                `}
+              </div>
+            `}
           </div>
         </div>
 
@@ -859,12 +954,154 @@ function openCart() {
 
 function goToCheckoutPage() {
   if (!cartItems.length) return;
+  if (activeCtx.adminPbfOrder) {
+    openPbfPurchaseOrderPopup();
+    return;
+  }
   window.location.href = '{{ route("checkout.index") }}';
+}
+
+function openPbfPurchaseOrderPopup() {
+  const items = document.getElementById('pbfPopupItems');
+  let total = 0;
+  items.innerHTML = cartItems.map((item, index) => {
+    const subtotal = Number(item.price || 0) * Number(item.qty || 0);
+    total += subtotal;
+    const unitLabel = item.unitLabel || item.unitLabels?.[item.saleUnit || 'box'] || 'Pcs';
+    return `<div class="pbf-popup-summary-item">
+      <span>${index + 1}. ${escapeHtml(item.name)} <span style="color:#64748b;">× ${Number(item.qty)} ${escapeHtml(unitLabel)}</span></span>
+      <strong>${formatRp(subtotal)}</strong>
+    </div>`;
+  }).join('');
+  document.getElementById('pbfPopupTotal').textContent = formatRp(total);
+  document.getElementById('pbfPopupFormView').style.display = 'grid';
+  document.getElementById('pbfPopupResult').style.display = 'none';
+  document.getElementById('pbfPopupError').style.display = 'none';
+  document.getElementById('pbfPopupSubmit').disabled = false;
+  document.getElementById('pbfPopupBackdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePbfPopup(event) {
+  if (event && event.target !== event.currentTarget) return;
+  const backdrop = document.getElementById('pbfPopupBackdrop');
+  if (!backdrop) return;
+  backdrop.classList.remove('open');
+  closePbfInvoice();
+  document.body.style.overflow = '';
+}
+
+function showPbfInvoice() {
+  const invoiceBase = activeCtx.adminPurchaseOrderBase;
+  if (!invoiceBase || !window.createdPbfOrderId) {
+    throw new Error('Tautan surat pesanan tidak tersedia.');
+  }
+  document.getElementById('pbfInvoiceFrame').src = invoiceBase.replace('__ORDER__', window.createdPbfOrderId);
+  document.getElementById('pbfInvoiceBackdrop').classList.add('open');
+}
+
+function closePbfInvoice(event) {
+  if (event && event.target !== event.currentTarget) return;
+  const backdrop = document.getElementById('pbfInvoiceBackdrop');
+  if (!backdrop) return;
+  backdrop.classList.remove('open');
+  document.getElementById('pbfInvoiceFrame').src = 'about:blank';
+}
+
+async function submitPbfPurchaseOrder() {
+  const errorPanel = document.getElementById('pbfPopupError');
+  const submitButton = document.getElementById('pbfPopupSubmit');
+  const distributor = document.getElementById('pbfPopupDistributor').value.trim();
+  const address = document.getElementById('pbfPopupAddress').value.trim();
+  const signer = document.getElementById('pbfPopupSigner').value.trim();
+  const title = document.getElementById('pbfPopupTitleField').value.trim();
+  const sia = document.getElementById('pbfPopupSia').value.trim();
+  const sipa = document.getElementById('pbfPopupSipa').value.trim();
+  errorPanel.style.display = 'none';
+  if (!distributor || !address || !signer || !title || !sia || !sipa) {
+    errorPanel.textContent = 'Lengkapi data distributor dan semua data penandatangan.';
+    errorPanel.style.display = 'block';
+    return;
+  }
+
+  const total = cartItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+  const payload = {
+    buyer_type: 'apotik',
+    buyer_name: 'Apotek Medix',
+    requester_name: signer,
+    apj: title,
+    sia,
+    sipa,
+    phone: '085890007359',
+    address: 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat',
+    pbf_name: distributor,
+    pbf_address: address,
+    items: cartItems.map(item => ({
+      id: item.id,
+      nama_obat: item.name,
+      quantity: item.qty,
+      harga: item.price,
+      sale_unit: item.saleUnit || 'box',
+      catatan: item.note || ''
+    })),
+    total,
+    original_total: total,
+    discounted_total: total,
+    approval_status: 'pending',
+    transaction_channel: 'online',
+    is_pbf_purchase_order: true
+  };
+
+  submitButton.disabled = true;
+  submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Membuat surat pesanan...';
+  try {
+    const response = await fetch('{{ route("orders.history.store") }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      const messages = Object.values(result.errors || {}).flat().join(' ');
+      throw new Error(messages || result.message || 'Surat pesanan gagal dibuat.');
+    }
+
+    window.createdPbfOrderId = result.id;
+    cartItems = [];
+    saveCartPage();
+    renderCartPage();
+    document.getElementById('pbfPopupFormView').style.display = 'none';
+    document.getElementById('pbfPopupResult').style.display = '';
+  } catch (error) {
+    errorPanel.textContent = error instanceof Error ? error.message : 'Surat pesanan gagal dibuat.';
+    errorPanel.style.display = 'block';
+  } finally {
+    submitButton.disabled = false;
+    submitButton.innerHTML = '<i class="fa-solid fa-file-signature"></i> Buat Surat Pesanan';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   saveCartPage();
   renderCartPage();
+  if (activeCtx.adminPbfOrder) {
+    document.getElementById('cartBannerTitle').textContent = 'Keranjang Pengadaan Apotek Medix';
+    document.getElementById('cartBannerDescription').textContent = 'Atur jumlah produk untuk pengadaan keluar Apotek Medix, lalu buat surat pesanan ke distributor.';
+    document.querySelector('.cart-page-title').textContent = 'Daftar Produk Pengadaan';
+    document.getElementById('cartCheckoutNote').textContent = 'Pengadaan ini menggunakan harga modal dan akan dibuatkan surat pesanan atas nama Apotek Medix.';
+    document.querySelector('#cartCheckoutButton span').textContent = 'Buat Surat Pesanan';
+    document.querySelector('#cartCheckoutButton i').className = 'fa-solid fa-file-signature';
+  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closePbfInvoice();
+      closePbfPopup();
+    }
+  });
 });
 </script>
 @endsection

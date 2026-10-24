@@ -7,6 +7,7 @@
 --}}
 @php
   $isKioskOrder = !empty($cartKioskOrder);
+  $isAdminPbfOrder = !empty($cartAdminPbfOrder);
   $defaultShippingAddress = auth()->check()
     && auth()->user()->isUser()
     && auth()->user()->is_default_address
@@ -50,6 +51,58 @@
 /* ORDER MODAL */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 3000; }
 .modal-box { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 92%; max-width: 480px; max-height: 90vh; overflow-y: auto; background: #fff; border-radius: 20px; z-index: 3001; box-shadow: 0 25px 60px rgba(0,0,0,0.25); }
+.pbf-checkout-overlay,.pbf-invoice-overlay { display:none; position:fixed; inset:0; z-index:4000; padding:2vh 2vw; background:rgba(15,23,42,.72); }
+.pbf-checkout-overlay.open,.pbf-invoice-overlay.open { display:flex; align-items:center; justify-content:center; }
+.pbf-checkout-modal { width:min(760px,100%); max-height:96vh; overflow:auto; border-radius:20px; background:#fff; box-shadow:0 25px 70px rgba(0,0,0,.32); }
+.pbf-checkout-header { display:flex; justify-content:space-between; gap:18px; align-items:flex-start; padding:22px 26px; color:#fff; background:linear-gradient(125deg,#0f4c81,#087f9c); }
+.pbf-checkout-kicker { display:block; margin-bottom:7px; color:#b8f2e6; font-size:.68rem; font-weight:800; letter-spacing:.12em; }
+.pbf-checkout-header h2 { margin:0; color:#fff; font-size:1.25rem; }
+.pbf-checkout-header p { margin:6px 0 0; color:rgba(255,255,255,.82); font-size:.84rem; }
+.pbf-checkout-close { flex:0 0 38px; width:38px; height:38px; border:0; border-radius:50%; color:#fff; background:rgba(255,255,255,.18); font-size:1.1rem; cursor:pointer; }
+.pbf-checkout-content { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); }
+.pbf-checkout-summary { padding:22px; background:#f3f8fb; border-right:1px solid #e2e8f0; }
+.pbf-checkout-section-heading { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; color:#0f4c81; font-size:.82rem; font-weight:800; }
+.pbf-checkout-summary-item { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #dce7ed; color:#334155; font-size:.8rem; }
+.pbf-checkout-summary-item strong { flex:0 0 auto; color:#087f9c; text-align:right; }
+.pbf-checkout-total { display:flex; justify-content:space-between; gap:12px; margin-top:14px; padding-top:12px; border-top:2px solid #cbdbe5; color:#334155; font-size:.82rem; font-weight:800; }
+.pbf-checkout-total strong { color:#087f9c; font-size:1.05rem; }
+.pbf-checkout-fields { padding:22px 24px; }
+.pbf-checkout-fields label { display:block; margin:0 0 6px; color:#334155; font-size:.76rem; font-weight:800; }
+.pbf-checkout-fields label span { color:#dc2626; }
+.pbf-checkout-fields input,.pbf-checkout-fields textarea { width:100%; margin:0 0 13px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:9px; outline:none; color:#0f172a; font:inherit; font-size:.85rem; }
+.pbf-checkout-fields input:focus,.pbf-checkout-fields textarea:focus { border-color:#0891b2; box-shadow:0 0 0 3px rgba(8,145,178,.12); }
+.pbf-checkout-fields textarea { resize:vertical; }
+.pbf-supplier-picker { position:relative; display:flex; margin:0 0 13px; border:1px solid #cbd5e1; border-radius:9px; background:#fff; transition:border-color .18s,box-shadow .18s; }
+.pbf-supplier-picker:focus-within,.pbf-supplier-picker.is-open { border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.12); }
+.pbf-supplier-picker input { flex:1; min-width:0; margin:0; border:0; box-shadow:none!important; background:transparent; }
+.pbf-supplier-picker input:focus { border-color:transparent; }
+.pbf-supplier-toggle { flex:0 0 42px; border:0; border-radius:0 9px 9px 0; background:transparent; color:#64748b; cursor:pointer; transition:color .18s,background .18s; }
+.pbf-supplier-toggle:hover,.pbf-supplier-picker.is-open .pbf-supplier-toggle { color:#1e88e5; background:#eff6ff; }
+.pbf-supplier-toggle i { transition:transform .18s; }
+.pbf-supplier-picker.is-open .pbf-supplier-toggle i { transform:rotate(180deg); }
+.pbf-supplier-menu { position:absolute; z-index:20; top:calc(100% + 7px); left:0; right:0; display:none; max-height:240px; overflow:auto; padding:6px; border:1px solid #e2e8f0; border-radius:12px; background:#fff; box-shadow:0 14px 32px rgba(15,23,42,.16); }
+.pbf-supplier-picker.is-open .pbf-supplier-menu { display:block; animation:pbfSupplierMenuIn .14s ease-out; }
+.pbf-supplier-option { display:flex; width:100%; flex-direction:column; gap:3px; padding:10px 12px; border:0; border-radius:8px; background:#fff; color:#1e293b; text-align:left; cursor:pointer; transition:background .15s,color .15s; }
+.pbf-supplier-option:hover,.pbf-supplier-option.is-active { background:#eff6ff; color:#1d4ed8; }
+.pbf-supplier-option-name { font-size:.84rem; font-weight:750; }
+.pbf-supplier-option-address { color:#64748b; font-size:.73rem; line-height:1.4; }
+.pbf-supplier-empty { padding:12px; color:#64748b; font-size:.8rem; text-align:center; }
+@keyframes pbfSupplierMenuIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+.pbf-signatory-heading { margin-top:5px; padding-top:14px; border-top:1px solid #e2e8f0; }
+.pbf-checkout-field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.pbf-checkout-error { display:none; margin:0 0 12px; padding:10px 12px; border-radius:8px; background:#fee2e2; color:#991b1b; font-size:.8rem; }
+.pbf-checkout-note { margin:0 0 14px; padding:10px; border-radius:8px; background:#ecfeff; color:#155e75; font-size:.75rem; line-height:1.5; }
+.pbf-checkout-submit { width:100%; padding:12px 15px; border:0; border-radius:10px; background:#087f9c; color:#fff; font-size:.9rem; font-weight:800; cursor:pointer; }
+.pbf-checkout-submit:disabled { opacity:.65; cursor:wait; }
+.pbf-checkout-result { padding:40px 28px; text-align:center; }
+.pbf-result-icon { color:#16a34a; font-size:3rem; }
+.pbf-checkout-result h3 { margin:10px 0; color:#0f172a; }
+.pbf-checkout-result p { margin:0 auto 20px; max-width:450px; color:#64748b; line-height:1.6; font-size:.9rem; }
+.pbf-invoice-overlay { z-index:4100; }
+.purchase-order-preview-panel { display:flex; flex-direction:column; width:min(1100px,100%); height:96vh; overflow:hidden; border-radius:14px; background:#fff; box-shadow:0 25px 60px rgba(0,0,0,.3); }
+.purchase-order-preview-toolbar { display:flex; flex:0 0 auto; justify-content:space-between; align-items:center; gap:12px; padding:10px 14px; color:#1e293b; font-weight:700; }
+.purchase-order-preview-toolbar button { padding:8px 12px; border:0; border-radius:8px; background:#e2e8f0; color:#1e293b; font-weight:700; cursor:pointer; }
+.purchase-order-preview iframe { flex:1 1 auto; width:100%; min-height:0; border:0; }
 .modal-head { background: linear-gradient(135deg,#1565C0,#1E88E5); padding: 1.25rem 1.5rem; border-radius: 20px 20px 0 0; display: flex; justify-content: space-between; align-items: center; }
 .modal-head h3 { color: #fff; margin: 0; font-size: 1rem; font-weight: 700; }
 .modal-head p { color: rgba(255,255,255,0.8); margin: 0; font-size: 0.75rem; }
@@ -83,30 +136,41 @@
   .cart-total-row strong { font-size: 1rem; }
   .btn-order-wa { padding: 0.8rem; font-size: 0.92rem; }
 }
+@media (max-width: 700px) {
+  .pbf-checkout-overlay,.pbf-invoice-overlay { padding:0; }
+  .pbf-checkout-modal { width:100%; height:100%; max-height:100dvh; overflow:auto; border-radius:0; }
+  .pbf-checkout-header { padding:18px; }
+  .pbf-checkout-header h2 { font-size:1.05rem; }
+  .pbf-checkout-content { grid-template-columns:1fr; }
+  .pbf-checkout-summary { padding:16px 18px; border-right:0; border-bottom:1px solid #e2e8f0; }
+  .pbf-checkout-fields { padding:18px; }
+  .purchase-order-preview-panel { width:100%; height:100dvh; border-radius:0; }
+}
 </style>
 
 {{-- ===== CART DRAWER HTML ===== --}}
 <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
 <div class="cart-drawer" id="cartDrawer">
   <div class="cart-head">
-    <h2><i class="fa-solid fa-cart-shopping"></i> Keranjang</h2>
+    <h2><i class="fa-solid fa-cart-shopping"></i> {{ $isAdminPbfOrder ? 'Keranjang Pengadaan' : 'Keranjang' }}</h2>
     <button class="cart-close-btn" onclick="closeCart()"><i class="fa-solid fa-xmark"></i></button>
   </div>
   <div class="cart-body" id="cartBody">
     <div class="cart-empty-msg"><i class="fa-solid fa-cart-shopping"></i><p>Keranjang masih kosong</p></div>
   </div>
   <div class="cart-foot" id="cartFoot" style="display:none;">
-    <div class="cart-total-row"><span>Total Pesanan</span><strong id="cartTotalAmt">Rp 0</strong></div>
-    <button class="btn-order-wa" onclick="openOrder()">Lanjutkan Pesanan</button>
+    <div class="cart-total-row"><span>{{ $isAdminPbfOrder ? 'Estimasi harga modal' : 'Total Pesanan' }}</span><strong id="cartTotalAmt">Rp 0</strong></div>
+    <button class="btn-order-wa" onclick="openOrder()">{{ $isAdminPbfOrder ? 'Buat Surat Pesanan' : 'Lanjutkan Pesanan' }}</button>
     <button class="btn-clear-cart" onclick="clearCart()">Kosongkan keranjang</button>
   </div>
 </div>
 
-{{-- ===== ORDER MODAL ===== --}}
+@unless($isAdminPbfOrder)
+{{-- ===== STANDARD CHECKOUT MODAL ===== --}}
 <div class="modal-overlay" id="orderOverlay" onclick="closeOrder()"></div>
 <div class="modal-box" id="orderModal">
   <div class="modal-head">
-    <div><h3><i class="fa-solid {{ $isKioskOrder ? 'fa-store' : 'fa-file-invoice' }}"></i> {{ $isKioskOrder ? 'Pesanan Internal' : 'Form Pemesanan' }}</h3><p>{{ $isKioskOrder ? 'Tunjukkan struk pesanan kepada kasir untuk pembayaran.' : 'Lengkapi data untuk melanjutkan' }}</p></div>
+    <div><h3><i class="fa-solid {{ $isKioskOrder ? 'fa-store' : 'fa-file-invoice' }}"></i> {{ $isKioskOrder ? 'Pesanan Internal' : 'Form Pemesanan' }}</h3><p>{{ $isKioskOrder ? 'Tunjukkan struk pesanan kepada kasir untuk pembayaran.' : ($isAdminPbfOrder ? 'Isi data distributor dan penandatangan Apotek Medix.' : 'Lengkapi data untuk melanjutkan') }}</p></div>
     <button class="modal-close" onclick="closeOrder()">&#x2715;</button>
   </div>
   <div class="modal-summary">
@@ -121,6 +185,8 @@
     @if(empty($cartWholesaleOrder))
     @if($isKioskOrder)
     <input type="hidden" id="f_jenis" value="umum">
+    @elseif($isAdminPbfOrder)
+    <input type="hidden" id="f_jenis" value="apotik">
     @else
     <div id="standardBuyerFields">
     <label class="form-lbl">Jenis Pembeli <span style="color:#ef4444;">*</span></label>
@@ -132,13 +198,13 @@
     </div>
     @endif
     @endif
-    <div id="pbfDestinationFields" style="display:none;">
-      <label class="form-lbl">Nama PBF <span style="color:#ef4444;">*</span></label>
-      <input id="f_pbf_name" type="text" class="form-inp" placeholder="Nama PBF tujuan">
-      <label class="form-lbl">Alamat PBF <span style="color:#ef4444;">*</span></label>
-      <textarea id="f_pbf_address" rows="2" class="form-inp" style="resize:vertical;" placeholder="Alamat PBF tujuan"></textarea>
+    <div id="pbfDestinationFields" @if(!$isAdminPbfOrder) style="display:none;" @endif>
+      <label class="form-lbl">Nama distributor / PBF tujuan <span style="color:#ef4444;">*</span></label>
+      <input id="f_pbf_name" type="text" class="form-inp" placeholder="Nama distributor atau PBF tujuan">
+      <label class="form-lbl">Alamat distributor <span style="color:#ef4444;">*</span></label>
+      <textarea id="f_pbf_address" rows="2" class="form-inp" style="resize:vertical;" placeholder="Alamat lengkap distributor"></textarea>
     </div>
-    <div id="signatoryFields" style="display:none;">
+    <div id="signatoryFields" @if(!$isAdminPbfOrder) style="display:none;" @endif>
       <label class="form-lbl">Nama Penandatangan <span style="color:#ef4444;">*</span></label>
       <input id="f_signer_name" type="text" class="form-inp" value="Apt. Hendri Setiyono, S Farm" placeholder="Nama apoteker">
       <label class="form-lbl">Jabatan <span style="color:#ef4444;">*</span></label>
@@ -176,7 +242,7 @@
       <label class="form-lbl">Alamat <span style="color:#ef4444;">*</span></label>
       <textarea id="f_alamat_apotik" rows="3" class="form-inp" style="resize:vertical;" placeholder="Alamat lengkap apotik"></textarea>
     </div>
-    @if(empty($cartWholesaleOrder) && !$isKioskOrder)
+    @if(empty($cartWholesaleOrder) && !$isKioskOrder && !$isAdminPbfOrder)
     <label class="form-lbl">Metode Pembayaran <span style="color:#ef4444;">*</span></label>
     <select id="f_payment" class="form-inp" onchange="toggleTempoFields()">
       <option value="">Pilih metode pembayaran</option>
@@ -199,21 +265,93 @@
         <i class="fa-solid fa-circle-info"></i> Pembayaran tunai dilakukan di kasir. Pesanan akan disimpan dan stok diperbarui setelah dibuat.
       </p>
     @endif
+    @if($isAdminPbfOrder)
+      <p style="padding:.75rem;background:#eff6ff;border-radius:.6rem;color:#1e40af;font-size:.85rem;">
+        <i class="fa-solid fa-circle-info"></i> Pesanan ini untuk pengadaan stok Apotek Medix. Tidak ada pembayaran online pada langkah ini; periksa surat pesanan sebelum dikirim ke distributor.
+      </p>
+    @endif
     <div class="form-error" id="formErr"></div>
+    @if($isAdminPbfOrder)
+      <div style="display:flex;gap:.6rem;">
+        <button class="btn-submit-wa" onclick="submitOrder()"><i class="fa-solid fa-file-signature"></i> Buat Surat Pesanan</button>
+      </div>
+    @else
     <button class="btn-submit-wa" onclick="submitOrder()">
       <i class="fa-solid {{ $isKioskOrder ? 'fa-receipt' : 'fa-paper-plane' }}"></i> {{ $isKioskOrder ? 'Buat Struk Pesanan' : 'Lanjutkan' }}
     </button>
+    @endif
   </div>
   <div class="modal-form" id="nextActionPanel" style="display:none;">
-    <p id="orderSuccessMessage" style="color:#374151;font-size:0.9rem;margin-bottom:1rem;">Pesanan berhasil dicatat! Pilih tindakan selanjutnya:</p>
-    <a id="invoiceLink" href="#" target="_blank" rel="noopener" style="width:100%;padding:0.75rem;background:#e8f5e9;color:#187b35;border:1.5px solid #86d39a;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:0.75rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;text-decoration:none;">
+    <p id="orderSuccessMessage" style="color:#374151;font-size:0.9rem;margin-bottom:1rem;">{{ $isAdminPbfOrder ? 'Surat pesanan berhasil dibuat. Pilih tindakan selanjutnya:' : 'Pesanan berhasil dicatat! Pilih tindakan selanjutnya:' }}</p>
+    <a id="invoiceLink" href="#" @unless($isAdminPbfOrder) target="_blank" rel="noopener" @endunless onclick="openInvoice(event)" style="width:100%;padding:0.75rem;background:#e8f5e9;color:#187b35;border:1.5px solid #86d39a;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:0.75rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;text-decoration:none;">
       <i class="fa-solid fa-file-invoice"></i> Lihat Invoice
     </a>
-    <button id="whatsappOrderButton" onclick="openWhatsAppOrder()" style="width:100%;padding:0.75rem;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+    <button id="whatsappOrderButton" @if($isAdminPbfOrder) style="display:none;" @else style="width:100%;padding:0.75rem;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;" @endif onclick="openWhatsAppOrder()">
       <i class="fa-brands fa-whatsapp" style="font-size:1.2rem;"></i> Chat WhatsApp
     </button>
   </div>
 </div>
+@endunless
+@if($isAdminPbfOrder)
+<div class="pbf-checkout-overlay" id="pbfCheckoutOverlay" onclick="closePbfCheckout(event)">
+  <section class="pbf-checkout-modal" id="pbfOrderModal" role="dialog" aria-modal="true" aria-labelledby="pbfOrderTitle">
+    <header class="pbf-checkout-header">
+      <div>
+        <span class="pbf-checkout-kicker">PENGADAAN STOK APOTEK MEDIX</span>
+        <h2 id="pbfOrderTitle"><i class="fa-solid fa-file-signature"></i> Surat Pesanan ke Distributor</h2>
+        <p>Lengkapi data tujuan dan penanggung jawab sebelum membuat surat pesanan.</p>
+      </div>
+      <button class="pbf-checkout-close" type="button" aria-label="Tutup" onclick="closePbfCheckout()"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="pbf-checkout-content" id="pbfCheckoutForm">
+      <div class="pbf-checkout-summary">
+        <div class="pbf-checkout-section-heading"><span>Ringkasan pengadaan</span><span id="pbfOrderItemCount"></span></div>
+        <div id="pbfOrderSummary"></div>
+        <div class="pbf-checkout-total"><span>Estimasi total harga modal</span><strong id="pbfOrderTotal">Rp 0</strong></div>
+      </div>
+      <div class="pbf-checkout-fields">
+        <div class="pbf-checkout-section-heading">Tujuan distributor</div>
+        <label for="pbfOrderDistributor">Nama distributor / PBF <span>*</span></label>
+        <div class="pbf-supplier-picker" id="pbfSupplierPicker">
+          <input id="pbfOrderDistributor" type="text" role="combobox" placeholder="Pilih atau ketik nama supplier" autocomplete="off" aria-autocomplete="list" aria-controls="pbfSupplierMenu" aria-expanded="false">
+          <button class="pbf-supplier-toggle" id="pbfSupplierToggle" type="button" aria-label="Tampilkan daftar supplier" aria-expanded="false"><i class="fa-solid fa-chevron-down"></i></button>
+          <div class="pbf-supplier-menu" id="pbfSupplierMenu" role="listbox"></div>
+        </div>
+        <label for="pbfOrderAddress">Alamat distributor <span>*</span></label>
+        <textarea id="pbfOrderAddress" rows="2" placeholder="Alamat lengkap distributor"></textarea>
+        <div class="pbf-checkout-section-heading pbf-signatory-heading">Penanggung jawab Apotek Medix</div>
+        <label for="pbfOrderSigner">Nama penandatangan <span>*</span></label>
+        <input id="pbfOrderSigner" type="text" value="Apt. Hendri Setiyono, S Farm">
+        <label for="pbfOrderTitleField">Jabatan <span>*</span></label>
+        <input id="pbfOrderTitleField" type="text" value="Apoteker">
+        <div class="pbf-checkout-field-row">
+          <div><label for="pbfOrderSia">No. SIA <span>*</span></label><input id="pbfOrderSia" type="text" value="13042600890450001"></div>
+          <div><label for="pbfOrderSipa">No. SIPA <span>*</span></label><input id="pbfOrderSipa" type="text" value="1/b.19/31.71.03.1007.4k-1.b/4/tm.09/e/2026"></div>
+        </div>
+        <div class="pbf-checkout-error" id="pbfCheckoutError" role="alert"></div>
+        <p class="pbf-checkout-note"><i class="fa-solid fa-circle-info"></i> Pengadaan ini dibuat atas nama Apotek Medix. Setelah disimpan, surat pesanan dapat ditinjau dan dicetak sebelum dikirim ke distributor.</p>
+        <button class="pbf-checkout-submit" id="pbfSubmitOrderButton" type="button" onclick="submitPbfOrder()"><i class="fa-solid fa-file-signature"></i> Buat Surat Pesanan</button>
+      </div>
+    </div>
+    <div class="pbf-checkout-result" id="pbfCheckoutResult" style="display:none;">
+      <div class="pbf-result-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <h3>Surat pesanan berhasil dibuat</h3>
+      <p>Surat tersimpan atas nama Apotek Medix. Buka untuk meninjau atau mencetak sebelum dikirim ke distributor.</p>
+      <a id="pbfInvoiceLink" href="#" hidden></a>
+      <button class="pbf-checkout-submit" id="pbfViewInvoiceButton" type="button" onclick="openPbfInvoice()"><i class="fa-solid fa-file-invoice"></i> Lihat Invoice</button>
+    </div>
+  </section>
+</div>
+<div class="pbf-invoice-overlay" id="pbfInvoiceOverlay" onclick="closePbfInvoice(event)">
+  <div class="purchase-order-preview-panel">
+    <div class="purchase-order-preview-toolbar">
+      <span>Surat Pesanan Apotek Medix</span>
+      <button type="button" onclick="closePbfInvoice()">Kembali</button>
+    </div>
+    <iframe id="pbfInvoiceFrame" title="Surat Pesanan Apotek Medix"></iframe>
+  </div>
+</div>
+@endif
 
 {{-- ===== CART JAVASCRIPT ===== --}}
 <script>
@@ -294,8 +432,13 @@ function selectProductCardUnit(button) {
     quantityInput.disabled = !selected || Number(quantityInput.max) < 1;
   });
 
-  const unitSelect = selectedCard.closest('.medicine-card')?.querySelector('.product-unit-data');
+  const productCard = selectedCard.closest('.medicine-card, .prod-card, .discounted-product-card');
+  const unitSelect = productCard?.querySelector('.product-unit-data');
   if (unitSelect) unitSelect.value = selectedCard.dataset.cartUnit;
+  const priceTarget = button.dataset.priceTarget
+    ? document.getElementById(button.dataset.priceTarget)
+    : null;
+  if (priceTarget) priceTarget.textContent = rp(button.dataset.unitPrice || 0);
 }
 
 function updateProductCardQty(input, adjustment = 0) {
@@ -305,6 +448,69 @@ function updateProductCardQty(input, adjustment = 0) {
   input.closest('.product-unit-card')?.classList.toggle('has-quantity', Number(input.value) > 0);
 }
 
+async function refreshAvailableProductStock() {
+  const stockBadges = Array.from(document.querySelectorAll('[data-stock-badge][data-stock-product-id]'));
+  const productIds = [...new Set(stockBadges.map(badge => badge.dataset.stockProductId))];
+  if (!productIds.length) return;
+
+  const url = new URL(@json(route('products.stock-availability')), window.location.origin);
+  productIds.forEach(id => url.searchParams.append('ids[]', id));
+  const response = await fetch(url, {
+    cache: 'no-store',
+    headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' }
+  });
+  if (!response.ok) throw new Error('Gagal memperbarui stok produk.');
+  const payload = await response.json();
+
+  Object.entries(payload.stock).forEach(([id, stock]) => {
+    document.querySelectorAll(`[data-stock-product-id="${id}"]`).forEach(element => {
+      if (element.matches('[data-stock-badge]')) {
+        const available = stock.units > 0;
+        if (element.classList.contains('stock-badge')) {
+          element.classList.toggle('stock-out', !available);
+          element.classList.toggle('stock-low', available && stock.units <= 10);
+          element.classList.toggle('stock-available', stock.units > 10);
+        } else {
+          element.classList.toggle('empty', !available);
+          element.classList.toggle('low', available && stock.units <= 10);
+          element.classList.toggle('available', stock.units > 10);
+        }
+        const icon = element.querySelector('i');
+        if (icon) icon.className = `fa-solid ${available ? 'fa-boxes-stacked' : 'fa-circle-xmark'}`;
+        element.lastChild.textContent = available ? ` Stok: ${stock.breakdown}` : ' Stok habis';
+      }
+      if (element.matches('.product-unit-data')) {
+        element.dataset.stockUnits = String(stock.units);
+        const unitFactors = JSON.parse(element.dataset.unitFactors || '{}');
+        const card = element.closest('.medicine-card, .prod-card, .discounted-product-card');
+        card?.querySelectorAll('.product-unit-card').forEach(unitCard => {
+          const input = unitCard.querySelector('[data-cart-quantity]');
+          if (!input) return;
+          const availableQuantity = Math.floor(stock.units / Number(unitFactors[input.dataset.stockUnit] || 1));
+          input.max = String(availableQuantity);
+          if (Number(input.value) > availableQuantity) input.value = String(availableQuantity);
+          const selected = unitCard.classList.contains('is-selected');
+          input.disabled = !selected || availableQuantity < 1;
+          unitCard.querySelectorAll('.product-unit-quantity button').forEach(button => {
+            button.disabled = !selected || availableQuantity < 1;
+          });
+        });
+        card?.querySelectorAll('[data-stock-cart]').forEach(button => {
+          button.disabled = stock.units < 1;
+          button.setAttribute('aria-disabled', String(stock.units < 1));
+        });
+      }
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  refreshAvailableProductStock().catch(error => console.error(error));
+  window.setInterval(() => {
+    if (!document.hidden) refreshAvailableProductStock().catch(error => console.error(error));
+  }, 5000);
+});
+
 function adjustProductCardQty(button, adjustment) {
   const input = button.closest('.product-unit-card')?.querySelector('input[data-cart-quantity]');
   if (input && !input.disabled) updateProductCardQty(input, adjustment);
@@ -312,7 +518,7 @@ function adjustProductCardQty(button, adjustment) {
 
 function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
   const unitSelect = unitSelectId ? document.getElementById(unitSelectId) : null;
-  const productCard = btn?.closest('.medicine-card');
+  const productCard = btn?.closest('.medicine-card, .prod-card, .discounted-product-card');
   const cardUnits = productCard?.querySelectorAll('.product-unit-card[data-cart-unit]') || [];
   if (cardUnits.length) {
     const unitPrices = unitSelect ? JSON.parse(unitSelect.dataset.unitPrices || '{}') : {};
@@ -581,12 +787,14 @@ function changeCartUnit(id, oldUnit, newUnit) {
 
 function openCart() {
   save();
+  if (CART_CONFIG.adminPbfOrder) {
+    document.getElementById('cartDrawer').classList.add('open');
+    document.getElementById('cartOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    render();
+    return;
+  }
   window.location.href = '{{ route("cart.index") }}';
-  return;
-  document.getElementById('cartDrawer').classList.add('open');
-  document.getElementById('cartOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  render();
 }
 
 function closeCart() {
@@ -604,32 +812,31 @@ function escapeHtml(text) {
 function openOrder() {
   if (!cart.length) return;
   save();
+  if (CART_CONFIG.adminPbfOrder) {
+    openPbfCheckout();
+    return;
+  }
   window.location.href = '{{ route("checkout.index") }}';
-  return;
-  let html = '', total = 0;
-  cart.forEach((it, i) => {
-    const sub = it.price * it.qty;
-    const disc = it.discount || 0;
-    const afterDisc = sub - disc;
-    total += afterDisc;
-    const unit = it.saleUnit || 'box';
-    const unitLabel = it.unitLabel || it.unitLabels?.[unit] || unit.charAt(0).toUpperCase() + unit.slice(1);
-    html += `<div style="padding:0.35rem 0;border-bottom:1px solid #f3f4f6;font-size:0.83rem;">
-      <div style="display:flex;justify-content:space-between;gap:0.75rem;">
-        <span>${i+1}. ${it.name} <span style="color:#9ca3af;">&times;${it.qty} ${unitLabel}</span></span>
-        <span style="font-weight:700;color:#1E88E5;">${disc > 0 ? `<span style="text-decoration:line-through;color:#9ca3af;font-size:.78rem;">${rp(sub)}</span> ${rp(afterDisc)}` : rp(sub)}</span>
-      </div>`;
-    if (disc > 0) html += `<div style="color:#ef4444;font-size:.78rem;">Potongan: -${rp(disc)}</div>`;
-    if (it.note)  html += `<div style="margin-top:0.35rem;color:#6b7280;font-size:0.8rem;">Catatan: ${escapeHtml(it.note)}</div>`;
-    html += `</div>`;
-  });
-  document.getElementById('orderSummary').innerHTML = html;
-  document.getElementById('orderTotal').textContent = rp(total);
-  document.getElementById('orderFormPanel').style.display = '';
-  document.getElementById('nextActionPanel').style.display = 'none';
-  document.getElementById('formErr').style.display = 'none';
-  document.getElementById('orderOverlay').style.display = 'block';
-  document.getElementById('orderModal').style.display = 'block';
+}
+
+function openPbfCheckout() {
+  const summary = document.getElementById('pbfOrderSummary');
+  let total = 0;
+  summary.innerHTML = cart.map((item, index) => {
+    const subtotal = item.price * item.qty;
+    total += subtotal;
+    return `<div class="pbf-checkout-summary-item">
+      <span>${index + 1}. ${escapeHtml(item.name)} <span style="color:#64748b;">× ${item.qty} ${escapeHtml(item.unitLabel || 'Pcs')}</span></span>
+      <strong>${rp(subtotal)}</strong>
+    </div>`;
+  }).join('');
+  document.getElementById('pbfOrderItemCount').textContent = `${cart.reduce((count, item) => count + item.qty, 0)} item`;
+  document.getElementById('pbfOrderTotal').textContent = rp(total);
+  document.getElementById('pbfCheckoutForm').style.display = '';
+  document.getElementById('pbfCheckoutResult').style.display = 'none';
+  document.getElementById('pbfCheckoutError').style.display = 'none';
+  document.getElementById('pbfSubmitOrderButton').disabled = false;
+  document.getElementById('pbfCheckoutOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
@@ -637,6 +844,43 @@ function closeOrder() {
   document.getElementById('orderOverlay').style.display = 'none';
   document.getElementById('orderModal').style.display = 'none';
   document.body.style.overflow = '';
+}
+
+function closePbfCheckout(event) {
+  if (event && event.target !== event.currentTarget) return;
+  const overlay = document.getElementById('pbfCheckoutOverlay');
+  if (!overlay) return;
+
+  overlay.classList.remove('open');
+  closePbfInvoice();
+  document.body.style.overflow = '';
+}
+
+function openPbfInvoice() {
+  const overlay = document.getElementById('pbfInvoiceOverlay');
+  const frame = document.getElementById('pbfInvoiceFrame');
+  const invoiceUrl = document.getElementById('pbfInvoiceLink')?.href;
+  if (!overlay || !frame || !invoiceUrl || invoiceUrl === window.location.href || invoiceUrl.endsWith('#')) {
+    throw new Error('Surat pesanan belum tersedia untuk ditampilkan.');
+  }
+
+  frame.src = invoiceUrl;
+  overlay.classList.add('open');
+}
+
+function closePbfInvoice(event) {
+  if (event && event.target !== event.currentTarget) return;
+  const overlay = document.getElementById('pbfInvoiceOverlay');
+  if (!overlay) return;
+
+  overlay.classList.remove('open');
+  document.getElementById('pbfInvoiceFrame').src = 'about:blank';
+}
+
+function openInvoice(event) {
+  if (!CART_CONFIG.adminPbfOrder) return;
+  event.preventDefault();
+  openPbfInvoice();
 }
 
 function toggleBuyerType() {
@@ -844,6 +1088,93 @@ function buildReceiptPdf(orderData) {
   return doc.output('bloburl');
 }
 
+async function submitPbfOrder() {
+  const errorPanel = document.getElementById('pbfCheckoutError');
+  const submitButton = document.getElementById('pbfSubmitOrderButton');
+  const distributor = document.getElementById('pbfOrderDistributor').value.trim();
+  const address = document.getElementById('pbfOrderAddress').value.trim();
+  const signer = document.getElementById('pbfOrderSigner').value.trim();
+  const title = document.getElementById('pbfOrderTitleField').value.trim();
+  const sia = document.getElementById('pbfOrderSia').value.trim();
+  const sipa = document.getElementById('pbfOrderSipa').value.trim();
+
+  errorPanel.style.display = 'none';
+  if (!cart.length) {
+    errorPanel.textContent = 'Keranjang pengadaan masih kosong.';
+    errorPanel.style.display = 'block';
+    return;
+  }
+  if (!distributor || !address || !signer || !title || !sia || !sipa) {
+    errorPanel.textContent = 'Lengkapi nama dan alamat distributor serta semua data penandatangan.';
+    errorPanel.style.display = 'block';
+    return;
+  }
+
+  const originalTotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const payload = {
+    buyer_type: 'apotik',
+    buyer_name: 'Apotek Medix',
+    requester_name: signer,
+    apj: title,
+    sia,
+    sipa,
+    phone: '085890007359',
+    address: 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat',
+    pbf_name: distributor,
+    pbf_address: address,
+    items: cart.map(item => ({
+      id: item.id,
+      nama_obat: item.name,
+      quantity: item.qty,
+      harga: item.price,
+      sale_unit: item.saleUnit || 'box',
+      catatan: item.note || ''
+    })),
+    total: originalTotal,
+    original_total: originalTotal,
+    discounted_total: originalTotal,
+    approval_status: 'pending',
+    transaction_channel: 'online',
+    is_pbf_purchase_order: true
+  };
+
+  submitButton.disabled = true;
+  submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Membuat surat pesanan...';
+  try {
+    const response = await fetch('{{ route("orders.history.store") }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      const messages = Object.values(result.errors || {}).flat().join(' ');
+      throw new Error(messages || result.message || 'Surat pesanan gagal dibuat.');
+    }
+
+    window.pbfOrderPayload = { ...payload, id: result.id };
+    const invoiceUrl = CART_CONFIG.adminPurchaseOrderBase
+      ? CART_CONFIG.adminPurchaseOrderBase.replace('__ORDER__', result.id)
+      : result.invoice_url;
+    document.getElementById('pbfInvoiceLink').href = invoiceUrl;
+    document.getElementById('pbfCheckoutForm').style.display = 'none';
+    document.getElementById('pbfCheckoutResult').style.display = '';
+    cart = [];
+    save();
+    render();
+  } catch (error) {
+    errorPanel.textContent = error instanceof Error ? error.message : 'Surat pesanan gagal dibuat.';
+    errorPanel.style.display = 'block';
+  } finally {
+    submitButton.disabled = false;
+    submitButton.innerHTML = '<i class="fa-solid fa-file-signature"></i> Buat Surat Pesanan';
+  }
+}
+
 async function submitOrder() {
   const jenis = CART_CONFIG.adminPbfOrder || CART_CONFIG.wholesaleOrder ? 'apotik' : (document.getElementById('f_jenis')?.value || 'umum');
   const err = document.getElementById('formErr');
@@ -918,7 +1249,7 @@ async function submitOrder() {
     }
   }
 
-  if (!CART_CONFIG.wholesaleOrder && !payload.payment_method) {
+  if (!CART_CONFIG.wholesaleOrder && !CART_CONFIG.adminPbfOrder && !payload.payment_method) {
     err.textContent = 'Metode pembayaran wajib diisi.'; err.style.display = 'block'; return;
   }
 
@@ -947,6 +1278,14 @@ async function submitOrder() {
     if (CART_CONFIG.kioskOrder) {
       document.getElementById('orderSuccessMessage').textContent = 'Struk pesanan siap. Tunjukkan kepada kasir untuk membayar dan menyelesaikan transaksi.';
       document.getElementById('invoiceLink').innerHTML = '<i class="fa-solid fa-receipt"></i> Buka / Cetak Struk';
+      document.getElementById('whatsappOrderButton').style.display = 'none';
+      cart = [];
+      save();
+      render();
+    }
+    if (CART_CONFIG.adminPbfOrder) {
+      document.getElementById('orderSuccessMessage').textContent = 'Surat pesanan berhasil dibuat. Pilih tindakan selanjutnya:';
+      document.getElementById('invoiceLink').innerHTML = '<i class="fa-solid fa-file-invoice"></i> Lihat Invoice';
       document.getElementById('whatsappOrderButton').style.display = 'none';
       cart = [];
       save();
@@ -1006,6 +1345,101 @@ function openWhatsAppOrder() {
 document.addEventListener('DOMContentLoaded', () => {
   syncBadge();
   toggleBuyerType();
+  const supplierPicker = document.getElementById('pbfSupplierPicker');
+  const supplierMenu = document.getElementById('pbfSupplierMenu');
+  const supplierToggle = document.getElementById('pbfSupplierToggle');
+  const supplierName = document.getElementById('pbfOrderDistributor');
+  const supplierAddress = document.getElementById('pbfOrderAddress');
+  const suppliers = Array.isArray(CART_CONFIG.suppliers) ? CART_CONFIG.suppliers : [];
+  if (supplierPicker && supplierMenu && supplierToggle && supplierName && supplierAddress) {
+    let activeSupplierIndex = -1;
+    let autoFilledAddress = '';
+
+    const closeSupplierMenu = () => {
+      supplierPicker.classList.remove('is-open');
+      supplierName.setAttribute('aria-expanded', 'false');
+      supplierToggle.setAttribute('aria-expanded', 'false');
+      activeSupplierIndex = -1;
+    };
+
+    const renderSupplierOptions = () => {
+      const query = supplierName.value.trim().toLocaleLowerCase();
+      const matches = suppliers.filter(supplier =>
+        `${supplier.name} ${supplier.address}`.toLocaleLowerCase().includes(query)
+      );
+      supplierMenu.innerHTML = matches.length
+        ? matches.map((supplier, index) => `
+          <button class="pbf-supplier-option${index === activeSupplierIndex ? ' is-active' : ''}" type="button" role="option" aria-selected="${supplier.name.toLocaleLowerCase() === query}">
+            <span class="pbf-supplier-option-name">${escapeHtml(supplier.name)}</span>
+            <span class="pbf-supplier-option-address">${escapeHtml(supplier.address)}</span>
+          </button>
+        `).join('')
+        : '<div class="pbf-supplier-empty">Supplier tidak ditemukan. Nama yang diketik tetap bisa digunakan.</div>';
+
+      supplierMenu.querySelectorAll('.pbf-supplier-option').forEach((option, index) => {
+        option.addEventListener('click', () => {
+          const selected = matches[index];
+          supplierName.value = selected.name;
+          supplierAddress.value = selected.address;
+          autoFilledAddress = selected.address;
+          closeSupplierMenu();
+        });
+      });
+      return matches;
+    };
+
+    const openSupplierMenu = () => {
+      supplierPicker.classList.add('is-open');
+      supplierName.setAttribute('aria-expanded', 'true');
+      supplierToggle.setAttribute('aria-expanded', 'true');
+      renderSupplierOptions();
+    };
+
+    supplierName.addEventListener('input', () => {
+      const selected = suppliers.find(supplier =>
+        supplier.name.toLocaleLowerCase() === supplierName.value.trim().toLocaleLowerCase()
+      );
+      if (selected) {
+        supplierAddress.value = selected.address;
+        autoFilledAddress = selected.address;
+      } else if (autoFilledAddress && supplierAddress.value === autoFilledAddress) {
+        supplierAddress.value = '';
+        autoFilledAddress = '';
+      }
+      activeSupplierIndex = -1;
+      openSupplierMenu();
+    });
+
+    supplierName.addEventListener('focus', openSupplierMenu);
+    supplierName.addEventListener('keydown', event => {
+      const options = supplierMenu.querySelectorAll('.pbf-supplier-option');
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (!supplierPicker.classList.contains('is-open')) openSupplierMenu();
+        const direction = event.key === 'ArrowDown' ? 1 : -1;
+        activeSupplierIndex = options.length
+          ? (activeSupplierIndex + direction + options.length) % options.length
+          : -1;
+        renderSupplierOptions();
+      } else if (event.key === 'Enter' && supplierPicker.classList.contains('is-open') && activeSupplierIndex >= 0) {
+        event.preventDefault();
+        options[activeSupplierIndex]?.click();
+      } else if (event.key === 'Escape') {
+        closeSupplierMenu();
+      }
+    });
+    supplierToggle.addEventListener('click', () => {
+      if (supplierPicker.classList.contains('is-open')) {
+        closeSupplierMenu();
+      } else {
+        supplierName.focus();
+        openSupplierMenu();
+      }
+    });
+    document.addEventListener('click', event => {
+      if (!supplierPicker.contains(event.target)) closeSupplierMenu();
+    });
+  }
   if (CART_CONFIG.wholesaleOrder) {
     const standardFields = document.getElementById('standardBuyerFields');
     if (standardFields) standardFields.style.display = 'none';
@@ -1013,10 +1447,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('buyerFieldsApotik').style.display = '';
   }
   if (CART_CONFIG.adminPbfOrder) {
-    document.getElementById('standardBuyerFields').style.display = 'none';
+    const standardBuyerFields = document.getElementById('standardBuyerFields');
+    if (standardBuyerFields) standardBuyerFields.style.display = 'none';
     document.querySelectorAll('.standard-buyer-fields').forEach((field) => field.style.display = 'none');
   }
   if (window.location.hash === '#keranjang') openCart();
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closePbfInvoice();
+      closePbfCheckout();
+    }
+  });
   const navBtn = document.getElementById('cartNavBtn');
   if (navBtn) navBtn.onclick = () => openCart();
   // Load jsPDF

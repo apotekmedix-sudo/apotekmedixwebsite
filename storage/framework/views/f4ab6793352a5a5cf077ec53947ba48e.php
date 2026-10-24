@@ -1,4 +1,4 @@
-﻿
+
 <?php $__env->startSection('title', 'Apotek Medix - Apotik Online Terpercaya'); ?>
 <?php $__env->startSection('styles'); ?>
 <style>
@@ -662,6 +662,54 @@
 .btn-cart { border-color:#0052cc;color:#0052cc; }
 .btn-cart:hover { background:#eff6ff; }
 .sec-link { color:#0052cc; }
+.featured-track .product-unit-section { margin:.55rem 0; text-align:left; }
+.featured-track .product-unit-heading { color:#64748b; font-size:.7rem; }
+.featured-track .product-unit-grid { grid-template-columns:repeat(auto-fit,minmax(74px,1fr)); }
+.featured-track .product-unit-grid-1 { grid-template-columns:minmax(92px,1fr); }
+.featured-track .product-unit-card { gap:.35rem; padding:.45rem; }
+.featured-track .product-unit-card.is-selected { border-color:#1e88e5; background:#eff6ff; box-shadow:0 0 0 1px #1e88e5; }
+.featured-track .product-unit-choice { min-height:2.7rem; }
+.featured-track .product-unit-name,.featured-track .product-unit-price { font-size:.72rem; }
+.featured-track .product-unit-quantity { border-color:#dbe3ec; }
+.featured-track .product-unit-quantity button { width:1.35rem; height:1.35rem; cursor:pointer; }
+.featured-track .product-unit-quantity input { width:2.2rem; }
+.featured-track .prod-body { gap:.35rem; }
+.featured-track .prod-name { min-height:2.4em; }
+.featured-track .product-stock { align-self:flex-start; margin:.15rem 0; }
+.home-product-section-description { margin:.35rem 0 0; color:#64748b; font-size:.82rem; }
+.discounted-products-section { padding:2.75rem 0; background:#f8fafc; border-block:1px solid #e2e8f0; }
+.discounted-products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(205px,1fr)); gap:1rem; align-items:stretch; }
+.discounted-product-card { position:relative; display:flex; min-width:0; flex-direction:column; overflow:hidden; border:1px solid #e2e8f0; border-radius:14px; background:#fff; box-shadow:0 5px 16px rgba(15,23,42,.06); transition:transform .2s,box-shadow .2s,border-color .2s; }
+.discounted-product-card:hover { transform:translateY(-3px); border-color:#bfdbfe; box-shadow:0 12px 26px rgba(15,23,42,.1); }
+.discounted-product-image { position:relative; display:flex; height:155px; align-items:center; justify-content:center; overflow:hidden; background:linear-gradient(135deg,#eff6ff,#ecfeff); }
+.discounted-product-image img { width:100%; height:100%; object-fit:contain; padding:1rem; }
+.discounted-product-badge { position:absolute; top:.65rem; left:.65rem; z-index:1; padding:.3rem .55rem; border-radius:999px; background:#ef4444; color:#fff; font-size:.72rem; font-weight:800; }
+.discounted-product-body { display:flex; flex:1; flex-direction:column; padding:.85rem; }
+.discounted-product-brand { overflow:hidden; margin-bottom:.35rem; color:#1d4ed8; font-size:.7rem; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+.discounted-product-name { min-height:2.5em; margin:0 0 .3rem; color:#1e293b; font-size:.9rem; line-height:1.35; }
+.discounted-product-prices { display:flex; align-items:baseline; gap:.45rem; flex-wrap:wrap; margin:.1rem 0 .25rem; }
+.discounted-product-old-price { color:#94a3b8; font-size:.74rem; text-decoration:line-through; }
+.discounted-product-current-price { color:#087f9c; font-size:1rem; font-weight:800; }
+.discounted-product-body .product-unit-section { margin:.4rem 0; }
+.discounted-product-body .product-unit-grid { grid-template-columns:repeat(auto-fit,minmax(68px,1fr)); }
+.discounted-product-body .product-unit-grid-1 { grid-template-columns:minmax(92px,1fr); }
+.discounted-product-body .product-unit-choice { min-height:2.5rem; }
+.discounted-product-body .product-unit-name,.discounted-product-body .product-unit-price { font-size:.7rem; }
+.discounted-product-body .product-stock { align-self:flex-start; margin:.35rem 0 .55rem; }
+.discounted-product-actions { display:grid; gap:.45rem; margin-top:auto; }
+.discounted-product-actions a,.discounted-product-actions button { display:flex; min-height:38px; align-items:center; justify-content:center; gap:.4rem; padding:.55rem; border:0; border-radius:8px; font-size:.78rem; font-weight:700; text-align:center; text-decoration:none; cursor:pointer; }
+.discounted-product-actions a { color:#1d4ed8; background:#eff6ff; }
+.discounted-product-actions a:hover { background:#dbeafe; }
+.discounted-product-actions button { color:#fff; background:#0f172a; }
+.discounted-product-actions button:hover { background:#1e293b; }
+@media(max-width:600px) {
+    .discounted-products-section { padding:2rem 0; }
+    .discounted-products-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; }
+    .discounted-product-image { height:125px; }
+    .discounted-product-body { padding:.65rem; }
+    .discounted-product-name { font-size:.82rem; }
+    .discounted-product-body .product-unit-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
 @media(max-width:768px) {
     .home-brand-hero { margin:.25rem .8rem .5rem;padding:1.75rem 1.25rem; }
     .home-brand-hero-mark { width:150px;height:150px;flex-basis:150px; }
@@ -688,6 +736,7 @@
     .promo-photo-card { width:235px;height:136px; }
 }
 </style>
+<?php echo $__env->make('partials.product-card-styles', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -1281,8 +1330,9 @@
   <div class="container">
     <div class="featured-header">
       <div class="sec-head-left">
-        <span class="sec-tag">🔥 Terlaris</span>
-        <h2 class="sec-title" style="margin:0;">Produk Unggulan</h2>
+        <span class="sec-tag">🔥 Terlaris B2C</span>
+        <h2 class="sec-title" style="margin:0;">Produk Terlaris</h2>
+        <p class="home-product-section-description">Produk pilihan untuk belanja retail B2C.</p>
       </div>
       <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
         <?php $totalPages = ceil($featuredProducts->count() / 10); ?>
@@ -1297,7 +1347,7 @@
           </button>
         </div>
         <?php endif; ?>
-        <a href="<?php echo e(route('products.index')); ?>" class="sec-link">Lihat Semua <i class="fa-solid fa-arrow-right"></i></a>
+        <a href="<?php echo e(route('products.apotek')); ?>" class="sec-link">Belanja B2C <i class="fa-solid fa-arrow-right"></i></a>
       </div>
     </div>
 
@@ -1324,14 +1374,13 @@
             ?>
             <div class="prod-price" id="home-price-a-<?php echo e($med->id); ?>">
               <?php if($med->getPromoPercent('b2c') > 0): ?><small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp <?php echo e(number_format($homeBasePrice, 0, ',', '.')); ?></small><?php endif; ?>
-              Rp <?php echo e(number_format($homePromoPrice, 0, ',', '.')); ?>
-
+              <span id="home-price-current-a-<?php echo e($med->id); ?>">Rp <?php echo e(number_format($homePromoPrice, 0, ',', '.')); ?></span>
             </div>
-            <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-a-' . $med->id, 'priceTargetId' => 'home-price-a-' . $med->id, 'priceChannel' => 'b2c'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-            <?php $stock = (int) ($med->stock_base_units ?? $med->stok); ?>
-            <span class="product-stock <?php echo e($stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available')); ?>">
+            <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-a-' . $med->id, 'priceTargetId' => 'home-price-current-a-' . $med->id, 'priceChannel' => 'b2c'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+            <?php $stock = (int) $med->available_stock_units; ?>
+            <span class="product-stock <?php echo e($stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($med->id); ?>">
               <i class="fa-solid <?php echo e($stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
-              <?php echo e($stock > 0 ? 'Stok: ' . $med->stock_breakdown : 'Stok habis'); ?>
+              <?php echo e($stock > 0 ? 'Stok: ' . $med->getStockBreakdownForUnits($stock) : 'Stok habis'); ?>
 
             </span>
             <?php if($med->sediaan_label): ?>
@@ -1340,7 +1389,7 @@
               </div>
             <?php endif; ?>
             <a href="<?php echo e(route('medicines.show', $med->id)); ?>" class="btn-detail">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-            <button class="btn-cart" data-package-unit-label="<?php echo e($med->package_unit_label); ?>" onclick="addToCart(<?php echo e($med->id); ?>,'<?php echo e(addslashes($med->nama_obat)); ?>',<?php echo e($homePromoPrice); ?>,'<?php echo e($med->gambar ? url('storage/'.$med->gambar) : ''); ?>','<?php echo e(addslashes($med->brand ?: $med->kategori)); ?>',this,'home-unit-a-<?php echo e($med->id); ?>')">
+            <button class="btn-cart" data-stock-cart <?php if($stock <= 0): echo 'disabled'; endif; ?> data-package-unit-label="<?php echo e($med->package_unit_label); ?>" onclick="addToCart(<?php echo e($med->id); ?>,'<?php echo e(addslashes($med->nama_obat)); ?>',<?php echo e($homePromoPrice); ?>,'<?php echo e($med->image_url ?: ''); ?>','<?php echo e(addslashes($med->brand ?: $med->kategori)); ?>',this,'home-unit-a-<?php echo e($med->id); ?>')">
               <i class="fa-solid fa-cart-plus"></i> Keranjang
             </button>
           </div>
@@ -1366,8 +1415,8 @@
     <?php endif; ?>
 
     <div class="featured-cta">
-      <a href="<?php echo e(route('products.index')); ?>" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 2.25rem;background:linear-gradient(135deg,#1E88E5,#1565C0);color:#fff;border-radius:50px;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.25s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-        <i class="fa-solid fa-pills"></i> Lihat Semua Produk
+      <a href="<?php echo e(route('products.apotek')); ?>" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 2.25rem;background:linear-gradient(135deg,#1E88E5,#1565C0);color:#fff;border-radius:50px;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.25s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+        <i class="fa-solid fa-store"></i> Lihat Semua Produk B2C
       </a>
     </div>
   </div>
@@ -1433,39 +1482,55 @@
 
 
 <?php if(isset($discountedProducts) && $discountedProducts->isNotEmpty()): ?>
-<section class="discounted-products-section" style="padding:2.5rem 0;background:#f0fdfa;border-block:1px solid #ccfbf1;">
+<section class="discounted-products-section">
   <div class="container">
     <div class="featured-header">
       <div class="sec-head-left">
-        <span class="sec-tag" style="background:#ccfbf1;color:#0f766e;">🏷️ Promo Spesial</span>
-        <h2 class="sec-title" style="margin:0;">Produk Promo</h2>
-        <p style="margin:.35rem 0 0;color:#64748b;">Harga promo B2C yang diatur oleh admin Apotek Medix.</p>
+        <span class="sec-tag">🏷️ Promo B2C</span>
+        <h2 class="sec-title" style="margin:0;">Promo Produk</h2>
+        <p class="home-product-section-description">Harga retail spesial untuk belanja B2C.</p>
       </div>
-      <a href="<?php echo e(route('products.apotek')); ?>" class="sec-link">Belanja Sekarang <i class="fa-solid fa-arrow-right"></i></a>
+      <a href="<?php echo e(route('products.apotek')); ?>" class="sec-link">Lihat Semua Promo <i class="fa-solid fa-arrow-right"></i></a>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;">
+    <div class="discounted-products-grid">
       <?php $__currentLoopData = $discountedProducts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $promoMedicine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <?php
           $promoBasePrice = $promoMedicine->getChannelBasePrice('b2c');
           $promoPrice = $promoMedicine->getChannelPromoPrice('b2c');
+          $promoUnitId = 'home-promo-unit-' . $promoMedicine->id;
         ?>
-        <article style="position:relative;overflow:hidden;border:1px solid #d1fae5;border-radius:14px;background:#fff;box-shadow:0 5px 16px rgba(15,23,42,.06);">
-          <span style="position:absolute;z-index:1;top:.65rem;left:.65rem;padding:.3rem .55rem;border-radius:999px;background:#ef4444;color:#fff;font-size:.75rem;font-weight:800;">Diskon <?php echo e($promoMedicine->getPromoPercent('b2c')); ?>%</span>
-          <a href="<?php echo e(route('medicines.show', $promoMedicine->id)); ?>" style="position:relative;display:block;height:145px;overflow:hidden;background:#f8fafc;">
+        <article class="discounted-product-card">
+          <span class="discounted-product-badge">Diskon <?php echo e($promoMedicine->getPromoPercent('b2c')); ?>%</span>
+          <a class="discounted-product-image" href="<?php echo e(route('medicines.show', $promoMedicine->id)); ?>" aria-label="Lihat <?php echo e($promoMedicine->nama_obat); ?>">
             <?php if($promoMedicine->gambar): ?>
-              <img src="<?php echo e($promoMedicine->image_url); ?>" alt="<?php echo e($promoMedicine->nama_obat); ?>" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:1rem;transition:opacity .24s ease,transform .35s ease;">
+              <img src="<?php echo e($promoMedicine->image_url); ?>" alt="<?php echo e($promoMedicine->nama_obat); ?>" loading="lazy">
               <?php if(count($promoMedicine->image_gallery) > 1): ?>
                 <img src="<?php echo e(url('storage/' . $promoMedicine->image_gallery[1])); ?>" alt="<?php echo e($promoMedicine->nama_obat); ?> - foto kedua" loading="lazy" class="promo-gallery-secondary">
               <?php endif; ?>
             <?php else: ?>
-              <img src="<?php echo e(asset('LOGO APOTEK MEDIX.PNG')); ?>" alt="Apotek Medix" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:1.5rem;">
+              <img src="<?php echo e(asset('LOGO APOTEK MEDIX.PNG')); ?>" alt="Apotek Medix" loading="lazy">
             <?php endif; ?>
           </a>
-          <div style="padding:.85rem;">
-            <h3 style="min-height:2.6em;margin:0 0 .55rem;color:#1e293b;font-size:.9rem;line-height:1.4;"><?php echo e($promoMedicine->nama_obat); ?></h3>
-            <div style="font-size:.76rem;color:#94a3b8;text-decoration:line-through;">Rp <?php echo e(number_format($promoBasePrice, 0, ',', '.')); ?></div>
-            <strong style="color:#0f766e;font-size:1rem;">Rp <?php echo e(number_format($promoPrice, 0, ',', '.')); ?></strong>
-            <a href="<?php echo e(route('medicines.show', $promoMedicine->id)); ?>" style="display:block;margin-top:.65rem;padding:.55rem;text-align:center;border-radius:8px;background:#0052cc;color:#fff;text-decoration:none;font-size:.8rem;font-weight:700;">Lihat Produk</a>
+          <div class="discounted-product-body">
+            <?php if($promoMedicine->brand ?: $promoMedicine->kategori): ?>
+              <span class="discounted-product-brand"><?php echo e($promoMedicine->brand ?: $promoMedicine->kategori); ?></span>
+            <?php endif; ?>
+            <h3 class="discounted-product-name"><?php echo e($promoMedicine->nama_obat); ?></h3>
+            <div class="discounted-product-prices">
+              <span class="discounted-product-old-price">Rp <?php echo e(number_format($promoBasePrice, 0, ',', '.')); ?></span>
+              <strong class="discounted-product-current-price" id="home-price-b-<?php echo e($promoMedicine->id); ?>">Rp <?php echo e(number_format($promoPrice, 0, ',', '.')); ?></strong>
+            </div>
+            <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $promoMedicine, 'unitSelectId' => $promoUnitId, 'priceTargetId' => 'home-price-b-' . $promoMedicine->id, 'priceChannel' => 'b2c'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+            <?php $promoStock = (int) $promoMedicine->available_stock_units; ?>
+            <span class="product-stock <?php echo e($promoStock <= 0 ? 'empty' : ($promoStock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($promoMedicine->id); ?>">
+              <i class="fa-solid <?php echo e($promoStock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
+              <?php echo e($promoStock > 0 ? 'Stok: ' . $promoMedicine->getStockBreakdownForUnits($promoStock) : 'Stok habis'); ?>
+
+            </span>
+            <div class="discounted-product-actions">
+              <a href="<?php echo e(route('medicines.show', $promoMedicine->id)); ?>">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
+              <button class="btn-cart" data-stock-cart <?php if($promoStock <= 0): echo 'disabled'; endif; ?> data-package-unit-label="<?php echo e($promoMedicine->package_unit_label); ?>" onclick="addToCart(<?php echo e($promoMedicine->id); ?>, '<?php echo e(addslashes($promoMedicine->nama_obat)); ?>', <?php echo e($promoPrice); ?>, '<?php echo e($promoMedicine->image_url ?: ''); ?>', '<?php echo e(addslashes($promoMedicine->brand ?: $promoMedicine->kategori)); ?>', this, '<?php echo e($promoUnitId); ?>')"><i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang</button>
+            </div>
           </div>
         </article>
       <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>

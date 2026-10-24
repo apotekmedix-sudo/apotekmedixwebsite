@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Medicine;
 use App\Models\ShoppingAccessCode;
 use App\Constants\Companies;
+use App\Support\StockAvailability;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -98,6 +99,7 @@ class ProductController extends Controller
         };
 
         $medicines       = $query->paginate(12)->withQueryString();
+        StockAvailability::annotate($medicines->getCollection());
         $total           = (clone $catalogQuery)->count();
         $kategoriOptions = Companies::LIST;
         // Ambil daftar perusahaan unik dari data yang ada di DB
@@ -196,6 +198,7 @@ class ProductController extends Controller
         };
 
         $medicines       = $query->paginate(12)->withQueryString();
+        StockAvailability::annotate($medicines->getCollection());
         $total           = Medicine::where('harga_grosir', '>', 0)->count();
         $kategoriOptions = Companies::LIST;
         $perusahaanList  = Medicine::where('harga_grosir', '>', 0)
@@ -264,31 +267,7 @@ class ProductController extends Controller
         $perusahaan      = $request->get('perusahaan', '');
         $sort            = $request->get('sort', 'terbaru');
 
-        $catalogQuery = Medicine::where(function ($query) {
-            $query->where(function ($packagedQuery) {
-                $packagedQuery->where('unit_packaging_enabled', true)
-                    ->where(function ($priceQuery) {
-                        $priceQuery->where('price_box', '>', 0)
-                            ->orWhere(function ($fallbackQuery) {
-                                $fallbackQuery->where(function ($boxPriceQuery) {
-                                    $boxPriceQuery->whereNull('price_box')
-                                        ->orWhere('price_box', '<=', 0);
-                                })->where(function ($retailQuery) {
-                                    $retailQuery->where('harga_retail', '>', 0)
-                                        ->orWhere('harga', '>', 0);
-                                });
-                            });
-                    });
-            })->orWhere(function ($unpackagedQuery) {
-                $unpackagedQuery->where(function ($packagingStateQuery) {
-                    $packagingStateQuery->where('unit_packaging_enabled', false)
-                        ->orWhereNull('unit_packaging_enabled');
-                })->where(function ($priceQuery) {
-                    $priceQuery->where('harga_retail', '>', 0)
-                        ->orWhere('harga', '>', 0);
-                });
-            });
-        });
+        $catalogQuery = Medicine::nonPbf()->availableForB2c();
         $query = clone $catalogQuery;
 
         if ($search) {
@@ -315,6 +294,7 @@ class ProductController extends Controller
         };
 
         $medicines       = $query->paginate(12)->withQueryString();
+        StockAvailability::annotate($medicines->getCollection());
         $total           = (clone $catalogQuery)->count();
         $kategoriOptions = Companies::LIST;
         $perusahaanList  = (clone $catalogQuery)
@@ -329,6 +309,24 @@ class ProductController extends Controller
             'medicines', 'search', 'kategori_produk', 'perusahaan',
             'sort', 'total', 'kategoriOptions', 'perusahaanList'
         ));
+    }
+
+    public function stockAvailability(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'max:100'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:medicines,id'],
+        ]);
+        $medicines = Medicine::whereIn('id', $validated['ids'])->get();
+        $availableUnits = StockAvailability::unitsByMedicineId($medicines);
+        $stock = $medicines->mapWithKeys(fn (Medicine $medicine) => [
+            $medicine->id => [
+                'units' => $availableUnits[$medicine->id],
+                'breakdown' => $medicine->getStockBreakdownForUnits($availableUnits[$medicine->id]),
+            ],
+        ]);
+
+        return response()->json(['stock' => $stock]);
     }
 
     /**

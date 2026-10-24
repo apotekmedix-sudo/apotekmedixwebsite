@@ -6,6 +6,7 @@ use App\Models\PurchaseHistory;
 use App\Models\Medicine;
 use App\Models\Customer;
 use App\Models\ShoppingAccessCode;
+use App\Models\PurchaseStockReservation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -75,13 +76,21 @@ class PurchaseHistoryController extends Controller
             $data['buyer_type'] !== 'apotik'
             || empty($data['pbf_name'])
             || empty($data['pbf_address'])
+            || empty($data['requester_name'])
+            || empty($data['apj'])
+            || empty($data['sia'])
+            || empty($data['sipa'])
             || empty($data['items'])
             || collect($data['items'])->contains(fn ($item) => empty($item['id']) || empty($item['quantity']))
         )) {
             return response()->json([
-                'message' => 'Data pemesanan PBF tidak lengkap.',
-                'errors' => ['pbf_name' => ['Nama dan alamat PBF wajib diisi.']],
+                'message' => 'Data surat pesanan belum lengkap.',
+                'errors' => ['pbf_name' => ['Lengkapi data distributor, penandatangan, dan produk untuk membuat surat pesanan.']],
             ], 422);
+        }
+
+        if ($isPbfPurchaseOrder) {
+            $data['buyer_name'] = 'Apotek Medix';
         }
 
         if ($channel === 'offline') {
@@ -97,7 +106,7 @@ class PurchaseHistoryController extends Controller
             $data['kota'] = null;
         }
 
-        if (in_array($data['buyer_type'], ['apotik', 'dokter'], true)) {
+        if (!$isPbfPurchaseOrder && in_array($data['buyer_type'], ['apotik', 'dokter'], true)) {
             $data['buyer_name'] = $data['requester_name'] ?? ($data['buyer_name'] ?? null);
         }
 
@@ -154,6 +163,10 @@ class PurchaseHistoryController extends Controller
                         'errors' => ['items' => ["Harga produk {$product->nama_obat} belum diatur untuk kanal ini."]],
                     ], 422);
                 }
+                if ($isPbfPurchaseOrder) {
+                    $items[$index]['harga_modal'] = $price;
+                    $items[$index]['brand'] = $product->brand ?: $product->kategori;
+                }
             }
             $subtotal = $qty * $price;
             $promoPercent = $isPbfPurchaseOrder ? 0 : ($product?->getPromoPercent($promoChannel) ?? 0);
@@ -198,6 +211,7 @@ class PurchaseHistoryController extends Controller
                 ->get()
                 ->keyBy('id');
             $requiredUnits = [];
+            $saleQuantities = [];
             foreach ($items as $item) {
                 if (empty($item['id']) || empty($item['quantity'])) {
                     continue;
@@ -210,32 +224,43 @@ class PurchaseHistoryController extends Controller
                     return ['error' => 'Produk atau satuan yang dipilih sudah tidak tersedia. Silakan muat ulang katalog.'];
                 }
                 $requiredUnits[$productId] = ($requiredUnits[$productId] ?? 0) + ((int) $item['quantity'] * $unitFactor);
+                $saleQuantities[$productId] = ($saleQuantities[$productId] ?? 0) + (int) $item['quantity'];
             }
 
             if (!$isPbfPurchaseOrder) {
+                $reservedUnits = PurchaseStockReservation::query()
+                    ->whereIn('medicine_id', array_keys($requiredUnits))
+                    ->selectRaw('medicine_id, SUM(quantity_units) as reserved_units')
+                    ->groupBy('medicine_id')
+                    ->pluck('reserved_units', 'medicine_id');
+
                 foreach ($requiredUnits as $productId => $quantity) {
                     $product = $products->get($productId);
-                    if (!$product || (int) $product->stock_base_units < $quantity) {
+                    $availableUnits = (int) ($product?->stock_base_units ?? $product?->stok ?? 0)
+                        - (int) $reservedUnits->get($productId, 0);
+                    if (!$product || $availableUnits < $quantity) {
                         $productName = $product?->nama_obat ?? 'Produk #' . $productId;
-                        return ['error' => "Stok {$productName} tidak mencukupi. Stok tersisa: " . ($product?->stock_breakdown ?? '0 satuan') . '.'];
+                        return ['error' => "Stok {$productName} tidak mencukupi. Stok tersisa: " . ($product?->getStockBreakdownForUnits(max(0, $availableUnits)) ?? '0 satuan') . '.'];
                     }
                 }
             }
 
+            $data['stock_committed'] = $isPbfPurchaseOrder || $requiredUnits === [];
+            $history = PurchaseHistory::create($data);
             if (!$isPbfPurchaseOrder) {
                 foreach ($requiredUnits as $productId => $quantity) {
-                    $product = $products->get($productId);
-                    $remainingUnits = (int) $product->stock_base_units - $quantity;
-                    $product->update([
-                        'stock_base_units' => $remainingUnits,
-                        'stok' => intdiv($remainingUnits, $product->units_per_box),
+                    PurchaseStockReservation::create([
+                        'purchase_history_id' => $history->id,
+                        'medicine_id' => $productId,
+                        'quantity_units' => $quantity,
+                        'sale_quantity' => $saleQuantities[$productId],
                     ]);
                 }
             }
-
-            $history = PurchaseHistory::create($data);
-            $customer = Customer::syncFromOrder($history);
-            $history->update(['customer_id' => $customer->id]);
+            if (!$isPbfPurchaseOrder) {
+                $customer = Customer::syncFromOrder($history);
+                $history->update(['customer_id' => $customer->id]);
+            }
 
             return ['history' => $history];
         });
@@ -283,7 +308,7 @@ class PurchaseHistoryController extends Controller
         $items = is_string($order->items) ? json_decode($order->items, true) : ($order->items ?? []);
         $items = is_array($items) ? $items : [];
         $items = array_map(function (array $item): array {
-            if (!empty($item['id'])) {
+            if (!isset($item['harga_modal']) && !empty($item['id'])) {
                 $item['harga_modal'] = Medicine::whereKey($item['id'])->value('harga_modal')
                     ?: ($item['harga'] ?? $item['price'] ?? 0);
             }

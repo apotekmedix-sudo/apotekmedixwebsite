@@ -38,11 +38,11 @@
             fn ($unit) => $unitBasePriceValues[$unit] > 0 && $unitFactors[$unit] > 0
         )
         : ($unitBasePriceValues['box'] > 0 ? ['box'] : []);
-    $stockUnits = max(0, (int) ($medicine->stock_base_units ?? $medicine->stok));
+    $stockUnits = max(0, (int) ($medicine->available_stock_units ?? $medicine->stock_base_units ?? $medicine->stok));
     $promoPercent = $medicine->getPromoPercent($priceChannel);
 ?>
 
-<select id="<?php echo e($unitSelectId); ?>" class="product-unit-data" aria-hidden="true" tabindex="-1"
+<select id="<?php echo e($unitSelectId); ?>" class="product-unit-data" data-stock-product-id="<?php echo e($medicine->id); ?>" aria-hidden="true" tabindex="-1"
         data-unit-prices="<?php echo e(json_encode($unitPriceValues)); ?>"
         data-unit-factors="<?php echo e(json_encode($unitFactors)); ?>"
         data-unit-labels="<?php echo e(json_encode($unitLabels)); ?>"
@@ -54,7 +54,7 @@
 
 <?php if($availableUnits): ?>
     <div class="product-unit-section">
-        <span class="product-unit-heading"><?php echo e($showUnitChoices ? 'Beli per satuan &amp; jumlah' : 'Harga per kemasan &amp; jumlah'); ?></span>
+        <span class="product-unit-heading"><?php echo e($showUnitChoices ? 'Beli per satuan & jumlah' : 'Harga per kemasan & jumlah'); ?></span>
         <div class="product-unit-grid product-unit-grid-<?php echo e(count($availableUnits)); ?>">
             <?php $__currentLoopData = $availableUnits; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $unit): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <?php
@@ -63,6 +63,8 @@
                 ?>
                 <div class="product-unit-card" data-cart-unit="<?php echo e($unit); ?>">
                     <button type="button" class="product-unit-choice" aria-pressed="false"
+                            data-unit-price="<?php echo e($unitPriceValues[$unit]); ?>"
+                            data-price-target="<?php echo e($priceTargetId ?? ''); ?>"
                             onclick="selectProductCardUnit(this)">
                         <span class="product-unit-name"><?php echo e($unitLabels[$unit]); ?></span>
                         <?php if($promoPercent > 0 && $unitBasePrice > $unitPriceValues[$unit]): ?>
@@ -74,7 +76,7 @@
                         <button type="button" aria-label="Kurangi <?php echo e($unitLabels[$unit]); ?>"
                                 onclick="adjustProductCardQty(this, -1)" disabled>−</button>
                         <input type="number" min="0" max="<?php echo e($availableQuantity); ?>" step="1" value="0"
-                               data-cart-quantity
+                               data-cart-quantity data-stock-unit="<?php echo e($unit); ?>"
                                aria-label="Jumlah <?php echo e($unitLabels[$unit]); ?>"
                                oninput="updateProductCardQty(this)" disabled>
                         <button type="button" aria-label="Tambah <?php echo e($unitLabels[$unit]); ?>"

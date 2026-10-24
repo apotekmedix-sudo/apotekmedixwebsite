@@ -7,6 +7,7 @@ use App\Models\Medicine;
 use App\Constants\Companies;
 use App\Helpers\ImageHelper;
 use Illuminate\Support\Facades\Storage;
+use App\Models\PbfSupplier;
 
 class AdminProdukController extends Controller
 {
@@ -60,7 +61,11 @@ class AdminProdukController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('nama_obat', 'like', "%{$search}%")
                     ->orWhere('kategori', 'like', "%{$search}%")
-                    ->orWhere('deskripsi', 'like', "%{$search}%");
+                    ->orWhere('deskripsi', 'like', "%{$search}%")
+                    ->orWhere('indikasi', 'like', "%{$search}%")
+                    ->orWhere('komposisi', 'like', "%{$search}%")
+                    ->orWhere('golongan', 'like', "%{$search}%")
+                    ->orWhere('sediaan', 'like', "%{$search}%");
             });
         }
 
@@ -68,7 +73,47 @@ class AdminProdukController extends Controller
             'medicines' => $query->paginate(15)->withQueryString(),
             'search' => $search,
             'total' => Medicine::where('harga_modal', '>', 0)->count(),
+            'suppliers' => PbfSupplier::orderBy('name')->get(['id', 'name', 'address']),
         ]);
+    }
+
+    public function storePbfSupplier(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:pbf_suppliers,name'],
+            'address' => ['required', 'string', 'max:2000'],
+        ]);
+
+        PbfSupplier::create($data);
+
+        return redirect()
+            ->route('admin.produk-pbf.index', array_filter([
+                'search' => $request->input('search'),
+            ]))
+            ->with('status', 'Supplier berhasil ditambahkan.');
+    }
+
+    public function updatePbfSupplier(Request $request, PbfSupplier $supplier)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:pbf_suppliers,name,' . $supplier->id],
+            'address' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $supplier->update($data);
+
+        return redirect()
+            ->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+            ->with('status', 'Supplier berhasil diperbarui.');
+    }
+
+    public function destroyPbfSupplier(PbfSupplier $supplier)
+    {
+        $supplier->delete();
+
+        return redirect()
+            ->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+            ->with('status', 'Supplier berhasil dihapus.');
     }
 
     public function export(Request $request)

@@ -122,6 +122,27 @@ class Medicine extends Model
         });
     }
 
+    public function scopeAvailableForB2c($query)
+    {
+        return $query->where(function ($catalogQuery) {
+            $catalogQuery->where(function ($packagedQuery) {
+                $packagedQuery->where('unit_packaging_enabled', true)
+                    ->where(function ($priceQuery) {
+                        $priceQuery->where('price_box', '>', 0)
+                            ->orWhere('harga_retail', '>', 0);
+                    });
+            })->orWhere(function ($unpackagedQuery) {
+                $unpackagedQuery->where(function ($packagingQuery) {
+                    $packagingQuery->where('unit_packaging_enabled', false)
+                        ->orWhereNull('unit_packaging_enabled');
+                })->where(function ($priceQuery) {
+                    $priceQuery->where('harga_retail', '>', 0)
+                        ->orWhere('harga', '>', 0);
+                });
+            });
+        });
+    }
+
     public function isAvailable(): bool
     {
         return (int) ($this->stock_base_units ?? $this->stok) > 0;
@@ -160,7 +181,11 @@ class Medicine extends Model
 
     public function getStockBreakdownAttribute(): string
     {
-        $stockUnits = (int) ($this->stock_base_units ?? $this->stok);
+        return $this->getStockBreakdownForUnits((int) ($this->stock_base_units ?? $this->stok));
+    }
+
+    public function getStockBreakdownForUnits(int $stockUnits): string
+    {
         if ($stockUnits <= 0) {
             return '0 ' . $this->package_unit_label;
         }
