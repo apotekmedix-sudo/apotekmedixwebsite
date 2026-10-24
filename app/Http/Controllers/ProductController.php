@@ -31,13 +31,13 @@ class ProductController extends Controller
         if ($internalOrder) {
             $catalogQuery->where(function ($query) {
                 $query->where('harga_internal', '>', 0)
-                    ->orWhere(function ($legacyQuery) {
-                        $legacyQuery->whereNull('harga_internal')
-                            ->where(function ($priceQuery) {
-                                $priceQuery->where('harga_retail', '>', 0)
-                                    ->orWhere('harga', '>', 0);
-                            });
-                    });
+                      ->orWhere(function ($legacyQuery) {
+                          $legacyQuery->whereNull('harga_internal')
+                              ->where(function ($priceQuery) {
+                                  $priceQuery->where('harga_retail', '>', 0)
+                                      ->orWhere('harga', '>', 0);
+                              });
+                      });
             });
         } else {
             $catalogQuery->nonPbf();
@@ -158,10 +158,12 @@ class ProductController extends Controller
     public function show($id)
     {
         $medicine = Medicine::findOrFail($id);
+        StockAvailability::annotate([$medicine]);
         $relatedMedicines = Medicine::where('kategori', $medicine->kategori)
                                     ->where('id', '!=', $medicine->id)
                                     ->limit(4)
                                     ->get();
+        StockAvailability::annotate($relatedMedicines);
         return view('medicines.detail', compact('medicine', 'relatedMedicines'));
     }
 
@@ -366,6 +368,8 @@ class ProductController extends Controller
             $medicine->id => [
                 'units' => $availableUnits[$medicine->id],
                 'breakdown' => $medicine->getStockBreakdownForUnits($availableUnits[$medicine->id]),
+                'converted_summary' => $medicine->getConvertedStockSummaryForUnits($availableUnits[$medicine->id]),
+                'unit_stocks' => $medicine->getConvertedUnitStocksForUnits($availableUnits[$medicine->id]),
             ],
         ]);
 
@@ -419,5 +423,4 @@ class ProductController extends Controller
 
         return view('checkout', compact('defaultShippingAddress', 'productCatalog'));
     }
-
 }

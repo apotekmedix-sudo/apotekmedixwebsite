@@ -94,7 +94,7 @@
         <div class="ordering-search" style="max-width:none;">
             <input name="search" value="{{ $search }}" placeholder="Cari nama, indikasi, komposisi, golongan, sediaan, dosis..."><button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
         </div>
-        @include('partials.product-attribute-filters', ['resetUrl' => route('admin.produk-pbf.index')])
+
     </form>
 </div>
 @if(session('status'))

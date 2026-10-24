@@ -1624,7 +1624,7 @@
             @php $stock = (int) $med->available_stock_units; @endphp
             <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $med->id }}">
               <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-              {{ $stock > 0 ? 'Stok: ' . $med->getStockBreakdownForUnits($stock) : 'Stok habis' }}
+              {{ $stock > 0 ? 'Stok: ' . $med->getConvertedStockSummaryForUnits($stock) : 'Stok habis' }}
             </span>
             @if($med->sediaan_label)
               <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.35rem;">
@@ -1767,7 +1767,7 @@
             @php $promoStock = (int) $promoMedicine->available_stock_units; @endphp
             <span class="product-stock {{ $promoStock <= 0 ? 'empty' : ($promoStock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $promoMedicine->id }}">
               <i class="fa-solid {{ $promoStock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-              {{ $promoStock > 0 ? 'Stok: ' . $promoMedicine->getStockBreakdownForUnits($promoStock) : 'Stok habis' }}
+              {{ $promoStock > 0 ? 'Stok: ' . $promoMedicine->getConvertedStockSummaryForUnits($promoStock) : 'Stok habis' }}
             </span>
             <div class="discounted-product-actions">
               <a href="{{ route('medicines.show', $promoMedicine->id) }}">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>

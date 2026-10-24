@@ -58,7 +58,7 @@
         <div class="product-unit-grid product-unit-grid-{{ count($availableUnits) }}">
             @foreach($availableUnits as $unit)
                 @php
-                    $availableQuantity = intdiv($stockUnits, $unitFactors[$unit]);
+                    $availableQuantity = intdiv($stockUnits, max(1, (int) $unitFactors[$unit]));
                     $unitBasePrice = $unitBasePriceValues[$unit];
                 @endphp
                 <div class="product-unit-card" data-cart-unit="{{ $unit }}">
@@ -71,6 +71,7 @@
                             <small class="product-unit-old-price">Rp {{ number_format($unitBasePrice, 0, ',', '.') }}</small>
                         @endif
                         <strong class="product-unit-price">Rp {{ number_format($unitPriceValues[$unit], 0, ',', '.') }}</strong>
+                        <small class="product-unit-stock" data-unit-stock-badge="{{ $unit }}">Stok: {{ number_format($availableQuantity, 0, ',', '.') }}</small>
                     </button>
                     <div class="product-unit-quantity">
                         <button type="button" aria-label="Kurangi {{ $unitLabels[$unit] }}"

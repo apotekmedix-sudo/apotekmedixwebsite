@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Medicine;
+use App\Models\PurchaseStockReservation;
 use App\Constants\Companies;
 use App\Helpers\ImageHelper;
+use App\Support\StockAvailability;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use App\Models\PbfSupplier;
@@ -54,6 +56,7 @@ class AdminProdukController extends Controller
         }
 
         $medicines       = $query->paginate(15)->withQueryString();
+        StockAvailability::annotate($medicines->getCollection());
         $total           = (clone $query)->reorder()->count();
         $kategoriOptions = Companies::LIST;
         $attrOptions     = Medicine::getAttributeFilterOptions();
@@ -91,9 +94,11 @@ class AdminProdukController extends Controller
         ]);
 
         $attrOptions = Medicine::getAttributeFilterOptions();
+        $medicines = $query->paginate(15)->withQueryString();
+        StockAvailability::annotate($medicines->getCollection());
 
         return view('admin.products-ordering', [
-            'medicines'    => $query->paginate(15)->withQueryString(),
+            'medicines'    => $medicines,
             'search'       => $search,
             'indikasi'     => $indikasi,
             'komposisi'    => $komposisi,
@@ -150,6 +155,7 @@ class AdminProdukController extends Controller
     {
         $products = Medicine::when($request->get('mode') === 'pbf', fn ($query) => $query->where('harga_modal', '>', 0))
             ->orderBy('nama_obat')->get();
+        StockAvailability::annotate($products);
         $columns = [
             'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
@@ -194,28 +200,29 @@ class AdminProdukController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama_obat'       => ['required', 'string', 'max:255'],
-            'kategori'        => ['required', 'string', 'max:255'],
-            'logo'            => ['nullable', 'string', 'max:255'],
-            'golongan'        => ['nullable', 'string', 'max:255'],
-            'satuan'          => ['nullable', 'string', 'max:100'],
-            'kemasan'         => ['nullable', 'string', 'max:255'],
-            'gambar'          => ['nullable', 'array', 'max:2'],
-            'gambar.*'        => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'harga_internal'  => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
-            'harga'           => ['required_without:harga_internal', 'nullable', 'numeric', 'min:0'],
-            'harga_modal'     => ['nullable', 'numeric', 'min:0'],
-            'harga_grosir'    => ['nullable', 'numeric', 'min:0'],
-            'harga_retail'    => ['nullable', 'numeric', 'min:0'],
-            'stok'            => ['required', 'numeric', 'min:0', 'max:10000000'],
-            'sediaan'         => ['nullable', 'string', 'max:255'],
-            'strips_per_box' => ['nullable', 'integer', 'min:0', 'max:100000'],
-            'tablets_per_box' => ['nullable', 'integer', 'min:0', 'max:10000000'],
-            'price_tablet' => ['nullable', 'numeric', 'min:0'],
-            'price_strip' => ['nullable', 'numeric', 'min:0'],
-            'komposisi'       => ['nullable', 'string'],
-            'indikasi'        => ['nullable', 'string'],
-            'dosis'           => ['nullable', 'string'],
+            'nama_obat'         => ['required', 'string', 'max:255'],
+            'kategori'          => ['required', 'string', 'max:255'],
+            'logo'              => ['nullable', 'string', 'max:255'],
+            'golongan'          => ['nullable', 'string', 'max:255'],
+            'satuan'            => ['nullable', 'string', 'max:100'],
+            'kemasan'           => ['nullable', 'string', 'max:255'],
+            'gambar'            => ['nullable', 'array', 'max:2'],
+            'gambar.*'          => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'harga_internal'    => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
+            'harga'             => ['required_without:harga_internal', 'nullable', 'numeric', 'min:0'],
+            'harga_modal'       => ['nullable', 'numeric', 'min:0'],
+            'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
+            'harga_retail'      => ['nullable', 'numeric', 'min:0'],
+            'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
+            'sediaan'           => ['nullable', 'string', 'max:255'],
+            'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'tablets_per_strip' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'tablets_per_box'   => ['nullable', 'integer', 'min:0', 'max:10000000'],
+            'price_tablet'      => ['nullable', 'numeric', 'min:0'],
+            'price_strip'       => ['nullable', 'numeric', 'min:0'],
+            'komposisi'         => ['nullable', 'string'],
+            'indikasi'          => ['nullable', 'string'],
+            'dosis'             => ['nullable', 'string'],
         ]);
 
         $this->validateTabletPackaging($request, $validated);
@@ -256,36 +263,39 @@ class AdminProdukController extends Controller
 
     public function edit(Medicine $produk)
     {
+        StockAvailability::annotate([$produk]);
+
         return view('admin.produk.edit', ['medicine' => $produk]);
     }
 
     public function update(Request $request, Medicine $produk)
     {
         $validated = $request->validate([
-            'nama_obat'       => ['required', 'string', 'max:255'],
-            'kategori'        => ['required', 'string', 'max:255'],
-            'logo'            => ['nullable', 'string', 'max:255'],
-            'golongan'        => ['nullable', 'string', 'max:255'],
-            'satuan'          => ['nullable', 'string', 'max:100'],
-            'kemasan'         => ['nullable', 'string', 'max:255'],
-            'gambar'          => ['nullable', 'array', 'max:2'],
-            'gambar.*'        => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'hapus_gambar'    => ['nullable', 'array'],
-            'hapus_gambar.*'  => ['required', 'string', 'max:255'],
-            'harga_internal'  => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
-            'harga'           => ['required_without:harga_internal', 'nullable', 'numeric', 'min:0'],
-            'harga_modal'     => ['nullable', 'numeric', 'min:0'],
-            'harga_grosir'    => ['nullable', 'numeric', 'min:0'],
-            'harga_retail'    => ['nullable', 'numeric', 'min:0'],
-            'stok'            => ['required', 'numeric', 'min:0', 'max:10000000'],
-            'sediaan'         => ['nullable', 'string', 'max:255'],
-            'strips_per_box' => ['nullable', 'integer', 'min:0', 'max:100000'],
-            'tablets_per_box' => ['nullable', 'integer', 'min:0', 'max:10000000'],
-            'price_tablet' => ['nullable', 'numeric', 'min:0'],
-            'price_strip' => ['nullable', 'numeric', 'min:0'],
-            'komposisi'       => ['nullable', 'string'],
-            'indikasi'        => ['nullable', 'string'],
-            'dosis'           => ['nullable', 'string'],
+            'nama_obat'         => ['required', 'string', 'max:255'],
+            'kategori'          => ['required', 'string', 'max:255'],
+            'logo'              => ['nullable', 'string', 'max:255'],
+            'golongan'          => ['nullable', 'string', 'max:255'],
+            'satuan'            => ['nullable', 'string', 'max:100'],
+            'kemasan'           => ['nullable', 'string', 'max:255'],
+            'gambar'            => ['nullable', 'array', 'max:2'],
+            'gambar.*'          => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'hapus_gambar'      => ['nullable', 'array'],
+            'hapus_gambar.*'    => ['required', 'string', 'max:255'],
+            'harga_internal'    => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
+            'harga'             => ['required_without:harga_internal', 'nullable', 'numeric', 'min:0'],
+            'harga_modal'       => ['nullable', 'numeric', 'min:0'],
+            'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
+            'harga_retail'      => ['nullable', 'numeric', 'min:0'],
+            'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
+            'sediaan'           => ['nullable', 'string', 'max:255'],
+            'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'tablets_per_strip' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'tablets_per_box'   => ['nullable', 'integer', 'min:0', 'max:10000000'],
+            'price_tablet'      => ['nullable', 'numeric', 'min:0'],
+            'price_strip'       => ['nullable', 'numeric', 'min:0'],
+            'komposisi'         => ['nullable', 'string'],
+            'indikasi'          => ['nullable', 'string'],
+            'dosis'             => ['nullable', 'string'],
         ]);
 
         $this->validateTabletPackaging($request, $validated);
@@ -342,6 +352,10 @@ class AdminProdukController extends Controller
         $produk->fill($validated);
         $produk->setStockInPackages($stockPackages);
         $produk->save();
+
+        if (Schema::hasTable('purchase_stock_reservations')) {
+            PurchaseStockReservation::where('medicine_id', $produk->id)->delete();
+        }
 
         foreach ($imagesToDelete as $image) {
             ImageHelper::deleteProductImage($image);
@@ -416,42 +430,90 @@ class AdminProdukController extends Controller
         $validated = $request->validate(['stok' => ['required', 'numeric', 'min:0', 'max:10000000']]);
         $produk->setStockInPackages((float) $validated['stok']);
         $produk->save();
+        if (Schema::hasTable('purchase_stock_reservations')) {
+            PurchaseStockReservation::where('medicine_id', $produk->id)->delete();
+        }
         return back()->with('success', 'Stok berhasil diupdate!');
     }
 
     public function updateInline(Request $request, Medicine $produk)
     {
         $validated = $request->validate([
-            'harga_modal'  => ['required', 'numeric', 'min:0'],
-            'harga_internal' => ['required', 'numeric', 'min:0'],
-            'harga_grosir' => ['nullable', 'numeric', 'min:0'],
-            'harga_retail' => ['required', 'numeric', 'min:0'],
-            'price_strip' => ['nullable', 'numeric', 'min:0'],
-            'price_tablet' => ['nullable', 'numeric', 'min:0'],
-            'stok'         => ['required', 'numeric', 'min:0', 'max:10000000'],
+            'harga_modal'       => ['required', 'numeric', 'min:0'],
+            'harga_internal'    => ['required', 'numeric', 'min:0'],
+            'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
+            'harga_retail'      => ['required', 'numeric', 'min:0'],
+            'price_strip'       => ['nullable', 'numeric', 'min:0'],
+            'price_tablet'      => ['nullable', 'numeric', 'min:0'],
+            'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'tablets_per_strip' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
         ]);
 
         $stockPackages = (float) $validated['stok'];
         unset($validated['stok']);
         $validated['harga_grosir'] = $validated['harga_grosir'] ?? $produk->harga_grosir;
-        if ($produk->unit_packaging_enabled) {
-            $validated['price_box'] = $validated['harga_retail'];
+
+        if ($request->hasAny(['strips_per_box', 'tablets_per_strip'])) {
+            $strips = (int) ($validated['strips_per_box'] ?? 0);
+            $tabletsPerStrip = (int) ($validated['tablets_per_strip'] ?? 0);
+            if ($strips > 0 && $tabletsPerStrip > 0) {
+                $validated['unit_packaging_enabled'] = true;
+                $validated['strips_per_box'] = $strips;
+                $validated['tablets_per_strip'] = $tabletsPerStrip;
+                $validated['price_box'] = $validated['harga_retail'];
+            } else {
+                $validated['unit_packaging_enabled'] = false;
+                $validated['strips_per_box'] = null;
+                $validated['tablets_per_strip'] = null;
+                $validated['price_box'] = null;
+                $validated['price_strip'] = null;
+                $validated['price_tablet'] = null;
+            }
         } else {
-            unset($validated['price_strip'], $validated['price_tablet']);
+            unset($validated['strips_per_box'], $validated['tablets_per_strip']);
+            if ($produk->unit_packaging_enabled) {
+                $validated['price_box'] = $validated['harga_retail'];
+            } else {
+                unset($validated['price_strip'], $validated['price_tablet']);
+            }
         }
+
         $produk->fill($validated);
         $produk->setStockInPackages($stockPackages);
         $produk->save();
 
+        if (Schema::hasTable('purchase_stock_reservations')) {
+            PurchaseStockReservation::where('medicine_id', $produk->id)->delete();
+        }
+
         return back()->with('success', 'Harga dan stok berhasil diupdate!');
+    }
+
+    private function resolveTabletsPerBox(Request $request, array $validated): int
+    {
+        $strips = (int) ($validated['strips_per_box'] ?? 0);
+        $tabletsPerBox = (int) ($request->input('tablets_per_box') ?? 0);
+        $tabletsPerStrip = (int) ($validated['tablets_per_strip'] ?? $request->input('tablets_per_strip') ?? 0);
+
+        if ($tabletsPerBox > 0) {
+            return $tabletsPerBox;
+        }
+
+        if ($strips > 0 && $tabletsPerStrip > 0) {
+            return $strips * $tabletsPerStrip;
+        }
+
+        return 0;
     }
 
     private function applyPackagingFields(Request $request, array &$validated): void
     {
         $strips = (int) ($validated['strips_per_box'] ?? 0);
-        $tablets = (int) ($request->input('tablets_per_box') ?? 0);
+        $tablets = $this->resolveTabletsPerBox($request, $validated);
         $enabled = $strips > 0 && $tablets > 0;
         $validated['unit_packaging_enabled'] = $enabled;
+        unset($validated['tablets_per_box']);
 
         if ($enabled) {
             $validated['tablets_per_strip'] = intdiv($tablets, $strips);
@@ -467,7 +529,7 @@ class AdminProdukController extends Controller
     private function validateTabletPackaging(Request $request, array $validated): void
     {
         $strips = (int) ($validated['strips_per_box'] ?? 0);
-        $tablets = (int) $request->input('tablets_per_box', 0);
+        $tablets = $this->resolveTabletsPerBox($request, $validated);
         if ($strips === 0 && $tablets === 0) {
             return;
         }

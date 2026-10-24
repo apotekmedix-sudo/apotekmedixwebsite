@@ -771,6 +771,94 @@ class MedicineUnitPackagingTest extends TestCase
         ImageHelper::deleteProductImage($medicine->gambar);
     }
 
+    public function test_three_unit_converted_stock_decreases_synchronously_when_customer_orders_box_strip_or_tablet(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->post(route('admin.produk.store'), [
+            'nama_obat' => 'Paracetamol 500mg Box',
+            'kategori_produk' => Companies::LIST[0],
+            'kategori' => 'Kimia Farma',
+            'logo' => 'HIJAU',
+            'satuan' => 'Box',
+            'harga_modal' => 10000,
+            'harga_internal' => 12000,
+            'harga_grosir' => 13000,
+            'harga_retail' => 15000,
+            'stok' => 10,
+            'strips_per_box' => 10,
+            'tablets_per_strip' => 10,
+            'price_strip' => 1600,
+            'price_tablet' => 200,
+        ])->assertRedirect(route('admin.produk.index'));
+
+        $medicine = Medicine::where('nama_obat', 'Paracetamol 500mg Box')->firstOrFail();
+        $this->assertTrue($medicine->hasTabletPackaging());
+        $this->assertSame(10, $medicine->strips_per_box);
+        $this->assertSame(10, $medicine->tablets_per_strip);
+        $this->assertSame(1000, $medicine->stock_base_units);
+        $this->assertSame([
+            'box' => 10,
+            'box_decimal' => 10.0,
+            'strip' => 100,
+            'tablet' => 1000,
+        ], $medicine->getConvertedUnitStocksForUnits());
+        $this->assertSame('10 Box · 100 Strip · 1.000 Tablet', $medicine->converted_stock_summary);
+
+        // Customer buys 1 Box (100 Tablet)
+        $this->postJson(route('orders.history.store'), [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pelanggan Box',
+            'phone' => '081234567890',
+            'address' => 'Jl. Contoh',
+            'items' => [
+                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 1, 'harga' => 15000, 'sale_unit' => 'box'],
+            ],
+            'total' => 15000,
+        ])->assertOk();
+
+        // Check stock availability endpoint after buying 1 Box -> 9 Box, 90 Strip, 900 Tablet
+        $this->getJson(route('products.stock-availability', ['ids' => [$medicine->id]]))
+            ->assertOk()
+            ->assertJsonPath("stocks.{$medicine->id}.units", 900)
+            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.box", 9)
+            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.strip", 90)
+            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.tablet", 900)
+            ->assertJsonPath("stocks.{$medicine->id}.converted_summary", '9 Box · 90 Strip · 900 Tablet');
+
+        // Customer buys 2 Strip (20 Tablet) -> remaining 880 Tablet (8 Box, 88 Strip, 880 Tablet)
+        $this->postJson(route('orders.history.store'), [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pelanggan Strip',
+            'phone' => '081234567890',
+            'address' => 'Jl. Contoh',
+            'items' => [
+                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 2, 'harga' => 1600, 'sale_unit' => 'strip'],
+            ],
+            'total' => 3200,
+        ])->assertOk();
+
+        // Customer buys 5 Tablet -> remaining 875 Tablet (8 Box, 87 Strip, 875 Tablet)
+        $this->postJson(route('orders.history.store'), [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pelanggan Tablet',
+            'phone' => '081234567890',
+            'address' => 'Jl. Contoh',
+            'items' => [
+                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 5, 'harga' => 200, 'sale_unit' => 'tablet'],
+            ],
+            'total' => 1000,
+        ])->assertOk();
+
+        $this->getJson(route('products.stock-availability', ['ids' => [$medicine->id]]))
+            ->assertOk()
+            ->assertJsonPath("stocks.{$medicine->id}.units", 875)
+            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.box", 8)
+            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.strip", 87)
+            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.tablet", 875)
+            ->assertJsonPath("stocks.{$medicine->id}.converted_summary", '8 Box · 87 Strip · 875 Tablet');
+    }
+
     public function test_product_gallery_uses_primary_and_secondary_images_and_opens_detail(): void
     {
         $medicine = Medicine::create([

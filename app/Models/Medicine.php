@@ -380,7 +380,16 @@ class Medicine extends Model
 
     public function isAvailable(): bool
     {
-        return (int) ($this->stock_base_units ?? $this->stok) > 0;
+        return $this->available_stock_units > 0;
+    }
+
+    public function getAvailableStockUnitsAttribute(): int
+    {
+        if (array_key_exists('available_stock_units', $this->attributes)) {
+            return max(0, (int) $this->attributes['available_stock_units']);
+        }
+
+        return max(0, (int) ($this->stock_base_units ?? $this->stok ?? 0));
     }
 
     public function getUnitsPerBoxAttribute(): int
@@ -404,7 +413,9 @@ class Medicine extends Model
 
     public function getStockPackagesAttribute(): float
     {
-        $stockUnits = (int) ($this->stock_base_units ?? $this->stok);
+        $stockUnits = array_key_exists('available_stock_units', $this->attributes)
+            ? max(0, (int) $this->attributes['available_stock_units'])
+            : (int) ($this->stock_base_units ?? $this->stok);
 
         return $stockUnits / $this->units_per_box;
     }
@@ -414,9 +425,80 @@ class Medicine extends Model
         return $this->stock_packages;
     }
 
+    public function getStockStripsAttribute(): int
+    {
+        return $this->getConvertedUnitStocksForUnits()['strip'];
+    }
+
+    public function getStockTabletsAttribute(): int
+    {
+        return $this->getConvertedUnitStocksForUnits()['tablet'];
+    }
+
+    /**
+     * Hitung ketiga stok terkonversi (Box/Satuan, Strip, Tablet) dari jumlah unit dasar (tablet).
+     * Contoh: 1 Box = 10 Strip, 1 Strip = 10 Tablet (100 Tablet/Box).
+     * - Jika tersedia 1000 unit -> Box: 10, Strip: 100, Tablet: 1000
+     * - Jika dibeli 1 Box (100 unit) -> Box: 9, Strip: 90, Tablet: 900
+     * - Jika dibeli 1 Strip (10 unit) -> Box: 9 (9.9), Strip: 99, Tablet: 990
+     */
+    public function getConvertedUnitStocksForUnits(?int $stockUnits = null): array
+    {
+        $units = max(0, $stockUnits ?? $this->available_stock_units);
+        $unitsPerBox = max(1, $this->units_per_box);
+        $tabletsPerStrip = max(1, (int) $this->tablets_per_strip);
+
+        if (!$this->unit_packaging_enabled) {
+            return [
+                'box' => $units,
+                'box_decimal' => (float) $units,
+                'strip' => 0,
+                'tablet' => 0,
+            ];
+        }
+
+        return [
+            'box' => intdiv($units, $unitsPerBox),
+            'box_decimal' => round($units / $unitsPerBox, 6),
+            'strip' => intdiv($units, $tabletsPerStrip),
+            'tablet' => $units,
+        ];
+    }
+
+    public function getConvertedStockSummaryAttribute(): string
+    {
+        return $this->getConvertedStockSummaryForUnits($this->available_stock_units);
+    }
+
+    public function getConvertedStockSummaryForUnits(?int $stockUnits = null): string
+    {
+        $units = max(0, $stockUnits ?? $this->available_stock_units);
+        if ($units <= 0) {
+            return '0 ' . $this->package_unit_label;
+        }
+
+        if (!$this->unit_packaging_enabled) {
+            return number_format($units, 0, ',', '.') . ' ' . $this->package_unit_label;
+        }
+
+        $converted = $this->getConvertedUnitStocksForUnits($units);
+
+        return sprintf(
+            '%s %s · %s Strip · %s Tablet',
+            number_format($converted['box'], 0, ',', '.'),
+            $this->package_unit_label,
+            number_format($converted['strip'], 0, ',', '.'),
+            number_format($converted['tablet'], 0, ',', '.')
+        );
+    }
+
     public function getStockBreakdownAttribute(): string
     {
-        return $this->getStockBreakdownForUnits((int) ($this->stock_base_units ?? $this->stok));
+        $stockUnits = array_key_exists('available_stock_units', $this->attributes)
+            ? max(0, (int) $this->attributes['available_stock_units'])
+            : (int) ($this->stock_base_units ?? $this->stok);
+
+        return $this->getStockBreakdownForUnits($stockUnits);
     }
 
     public function getStockBreakdownForUnits(int $stockUnits): string

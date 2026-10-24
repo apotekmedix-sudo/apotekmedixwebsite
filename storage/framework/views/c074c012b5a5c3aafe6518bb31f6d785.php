@@ -1060,7 +1060,7 @@
 
             <ul class="navbar-menu" id="navbarMenu">
                 <li><a href="<?php echo e(route('home')); ?>"><i class="fa-solid fa-house"></i> Home</a></li>
-                <li><a href="<?php echo e(route('products.index')); ?>"><i class="fa-solid fa-pills"></i> Produk Kami</a></li>
+                <li><a href="<?php echo e(route('products.apotek')); ?>"><i class="fa-solid fa-store"></i> Belanja B2C</a></li>
                 <li><a href="<?php echo e(route('about')); ?>"><i class="fa-solid fa-circle-info"></i> Tentang Kami</a></li>
                 <li><a href="<?php echo e(route('contact')); ?>"><i class="fa-solid fa-headset"></i> Hubungi Kami</a></li>
 

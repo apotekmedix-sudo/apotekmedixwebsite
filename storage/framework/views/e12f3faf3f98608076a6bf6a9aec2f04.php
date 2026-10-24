@@ -659,9 +659,9 @@
                     </a>
                 </li>
                 <li>
-                    <a href="<?php echo e(route('admin.promotions.index')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'admin.promotions')): ?> active <?php endif; ?>">
-                        <i class="fa-solid fa-percent"></i>
-                        <span>Diskon per Kanal</span>
+                    <a href="<?php echo e(route('admin.promotions.index')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'admin.promotions') || str_contains(Route::current()->getName() ?? '', 'admin.discount-codes')): ?> active <?php endif; ?>">
+                        <i class="fa-solid fa-tags"></i>
+                        <span>Promo & Diskon</span>
                     </a>
                 </li>
                 <li>
@@ -760,4 +760,4 @@
     </nav>
 </body>
 </html>
-<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/layouts/admin.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/layouts/admin.blade.php ENDPATH**/ ?>

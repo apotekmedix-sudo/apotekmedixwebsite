@@ -151,7 +151,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 0.2rem;
+        gap: 0.15rem;
         padding: 0;
         border: 0;
         color: inherit;
@@ -173,6 +173,13 @@
     .product-unit-price {
         font-size: 0.79rem;
         line-height: 1.2;
+        white-space: nowrap;
+    }
+    .product-unit-stock {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #0369a1;
+        line-height: 1.15;
         white-space: nowrap;
     }
     .product-unit-old-price {

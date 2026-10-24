@@ -400,6 +400,25 @@
                     <div class="price-label">Harga Satuan</div>
                     <div class="price">{{ $medicine->getFormattedPrice() }}</div>
                 </div>
+                @php $detailConverted = $medicine->getConvertedUnitStocksForUnits($medicine->available_stock_units); @endphp
+                <div class="stock-info">
+                    <div class="stock-item">
+                        <div class="stock-item-label">Stok {{ $medicine->package_unit_label }}</div>
+                        <div class="stock-item-value">{{ number_format($detailConverted['box'], 0, ',', '.') }} {{ $medicine->package_unit_label }}</div>
+                    </div>
+                    @if($medicine->unit_packaging_enabled)
+                        <div class="stock-item">
+                            <div class="stock-item-label">Stok Strip</div>
+                            <div class="stock-item-value">{{ number_format($detailConverted['strip'], 0, ',', '.') }} Strip</div>
+                        </div>
+                        <div class="stock-item">
+                            <div class="stock-item-label">Stok Tablet</div>
+                            <div class="stock-item-value">{{ number_format($detailConverted['tablet'], 0, ',', '.') }} Tablet</div>
+                        </div>
+                    @endif
+                </div>
+                <div style="display:none;">
+                </div>
 
                 @if(!empty($medicine->golongan))
                     <div style="margin-bottom:0.85rem;"><strong>Golongan:</strong> <span style="color:#374151;">{{ $medicine->golongan }}</span></div>

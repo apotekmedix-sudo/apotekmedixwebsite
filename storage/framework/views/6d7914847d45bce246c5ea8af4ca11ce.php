@@ -1,5 +1,3 @@
-﻿
-
 <?php $__env->startSection('title', 'Produk Kami - Admin Apotek Medix'); ?>
 <?php $__env->startSection('page-title', 'Produk Kami'); ?>
 
@@ -41,7 +39,7 @@
     .btn-reset:hover { background:#f9fafb; color:#374151; }
 
     .data-table-wrap { background:white; border-radius:0.75rem; box-shadow:0 1px 4px rgba(0,0,0,0.06); border:1px solid #f0f0f0; overflow-x:auto; }
-    .data-table { width:100%; min-width:1800px; border-collapse:collapse; font-size:0.875rem; }
+    .data-table { width:100%; min-width:1850px; border-collapse:collapse; font-size:0.875rem; }
     .data-table thead tr { background:#f8faff; border-bottom:2px solid #e5e7eb; }
     .data-table th { padding:0.85rem 1rem; text-align:left; font-size:0.75rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap; }
     .data-table td { padding:0.85rem 1rem; border-bottom:1px solid #f3f4f6; color:#374151; vertical-align:middle; }
@@ -74,6 +72,12 @@
     .inline-number:focus { outline:none; border-color:#1E88E5; box-shadow:0 0 0 3px rgba(30,136,229,0.1); }
     .inline-save { display:inline-flex; align-items:center; gap:0.3rem; margin-top:0.35rem; padding:0.3rem 0.55rem; border:0; border-radius:0.4rem; background:#e8f5e9; color:#2e7d32; font-size:0.72rem; font-weight:700; cursor:pointer; }
     .inline-save:hover { background:#2e7d32; color:#fff; }
+
+    .converted-stock-pills { display:grid; gap:0.22rem; margin-top:0.4rem; min-width:148px; }
+    .converted-stock-pill { display:flex; align-items:center; justify-content:space-between; gap:0.4rem; padding:0.2rem 0.45rem; border-radius:0.35rem; font-size:0.72rem; font-weight:700; background:#f8fafc; border:1px solid #e2e8f0; color:#334155; }
+    .converted-stock-pill--box { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+    .converted-stock-pill--strip { background:#f0f9ff; border-color:#bae6fd; color:#0369a1; }
+    .converted-stock-pill--tablet { background:#ecfdf5; border-color:#a7f3d0; color:#047857; }
 
     .action-wrap { display:flex; gap:0.4rem; }
     .btn-edit, .btn-del { display:inline-flex; align-items:center; gap:0.3rem; padding:0.35rem 0.75rem; border-radius:0.4rem; font-size:0.78rem; font-weight:600; text-decoration:none; border:none; cursor:pointer; transition:all 0.2s; }
@@ -182,20 +186,21 @@
                 <label>Cari Produk</label>
                 <div class="search-input-wrap">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" name="search" value="<?php echo e($search); ?>" placeholder="Nama produk, pabrik, deskripsi...">
+                    <input type="text" name="search" value="<?php echo e($search); ?>" placeholder="Nama produk, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan...">
                 </div>
             </div>
             <div class="search-actions">
                 <button type="submit" class="btn-search">
                     <i class="fa-solid fa-magnifying-glass"></i> Cari
                 </button>
-                <?php if($search || $pabrik): ?>
+                <?php if($search || $pabrik || request('indikasi') || request('komposisi') || request('sediaan') || request('dosis') || request('golongan')): ?>
                     <a href="<?php echo e(route('admin.produk.index', $kategori_produk ? ['kategori_produk' => $kategori_produk] : [])); ?>" class="btn-reset">
                         <i class="fa-solid fa-xmark"></i> Reset
                     </a>
                 <?php endif; ?>
             </div>
         </div>
+
     </form>
 </div>
 
@@ -236,14 +241,17 @@
                     <th>Harga B2B</th>
                     <th>Harga B2C</th>
                     <th>Harga Strip / Tablet</th>
-                    <th>Stok (Satuan Kemasan)</th>
+                    <th>Stok (Box / Strip / Tablet)</th>
                     <th>Ditambahkan</th>
                     <th style="width:130px;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 <?php $__currentLoopData = $medicines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $medicine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <tr>
+                <?php
+                    $converted = $medicine->getConvertedUnitStocksForUnits($medicine->available_stock_units);
+                ?>
+                <tr data-product-row="<?php echo e($medicine->id); ?>" data-unit-label="<?php echo e($medicine->package_unit_label); ?>">
                     <td style="text-align:center;">
                         <input type="checkbox" class="product-checkbox" name="produk_ids[]" value="<?php echo e($medicine->id); ?>">
                     </td>
@@ -267,11 +275,22 @@
                     <td>
                         <div class="med-desc"><?php echo e($medicine->komposisi ?: '-'); ?></div>
                         <div class="med-meta"><?php echo e($medicine->indikasi ?: '-'); ?></div>
+                        <?php if($medicine->dosis): ?><div class="med-meta" style="color:#0369a1;font-weight:600;">Dosis: <?php echo e($medicine->dosis); ?></div><?php endif; ?>
                     </td>
                     <td>
-                        <div><?php echo e($medicine->satuan ?: '-'); ?></div>
+                        <div style="font-weight:700;"><?php echo e($medicine->satuan ?: $medicine->package_unit_label); ?></div>
+                        <div class="price-unit-fields" style="margin-top:0.35rem;">
+                            <div class="price-unit-field">
+                                <label for="strips-per-box-<?php echo e($medicine->id); ?>">1 <?php echo e($medicine->package_unit_label); ?> = ... Strip</label>
+                                <input id="strips-per-box-<?php echo e($medicine->id); ?>" class="inline-number price-unit-input js-row-strips" type="number" name="strips_per_box" form="inline-update-<?php echo e($medicine->id); ?>" value="<?php echo e($medicine->unit_packaging_enabled ? ($medicine->strips_per_box ?? 0) : 0); ?>" min="0" step="1" aria-label="Strip per <?php echo e($medicine->package_unit_label); ?> <?php echo e($medicine->nama_obat); ?>">
+                            </div>
+                            <div class="price-unit-field">
+                                <label for="tablets-per-strip-<?php echo e($medicine->id); ?>">1 Strip = ... Tablet</label>
+                                <input id="tablets-per-strip-<?php echo e($medicine->id); ?>" class="inline-number price-unit-input js-row-tablets" type="number" name="tablets_per_strip" form="inline-update-<?php echo e($medicine->id); ?>" value="<?php echo e($medicine->unit_packaging_enabled ? ($medicine->tablets_per_strip ?? 0) : 0); ?>" min="0" step="1" aria-label="Tablet per strip <?php echo e($medicine->nama_obat); ?>">
+                            </div>
+                        </div>
                         <?php if($medicine->unit_packaging_enabled): ?>
-                            <small class="med-meta"><?php echo e($medicine->strips_per_box); ?> strip / <?php echo e($medicine->tablets_per_strip * $medicine->strips_per_box); ?> tablet per <?php echo e(strtolower($medicine->package_unit_label)); ?></small>
+                            <small class="med-meta" style="display:block;margin-top:0.25rem;"><?php echo e($medicine->strips_per_box); ?> strip / <?php echo e($medicine->tablets_per_strip * $medicine->strips_per_box); ?> tablet per <?php echo e(strtolower($medicine->package_unit_label)); ?></small>
                         <?php endif; ?>
                     </td>
                     <td>
@@ -307,24 +326,37 @@
                         <input class="inline-number" type="number" name="harga_retail" form="inline-update-<?php echo e($medicine->id); ?>" value="<?php echo e($medicine->price_box ?? ($medicine->harga_retail ?: $medicine->harga)); ?>" min="0" step="0.01" aria-label="Harga jual B2C <?php echo e($medicine->nama_obat); ?>">
                     </td>
                     <td>
-                        <?php if($medicine->unit_packaging_enabled): ?>
-                            <div class="price-unit-fields">
-                                <div class="price-unit-field">
-                                    <label for="price-strip-<?php echo e($medicine->id); ?>">Strip</label>
-                                    <input id="price-strip-<?php echo e($medicine->id); ?>" class="inline-number price-unit-input" type="number" name="price_strip" form="inline-update-<?php echo e($medicine->id); ?>" value="<?php echo e($medicine->price_strip ?? 0); ?>" min="0" step="0.01" aria-label="Harga strip <?php echo e($medicine->nama_obat); ?>">
-                                </div>
-                                <div class="price-unit-field">
-                                    <label for="price-tablet-<?php echo e($medicine->id); ?>">Tablet</label>
-                                    <input id="price-tablet-<?php echo e($medicine->id); ?>" class="inline-number price-unit-input" type="number" name="price_tablet" form="inline-update-<?php echo e($medicine->id); ?>" value="<?php echo e($medicine->price_tablet ?? 0); ?>" min="0" step="0.01" aria-label="Harga tablet <?php echo e($medicine->nama_obat); ?>">
-                                </div>
+                        <div class="price-unit-fields">
+                            <div class="price-unit-field">
+                                <label for="price-strip-<?php echo e($medicine->id); ?>">Strip</label>
+                                <input id="price-strip-<?php echo e($medicine->id); ?>" class="inline-number price-unit-input" type="number" name="price_strip" form="inline-update-<?php echo e($medicine->id); ?>" value="<?php echo e($medicine->price_strip ?? 0); ?>" min="0" step="0.01" aria-label="Harga strip <?php echo e($medicine->nama_obat); ?>">
                             </div>
-                        <?php else: ?>
-                            <small class="med-meta">Tidak aktif</small>
-                        <?php endif; ?>
+                            <div class="price-unit-field">
+                                <label for="price-tablet-<?php echo e($medicine->id); ?>">Tablet</label>
+                                <input id="price-tablet-<?php echo e($medicine->id); ?>" class="inline-number price-unit-input" type="number" name="price_tablet" form="inline-update-<?php echo e($medicine->id); ?>" value="<?php echo e($medicine->price_tablet ?? 0); ?>" min="0" step="0.01" aria-label="Harga tablet <?php echo e($medicine->nama_obat); ?>">
+                            </div>
+                        </div>
                     </td>
                     <td>
-                        <input class="inline-number" type="number" name="stok" form="inline-update-<?php echo e($medicine->id); ?>" value="<?php echo e(rtrim(rtrim(number_format($medicine->stock_packages, 6, '.', ''), '0'), '.')); ?>" min="0" step="0.000001" aria-label="Stok <?php echo e($medicine->package_unit_label); ?> <?php echo e($medicine->nama_obat); ?>">
-                        <small style="display:block;margin-top:.25rem;color:#64748b;"><?php echo e($medicine->stock_breakdown); ?></small>
+                        <div class="price-unit-field">
+                            <label for="stok-box-<?php echo e($medicine->id); ?>">Stok <?php echo e($medicine->package_unit_label); ?></label>
+                            <input id="stok-box-<?php echo e($medicine->id); ?>" class="inline-number js-row-stock" type="number" name="stok" form="inline-update-<?php echo e($medicine->id); ?>" value="<?php echo e(rtrim(rtrim(number_format($medicine->stock_packages, 6, '.', ''), '0'), '.')); ?>" min="0" step="0.000001" aria-label="Stok <?php echo e($medicine->package_unit_label); ?> <?php echo e($medicine->nama_obat); ?>">
+                        </div>
+                        <div class="converted-stock-pills" data-converted-stock-pills>
+                            <div class="converted-stock-pill converted-stock-pill--box">
+                                <span><?php echo e($medicine->package_unit_label); ?>:</span>
+                                <strong data-pill-box><?php echo e(number_format($converted['box'], 0, ',', '.')); ?> <?php echo e($medicine->package_unit_label); ?></strong>
+                            </div>
+                            <div class="converted-stock-pill converted-stock-pill--strip" <?php if(!$medicine->unit_packaging_enabled): ?> style="display:none;" <?php endif; ?> data-pill-strip-wrap>
+                                <span>Strip:</span>
+                                <strong data-pill-strip><?php echo e(number_format($converted['strip'], 0, ',', '.')); ?> Strip</strong>
+                            </div>
+                            <div class="converted-stock-pill converted-stock-pill--tablet" <?php if(!$medicine->unit_packaging_enabled): ?> style="display:none;" <?php endif; ?> data-pill-tablet-wrap>
+                                <span>Tablet:</span>
+                                <strong data-pill-tablet><?php echo e(number_format($converted['tablet'], 0, ',', '.')); ?> Tablet</strong>
+                            </div>
+                        </div>
+                        <small style="display:block;margin-top:.25rem;color:#64748b;" data-row-breakdown>Sisa: <?php echo e($medicine->stock_breakdown); ?></small>
                     </td>
                     <td style="font-size:0.82rem;color:#9ca3af;"><?php echo e($medicine->created_at->format('d M Y')); ?></td>
                     <td>
@@ -469,7 +501,6 @@ function saveStoredSelectedIds(ids) {
 
 function updateBulkDeleteState() {
     const selectedIds = getStoredSelectedIds();
-    const checkedBoxes = document.querySelectorAll('.product-checkbox:checked');
     const bulkBtn = document.getElementById('bulkDeleteBtn');
     const bulkCount = document.getElementById('bulkDeleteCount');
     const selectAll = document.getElementById('selectAllProducts');
@@ -531,6 +562,47 @@ if (bulkDeleteForm) {
 
 syncSelectionsFromStorage();
 
+// Live kalkulasi konversi stok per baris saat admin mengubah stok / strip / tablet
+document.querySelectorAll('tr[data-product-row]').forEach(function (row) {
+    const stockInput = row.querySelector('.js-row-stock');
+    const stripsInput = row.querySelector('.js-row-strips');
+    const tabletsInput = row.querySelector('.js-row-tablets');
+    const unitLabel = row.dataset.unitLabel || 'Box';
+    const boxEl = row.querySelector('[data-pill-box]');
+    const stripWrap = row.querySelector('[data-pill-strip-wrap]');
+    const stripEl = row.querySelector('[data-pill-strip]');
+    const tabletWrap = row.querySelector('[data-pill-tablet-wrap]');
+    const tabletEl = row.querySelector('[data-pill-tablet]');
+
+    function updateRowStockPreview() {
+        const stockBoxes = Math.max(0, parseFloat(stockInput?.value || '0') || 0);
+        const stripsPerBox = Math.max(0, parseInt(stripsInput?.value || '0', 10) || 0);
+        const tabletsPerStrip = Math.max(0, parseInt(tabletsInput?.value || '0', 10) || 0);
+        const fmt = (n) => Number(n || 0).toLocaleString('id-ID');
+
+        if (stripsPerBox > 0 && tabletsPerStrip > 0) {
+            const unitsPerBox = stripsPerBox * tabletsPerStrip;
+            const totalTablets = Math.round(stockBoxes * unitsPerBox);
+            const totalStrips = Math.floor(totalTablets / tabletsPerStrip);
+            const wholeBoxes = Math.floor(totalTablets / unitsPerBox);
+            if (boxEl) boxEl.textContent = `${fmt(wholeBoxes)} ${unitLabel}`;
+            if (stripWrap) stripWrap.style.display = 'flex';
+            if (stripEl) stripEl.textContent = `${fmt(totalStrips)} Strip`;
+            if (tabletWrap) tabletWrap.style.display = 'flex';
+            if (tabletEl) tabletEl.textContent = `${fmt(totalTablets)} Tablet`;
+        } else {
+            const wholeBoxes = Math.floor(stockBoxes);
+            if (boxEl) boxEl.textContent = `${fmt(wholeBoxes)} ${unitLabel}`;
+            if (stripWrap) stripWrap.style.display = 'none';
+            if (tabletWrap) tabletWrap.style.display = 'none';
+        }
+    }
+
+    stockInput?.addEventListener('input', updateRowStockPreview);
+    stripsInput?.addEventListener('input', updateRowStockPreview);
+    tabletsInput?.addEventListener('input', updateRowStockPreview);
+});
+
 // Tutup modal jika klik overlay
 document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) closeDeleteModal();
@@ -538,4 +610,4 @@ document.getElementById('deleteModal').addEventListener('click', function(e) {
 </script>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/admin/produk/index.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/admin/produk/index.blade.php ENDPATH**/ ?>

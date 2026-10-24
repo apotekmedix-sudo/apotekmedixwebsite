@@ -1,32 +1,22 @@
 
 
-<?php $__env->startSection('title', 'Belanja B2B - Apotek Medix'); ?>
+<?php $__env->startSection('title', 'Belanja B2C - Apotek Medix'); ?>
 
 <?php $__env->startSection('styles'); ?>
 <style>
     .products-header {
-        background: linear-gradient(135deg, #0047b3 0%, #0f4c81 40%, #fb8c00 100%);
-        padding: 4.5rem 0 3rem;
+        background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%);
+        padding: 4rem 0;
         position: relative;
         overflow: hidden;
-        color: white;
-    }
-    .products-header::before,
-    .products-header::after {
-        content: '';
-        position: absolute;
-        border-radius: 50%;
-        opacity: 0.35;
     }
     .products-header::before {
-        top: -60px; right: -90px;
-        width: 320px; height: 320px;
-        background: rgba(255, 152, 0, 0.22);
-    }
-    .products-header::after {
-        bottom: -80px; left: -80px;
-        width: 260px; height: 260px;
-        background: rgba(2, 136, 209, 0.22);
+        content: '';
+        position: absolute;
+        top: -80px; right: -80px;
+        width: 350px; height: 350px;
+        background: radial-gradient(circle, rgba(124,179,66,0.18) 0%, transparent 70%);
+        border-radius: 50%;
     }
     .products-header .header-deco-icon {
         position: absolute;
@@ -41,53 +31,18 @@
         0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.08; }
         50%       { transform: translateY(-12px) rotate(8deg); opacity: 0.14; }
     }
-    @keyframes headerIconFloatMobile {
-        0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.08; }
-        25%       { transform: translate(-4px, -8px) rotate(-4deg); opacity: 0.12; }
-        50%       { transform: translate(4px, -10px) rotate(6deg); opacity: 0.14; }
-        75%       { transform: translate(-2px, -6px) rotate(-2deg); opacity: 0.12; }
-    }
     .products-header h1 {
         font-size: clamp(2rem, 4vw, 3rem);
         font-weight: 800; color: white;
         margin-bottom: 0.5rem; position: relative;
     }
     .products-header p { color: rgba(255,255,255,0.8); font-size: 1rem; position: relative; }
-    .breadcrumb-custom { display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.9rem; position: relative; font-size: 0.88rem; }
-    .breadcrumb-custom a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.88rem; transition: color 0.2s; font-weight: 500; }
-    .breadcrumb-custom a:hover { color: #ffffff; }
-    .breadcrumb-custom span { color: rgba(255,255,255,0.55); font-size: 0.88rem; }
-    .breadcrumb-custom .current { color: #ffd79b; font-size: 0.88rem; font-weight: 600; }
-    .products-header .hero-panel {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 3rem;
-        align-items: flex-start;
-        position: relative;
-        z-index: 2;
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.22);
-        border-radius: 32px;
-        padding: 3rem;
-        box-shadow: 0 35px 70px rgba(0,0,0,0.18);
-        backdrop-filter: blur(16px);
-    }
-    .products-header .brand-logo {
-        max-height: 150px;
-        width: auto;
-        display: block;
-        border-radius: 24px;
-        padding: 0.75rem;
-        background: rgba(255,255,255,0.96);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-        flex-shrink: 0;
-        margin-top: 0.5rem;
-    }
-    .products-header .brand-copy {
-        max-width: 100%;
-    }
-    .products-header .brand-copy h1 { margin-bottom: 0.6rem; line-height: 1.08; letter-spacing: -0.02em; font-size: 2.5rem; font-weight: 800; color: #ffffff; }
-    .products-header .brand-copy p { margin: 0 0 0.75rem; color: rgba(255,255,255,0.96); font-size: 1.08rem; line-height: 1.65; font-weight: 400; }
+    .breadcrumb-custom { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; position: relative; }
+    .breadcrumb-custom a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; }
+    .breadcrumb-custom a:hover { color: white; }
+    .breadcrumb-custom span { color: rgba(255,255,255,0.5); font-size: 0.9rem; }
+    .breadcrumb-custom .current { color: #a5d65a; font-size: 0.9rem; font-weight: 600; }
+
     .products-main { background: transparent; padding: 2.5rem 0 5rem; min-height: 60vh; }
 
     .filter-bar {
@@ -129,20 +84,18 @@
         gap: 1.5rem; margin-bottom: 2.5rem;
     }
     .medicine-card {
-        background: linear-gradient(180deg, rgba(3,37,131,0.08) 0%, rgba(251,140,0,0.06) 100%);
-        border-radius: 20px; overflow: hidden;
-        border: 1px solid rgba(30, 103, 196, 0.18); transition: all 0.3s;
+        background: white; border-radius: 16px; overflow: hidden;
+        border: 1px solid #e5e7eb; transition: all 0.3s;
         display: flex; flex-direction: column;
-        backdrop-filter: blur(8px);
     }
     .medicine-card:hover {
         transform: translateY(-6px);
-        box-shadow: 0 18px 42px rgba(3,37,131,0.16);
-        border-color: rgba(251,140,0,0.45);
+        box-shadow: 0 12px 35px rgba(30,136,229,0.12);
+        border-color: #90caf9;
     }
     .medicine-image {
         width: 100%; height: 180px;
-        background: linear-gradient(135deg, rgba(2,118,210,0.18), rgba(251,140,0,0.18));
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
         display: flex; align-items: center; justify-content: center;
         font-size: 3rem; overflow: hidden;
     }
@@ -330,88 +283,22 @@
     .page-btn.disabled { background: #f3f4f6; color: #d1d5db; cursor: not-allowed; pointer-events: none; }
 
     @media (max-width: 768px) {
-        .products-header {
-            padding: 3rem 0 2.5rem;
-        }
-        .products-header .hero-panel {
-            grid-template-columns: 1fr;
-            text-align: center;
-            gap: 1.5rem;
-            padding: 2rem;
-        }
-        .products-header .brand-logo {
-            margin: 0 auto;
-            max-height: 130px;
-            width: auto;
-        }
-        .products-header .brand-copy h1 {
-            font-size: 2rem;
-            line-height: 1.1;
-            margin-bottom: 0.5rem;
-        }
-        .products-header .brand-copy p {
-            font-size: 1rem;
-            line-height: 1.6;
-        }
-        .products-header .brand-copy {
-            max-width: none;
-        }
-        .products-header .header-deco-icon-1,
-        .products-header .header-deco-icon-2,
-        .products-header .header-deco-icon-3 {
-            animation: headerIconFloatMobile 5.5s ease-in-out infinite;
-            opacity: 0.08;
-        }
-        .products-header .header-deco-icon-1 { right: 6%; bottom: 18px; font-size: 3.2rem; }
-        .products-header .header-deco-icon-2 { right: 18%; top: 12px; font-size: 2.2rem; }
-        .products-header .header-deco-icon-3 { right: 30%; bottom: 14px; font-size: 1.9rem; }
-        .products-header h1 { font-size: clamp(1.8rem, 6vw, 2.4rem); }
-        .products-header p { font-size: 0.98rem; line-height: 1.6; }
         .filter-bar { flex-direction: column; padding: 1rem; gap: 0.75rem; }
         .filter-group { width: 100%; min-width: unset; }
         .filter-bar > div:last-child { width: 100%; display: flex; gap: 0.5rem; }
         .btn-filter, .btn-reset { flex: 1; text-align: center; }
-        .medicines-grid { grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+        .medicines-grid { grid-template-columns: repeat(2, 1fr); gap: 0.85rem; }
         .cart-drawer { width: 100%; max-width: 100%; right: -100%; }
         .cart-drawer.open { right: 0; }
     }
 
     @media (max-width: 480px) {
-        .products-header {
-            padding: 2.5rem 0 2rem;
-        }
-        .products-header .brand-card {
-            padding: 0.85rem;
-            gap: 0.85rem;
-        }
-        .products-header .brand-logo {
-            max-height: 90px;
-        }
-        .products-header .brand-copy h1 {
-            font-size: 2rem;
-        }
-        .products-header .brand-copy p {
-            font-size: 0.95rem;
-        }
-        .products-header .partner-chip {
-            padding: 0.55rem 0.8rem;
-            font-size: 0.85rem;
-        }
-        .products-header .header-deco-icon-1,
-        .products-header .header-deco-icon-2,
-        .products-header .header-deco-icon-3 {
-            animation: headerIconFloatMobile 6s ease-in-out infinite;
-            opacity: 0.06;
-        }
-        .products-header .header-deco-icon-1 { right: 4%; bottom: 10px; font-size: 2.6rem; }
-        .products-header .header-deco-icon-2 { right: 18%; top: 10px; font-size: 1.8rem; }
-        .products-header .header-deco-icon-3 { right: 28%; bottom: 8px; font-size: 1.5rem; }
-        .medicines-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); gap: 0.85rem; }
+        .medicines-grid { grid-template-columns: repeat(2, 1fr); gap: 0.65rem; }
         .medicine-image { height: 120px; }
-        .medicine-body { padding: 0.75rem; }
-        .medicine-name { font-size: 0.88rem; }
-        .medicine-price { font-size: 1rem; }
-        .medicine-btn, .btn-cart { font-size: 0.82rem; padding: 0.55rem; }
+        .medicine-body { padding: 0.65rem; }
+        .medicine-name { font-size: 0.82rem; }
+        .medicine-price { font-size: 0.9rem; }
+        .medicine-btn, .btn-cart { font-size: 0.78rem; padding: 0.5rem; }
     }
 </style>
 <?php echo $__env->make('partials.product-card-styles', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
@@ -421,18 +308,13 @@
 
 <div class="products-header">
     <div class="container">
-        <div class="hero-panel">
-            <img src="<?php echo e(asset('LOGO APOTEK MEDIX.PNG')); ?>" alt="Apotek Medix" class="brand-logo" />
-            <div class="brand-copy">
-                <div class="breadcrumb-custom" style="margin:0 0 0.75rem;">
-                    <a href="<?php echo e(route('home')); ?>"><i class="fa-solid fa-house"></i> Home</a>
-                    <span>/</span>
-                    <span class="current">Belanja B2B</span>
-                </div>
-                <h1><i class="fa-solid fa-box"></i> Belanja B2B</h1>
-                <p><?php echo e($total); ?> produk PBF tersedia dari Apotek Medix untuk mitra apotek dan distributor yang membutuhkan stok terpercaya.</p>
-            </div>
+        <div class="breadcrumb-custom">
+            <a href="<?php echo e(route('home')); ?>"><i class="fa-solid fa-house"></i> Home</a>
+            <span>/</span>
+            <span class="current">Belanja B2C</span>
         </div>
+        <h1><i class="fa-solid fa-store"></i> Belanja B2C</h1>
+        <p><?php echo e($total); ?> produk tersedia dari berbagai perusahaan farmasi terpercaya</p>
     </div>
     <i class="fa-solid fa-pills header-deco-icon header-deco-icon-1"></i>
     <i class="fa-solid fa-capsules header-deco-icon header-deco-icon-2"></i>
@@ -442,36 +324,11 @@
 <div class="products-main">
     <div class="container">
 
-        
-        <?php if(session('pbf_success')): ?>
-        <div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-            <span style="color:#065f46;font-weight:700;font-size:0.9rem;display:flex;align-items:center;gap:0.5rem;">
-                <i class="fa-solid fa-circle-check"></i>
-                <?php echo e(session('pbf_success')); ?>
-
-            </span>
-        </div>
-        <?php endif; ?>
-
-        
-        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:0.75rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-            <span style="color:#92400e;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
-                <i class="fa-solid fa-shield-halved" style="color:#f59e0b;"></i>
-                Anda masuk sebagai mitra PBF terverifikasi
-            </span>
-            <form method="POST" action="<?php echo e(route('products.pbf.logout')); ?>" style="margin:0;">
-                <?php echo csrf_field(); ?>
-                <button type="submit" style="background:none;border:1.5px solid #f59e0b;color:#92400e;padding:0.35rem 0.9rem;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;transition:all 0.2s;">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar Akses
-                </button>
-            </form>
-        </div>
-
-        <form method="GET" action="<?php echo e(route('products.pbf')); ?>" class="filter-bar">
+        <form method="GET" action="<?php echo e(route('products.apotek')); ?>" class="filter-bar">
             <div class="filter-group" style="flex: 2; min-width: 200px;">
                 <label class="filter-label"><i class="fa-solid fa-magnifying-glass"></i> Cari Produk</label>
                 <input type="text" name="search" class="filter-input"
-                       placeholder="Nama produk atau deskripsi..."
+                       placeholder="Cari nama obat, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan..."
                        value="<?php echo e($search); ?>">
             </div>
             <div class="filter-group">
@@ -506,10 +363,11 @@
                 <button type="submit" class="btn-filter">
                     <i class="fa-solid fa-magnifying-glass"></i> Cari
                 </button>
-                <?php if($search || ($kategori_produk ?? '') || $perusahaan || $sort !== 'terbaru'): ?>
-                    <a href="<?php echo e(route('products.pbf')); ?>" class="btn-reset">✕ Reset</a>
+                <?php if($search || ($kategori_produk ?? '') || $perusahaan || ($indikasi ?? '') || ($komposisi ?? '') || ($sediaan ?? '') || ($dosis ?? '') || ($golongan ?? '') || $sort !== 'terbaru'): ?>
+                    <a href="<?php echo e(route('products.apotek')); ?>" class="btn-reset">✕ Reset</a>
                 <?php endif; ?>
             </div>
+
         </form>
 
         <div class="result-info">
@@ -536,25 +394,25 @@
                             <h3 class="medicine-name"><a href="<?php echo e(route('medicines.show', $medicine->id)); ?>"><?php echo e($medicine->nama_obat); ?></a></h3>
 
                             <?php
-                                $basePrice = $medicine->getChannelBasePrice('b2b');
-                                $promoPrice = $medicine->getChannelPromoPrice('b2b');
+                                $promoPrice = $medicine->getChannelPromoPrice('b2c');
                             ?>
                             <div class="medicine-card-details">
                                 <p><strong>Komposisi:</strong> <?php echo e($medicine->komposisi ?: $medicine->nama_obat); ?></p>
                                 <?php if($medicine->indikasi): ?>
                                     <p><strong>Indikasi:</strong> <?php echo e($medicine->indikasi); ?></p>
                                 <?php endif; ?>
+                                <?php if($medicine->dosis): ?>
+                                    <p><strong>Dosis:</strong> <?php echo e($medicine->dosis); ?></p>
+                                <?php endif; ?>
+                                <?php if($medicine->golongan): ?>
+                                    <p><strong>Golongan:</strong> <?php echo e($medicine->golongan); ?></p>
+                                <?php endif; ?>
                             </div>
-                            <?php echo $__env->make('partials.product-unit-selector', [
-                                'medicine' => $medicine,
-                                'unitSelectId' => 'pbf-unit-' . $medicine->id,
-                                'priceChannel' => 'b2b',
-                                'showUnitChoices' => false,
-                            ], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                            <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => 'b2c'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                             <?php $stock = (int) $medicine->available_stock_units; ?>
-                            <span class="stock-badge <?php echo e($stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($medicine->id); ?>">
+                            <span class="product-stock <?php echo e($stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($medicine->id); ?>">
                                 <i class="fa-solid <?php echo e($stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
-                                <?php echo e($stock > 0 ? 'Stok: ' . $medicine->getStockBreakdownForUnits($stock) : 'Stok habis'); ?>
+                                <?php echo e($stock > 0 ? 'Stok: ' . $medicine->getConvertedStockSummaryForUnits($stock) : 'Stok habis'); ?>
 
                             </span>
                             <?php if($medicine->sediaan_label): ?>
@@ -562,22 +420,16 @@
                                     <i class="fa-solid fa-cube"></i> <span>Sediaan: <?php echo e($medicine->sediaan_label); ?></span>
                                 </div>
                             <?php endif; ?>
-                            <?php if($basePrice > 0): ?>
-                                <button class="btn-cart" data-stock-cart <?php if($stock <= 0): echo 'disabled'; endif; ?>
-                                        data-product-id="<?php echo e($medicine->id); ?>"
-                                        data-package-unit-label="<?php echo e($medicine->package_unit_label); ?>"
-                                        data-product-name="<?php echo e($medicine->nama_obat); ?>"
-                                        data-product-price="<?php echo e($promoPrice); ?>"
-                                        data-product-image="<?php echo e($medicine->image_url ?: ''); ?>"
-                                        data-product-brand="<?php echo e($medicine->brand ?: $medicine->kategori); ?>"
-                                        onclick="addToCart(<?php echo e($medicine->id); ?>, this.dataset.productName, Number(this.dataset.productPrice), this.dataset.productImage, this.dataset.productBrand, this, 'pbf-unit-<?php echo e($medicine->id); ?>')">
-                                    <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang
-                                </button>
-                            <?php else: ?>
-                                <button class="btn-cart" type="button" disabled style="opacity:.55;cursor:not-allowed;">
-                                    Harga belum tersedia
-                                </button>
-                            <?php endif; ?>
+                            <button class="btn-cart" data-stock-cart <?php if($stock <= 0): echo 'disabled'; endif; ?>
+                                    data-product-id="<?php echo e($medicine->id); ?>"
+                                    data-package-unit-label="<?php echo e($medicine->package_unit_label); ?>"
+                                    data-product-name="<?php echo e($medicine->nama_obat); ?>"
+                                    data-product-price="<?php echo e($promoPrice); ?>"
+                                    data-product-image="<?php echo e($medicine->image_url ?: ''); ?>"
+                                    data-product-brand="<?php echo e($medicine->brand ?: $medicine->kategori); ?>"
+                                    onclick="addToCart(<?php echo e($medicine->id); ?>, this.dataset.productName, Number(this.dataset.productPrice), this.dataset.productImage, this.dataset.productBrand, this, 'apotik-unit-<?php echo e($medicine->id); ?>')">
+                                <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang
+                            </button>
                         </div>
                     </div>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -622,7 +474,7 @@
                     <?php endif; ?>
                 </p>
                 <?php if($search || ($kategori_produk ?? '') || $perusahaan): ?>
-                    <a href="<?php echo e(route('products.pbf')); ?>" class="btn-reset" style="display:inline-block;margin-top:1rem;">✕ Hapus Filter</a>
+                    <a href="<?php echo e(route('products.apotek')); ?>" class="btn-reset" style="display:inline-block;margin-top:1rem;">✕ Hapus Filter</a>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
@@ -633,15 +485,8 @@
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('scripts'); ?>
-<script>
-window.cartSettings = {
-    storageKey: 'apotekmedix_cart_pbf',
-    receiptStoreName: 'Apotek Medix',
-    receiptStoreAddress: 'Jl. Pendawa Jl. Sersan Muis No.99, 2 Ilir, Kec. Ilir Tim. II, Kota Palembang\nSumatera Selatan 30118',
-    receiptFilePrefix: 'struk-pt-surya-sharone-abadi'
-};
-</script>
-<?php echo $__env->make('partials.cart', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_apotek', wholesaleOrder: false };</script>
+<?php echo $__env->make('partials.cart', ['cartWholesaleOrder' => false], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.frontend', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/products_pbf.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.frontend', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/products_apotek.blade.php ENDPATH**/ ?>

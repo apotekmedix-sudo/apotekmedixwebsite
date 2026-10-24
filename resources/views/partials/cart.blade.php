@@ -477,7 +477,7 @@ async function refreshAvailableProductStock() {
         }
         const icon = element.querySelector('i');
         if (icon) icon.className = `fa-solid ${available ? 'fa-boxes-stacked' : 'fa-circle-xmark'}`;
-        element.lastChild.textContent = available ? ` Stok: ${stock.breakdown}` : ' Stok habis';
+        element.lastChild.textContent = available ? ` Stok: ${stock.converted_summary || stock.breakdown}` : ' Stok habis';
       }
       if (element.matches('.product-unit-data')) {
         element.dataset.stockUnits = String(stock.units);
@@ -487,6 +487,8 @@ async function refreshAvailableProductStock() {
           const input = unitCard.querySelector('[data-cart-quantity]');
           if (!input) return;
           const availableQuantity = Math.floor(stock.units / Number(unitFactors[input.dataset.stockUnit] || 1));
+          const unitStockBadge = unitCard.querySelector('[data-unit-stock-badge]');
+          if (unitStockBadge) unitStockBadge.textContent = `Stok: ${availableQuantity.toLocaleString('id-ID')}`;
           input.max = String(availableQuantity);
           if (Number(input.value) > availableQuantity) input.value = String(availableQuantity);
           const selected = unitCard.classList.contains('is-selected');
