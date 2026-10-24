@@ -13,6 +13,7 @@ class ShoppingAccessCode extends Model
 {
     public const CHANNEL_INTERNAL = 'internal';
     public const CHANNEL_B2B = 'b2b';
+    public const CHANNEL_B2C = 'b2c';
 
     protected $fillable = [
         'channel',

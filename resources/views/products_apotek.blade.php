@@ -36,6 +36,30 @@
         font-weight: 800; color: white;
         margin-bottom: 0.5rem; position: relative;
     }
+    .b2c-secret-trigger {
+        padding: 0 .12em;
+        border: 0;
+        border-radius: 2px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-weight: inherit;
+        cursor: pointer;
+    }
+    .b2c-secret-trigger:focus-visible { outline: 3px solid #bfdbfe; outline-offset: 3px; }
+    .b2c-access-status { display: inline-flex; gap: .4rem; align-items: center; margin: .25rem 0 .5rem; padding: .35rem .65rem; border-radius: 999px; background: rgba(220,252,231,.16); color: #dcfce7; font-size: .82rem; font-weight: 700; }
+    .b2c-code-dialog { width: min(420px, calc(100% - 2rem)); padding: 0; border: 0; border-radius: 18px; box-shadow: 0 24px 70px rgba(15,23,42,.35); }
+    .b2c-code-dialog::backdrop { background: rgba(15,23,42,.68); backdrop-filter: blur(3px); }
+    .b2c-code-dialog-content { padding: 1.5rem; color: #0f172a; }
+    .b2c-code-dialog h2 { margin: 0 0 .45rem; font-size: 1.25rem; }
+    .b2c-code-dialog p { margin: 0 0 1rem; color: #64748b; font-size: .9rem; line-height: 1.5; }
+    .b2c-code-dialog label { display: block; margin-bottom: .4rem; color: #334155; font-size: .85rem; font-weight: 700; }
+    .b2c-code-dialog input { width: 100%; padding: .75rem .85rem; border: 1px solid #cbd5e1; border-radius: 10px; font: inherit; letter-spacing: .18em; }
+    .b2c-code-dialog-actions { display: flex; justify-content: flex-end; gap: .65rem; margin-top: 1.1rem; }
+    .b2c-code-dialog-actions button { padding: .65rem .9rem; border: 0; border-radius: 9px; font: inherit; font-weight: 700; cursor: pointer; }
+    .b2c-code-submit { background: #0052cc; color: white; }
+    .b2c-code-cancel { background: #f1f5f9; color: #334155; }
+    .b2c-code-error { margin: .8rem 0 0!important; color: #b91c1c!important; }
     .products-header p { color: rgba(255,255,255,0.8); font-size: 1rem; position: relative; }
     .breadcrumb-custom { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; position: relative; }
     .breadcrumb-custom a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; }
@@ -313,13 +337,33 @@
             <span>/</span>
             <span class="current">Belanja B2C</span>
         </div>
-        <h1><i class="fa-solid fa-store"></i> Belanja B2C</h1>
+        <h1><i class="fa-solid fa-store"></i> Belanja <button type="button" class="b2c-secret-trigger" aria-label="Masukkan kode akses B2C" aria-haspopup="dialog" onclick="document.getElementById('b2cCodeDialog').showModal()">B2C</button></h1>
+        @if($b2cAccess)
+            <div class="b2c-access-status"><i class="fa-solid fa-unlock-keyhole" aria-hidden="true"></i> Produk khusus terbuka</div>
+        @endif
         <p>{{ $total }} produk tersedia dari berbagai perusahaan farmasi terpercaya</p>
     </div>
     <i class="fa-solid fa-pills header-deco-icon header-deco-icon-1"></i>
     <i class="fa-solid fa-capsules header-deco-icon header-deco-icon-2"></i>
     <i class="fa-solid fa-syringe header-deco-icon header-deco-icon-3"></i>
 </div>
+
+<dialog id="b2cCodeDialog" class="b2c-code-dialog" aria-labelledby="b2cCodeDialogTitle">
+    <form action="{{ route('products.apotek.activate') }}" method="POST" class="b2c-code-dialog-content">
+        @csrf
+        <h2 id="b2cCodeDialogTitle">Akses Produk Khusus B2C</h2>
+        <p>Masukkan kode aktivasi untuk membuka produk dengan logo merah. Kode dapat diperoleh dari administrator.</p>
+        <label for="b2cAccessCode">Kode aktivasi</label>
+        <input id="b2cAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" autocomplete="one-time-code" placeholder="5 digit" value="{{ old('kode') }}" required>
+        @if($errors->has('kode'))
+            <p class="b2c-code-error" role="alert">{{ $errors->first('kode') }}</p>
+        @endif
+        <div class="b2c-code-dialog-actions">
+            <button type="button" class="b2c-code-cancel" onclick="document.getElementById('b2cCodeDialog').close()">Batal</button>
+            <button type="submit" class="b2c-code-submit">Buka Produk</button>
+        </div>
+    </form>
+</dialog>
 
 <div class="products-main">
     <div class="container">
@@ -486,4 +530,11 @@
 @section('scripts')
 <script>window.cartSettings = { storageKey: 'apotekmedix_cart_apotek', wholesaleOrder: false };</script>
 @include('partials.cart', ['cartWholesaleOrder' => false])
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    @if($errors->has('kode') || session('b2c_activation_required'))
+    document.getElementById('b2cCodeDialog')?.showModal();
+    @endif
+});
+</script>
 @endsection

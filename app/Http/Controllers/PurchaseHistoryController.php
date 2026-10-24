@@ -128,6 +128,7 @@ class PurchaseHistoryController extends Controller
         $items = is_array($data['items'] ?? null) ? $data['items'] : [];
         $originalTotal = 0;
         $discountedTotal = 0;
+        $hasB2cAccess = null;
 
         foreach ($items as $index => $item) {
             $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
@@ -147,6 +148,24 @@ class PurchaseHistoryController extends Controller
                 : (($product && $product->kelompok === 'PBF') || $data['buyer_type'] === 'pbf' || !empty($data['pbf_name'])
                     ? 'b2b'
                     : 'b2c');
+
+            if ($product?->hasRedLogo() && $promoChannel === 'b2c') {
+                if ($hasB2cAccess === null) {
+                    $b2cAccessExpiresAt = (int) $request->session()->get('b2c_access_expires_at', 0);
+                    $hasB2cAccess = $b2cAccessExpiresAt > now()->timestamp
+                        && ShoppingAccessCode::matchesSession(
+                            ShoppingAccessCode::CHANNEL_B2C,
+                            $request->session()->get('b2c_access_code_hash')
+                        );
+                }
+
+                if (!$hasB2cAccess) {
+                    return response()->json([
+                        'message' => 'Aktifkan kode akses B2C untuk memesan produk berlogo merah.',
+                        'errors' => ['items' => ['Produk berlogo merah memerlukan kode akses B2C aktif.']],
+                    ], 403);
+                }
+            }
 
             if ($product && in_array($promoChannel, ['internal', 'b2b'], true) && $unit !== 'box') {
                 return response()->json([

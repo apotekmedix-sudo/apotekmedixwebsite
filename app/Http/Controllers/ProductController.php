@@ -155,14 +155,34 @@ class ProductController extends Controller
     /**
      * Halaman show detail produk (public)
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $medicine = Medicine::findOrFail($id);
-        StockAvailability::annotate([$medicine]);
-        $relatedMedicines = Medicine::where('kategori', $medicine->kategori)
-                                    ->where('id', '!=', $medicine->id)
-                                    ->limit(4)
-                                    ->get();
+        $b2cAccess = $this->hasB2cAccess($request);
+        $hasOtherChannelAccess = $this->hasShoppingAccess(
+            $request,
+            ShoppingAccessCode::CHANNEL_B2B,
+            'pbf_access_expires_at',
+            'pbf_access_code_hash'
+        ) || $this->hasShoppingAccess(
+            $request,
+            ShoppingAccessCode::CHANNEL_INTERNAL,
+            'internal_shopping_expires_at',
+            'internal_shopping_code_hash'
+        );
+        if ($medicine->hasRedLogo() && !$b2cAccess && !$hasOtherChannelAccess) {
+            return redirect()
+                ->route('products.apotek')
+                ->with('b2c_activation_required', true);
+        }
+
+        StockAvailability::annotate($medicine->newCollection([$medicine]));
+        $relatedQuery = Medicine::where('kategori', $medicine->kategori)
+            ->where('id', '!=', $medicine->id);
+        if (!$b2cAccess && !$hasOtherChannelAccess) {
+            $relatedQuery->withoutRedLogo();
+        }
+        $relatedMedicines = $relatedQuery->limit(4)->get();
         StockAvailability::annotate($relatedMedicines);
         return view('medicines.detail', compact('medicine', 'relatedMedicines'));
     }
@@ -293,6 +313,7 @@ class ProductController extends Controller
      */
     public function apotek(Request $request)
     {
+        $b2cAccess = $this->hasB2cAccess($request);
         $search          = $request->get('search', '');
         $kategori_produk = $request->get('kategori_produk', '');
         $perusahaan      = $request->get('perusahaan', '');
@@ -304,6 +325,9 @@ class ProductController extends Controller
         $sort            = $request->get('sort', 'terbaru');
 
         $catalogQuery = Medicine::nonPbf()->availableForB2c();
+        if (!$b2cAccess) {
+            $catalogQuery->withoutRedLogo();
+        }
         $query = clone $catalogQuery;
 
         if ($search !== '') {
@@ -352,8 +376,64 @@ class ProductController extends Controller
             'medicines', 'search', 'kategori_produk', 'perusahaan',
             'indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan',
             'sediaanList', 'golonganList',
-            'sort', 'total', 'kategoriOptions', 'perusahaanList'
+            'sort', 'total', 'kategoriOptions', 'perusahaanList', 'b2cAccess'
         ));
+    }
+
+    public function apotekActivate(Request $request)
+    {
+        $validated = $request->validate([
+            'kode' => ['required', 'string', 'regex:/^[0-9]{5}$/'],
+        ]);
+        $accessCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2C)->first();
+
+        if (!$accessCode || !$accessCode->verify($validated['kode'])) {
+            return redirect()
+                ->route('products.apotek')
+                ->withErrors(['kode' => 'Kode akses tidak sesuai atau belum diaktifkan. Hubungi administrator.'])
+                ->withInput();
+        }
+
+        $request->session()->regenerate();
+        $sessionExpiresAt = now()->addDays((int) config('internal.code_validity_days', 30));
+        if ($accessCode->expires_at->lt($sessionExpiresAt)) {
+            $sessionExpiresAt = $accessCode->expires_at;
+        }
+        $request->session()->put('b2c_access_expires_at', $sessionExpiresAt->timestamp);
+        $request->session()->put('b2c_access_code_hash', $accessCode->code_hash);
+
+        return redirect()->route('products.apotek')
+            ->with('success', 'Kode berhasil. Produk berlogo merah sekarang dapat dilihat.');
+    }
+
+    private function hasB2cAccess(Request $request): bool
+    {
+        return $this->hasShoppingAccess(
+            $request,
+            ShoppingAccessCode::CHANNEL_B2C,
+            'b2c_access_expires_at',
+            'b2c_access_code_hash'
+        );
+    }
+
+    private function hasShoppingAccess(
+        Request $request,
+        string $channel,
+        string $expiresAtKey,
+        string $codeHashKey
+    ): bool {
+        $expiresAt = (int) $request->session()->get($expiresAtKey, 0);
+        $codeHash = $request->session()->get($codeHashKey);
+        if (
+            $expiresAt <= now()->timestamp
+            || !ShoppingAccessCode::matchesSession($channel, $codeHash)
+        ) {
+            $request->session()->forget([$expiresAtKey, $codeHashKey]);
+
+            return false;
+        }
+
+        return true;
     }
 
     public function stockAvailability(Request $request)

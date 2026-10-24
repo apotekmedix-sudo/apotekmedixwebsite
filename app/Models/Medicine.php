@@ -378,6 +378,19 @@ class Medicine extends Model
         });
     }
 
+    public function scopeWithoutRedLogo($query)
+    {
+        return $query->where(function ($catalogQuery) {
+            $catalogQuery->whereNull('logo')
+                ->orWhereRaw('LOWER(TRIM(logo)) NOT IN (?, ?)', ['merah', 'red']);
+        });
+    }
+
+    public function hasRedLogo(): bool
+    {
+        return in_array(mb_strtolower(trim((string) $this->logo)), ['merah', 'red'], true);
+    }
+
     public function isAvailable(): bool
     {
         return $this->available_stock_units > 0;
