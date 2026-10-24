@@ -618,6 +618,43 @@ class MedicineUnitPackagingTest extends TestCase
         $this->assertDatabaseCount('pbf_suppliers', 0);
     }
 
+    public function test_admin_can_import_and_export_pbf_supplier_csv(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $supplier = \App\Models\PbfSupplier::create([
+            'name' => 'Supplier Lama',
+            'address' => 'Alamat Lama',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
+            ->assertOk()
+            ->assertSee('Export Supplier')
+            ->assertSee('Template CSV')
+            ->assertSee('Import Supplier');
+
+        $export = $this->get(route('admin.produk-pbf.suppliers.export'));
+        $export->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('ID,NAMA,ALAMAT', $export->streamedContent());
+
+        $csv = "ID,NAMA,ALAMAT\n{$supplier->id},Supplier Baru,\"Alamat Baru, Bogor\"\n,PT Supplier Baru,Jakarta\n";
+        $file = UploadedFile::fake()->createWithContent('suppliers.csv', $csv);
+        $this->post(route('admin.produk-pbf.suppliers.import'), ['file' => $file])
+            ->assertRedirect(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
+            ->assertSessionHas('status', '2 data supplier berhasil diimpor atau diperbarui.');
+
+        $this->assertDatabaseHas('pbf_suppliers', [
+            'id' => $supplier->id,
+            'name' => 'Supplier Baru',
+            'address' => 'Alamat Baru, Bogor',
+        ]);
+        $this->assertDatabaseHas('pbf_suppliers', [
+            'name' => 'PT Supplier Baru',
+            'address' => 'Jakarta',
+        ]);
+        $this->assertDatabaseCount('pbf_suppliers', 2);
+    }
+
     public function test_cart_page_uses_pbf_purchase_order_popup_without_changing_regular_checkout(): void
     {
         $this->get(route('cart.index'))

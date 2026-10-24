@@ -135,6 +135,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/purchase-history/{order}', [AdminDashboardController::class, 'destroy'])->name('purchase-history.destroy');
     Route::delete('/purchase-history', [AdminDashboardController::class, 'destroyAll'])->name('purchase-history.destroyAll');
     Route::get('/customers/export', [AdminCustomerController::class, 'export'])->name('customers.export');
+    Route::get('/customers/export/master', [AdminCustomerController::class, 'exportMaster'])->name('customers.export.master');
+    Route::get('/customers/import/template', [AdminCustomerController::class, 'downloadImportTemplate'])->name('customers.import.template');
+    Route::post('/customers/import', [AdminCustomerController::class, 'import'])->name('customers.import');
     Route::resource('customers', AdminCustomerController::class)->except('show');
     Route::get('/access-codes', [AdminShoppingAccessCodeController::class, 'index'])->name('access-codes.index');
     Route::post('/access-codes/{channel}/generate', [AdminShoppingAccessCodeController::class, 'generate'])
@@ -170,6 +173,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('produk/bulk-delete', [AdminProdukController::class, 'destroyMany'])->name('produk.destroyMany');
     Route::get('produk-pbf', [AdminProdukController::class, 'indexPbf'])->name('produk-pbf.index');
     Route::post('produk-pbf/suppliers', [AdminProdukController::class, 'storePbfSupplier'])->name('produk-pbf.suppliers.store');
+    Route::get('produk-pbf/suppliers/export', [AdminProdukController::class, 'exportPbfSuppliers'])->name('produk-pbf.suppliers.export');
+    Route::get('produk-pbf/suppliers/import/template', [AdminProdukController::class, 'downloadPbfSupplierImportTemplate'])->name('produk-pbf.suppliers.import.template');
+    Route::post('produk-pbf/suppliers/import', [AdminProdukController::class, 'importPbfSuppliers'])->name('produk-pbf.suppliers.import');
     Route::put('produk-pbf/suppliers/{supplier}', [AdminProdukController::class, 'updatePbfSupplier'])->name('produk-pbf.suppliers.update');
     Route::delete('produk-pbf/suppliers/{supplier}', [AdminProdukController::class, 'destroyPbfSupplier'])->name('produk-pbf.suppliers.destroy');
     Route::get('produk-export', [AdminProdukController::class, 'export'])->name('produk.export');

@@ -10,7 +10,11 @@ use App\Helpers\ImageHelper;
 use App\Support\StockAvailability;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use App\Models\PbfSupplier;
+use App\Support\CsvSpreadsheet;
+use RuntimeException;
 
 class AdminProdukController extends Controller
 {
@@ -149,6 +153,123 @@ class AdminProdukController extends Controller
         return redirect()
             ->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
             ->with('status', 'Supplier berhasil dihapus.');
+    }
+
+    public function exportPbfSuppliers()
+    {
+        $rows = PbfSupplier::query()->orderBy('id')->get(['id', 'name', 'address'])->map(
+            fn (PbfSupplier $supplier) => [$supplier->id, $supplier->name, $supplier->address]
+        );
+
+        return CsvSpreadsheet::download(
+            'data-supplier-pbf-'.now()->format('Ymd-His').'.csv',
+            ['ID', 'NAMA', 'ALAMAT'],
+            $rows
+        );
+    }
+
+    public function downloadPbfSupplierImportTemplate()
+    {
+        return CsvSpreadsheet::download('template-import-supplier-pbf.csv', ['ID', 'NAMA', 'ALAMAT'], []);
+    }
+
+    public function importPbfSuppliers(Request $request)
+    {
+        $fileValidator = Validator::make($request->all(), [
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
+        ]);
+        if ($fileValidator->fails()) {
+            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+                ->withErrors($fileValidator, 'supplierImport');
+        }
+
+        try {
+            [$headers, $rows] = CsvSpreadsheet::read($request->file('file'));
+        } catch (RuntimeException $exception) {
+            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+                ->withErrors(['file' => $exception->getMessage()], 'supplierImport');
+        }
+
+        if (array_diff(['nama', 'alamat'], $headers)) {
+            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+                ->withErrors(['file' => 'Format CSV supplier tidak sesuai. Kolom wajib: NAMA dan ALAMAT.'], 'supplierImport');
+        }
+        if (count($rows) > 5000) {
+            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+                ->withErrors(['file' => 'Maksimal 5.000 data supplier per impor.'], 'supplierImport');
+        }
+
+        $prepared = [];
+        $errors = [];
+        $seenNames = [];
+        foreach ($rows as $index => $row) {
+            $line = $index + 2;
+            $data = ['name' => $row['nama'] ?? null, 'address' => $row['alamat'] ?? null];
+            $validator = Validator::make($data, [
+                'name' => ['required', 'string', 'max:255'],
+                'address' => ['required', 'string', 'max:2000'],
+            ]);
+            if ($validator->fails()) {
+                foreach ($validator->errors()->all() as $message) {
+                    $errors[] = "Baris {$line}: {$message}";
+                }
+                continue;
+            }
+
+            $id = filled($row['id'] ?? null) ? filter_var($row['id'], FILTER_VALIDATE_INT) : null;
+            if (filled($row['id'] ?? null) && (! $id || $id < 1)) {
+                $errors[] = "Baris {$line}: ID supplier harus berupa angka positif.";
+                continue;
+            }
+            $supplier = $id ? PbfSupplier::find($id) : null;
+            if ($id && ! $supplier) {
+                $errors[] = "Baris {$line}: supplier dengan ID {$id} tidak ditemukan.";
+                continue;
+            }
+
+            $normalizedName = mb_strtolower(trim($data['name']));
+            if (isset($seenNames[$normalizedName])) {
+                $errors[] = "Baris {$line}: nama supplier duplikat di dalam file.";
+                continue;
+            }
+            $seenNames[$normalizedName] = true;
+
+            $duplicateQuery = PbfSupplier::whereRaw('LOWER(name) = ?', [$normalizedName]);
+            if ($supplier) {
+                $duplicateQuery->where('id', '!=', $supplier->id);
+            }
+            $duplicate = $duplicateQuery->first();
+            if ($duplicate) {
+                if ($id) {
+                    $errors[] = "Baris {$line}: nama supplier sudah digunakan oleh supplier lain.";
+                    continue;
+                }
+                $supplier = $duplicate;
+            }
+
+            $prepared[] = ['supplier' => $supplier, 'data' => $data];
+        }
+
+        if ($errors) {
+            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+                ->withErrors(['file' => $errors], 'supplierImport');
+        }
+        if (! $prepared) {
+            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+                ->withErrors(['file' => 'File CSV tidak berisi data supplier untuk diimpor.'], 'supplierImport');
+        }
+
+        DB::transaction(function () use ($prepared): void {
+            foreach ($prepared as $record) {
+                $supplier = $record['supplier'] ?? new PbfSupplier();
+                $supplier->fill($record['data']);
+                $supplier->save();
+            }
+        });
+
+        return redirect()
+            ->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+            ->with('status', count($prepared).' data supplier berhasil diimpor atau diperbarui.');
     }
 
     public function export(Request $request)

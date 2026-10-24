@@ -9,9 +9,15 @@
     .customer-summary-card{padding:16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px}
     .customer-summary-card span{display:block;color:#64748b;font-size:12px;font-weight:600}
     .customer-summary-card strong{display:block;margin-top:6px;color:#1e293b;font-size:22px}
-    .customer-heading{display:flex;justify-content:space-between;align-items:center;gap:14px}
+    .customer-heading{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
     .customer-add,.customer-action{display:inline-block;padding:8px 11px;border-radius:8px;background:#0052cc;color:#fff;text-decoration:none;font-size:12px;font-weight:700}
     .customer-export{background:#15803d}
+    .customer-tools{display:flex;flex-wrap:wrap;gap:8px}
+    .customer-import{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}
+    .customer-import input[type=file]{max-width:260px;font-size:12px}
+    .customer-import button{padding:8px 11px;border:0;border-radius:8px;background:#0052cc;color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+    .customer-import-hint{color:#64748b;font-size:12px}
+    .customer-import-errors{margin:0 0 14px;padding:10px 14px;border-radius:8px;background:#fff1f2;color:#9f1239;font-size:13px}
     .customer-filters{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:16px 0}
     .customer-filters label{display:block;margin-bottom:5px;color:#475569;font-size:12px;font-weight:700}
     .customer-filters input,.customer-filters select{min-width:190px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
@@ -25,6 +31,11 @@
 </style>
 
 @if(session('success'))<div class="flash-success">{{ session('success') }}</div>@endif
+@if($errors->any())
+    <ul class="customer-import-errors" role="alert">
+        @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+    </ul>
+@endif
 
 <section class="customer-summary" aria-label="Ringkasan customer dan kanal">
     <div class="customer-summary-card"><span>MASTER CUSTOMER</span><strong>{{ number_format($summary['total']) }}</strong></div>
@@ -39,11 +50,19 @@
             <div class="card-title">Master Customer</div>
             <p style="color:#64748b;margin-top:-.75rem;">Data customer otomatis dihimpun dari pesanan Internal, B2B, dan B2C. Pesanan berulang dengan identitas yang cocok akan masuk ke satu profil.</p>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div class="customer-tools">
+            <a class="customer-add customer-export" href="{{ route('admin.customers.export.master') }}">Export Master CSV</a>
             <a class="customer-add customer-export" href="{{ route('admin.customers.export') }}">Export Customer per Kanal</a>
             <a class="customer-add" href="{{ route('admin.customers.create') }}">+ Tambah Customer</a>
         </div>
     </div>
+    <form class="customer-import" method="POST" action="{{ route('admin.customers.import') }}" enctype="multipart/form-data">
+        @csrf
+        <a class="customer-add" href="{{ route('admin.customers.import.template') }}">Download Template CSV</a>
+        <input type="file" name="file" accept=".csv,.txt,text/csv" aria-label="Pilih file CSV customer" required>
+        <button type="submit">Import Customer</button>
+        <span class="customer-import-hint">Gunakan format template CSV. ID yang ada akan diperbarui; ID kosong akan menambah customer baru.</span>
+    </form>
 
     <form class="customer-filters" method="GET" action="{{ route('admin.customers.index') }}">
         <div>

@@ -37,6 +37,11 @@
     .supplier-manager-search input { flex:1; min-width:0; padding:.65rem .8rem; border:1px solid #cbd5e1; border-radius:.55rem; color:#1e293b; font:inherit; font-size:.85rem; outline:none; }
     .supplier-manager-search input:focus { border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.12); }
     .supplier-manager-count { flex:0 0 auto; color:#64748b; font-size:.75rem; }
+    .supplier-data-tools { display:flex; flex-wrap:wrap; align-items:center; gap:.55rem; margin:0 0 .85rem; padding:.75rem; border:1px solid #e2e8f0; border-radius:.65rem; background:#f8fafc; }
+    .supplier-data-tools a,.supplier-data-tools button { display:inline-flex; align-items:center; justify-content:center; gap:.35rem; min-height:36px; padding:.5rem .7rem; border:1px solid #bfdbfe; border-radius:.45rem; background:#eff6ff; color:#1d4ed8; font-size:.75rem; font-weight:700; text-decoration:none; cursor:pointer; }
+    .supplier-data-tools button { border-color:#1e88e5; background:#1e88e5; color:#fff; }
+    .supplier-data-tools input[type=file] { min-width:160px; max-width:220px; color:#475569; font-size:.72rem; }
+    .supplier-import-errors { flex:1 0 100%; margin:0; padding:.65rem .65rem .65rem 1.8rem; border-radius:.45rem; background:#fee2e2; color:#991b1b; font-size:.75rem; }
     .supplier-list { display:grid; gap:.7rem; }
     .supplier-row { padding:.85rem; border:1px solid #e2e8f0; border-radius:10px; background:#fff; }
     .supplier-row-main { display:flex; justify-content:space-between; gap:1rem; align-items:center; }
@@ -131,6 +136,20 @@
                 <input id="supplierManagerSearch" type="search" placeholder="Cari nama atau alamat supplier..." autocomplete="off">
                 <span class="supplier-manager-count" id="supplierManagerCount">{{ $suppliers->count() }} supplier</span>
             </label>
+            <div class="supplier-data-tools">
+                <a href="{{ route('admin.produk-pbf.suppliers.export') }}"><i class="fa-solid fa-file-export"></i> Export Supplier</a>
+                <a href="{{ route('admin.produk-pbf.suppliers.import.template') }}"><i class="fa-solid fa-download"></i> Template CSV</a>
+                <form method="POST" action="{{ route('admin.produk-pbf.suppliers.import') }}" enctype="multipart/form-data" style="display:contents;">
+                    @csrf
+                    <input type="file" name="file" accept=".csv,.txt,text/csv" aria-label="Pilih file CSV supplier" required>
+                    <button type="submit"><i class="fa-solid fa-file-import"></i> Import Supplier</button>
+                </form>
+                @if($errors->supplierImport->any())
+                    <ul class="supplier-import-errors" role="alert">
+                        @foreach($errors->supplierImport->all() as $error)<li>{{ $error }}</li>@endforeach
+                    </ul>
+                @endif
+            </div>
             @if($suppliers->isEmpty())
                 <div class="supplier-list-empty"><i class="fa-solid fa-address-book"></i><p>Belum ada supplier. Tambahkan supplier untuk mulai mengelola daftar.</p></div>
             @else

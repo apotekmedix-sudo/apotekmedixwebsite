@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -75,6 +76,51 @@ class CustomerAccountTest extends TestCase
             ->assertDontSee('page6.jpeg')
             ->assertDontSee('page7.jpeg')
             ->assertDontSee('background1.jpeg');
+    }
+
+    public function test_admin_can_import_and_export_customer_master_csv(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $customer = \App\Models\Customer::create([
+            'identity_key' => hash('sha256', 'customer-csv-import'),
+            'buyer_type' => 'apotik',
+            'name' => 'Apotek Lama',
+            'phone' => '081234567899',
+            'outlet_name' => 'Apotek Lama',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.customers.index'))
+            ->assertOk()
+            ->assertSee('Export Master CSV')
+            ->assertSee('Download Template CSV')
+            ->assertSee('Import Customer');
+
+        $export = $this->get(route('admin.customers.export.master'));
+        $export->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('BUYER_TYPE,NAME', $export->streamedContent());
+
+        $csv = implode("\n", [
+            'ID,BUYER_TYPE,NAME,REQUESTER_NAME,EMAIL,PHONE,OUTLET_NAME,PBF_NAME,ADDRESS,KECAMATAN,KOTA,SIA,SIPA,NO_IZIN_PBF,APJ,SIKA',
+            "{$customer->id},apotik,Apotek Baru,Dokter Contoh,dokter@example.test,081234567899,Apotek Baru,,,Bogor Timur,Bogor,SIA-1,SIPA-1,,,",
+            ',umum,Customer Baru,,,081298765432,,,,,,,,,,',
+        ]);
+        $file = UploadedFile::fake()->createWithContent('customers.csv', $csv);
+        $this->post(route('admin.customers.import'), ['file' => $file])
+            ->assertRedirect(route('admin.customers.index'))
+            ->assertSessionHas('success', '2 data customer berhasil diimpor atau diperbarui.');
+
+        $this->assertDatabaseHas('customers', [
+            'id' => $customer->id,
+            'name' => 'Apotek Baru',
+            'requester_name' => 'Dokter Contoh',
+            'sipa' => 'SIPA-1',
+        ]);
+        $this->assertDatabaseHas('customers', [
+            'name' => 'Customer Baru',
+            'phone' => '081298765432',
+        ]);
+        $this->assertDatabaseCount('customers', 2);
     }
 
     public function test_shopping_channels_open_their_respective_pages(): void
