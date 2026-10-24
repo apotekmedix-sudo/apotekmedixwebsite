@@ -51,4 +51,16 @@ class InternalShoppingAccessController extends Controller
 
         return redirect()->route('home')->with('success', 'Akses belanja internal telah ditutup.');
     }
+
+    public function lock(Request $request, string $channel)
+    {
+        abort_unless(in_array($channel, ['internal', 'b2b'], true), 404);
+
+        $keys = $channel === 'internal'
+            ? ['internal_shopping_expires_at', 'internal_shopping_code_hash']
+            : ['pbf_access_expires_at', 'pbf_access_code_hash'];
+        $request->session()->forget($keys);
+
+        return response()->noContent();
+    }
 }

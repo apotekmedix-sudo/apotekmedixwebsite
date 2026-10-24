@@ -22,6 +22,7 @@ class AdminCustomerController extends Controller
 
         $customers = Customer::query()
             ->withCount('purchaseHistories')
+            ->withSum('purchaseHistories as total_pesanan', 'total')
             ->withCount([
                 'purchaseHistories as internal_orders_count' => fn ($query) => $query->where('transaction_channel', 'offline'),
                 'purchaseHistories as b2b_orders_count' => fn ($query) => $this->applyB2bFilter($query),

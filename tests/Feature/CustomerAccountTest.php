@@ -52,9 +52,29 @@ class CustomerAccountTest extends TestCase
 
         $this->get(route('contact'))
             ->assertOk()
+            ->assertDontSee('Persyaratan Dokumen Pemesanan')
             ->assertSee('0858 8271 7844')
             ->assertSee('apotekmedix@gmail.com')
-            ->assertSee('Sindangsari');
+            ->assertSee('Sindangsari')
+            ->assertSee('Senin–Sabtu: 08.00–20.00')
+            ->assertSee('Plus Code: 9R3R+P9 Sindangsari, Kota Bogor')
+            ->assertSee('-6.6456763, 106.8409757')
+            ->assertSee('https://www.google.com/maps?q=-6.6456763,106.8409757&z=17&output=embed', false);
+    }
+
+    public function test_about_page_uses_only_the_apotek_medix_logo_instead_of_photos(): void
+    {
+        $this->get(route('about'))
+            ->assertOk()
+            ->assertSee('LOGO APOTEK MEDIX.PNG')
+            ->assertDontSee('page1.jpeg')
+            ->assertDontSee('page2.jpeg')
+            ->assertDontSee('page3.jpeg')
+            ->assertDontSee('page4.jpeg')
+            ->assertDontSee('page5.jpeg')
+            ->assertDontSee('page6.jpeg')
+            ->assertDontSee('page7.jpeg')
+            ->assertDontSee('background1.jpeg');
     }
 
     public function test_shopping_channels_open_their_respective_pages(): void

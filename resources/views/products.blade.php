@@ -509,5 +509,8 @@
 
 @section('scripts')
 <script>window.cartSettings = { storageKey: '{{ ($internalOrder ?? false) ? 'apotekmedix_cart_internal' : 'apotekmedix_cart_retail' }}', kioskOrder: @json($internalOrder ?? false) };</script>
+@if($internalOrder ?? false)
+    @include('partials.shopping-access-lock', ['channel' => 'internal'])
+@endif
 @include('partials.cart', ['cartKioskOrder' => $internalOrder ?? false])
 @endsection

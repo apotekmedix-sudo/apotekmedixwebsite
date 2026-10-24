@@ -483,6 +483,72 @@
   .co-pay-opt.active i {
     color: #0E7490;
   }
+  .co-pay-opt:disabled {
+    border-color: #e2e8f0;
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .co-pay-opt:disabled i {
+    color: #94a3b8;
+  }
+  .co-tempo-disabled-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 500;
+  }
+  .co-tempo-disabled-label[hidden] {
+    display: none;
+  }
+  .co-payment-detail {
+    margin: 0 0 0.85rem;
+    padding: 0.9rem;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #334155;
+    text-align: center;
+  }
+  .co-payment-detail[hidden] {
+    display: none;
+  }
+  .co-qris-dummy {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 0.6rem;
+    padding: 0.55rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+  }
+  .co-payment-detail-title {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #0f172a;
+    font-size: 0.88rem;
+    font-weight: 800;
+  }
+  .co-payment-detail-note {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.77rem;
+    line-height: 1.45;
+  }
+  .co-transfer-number {
+    display: block;
+    margin: 0.3rem 0;
+    color: #0f172a;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+  .co-cash-amount {
+    display: block;
+    color: #0e7490;
+    font-size: 1.3rem;
+    font-weight: 800;
+  }
 
   /* ===== BILLING ADDRESS RADIO GROUP ===== */
   .co-radio-group {
@@ -995,10 +1061,28 @@
               <i class="fa-solid fa-money-bill-wave"></i>
               <span>Cash</span>
             </button>
-            <button type="button" class="co-pay-opt" id="coTempoOption" data-pay-method="Tempo" onclick="selectPaymentMethod('Tempo')">
+            <button type="button" class="co-pay-opt" id="coTempoOption" data-pay-method="Tempo" onclick="selectPaymentMethod('Tempo')" aria-disabled="false">
               <i class="fa-solid fa-calendar-day"></i>
-              <span>Tempo</span>
+              <span>Tempo<small id="coTempoDisabledLabel" class="co-tempo-disabled-label" hidden>B2B &amp; Internal</small></span>
             </button>
+          </div>
+
+          <div id="coQrisDetails" class="co-payment-detail" aria-live="polite">
+            <svg class="co-qris-dummy" viewBox="0 0 21 21" role="img" aria-label="Ilustrasi QRIS dummy, bukan kode pembayaran aktif">
+              <rect width="21" height="21" fill="#fff"/>
+              <path fill="#0f172a" d="M1 1h7v7H1zm1 1v5h5V2zm2 1h2v2H4zM13 1h7v7h-7zm1 1v5h5V2zm2 1h2v2h-2zM1 13h7v7H1zm1 1v5h5v-5zm2 1h2v2H4zM10 1h1v2h-1zm0 4h2v1h-2zm-1 3h2v2H9zm4 0h1v3h-1zm2 0h2v1h-2zm3 0h2v2h-2zm-8 3h2v2h-2zm3 1h2v1h-2zm3-1h1v3h-1zm3 1h1v2h-1zm-9 2h2v2h-2zm3 2h2v1h-2zm3 0h1v3h-1zm2 1h2v2h-2zm-9 1h2v1h-2z"/>
+            </svg>
+            <span class="co-payment-detail-title">QRIS Dummy</span>
+            <p class="co-payment-detail-note">Contoh tampilan saja. QRIS ini belum dapat digunakan untuk pembayaran.</p>
+          </div>
+          <div id="coTransferDetails" class="co-payment-detail" aria-live="polite" hidden>
+            <span class="co-payment-detail-title">Transfer Bank BCA</span>
+            <span class="co-transfer-number">6540126787</span>
+            <p class="co-payment-detail-note">Atas nama Ruly Haykal</p>
+          </div>
+          <div id="coCashDetails" class="co-payment-detail" aria-live="polite" hidden>
+            <span class="co-payment-detail-title">Nominal pembayaran</span>
+            <span id="coCashAmount" class="co-cash-amount">Rp 0,00</span>
           </div>
 
           <div id="coTempoDaysWrap" style="display:none;margin-bottom:0.75rem;">
@@ -1168,6 +1252,8 @@
     }
 
     grandEl.textContent = formatIdrDecimal(grandTotal);
+    const cashAmount = document.getElementById('coCashAmount');
+    if (cashAmount) cashAmount.textContent = formatIdrDecimal(grandTotal);
   }
 
   async function applyCheckoutDiscount() {
@@ -1282,6 +1368,7 @@
   }
 
   function selectPaymentMethod(method) {
+    if (method === 'Tempo' && !isTempoAvailable()) return;
     const input = document.getElementById('co_payment_method');
     if (input) input.value = method;
     document.querySelectorAll('#coPayOptionsGrid .co-pay-opt').forEach(btn => {
@@ -1291,10 +1378,33 @@
   }
 
   function onPaymentMethodChange() {
-    const payMethod = document.getElementById('co_payment_method').value;
+    const payMethod = document.getElementById('co_payment_method')?.value || 'QRIS';
     const tempoWrap = document.getElementById('coTempoDaysWrap');
     if (tempoWrap) {
       tempoWrap.style.display = payMethod === 'Tempo' ? 'block' : 'none';
+    }
+    document.getElementById('coQrisDetails').hidden = payMethod !== 'QRIS';
+    document.getElementById('coTransferDetails').hidden = payMethod !== 'Transfer';
+    document.getElementById('coCashDetails').hidden = payMethod !== 'Cash';
+  }
+
+  function isTempoAvailable() {
+    return Boolean(activeCtx.kioskOrder || activeCtx.wholesaleOrder || activeCtx.adminPbfOrder);
+  }
+
+  function configureTempoOption() {
+    const tempoOption = document.getElementById('coTempoOption');
+    const disabledLabel = document.getElementById('coTempoDisabledLabel');
+    if (!tempoOption) return;
+    const available = isTempoAvailable();
+    tempoOption.disabled = !available;
+    tempoOption.setAttribute('aria-disabled', String(!available));
+    if (disabledLabel) {
+      disabledLabel.hidden = available;
+      disabledLabel.style.display = available ? 'none' : 'block';
+    }
+    if (!available && document.getElementById('co_payment_method')?.value === 'Tempo') {
+      selectPaymentMethod('QRIS');
     }
   }
 
@@ -1329,9 +1439,7 @@
     const totalDiscount = Math.min(originalTotal, itemDiscounts + extraVoucherDiscount);
     const discountedTotal = Math.max(0, originalTotal - totalDiscount);
 
-    const paymentMethod = activeCtx.kioskOrder
-      ? 'Tunai'
-      : document.getElementById('co_payment_method').value;
+    const paymentMethod = document.getElementById('co_payment_method').value;
     const paymentTermDays = Number(document.getElementById('co_payment_term_days')?.value || 0);
 
     const mappedItems = checkoutCart.map((it) => ({
@@ -1503,6 +1611,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    configureTempoOption();
     if (activeCtx.adminPbfOrder) {
       document.getElementById('coAdminPbfFields').style.display = 'block';
     }

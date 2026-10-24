@@ -646,5 +646,6 @@ window.cartSettings = {
     receiptFilePrefix: 'struk-pt-surya-sharone-abadi'
 };
 </script>
+@include('partials.shopping-access-lock', ['channel' => 'b2b'])
 @include('partials.cart')
 @endsection

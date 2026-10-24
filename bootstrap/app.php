@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'internal.access' => \App\Http\Middleware\EnsureInternalShoppingAccess::class,
             'staff' => \App\Http\Middleware\EnsureStaffAccess::class,
         ]);
+        $middleware->appendToGroup('web', \App\Http\Middleware\LockShoppingAccessOnLeave::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

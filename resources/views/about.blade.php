@@ -8,18 +8,16 @@
 /* ===== HERO ===== */
 .about-hero {
     position: relative;
-    min-height: 520px;
+    min-height: 440px;
     display: flex;
     align-items: center;
     overflow: hidden;
+    background: linear-gradient(135deg, #0D47A1 0%, #1565C0 55%, #1E88E5 100%);
 }
 .about-hero-bg {
     position: absolute;
     inset: 0;
-    background-image: url('{{ asset("background1.jpeg") }}');
-    background-size: cover;
-    background-position: center;
-    filter: brightness(0.38);
+    background: radial-gradient(circle at 85% 20%, rgba(255,255,255,.12), transparent 32%);
 }
 .about-hero-content {
     position: relative;
@@ -40,6 +38,16 @@
     font-weight: 700;
     margin-bottom: 1.2rem;
     backdrop-filter: blur(4px);
+}
+.about-logo {
+    display: block;
+    width: min(180px, 45vw);
+    max-height: 100px;
+    object-fit: contain;
+    padding: .65rem;
+    margin-bottom: 1.5rem;
+    border-radius: 14px;
+    background: #fff;
 }
 .about-hero h1 {
     font-size: clamp(2.2rem, 5vw, 3.4rem);
@@ -111,61 +119,13 @@
 
 /* ===== WHO WE ARE ===== */
 .who-section { padding: 5rem 0; background: #f8faff; }
-.who-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5rem; align-items: center; }
-.who-img-wrap { position: relative; }
-.who-img-main {
-    width: 100%; height: 420px; object-fit: cover;
-    border-radius: 24px;
-    box-shadow: 0 24px 60px rgba(15,23,42,.18);
-}
-.who-img-badge {
-    position: absolute; bottom: -1.25rem; left: -1.25rem;
-    background: #1E88E5; color: #fff;
-    border-radius: 18px; padding: 1rem 1.4rem;
-    box-shadow: 0 12px 32px rgba(30,136,229,.4);
-    text-align: center; min-width: 130px;
-}
-.who-img-badge .big { font-size: 1.8rem; font-weight: 900; display: block; line-height: 1; }
-.who-img-badge .sm  { font-size: .78rem; opacity: .88; }
-.who-img-corner {
-    position: absolute; top: -1rem; right: -1rem;
-    width: 160px; height: 160px; object-fit: cover;
-    border-radius: 16px;
-    border: 4px solid #fff;
-    box-shadow: 0 10px 28px rgba(15,23,42,.14);
-}
+.who-grid { display: grid; grid-template-columns: 1fr; gap: 3.5rem; align-items: center; max-width: 900px; margin: 0 auto; }
 .who-checks { margin: 1.5rem 0; display: flex; flex-direction: column; gap: .65rem; }
 .who-check {
     display: flex; align-items: flex-start; gap: .65rem;
     font-size: .92rem; color: #374151; line-height: 1.6;
 }
 .who-check i { color: #1E88E5; margin-top: 3px; flex-shrink: 0; font-size: .9rem; }
-
-/* ===== GALLERY ===== */
-.gallery-section { padding: 5rem 0; background: #fff; }
-.gallery-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    grid-template-rows: 200px 200px;
-    gap: 1rem;
-    border-radius: 24px;
-    overflow: hidden;
-}
-.gallery-item { position: relative; overflow: hidden; cursor: pointer; }
-.gallery-item img {
-    width: 100%; height: 100%; object-fit: cover;
-    transition: transform .5s ease;
-}
-.gallery-item:hover img { transform: scale(1.07); }
-.gallery-item-large { grid-row: span 2; }
-.gallery-overlay {
-    position: absolute; inset: 0;
-    background: linear-gradient(to top, rgba(13,71,161,.7) 0%, transparent 60%);
-    opacity: 0; transition: opacity .35s;
-    display: flex; align-items: flex-end; padding: 1rem;
-}
-.gallery-item:hover .gallery-overlay { opacity: 1; }
-.gallery-overlay span { color: #fff; font-size: .85rem; font-weight: 600; }
 
 /* ===== VISI MISI ===== */
 .vm-section { padding: 5rem 0; background: #f0f7ff; }
@@ -205,7 +165,6 @@
     box-shadow: 0 4px 20px rgba(0,0,0,.06); transition: all .3s;
 }
 .layanan-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(30,136,229,.15); border-color: #93c5fd; }
-.layanan-card-img { width: 100%; height: 190px; object-fit: cover; }
 .layanan-card-body { padding: 1.5rem; }
 .layanan-icon {
     width: 46px; height: 46px; border-radius: 12px;
@@ -243,9 +202,7 @@
 }
 .cta-bg {
     position: absolute; inset: 0;
-    background-image: url('{{ asset("page3.jpeg") }}');
-    background-size: cover; background-position: center;
-    filter: brightness(.25);
+    background: linear-gradient(135deg, #0D47A1, #1565C0 60%, #1E88E5);
 }
 .cta-content {
     position: relative; z-index: 2; text-align: center;
@@ -270,16 +227,6 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 992px) {
-    .who-grid  { grid-template-columns: 1fr; }
-    .who-img-wrap { order: -1; }
-    .who-img-main { height: 280px; }
-    .who-img-corner { display: none; }
-    .who-img-badge { bottom: -1rem; left: .5rem; }
-    .gallery-grid {
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 160px 160px 160px;
-    }
-    .gallery-item-large { grid-row: span 1; }
     .vm-grid { grid-template-columns: 1fr; }
     .layanan-grid { grid-template-columns: 1fr; }
     .nilai-grid { grid-template-columns: 1fr 1fr; }
@@ -292,7 +239,6 @@
     .about-hero h1 { font-size: 1.85rem; }
     .hero-btns { flex-direction: column; }
     .hero-btns a { width: 100%; justify-content: center; }
-    .gallery-grid { grid-template-columns: 1fr 1fr; grid-template-rows: 130px 130px 130px; }
     .nilai-grid { grid-template-columns: 1fr; }
     .mitra-grid { gap: 1.5rem; }
 }
@@ -306,6 +252,7 @@
     <div class="about-hero-bg"></div>
     <div class="about-hero-content">
         <div class="container">
+            <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix" class="about-logo">
             <div class="about-hero-badge">
                 <i class="fa-solid fa-award"></i> Terpercaya Sejak 2016
             </div>
@@ -328,8 +275,8 @@
     <div class="container">
         <div class="stats-strip-inner">
             <div class="stat-strip-item">
-                <span class="num">15+</span>
-                <span class="lbl">Tahun Pengalaman</span>
+                <span class="num">2016</span>
+                <span class="lbl">Mulai Melayani</span>
             </div>
             <div class="stat-strip-item">
                 <span class="num">100+</span>
@@ -374,46 +321,6 @@
                     <a href="mailto:apotekmedix@gmail.com" style="color:#1E88E5;text-decoration:none;font-weight:600;">apotekmedix@gmail.com</a>
                 </div>
             </div>
-            <div class="who-img-wrap">
-                <img src="{{ asset('page2.jpeg') }}" alt="Apotek Medix" class="who-img-main">
-                <img src="{{ asset('page1.jpeg') }}" alt="Produk Apotek Medix" class="who-img-corner">
-                <div class="who-img-badge">
-                    <span class="big">2016</span>
-                    <span class="sm">Berdiri Sejak</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-{{-- ===== GALLERY ===== --}}
-<section class="gallery-section">
-    <div class="container">
-        <div style="text-align:center;margin-bottom:2rem;">
-            <div class="section-tag" style="background:#fef3c7;color:#92400e;"><i class="fa-solid fa-images"></i> Galeri Kami</div>
-            <h2 class="section-title">Momen & Aktivitas<br>Apotek Medix</h2>
-        </div>
-        <div class="gallery-grid">
-            <div class="gallery-item gallery-item-large">
-                <img src="{{ asset('page4.jpeg') }}" alt="Aktivitas Apotek Medix">
-                <div class="gallery-overlay"><span><i class="fa-solid fa-expand"></i> Distribusi Produk</span></div>
-            </div>
-            <div class="gallery-item">
-                <img src="{{ asset('page5.jpeg') }}" alt="Produk Apotek Medix">
-                <div class="gallery-overlay"><span><i class="fa-solid fa-expand"></i> Produk Unggulan</span></div>
-            </div>
-            <div class="gallery-item">
-                <img src="{{ asset('page6.jpeg') }}" alt="Layanan Apotek Medix">
-                <div class="gallery-overlay"><span><i class="fa-solid fa-expand"></i> Layanan Profesional</span></div>
-            </div>
-            <div class="gallery-item">
-                <img src="{{ asset('page7.jpeg') }}" alt="Konsultasi Apotek Medix">
-                <div class="gallery-overlay"><span><i class="fa-solid fa-expand"></i> Konsultasi Kesehatan</span></div>
-            </div>
-            <div class="gallery-item">
-                <img src="{{ asset('page3.jpeg') }}" alt="Apotek Medix">
-                <div class="gallery-overlay"><span><i class="fa-solid fa-expand"></i> Apotik Online</span></div>
-            </div>
         </div>
     </div>
 </section>
@@ -451,7 +358,6 @@
         </div>
         <div class="layanan-grid">
             <div class="layanan-card">
-                <img src="{{ asset('page1.jpeg') }}" alt="Distributor Resmi" class="layanan-card-img">
                 <div class="layanan-card-body">
                     <div class="layanan-icon"><i class="fa-solid fa-truck"></i></div>
                     <h4>Distributor Resmi</h4>
@@ -459,7 +365,6 @@
                 </div>
             </div>
             <div class="layanan-card">
-                <img src="{{ asset('page6.jpeg') }}" alt="Apotik Online" class="layanan-card-img">
                 <div class="layanan-card-body">
                     <div class="layanan-icon"><i class="fa-solid fa-store"></i></div>
                     <h4>Apotik Online 24/7</h4>
@@ -467,7 +372,6 @@
                 </div>
             </div>
             <div class="layanan-card">
-                <img src="{{ asset('page7.jpeg') }}" alt="Konsultasi" class="layanan-card-img">
                 <div class="layanan-card-body">
                     <div class="layanan-icon"><i class="fa-solid fa-user-doctor"></i></div>
                     <h4>Konsultasi Profesional</h4>
@@ -475,7 +379,6 @@
                 </div>
             </div>
             <div class="layanan-card">
-                <img src="{{ asset('page5.jpeg') }}" alt="Pengiriman" class="layanan-card-img">
                 <div class="layanan-card-body">
                     <div class="layanan-icon"><i class="fa-solid fa-shield-halved"></i></div>
                     <h4>Kualitas Terjamin</h4>

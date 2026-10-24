@@ -265,4 +265,24 @@ class PurchaseHistoryTest extends TestCase
             'payment_term_days' => 14,
         ]);
     }
+
+    public function test_b2c_cannot_create_an_order_with_tempo_payment(): void
+    {
+        $response = $this->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pembeli B2C',
+            'phone' => '081234567894',
+            'payment_method' => 'Tempo',
+            'payment_term_days' => 14,
+            'items' => [],
+            'total' => 0,
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors('payment_method');
+        $this->assertDatabaseMissing('purchase_histories', [
+            'buyer_name' => 'Pembeli B2C',
+            'payment_method' => 'Tempo',
+        ]);
+    }
 }

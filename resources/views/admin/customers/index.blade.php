@@ -70,7 +70,6 @@
             <thead>
                 <tr>
                     <th>Customer / Pemesan</th>
-                    <th>Outlet / PBF</th>
                     <th>Kontak dan alamat</th>
                     <th>Riwayat kanal</th>
                     <th>Total pesanan</th>
@@ -87,7 +86,6 @@
                             @if($customer->email)<span class="customer-subtext">{{ $customer->email }}</span>@endif
                             <span class="customer-subtext">{{ strtoupper($customer->buyer_type) }}</span>
                         </td>
-                        <td>{{ $customer->outlet_name ?: $customer->pbf_name ?: '-' }}</td>
                         <td>
                             {{ $customer->phone ?: '-' }}
                             <span class="customer-subtext">{{ collect([$customer->address, $customer->kecamatan, $customer->kota])->filter()->join(', ') ?: 'Alamat tidak dicantumkan' }}</span>
@@ -98,7 +96,7 @@
                             @if($customer->b2c_orders_count)<span class="channel-badge channel-b2c">B2C {{ $customer->b2c_orders_count }}</span>@endif
                             @if(!$customer->purchase_histories_count)<span class="customer-subtext">Belum ada pesanan</span>@endif
                         </td>
-                        <td>{{ number_format($customer->purchase_histories_count) }}</td>
+                        <td>Rp {{ number_format((int) $customer->total_pesanan, 0, ',', '.') }}</td>
                         <td>{{ $customer->last_order_at?->format('d M Y, H:i') ?: '-' }}</td>
                         <td>
                             <div class="customer-actions">
@@ -112,7 +110,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" style="text-align:center;padding:2rem;color:#64748b;">Belum ada customer yang sesuai. Profil akan otomatis dibuat saat ada pesanan.</td></tr>
+                    <tr><td colspan="6" style="text-align:center;padding:2rem;color:#64748b;">Belum ada customer yang sesuai. Profil akan otomatis dibuat saat ada pesanan.</td></tr>
                 @endforelse
             </tbody>
         </table>

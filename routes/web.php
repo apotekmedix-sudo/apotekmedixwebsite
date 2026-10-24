@@ -53,6 +53,9 @@ Route::post('/belanja-internal/akses', [InternalShoppingAccessController::class,
     ->middleware('throttle:5,1')
     ->name('shopping.internal.verify');
 Route::post('/belanja-internal/keluar', [InternalShoppingAccessController::class, 'logout'])->name('shopping.internal.logout');
+Route::post('/shopping/access/lock/{channel}', [InternalShoppingAccessController::class, 'lock'])
+    ->where('channel', 'internal|b2b')
+    ->name('shopping.access.lock');
 Route::get('/belanja-internal', [ProductController::class, 'index'])
     ->middleware('internal.access')
     ->name('shopping.internal');

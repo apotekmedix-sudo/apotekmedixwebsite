@@ -102,7 +102,7 @@ class PurchaseHistoryController extends Controller
                     'errors' => ['buyer_name' => ['Nama dan nomor telepon wajib diisi untuk pesanan internal.']],
                 ], 422);
             }
-            $data['payment_method'] = 'Tunai';
+            $data['payment_method'] = $data['payment_method'] ?? 'Tunai';
             $data['address'] = null;
             $data['kecamatan'] = null;
             $data['kota'] = null;
@@ -114,7 +114,18 @@ class PurchaseHistoryController extends Controller
 
         $paymentMethod = trim((string) ($data['payment_method'] ?? ''));
         $paymentTermDays = (int) ($data['payment_term_days'] ?? 0);
-        if (in_array($data['buyer_type'], ['apotik', 'dokter'], true) && $paymentMethod === 'Tempo' && $paymentTermDays < 1) {
+        if (
+            $channel === 'online'
+            && $data['buyer_type'] === 'umum'
+            && $paymentMethod === 'Tempo'
+        ) {
+            return response()->json([
+                'message' => 'Metode pembayaran Tempo tidak tersedia untuk transaksi B2C.',
+                'errors' => ['payment_method' => ['Pilih QRIS, Transfer, atau Cash untuk transaksi B2C.']],
+            ], 422);
+        }
+
+        if ($paymentMethod === 'Tempo' && $paymentTermDays < 1) {
             return response()->json([
                 'message' => 'Jumlah hari tempo wajib diisi untuk metode pembayaran Tempo.',
                 'errors' => ['payment_term_days' => ['Jumlah hari tempo wajib diisi untuk metode pembayaran Tempo.']],

@@ -185,7 +185,35 @@
     /* Map */
     .map-section { margin-top: 2.5rem; }
     .map-section h3 { font-size: 1.1rem; font-weight: 700; color: #1f2937; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-    .map-wrap { border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; }
+    .map-wrap { position:relative; border-radius:16px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,0.08); border:1px solid #e5e7eb; }
+    .map-directions { position:absolute; top:10px; left:10px; z-index:1; margin:0; }
+    .map-directions-link {
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:.55rem;
+        min-height:36px;
+        padding:.5rem .75rem;
+        border:1px solid #dadce0;
+        border-radius:6px;
+        background:#fff;
+        color:#0052cc;
+        font-size:.85rem;
+        font-weight:600;
+        line-height:1.4;
+        text-decoration:none;
+        box-shadow:0 1px 4px rgba(0,0,0,.2);
+        transition:background .2s,border-color .2s;
+    }
+    .map-directions-link:hover {
+        background:#f8faff;
+        border-color:#c6c9cc;
+        color:#003eaa;
+    }
+    .map-directions-link:focus-visible {
+        outline:3px solid #93c5fd;
+        outline-offset:2px;
+    }
 
     @media (max-width: 768px) {
         .contact-main { padding: 1.75rem 0 3rem; }
@@ -224,67 +252,15 @@
     <div class="container">
         <div class="contact-grid">
 
-            {{-- KOLOM KIRI: Dokumen + Info Kontak --}}
+            {{-- KOLOM KIRI: Info Kontak --}}
             <div>
-
-                {{-- Card Persyaratan Dokumen --}}
-                <div class="doc-card">
-                    <div class="doc-card-title">
-                        <i class="fa-solid fa-file-shield" style="color:#1E88E5;"></i>
-                        Persyaratan Dokumen Pemesanan
-                    </div>
-
-                    {{-- RS / Klinik --}}
-                    <div class="doc-type doc-type-blue">
-                        <div class="doc-type-header">
-                            <div class="doc-type-icon"><i class="fa-solid fa-hospital"></i></div>
-                            RS / Klinik
-                        </div>
-                        <ul class="doc-list">
-                            <li>Surat Pemesanan</li>
-                            <li>SP Khusus</li>
-                            <li>Surat Izin RS / Klinik</li>
-                            <li>Dokumen Pendukung Lainnya</li>
-                        </ul>
-                    </div>
-
-                    {{-- Apotek --}}
-                    <div class="doc-type doc-type-green">
-                        <div class="doc-type-header">
-                            <div class="doc-type-icon"><i class="fa-solid fa-prescription-bottle-medical"></i></div>
-                            Apotek
-                        </div>
-                        <ul class="doc-list">
-                            <li>SP</li>
-                            <li>SP Khusus</li>
-                            <li>SIA</li>
-                            <li>SIPA</li>
-                            <li>KTP</li>
-                            <li>NPWP</li>
-                        </ul>
-                    </div>
-
-                    {{-- Toko Obat --}}
-                    <div class="doc-type doc-type-orange">
-                        <div class="doc-type-header">
-                            <div class="doc-type-icon"><i class="fa-solid fa-store"></i></div>
-                            Toko Obat
-                        </div>
-                        <ul class="doc-list">
-                            <li>SP Asli + Stempel</li>
-                            <li>KTP Pemilik</li>
-                        </ul>
-                    </div>
-                </div>
-
                 {{-- Card Info Kontak --}}
                 <div class="info-card">
                     <div class="info-item">
                         <div class="info-icon icon-blue"><i class="fa-solid fa-location-dot"></i></div>
                         <div class="info-text">
                             <h4>Alamat</h4>
-                            <p>Jl. Raya Ciawi Prapatan No.256 C, RT.04/RW.04, Sindangsari,<br>
-                               Kec. Bogor Timur, Kota Bogor, Jawa Barat 16146</p>
+                            <p>Jl. Raya Ciawi Prapatan No.256 C, RT.04/RW.04, Sindangsari, Kec. Bogor Timur, Kota Bogor, Jawa Barat 16146</p>
                         </div>
                     </div>
                     <div class="info-item">
@@ -300,7 +276,20 @@
                         <div class="info-text">
                             <h4>Telepon</h4>
                             <a href="tel:+6285882717844">0858 8271 7844</a>
-                            <p style="margin-top:0.2rem;font-size:0.8rem;">Sen–Jum 08:00–18:00 · Sab–Min 09:00–17:00</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon icon-orange"><i class="fa-solid fa-clock"></i></div>
+                        <div class="info-text">
+                            <h4>Jam Operasional</h4>
+                            <p>Senin–Sabtu: 08.00–20.00<br>Minggu: Tutup</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon icon-blue"><i class="fa-solid fa-globe"></i></div>
+                        <div class="info-text">
+                            <h4>Situs Web</h4>
+                            <a href="https://apotekmedix.com" target="_blank" rel="noopener">apotekmedix.com</a>
                         </div>
                     </div>
                     <div class="info-item">
@@ -308,6 +297,14 @@
                         <div class="info-text">
                             <h4>Email</h4>
                             <a href="mailto:apotekmedix@gmail.com">apotekmedix@gmail.com</a>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon icon-purple"><i class="fa-solid fa-location-crosshairs"></i></div>
+                        <div class="info-text">
+                            <h4>Koordinat Lokasi</h4>
+                            <a href="https://www.google.com/maps?q=-6.6456763,106.8409757" target="_blank" rel="noopener">-6.6456763, 106.8409757</a>
+                            <p style="margin-top:0.2rem;font-size:0.8rem;">Plus Code: 9R3R+P9 Sindangsari, Kota Bogor</p>
                         </div>
                     </div>
                 </div>
@@ -369,10 +366,15 @@
 
                 {{-- MAP --}}
                 <div class="map-section">
-                    <h3><i class="fa-solid fa-map-location-dot" style="color:#1E88E5;"></i> Lokasi Kami</h3>
+                    <h3><i class="fa-solid fa-map-location-dot" style="color:#1E88E5;"></i> Apotek Medix di Google Maps</h3>
                     <div class="map-wrap">
+                        <p class="map-directions">
+                            <a class="map-directions-link" href="https://www.google.com/maps/place/Apotek+Medix/@-6.6456763,106.8409757,17z/" target="_blank" rel="noopener">
+                                Buka di Maps <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                            </a>
+                        </p>
                         <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.8!2d106.8574!3d-6.1627!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f5d2e764b12d%3A0x3d2ad6e1e0e1d1f!2sITC%20Cempaka%20Mas!5e0!3m2!1sid!2sid!4v1"
+                            src="https://www.google.com/maps?q=-6.6456763,106.8409757&z=17&output=embed"
                             width="100%" height="320" style="border:0;display:block;" allowfullscreen="" loading="lazy"
                             referrerpolicy="no-referrer-when-downgrade">
                         </iframe>
