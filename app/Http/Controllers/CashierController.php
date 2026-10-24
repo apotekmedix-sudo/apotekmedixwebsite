@@ -139,12 +139,12 @@ class CashierController extends Controller
 
                 foreach ($reservations as $reservation) {
                     $product = $products->get($reservation->medicine_id);
-                    if (!$product || (int) ($product->stock_base_units ?? $product->stok) < $reservation->quantity_units) {
+                    if (!$product || (int) $product->available_stock_units < $reservation->quantity_units) {
                         throw ValidationException::withMessages([
                             'order' => 'Stok produk tidak mencukupi untuk menyelesaikan transaksi ini.',
                         ]);
                     }
-                    $remainingUnits = (int) ($product->stock_base_units ?? $product->stok) - $reservation->quantity_units;
+                    $remainingUnits = (int) $product->available_stock_units - $reservation->quantity_units;
                     $product->update([
                         'stock_base_units' => $remainingUnits,
                         'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
@@ -247,7 +247,7 @@ class CashierController extends Controller
 
                 foreach ($quantities as $productId => $quantity) {
                     $product = $products->get($productId);
-                    $remainingUnits = (int) ($product->stock_base_units ?? $product->stok) + $quantity;
+                    $remainingUnits = (int) $product->available_stock_units + $quantity;
                     $product->update([
                         'stock_base_units' => $remainingUnits,
                         'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),

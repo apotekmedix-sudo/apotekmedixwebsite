@@ -257,7 +257,7 @@ class PurchaseHistoryController extends Controller
 
                 foreach ($requiredUnits as $productId => $quantity) {
                     $product = $products->get($productId);
-                    $availableUnits = (int) ($product?->stock_base_units ?? $product?->stok ?? 0)
+                    $availableUnits = (int) ($product?->available_stock_units ?? 0)
                         - (int) $reservedUnits->get($productId, 0);
                     if (!$product || $availableUnits < $quantity) {
                         $productName = $product?->nama_obat ?? 'Produk #' . $productId;

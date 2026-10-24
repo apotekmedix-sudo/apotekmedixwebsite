@@ -8,6 +8,7 @@ use App\Models\Medicine;
 use App\Models\PurchaseHistory;
 use App\Models\ShoppingAccessCode;
 use App\Models\User;
+use App\Support\StockAvailability;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\UploadedFile;
@@ -26,7 +27,8 @@ class MedicineUnitPackagingTest extends TestCase
             'kategori_produk' => Companies::LIST[0],
             'kategori' => 'Pabrik Contoh',
             'logo' => 'HIJAU',
-            'satuan' => 'Botol',
+            'satuan' => 'Box',
+            'sediaan' => 'Tablet',
             'harga_modal' => 5000,
             'harga_internal' => 8000,
             'harga_grosir' => 7000,
@@ -49,8 +51,8 @@ class MedicineUnitPackagingTest extends TestCase
         $medicine->update(['kelompok' => 'APOTEK']);
         $this->assertSame(2, $medicine->stok);
         $this->assertSame(200, $medicine->stock_base_units);
-        $this->assertSame('Botol', $medicine->package_unit_label);
-        $this->assertSame('2 Botol', $medicine->stock_breakdown);
+        $this->assertSame('Box', $medicine->package_unit_label);
+        $this->assertSame('2 Box', $medicine->stock_breakdown);
         $this->assertSame(10, $medicine->getSaleUnitFactor('strip'));
         $this->assertSame(9900.0, $medicine->getSaleUnitPrice('box'));
         $this->assertSame(8000.0, $medicine->getChannelBasePrice('internal'));
@@ -79,8 +81,8 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertOk()
             ->assertSee('Tablet · Rp 100', false)
             ->assertSee('Strip · Rp 900', false)
-            ->assertSee('Botol · Rp 9.900', false)
-            ->assertSee('data-package-unit-label="Botol"', false);
+            ->assertSee('Box · Rp 9.900', false)
+            ->assertSee('data-package-unit-label="Box"', false);
 
         foreach ($medicine->image_gallery as $image) {
             ImageHelper::deleteProductImage($image);
@@ -91,7 +93,8 @@ class MedicineUnitPackagingTest extends TestCase
     {
         $medicine = Medicine::create([
             'nama_obat' => 'Obat Satuan',
-            'satuan' => 'Botol',
+            'satuan' => 'Box',
+            'sediaan' => 'Tablet',
             'kategori' => 'Pabrik Contoh',
             'harga' => 8000,
             'stok' => 20,
@@ -121,9 +124,9 @@ class MedicineUnitPackagingTest extends TestCase
         $order = PurchaseHistory::findOrFail($response->json('id'));
         $this->assertSame(10100, $order->total);
         $this->assertSame('Tablet', $order->items[0]['unit_label']);
-        $this->assertSame('Botol', $order->items[2]['unit_label']);
+        $this->assertSame('Box', $order->items[2]['unit_label']);
         $this->assertSame(100, $order->items[0]['harga']);
-        $this->assertSame('20 Botol', $medicine->fresh()->stock_breakdown);
+        $this->assertSame('20 Box', $medicine->fresh()->stock_breakdown);
         $this->assertDatabaseHas('medicines', [
             'id' => $medicine->id,
             'stock_base_units' => 2000,
@@ -141,7 +144,8 @@ class MedicineUnitPackagingTest extends TestCase
     {
         $medicine = Medicine::create([
             'nama_obat' => 'Obat Harga Kanal',
-            'satuan' => 'Botol',
+            'satuan' => 'Box',
+            'sediaan' => 'Tablet',
             'kategori' => 'Pabrik Contoh',
             'kelompok' => 'APOTEK',
             'harga' => 1600,
@@ -170,7 +174,7 @@ class MedicineUnitPackagingTest extends TestCase
         ])->get(route('shopping.internal'))
             ->assertOk()
             ->assertSee('Harga per kemasan')
-            ->assertSee('Botol · Rp 1.200', false)
+            ->assertSee('Box · Rp 1.200', false)
             ->assertDontSee('Tablet · Rp 100', false)
             ->assertDontSee('Strip · Rp 900', false);
 
@@ -185,7 +189,7 @@ class MedicineUnitPackagingTest extends TestCase
         ])->get(route('products.pbf'))
             ->assertOk()
             ->assertSee('Harga per kemasan')
-            ->assertSee('Botol · Rp 1.400', false)
+            ->assertSee('Box · Rp 1.400', false)
             ->assertDontSee('Tablet · Rp 140', false)
             ->assertDontSee('Strip · Rp 140', false);
 
@@ -227,8 +231,138 @@ class MedicineUnitPackagingTest extends TestCase
         $this->assertSame('5 Tube', $medicine->stock_breakdown);
         $this->assertSame(5.0, $medicine->stock_packages);
 
-        $medicine->update(['stock_base_units' => 0]);
+        $medicine->setStockInPackages(0);
+        $medicine->save();
         $this->assertSame('0 Tube', $medicine->fresh()->stock_breakdown);
+    }
+
+    public function test_bottle_and_tube_stock_is_not_multiplied_by_tablet_packaging_fields(): void
+    {
+        foreach (['Botol' => 'Sirup', 'Tube' => 'Krim'] as $unit => $form) {
+            $medicine = Medicine::create([
+                'nama_obat' => "Produk {$unit}",
+                'satuan' => $unit,
+                'sediaan' => $form,
+                'kategori' => 'Pabrik Contoh',
+                'harga' => 8000,
+                'harga_retail' => 8000,
+                'stok' => 3,
+                'stock_base_units' => 300,
+                'unit_packaging_enabled' => true,
+                'tablets_per_strip' => 10,
+                'strips_per_box' => 10,
+                'price_tablet' => 100,
+                'price_strip' => 900,
+                'price_box' => 8000,
+                'deskripsi' => 'Produk pengujian satuan kemasan',
+            ]);
+
+            $this->assertFalse($medicine->usesTabletPackaging());
+            $this->assertSame(1, $medicine->units_per_box);
+            $this->assertSame(3, $medicine->available_stock_units);
+            $this->assertSame(3.0, $medicine->stock_packages);
+            $this->assertSame("3 {$unit}", $medicine->stock_breakdown);
+            $this->assertSame(0, $medicine->getSaleUnitFactor('tablet'));
+            $this->assertSame(0, $medicine->getSaleUnitFactor('strip'));
+            $this->assertSame(1, $medicine->getSaleUnitFactor('box'));
+            $annotatedProducts = new \Illuminate\Database\Eloquent\Collection([$medicine]);
+            StockAvailability::annotate($annotatedProducts);
+            StockAvailability::annotate($annotatedProducts);
+            $this->assertSame(3, $medicine->available_stock_units);
+
+            $this->getJson(route('products.stock-availability', ['ids' => [$medicine->id]]))
+                ->assertOk()
+                ->assertJsonPath("stock.{$medicine->id}.units", 3)
+                ->assertJsonPath("stock.{$medicine->id}.converted_summary", "3 {$unit}");
+
+            $this->postJson(route('orders.history.store'), [
+                'buyer_type' => 'umum',
+                'buyer_name' => 'Pelanggan',
+                'phone' => '081234567890',
+                'address' => 'Alamat contoh',
+                'items' => [
+                    ['id' => $medicine->id, 'quantity' => 1, 'sale_unit' => 'box'],
+                ],
+                'total' => 8000,
+            ])->assertOk();
+
+            $this->assertDatabaseHas('purchase_stock_reservations', [
+                'medicine_id' => $medicine->id,
+                'quantity_units' => 1,
+                'sale_quantity' => 1,
+            ]);
+        }
+    }
+
+    public function test_admin_cannot_enable_tablet_conversion_for_bottle_stock(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->post(route('admin.produk.store'), [
+            'nama_obat' => 'Sirup Botol',
+            'kategori_produk' => Companies::LIST[0],
+            'kategori' => 'Pabrik Contoh',
+            'satuan' => 'Botol',
+            'sediaan' => 'Sirup',
+            'harga_modal' => 5000,
+            'harga_internal' => 8000,
+            'harga_grosir' => 7000,
+            'harga_retail' => 9900,
+            'stok' => 4,
+            'strips_per_box' => 10,
+            'tablets_per_strip' => 10,
+            'price_tablet' => 100,
+            'price_strip' => 900,
+        ])->assertRedirect(route('admin.produk.index'));
+
+        $medicine = Medicine::where('nama_obat', 'Sirup Botol')->firstOrFail();
+        $this->assertFalse($medicine->unit_packaging_enabled);
+        $this->assertSame(1, $medicine->units_per_box);
+        $this->assertSame(4, $medicine->stock_base_units);
+        $this->assertSame(4, $medicine->available_stock_units);
+        $this->assertSame(0, $medicine->getSaleUnitFactor('tablet'));
+    }
+
+    public function test_admin_product_list_only_shows_strip_and_tablet_fields_for_box_products(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $box = Medicine::create([
+            'nama_obat' => 'Tablet BOX',
+            'satuan' => 'BOX',
+            'sediaan' => 'Tablet',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 8000,
+            'stok' => 5,
+            'deskripsi' => 'Produk tablet dalam box',
+        ]);
+        $bottle = Medicine::create([
+            'nama_obat' => 'Sirup Botol',
+            'satuan' => 'Botol',
+            'sediaan' => 'Sirup',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 8000,
+            'stok' => 5,
+            'deskripsi' => 'Produk cair dalam botol',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.produk.index'))->assertOk();
+        $response->assertSeeInOrder([
+            'id="stok-box-' . $box->id . '"',
+            'id="strips-per-box-' . $box->id . '"',
+            'id="tablets-per-strip-' . $box->id . '"',
+        ], false)
+            ->assertSee('class="stock-quantity-input js-row-strip-quantity"', false)
+            ->assertSee('class="stock-quantity-input js-row-tablet-quantity"', false)
+            ->assertDontSee('label for="stok-box-' . $box->id . '"', false)
+            ->assertSee('id="price-strip-' . $box->id . '"', false)
+            ->assertDontSee('id="strips-per-box-' . $bottle->id . '"', false)
+            ->assertDontSee('id="tablets-per-strip-' . $bottle->id . '"', false)
+            ->assertDontSee('id="price-strip-' . $bottle->id . '"', false)
+            ->assertDontSee('id="price-tablet-' . $bottle->id . '"', false);
+
+        $this->assertTrue(Medicine::supportsTabletPackaging('BOX', 'Tablet'));
+        $this->assertFalse(Medicine::supportsTabletPackaging('Botol', 'Tablet'));
+        $this->assertFalse(Medicine::supportsTabletPackaging('Tube', 'Tablet'));
     }
 
     public function test_customer_cannot_order_more_units_than_remain_in_stock(): void
@@ -793,7 +927,7 @@ class MedicineUnitPackagingTest extends TestCase
         ])->assertRedirect(route('admin.produk.index'));
 
         $medicine = Medicine::where('nama_obat', 'Paracetamol 500mg Box')->firstOrFail();
-        $this->assertTrue($medicine->hasTabletPackaging());
+        $this->assertTrue($medicine->usesTabletPackaging());
         $this->assertSame(10, $medicine->strips_per_box);
         $this->assertSame(10, $medicine->tablets_per_strip);
         $this->assertSame(1000, $medicine->stock_base_units);
@@ -820,11 +954,11 @@ class MedicineUnitPackagingTest extends TestCase
         // Check stock availability endpoint after buying 1 Box -> 9 Box, 90 Strip, 900 Tablet
         $this->getJson(route('products.stock-availability', ['ids' => [$medicine->id]]))
             ->assertOk()
-            ->assertJsonPath("stocks.{$medicine->id}.units", 900)
-            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.box", 9)
-            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.strip", 90)
-            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.tablet", 900)
-            ->assertJsonPath("stocks.{$medicine->id}.converted_summary", '9 Box · 90 Strip · 900 Tablet');
+            ->assertJsonPath("stock.{$medicine->id}.units", 900)
+            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.box", 9)
+            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.strip", 90)
+            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.tablet", 900)
+            ->assertJsonPath("stock.{$medicine->id}.converted_summary", '9 Box · 90 Strip · 900 Tablet');
 
         // Customer buys 2 Strip (20 Tablet) -> remaining 880 Tablet (8 Box, 88 Strip, 880 Tablet)
         $this->postJson(route('orders.history.store'), [
@@ -852,11 +986,11 @@ class MedicineUnitPackagingTest extends TestCase
 
         $this->getJson(route('products.stock-availability', ['ids' => [$medicine->id]]))
             ->assertOk()
-            ->assertJsonPath("stocks.{$medicine->id}.units", 875)
-            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.box", 8)
-            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.strip", 87)
-            ->assertJsonPath("stocks.{$medicine->id}.unit_stocks.tablet", 875)
-            ->assertJsonPath("stocks.{$medicine->id}.converted_summary", '8 Box · 87 Strip · 875 Tablet');
+            ->assertJsonPath("stock.{$medicine->id}.units", 875)
+            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.box", 8)
+            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.strip", 87)
+            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.tablet", 875)
+            ->assertJsonPath("stock.{$medicine->id}.converted_summary", '8 Box · 87 Strip · 875 Tablet');
     }
 
     public function test_product_gallery_uses_primary_and_secondary_images_and_opens_detail(): void

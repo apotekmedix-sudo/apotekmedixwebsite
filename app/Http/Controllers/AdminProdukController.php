@@ -174,8 +174,8 @@ class AdminProdukController extends Controller
             $product->kemasan ?: '',
             $product->sediaan ?: '',
             $product->stock_packages,
-            $product->unit_packaging_enabled ? $product->strips_per_box : 0,
-            $product->unit_packaging_enabled ? $product->units_per_box : 0,
+            $product->usesTabletPackaging() ? $product->strips_per_box : 0,
+            $product->usesTabletPackaging() ? $product->units_per_box : 0,
             $product->harga_modal,
             $product->getChannelBasePrice('internal'),
             $product->getChannelBasePrice('b2b'),
@@ -457,7 +457,8 @@ class AdminProdukController extends Controller
         if ($request->hasAny(['strips_per_box', 'tablets_per_strip'])) {
             $strips = (int) ($validated['strips_per_box'] ?? 0);
             $tabletsPerStrip = (int) ($validated['tablets_per_strip'] ?? 0);
-            if ($strips > 0 && $tabletsPerStrip > 0) {
+            if ($strips > 0 && $tabletsPerStrip > 0
+                && Medicine::supportsTabletPackaging((string) $produk->satuan, (string) $produk->sediaan)) {
                 $validated['unit_packaging_enabled'] = true;
                 $validated['strips_per_box'] = $strips;
                 $validated['tablets_per_strip'] = $tabletsPerStrip;
@@ -472,7 +473,7 @@ class AdminProdukController extends Controller
             }
         } else {
             unset($validated['strips_per_box'], $validated['tablets_per_strip']);
-            if ($produk->unit_packaging_enabled) {
+            if ($produk->usesTabletPackaging()) {
                 $validated['price_box'] = $validated['harga_retail'];
             } else {
                 unset($validated['price_strip'], $validated['price_tablet']);
@@ -511,7 +512,12 @@ class AdminProdukController extends Controller
     {
         $strips = (int) ($validated['strips_per_box'] ?? 0);
         $tablets = $this->resolveTabletsPerBox($request, $validated);
-        $enabled = $strips > 0 && $tablets > 0;
+        $enabled = $strips > 0
+            && $tablets > 0
+            && Medicine::supportsTabletPackaging(
+                isset($validated['satuan']) ? (string) $validated['satuan'] : null,
+                isset($validated['sediaan']) ? (string) $validated['sediaan'] : null
+            );
         $validated['unit_packaging_enabled'] = $enabled;
         unset($validated['tablets_per_box']);
 

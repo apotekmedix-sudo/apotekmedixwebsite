@@ -55,7 +55,7 @@
     <style>
         /* ===== BOOTSTRAP GRID REPLACEMENT ===== */
         *, *::before, *::after { box-sizing: border-box; }
-        html, body { overflow-x: hidden; max-width: 100%; }
+        html, body { overflow-x: clip; max-width: 100%; }
         body { margin: 0; }
         img, svg, video { max-width: 100%; height: auto; display: block; }
         button, input, textarea, select { max-width: 100%; }

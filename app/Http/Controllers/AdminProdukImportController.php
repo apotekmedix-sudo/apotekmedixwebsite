@@ -345,6 +345,8 @@ class AdminProdukImportController extends Controller
                 if (array_key_exists('UNIT_PACKAGING_ENABLED', $data)) {
                     $packagingEnabled = $this->parseBoolean($data['UNIT_PACKAGING_ENABLED'], 'UNIT PACKAGING ENABLED');
                 }
+                $packagingEnabled = $packagingEnabled
+                    && Medicine::supportsTabletPackaging($satuan !== '' ? $satuan : null, $sediaan);
                 if ($packagingEnabled && ($stripsPerBox < 1 || $tabletsPerStrip < 1)) {
                     throw new \InvalidArgumentException('Kemasan strip/tablet harus diisi jika UNIT PACKAGING ENABLED aktif.');
                 }

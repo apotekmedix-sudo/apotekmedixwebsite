@@ -50,7 +50,7 @@
         <li>Pilih mode import sesuai tujuan: tambah/lengkapi produk atau edit massal dari hasil export</li>
         <li>Untuk edit massal, download file Export Produk di bawah, edit kolomnya, lalu pilih mode Edit massal</li>
         <li>Isi stok pada kolom <strong>STOK SATUAN</strong> dan harga pada kolom <strong>MODAL</strong> serta harga jual Internal, B2B, dan B2C</li>
-        <li><strong>PER STRIP</strong> adalah jumlah strip per satuan kemasan, sedangkan <strong>PER TABLET</strong> adalah jumlah tablet total per satuan kemasan. Harga per strip/tablet dapat diisi 0 jika tidak dijual satuan.</li>
+        <li>Isi <strong>PER STRIP</strong> dan <strong>PER TABLET</strong> hanya untuk kemasan <strong>BOX</strong> tablet/kapsul. Untuk Botol, Tube, dan satuan selain BOX, biarkan kedua kolom bernilai 0. Harga strip/tablet dapat diisi 0 jika tidak dijual satuan.</li>
         <li>Upload file <strong>.csv</strong>, <strong>.xls</strong>, atau <strong>.xlsx</strong></li>
         <li>Mode tambah/lengkapi mencocokkan nama produk: data yang kosong dilengkapi tanpa menimpa data yang sudah terisi; nama yang belum ada menjadi produk baru</li>
         <li>Mode edit massal hanya memperbarui produk berdasarkan ID pada kolom NO; data tidak akan membuat produk baru</li>

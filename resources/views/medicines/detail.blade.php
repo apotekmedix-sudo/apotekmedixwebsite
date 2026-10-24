@@ -406,7 +406,7 @@
                         <div class="stock-item-label">Stok {{ $medicine->package_unit_label }}</div>
                         <div class="stock-item-value">{{ number_format($detailConverted['box'], 0, ',', '.') }} {{ $medicine->package_unit_label }}</div>
                     </div>
-                    @if($medicine->unit_packaging_enabled)
+                    @if($medicine->usesTabletPackaging())
                         <div class="stock-item">
                             <div class="stock-item-label">Stok Strip</div>
                             <div class="stock-item-value">{{ number_format($detailConverted['strip'], 0, ',', '.') }} Strip</div>

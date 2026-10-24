@@ -702,13 +702,16 @@
 .discounted-product-actions a:hover { background:#dbeafe; }
 .discounted-product-actions button { color:#fff; background:#0f172a; }
 .discounted-product-actions button:hover { background:#1e293b; }
+@media(max-width:900px) {
+    .discounted-products-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
 @media(max-width:600px) {
     .discounted-products-section { padding:2rem 0; }
-    .discounted-products-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; }
-    .discounted-product-image { height:125px; }
-    .discounted-product-body { padding:.65rem; }
-    .discounted-product-name { font-size:.82rem; }
-    .discounted-product-body .product-unit-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .discounted-products-grid { grid-template-columns:minmax(0,1fr); gap:.85rem; }
+    .discounted-product-image { height:160px; }
+    .discounted-product-body { padding:.8rem; }
+    .discounted-product-name { font-size:.95rem; }
+    .discounted-product-body .product-unit-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 @media(max-width:768px) {
     .home-brand-hero { margin:.25rem .8rem .5rem;padding:1.75rem 1.25rem; }

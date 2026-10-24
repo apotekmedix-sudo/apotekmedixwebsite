@@ -374,6 +374,8 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         Medicine::create([
             'nama_obat' => 'Produk Satuan',
+            'satuan' => 'Box',
+            'sediaan' => 'Tablet',
             'kategori' => 'Pabrik Contoh',
             'harga' => 10000,
             'stok' => 2,

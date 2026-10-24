@@ -406,9 +406,9 @@
                         <span class="price-text">{{ $medicine->getFormattedPrice() }}</span>
                     </td>
                     <td>
-                        @if(($medicine->stock_base_units ?? $medicine->stok) > 10)
+                        @if($medicine->available_stock_units > 10)
                             <span class="stock-badge stock-ok">{{ $medicine->stock_breakdown }}</span>
-                        @elseif(($medicine->stock_base_units ?? $medicine->stok) > 0)
+                        @elseif($medicine->available_stock_units > 0)
                             <span class="stock-badge stock-low">{{ $medicine->stock_breakdown }}</span>
                         @else
                             <span class="stock-badge stock-empty">Habis</span>
