@@ -33,7 +33,7 @@
 
 <div class="card">
     <div class="card-title">Aktivasi kode akses</div>
-    <p class="activation-intro">Buat kode angka 5 digit untuk membuka halaman Belanja Internal dan B2B. Kode berlaku 30 hari sejak dibuat dan kode baru langsung menggantikan kode sebelumnya.</p>
+    <p class="activation-intro">Buat kode angka 5 digit untuk akses katalog B2B dan produk khusus B2C. Kode berlaku 30 hari sejak dibuat dan kode baru langsung menggantikan kode sebelumnya.</p>
 
     @if(session('success'))<div class="activation-success">{{ session('success') }}</div>@endif
     @if($errors->any())
@@ -42,8 +42,8 @@
 
     <div class="activation-grid">
         @foreach([
-            'internal' => ['title' => 'Belanja Internal', 'description' => 'Kode angka 5 digit untuk membuka katalog dan transaksi staf internal.', 'icon' => 'fa-store'],
             'b2b' => ['title' => 'Belanja B2B', 'description' => 'Kode angka 5 digit untuk membuka katalog khusus mitra dan distributor.', 'icon' => 'fa-boxes-stacked'],
+            'b2c' => ['title' => 'Produk Khusus B2C', 'description' => 'Kode angka 5 digit untuk membuka produk B2C dengan logo merah.', 'icon' => 'fa-unlock-keyhole'],
         ] as $channel => $details)
             <article class="activation-card">
                 <div class="activation-icon"><i class="fa-solid {{ $details['icon'] }}" aria-hidden="true"></i></div>
@@ -86,7 +86,7 @@
                         $codeIsActive = $code->expires_at?->isFuture() === true && $readableCode !== null;
                     @endphp
                     <tr>
-                        <td><strong>{{ $code->channel === 'internal' ? 'Belanja Internal' : 'Belanja B2B' }}</strong></td>
+                        <td><strong>{{ ['b2b' => 'Belanja B2B', 'b2c' => 'Produk Khusus B2C'][$code->channel] ?? 'Belanja' }}</strong></td>
                         <td><code class="code-value">{{ $readableCode ?: 'Tidak dapat ditampilkan — buat ulang' }}</code></td>
                         <td><span class="activation-status {{ $codeIsActive ? 'active' : '' }}">{{ $codeIsActive ? 'Aktif' : ($isUnreadableCode ? 'Tidak dapat dibaca — buat ulang' : 'Kedaluwarsa') }}</span></td>
                         <td>{{ $code->expires_at?->format('d M Y, H:i') ?: '-' }}</td>

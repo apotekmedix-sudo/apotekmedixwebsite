@@ -89,6 +89,38 @@ class PurchaseHistoryTest extends TestCase
         $this->assertSame(15000, $history->items[0]['price']);
     }
 
+    public function test_b2c_invoice_uses_the_medix_receipt_format(): void
+    {
+        $response = $this->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Budi',
+            'phone' => '081234567890',
+            'payment_method' => 'QRIS',
+            'items' => [
+                ['nama_obat' => 'Vitamin C', 'quantity' => 2, 'harga' => 25000, 'potongan' => 5000],
+            ],
+            'total' => 45000,
+        ])->assertOk();
+
+        $order = \App\Models\PurchaseHistory::findOrFail($response->json('id'));
+        $this->assertSame('umum', $order->buyer_type);
+        $this->assertSame('online', $order->transaction_channel);
+
+        $this->withMiddleware()->get($response->json('invoice_url'))
+            ->assertOk()
+            ->assertSee('LOGO APOTEK MEDIX.PNG')
+            ->assertSee('STRUK PENJUALAN')
+            ->assertSee('APJ: Apt. Safwan Nugraha, S. Farm')
+            ->assertSee('Vitamin C')
+            ->assertSee('QRIS')
+            ->assertSee('Rp 45.000')
+            ->assertSee('Semoga lekas sembuh')
+            ->assertSee('Sehat Bersama Medix')
+            ->assertSee('Menunggu pembayaran')
+            ->assertDontSee('Uang diterima')
+            ->assertDontSee('Kembalian');
+    }
+
     public function test_purchase_history_keeps_item_price_and_calculates_discount(): void
     {
         $response = $this->postJson('/orders/history', [
@@ -178,7 +210,6 @@ class PurchaseHistoryTest extends TestCase
             'kategori' => 'MEDIX',
             'kelompok' => 'PBF',
             'harga' => 1000,
-            'harga_internal' => 1500,
             'harga_modal' => 2000,
             'stok' => 10,
             'deskripsi' => 'Harga B2B belum dikonfigurasi',
@@ -263,6 +294,26 @@ class PurchaseHistoryTest extends TestCase
             'buyer_type' => 'apotik',
             'payment_method' => 'Tempo',
             'payment_term_days' => 14,
+        ]);
+    }
+
+    public function test_b2c_cannot_create_an_order_with_tempo_payment(): void
+    {
+        $response = $this->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pembeli B2C',
+            'phone' => '081234567894',
+            'payment_method' => 'Tempo',
+            'payment_term_days' => 14,
+            'items' => [],
+            'total' => 0,
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors('payment_method');
+        $this->assertDatabaseMissing('purchase_histories', [
+            'buyer_name' => 'Pembeli B2C',
+            'payment_method' => 'Tempo',
         ]);
     }
 }

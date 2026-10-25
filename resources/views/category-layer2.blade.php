@@ -519,7 +519,7 @@
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .category-content {
         grid-template-columns: 1fr;
     }
@@ -530,7 +530,7 @@
 
     .products-wrapper {
         order: 1;
-        grid-template-columns: repeat(2, minmax(160px, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .search-filter-row {
@@ -550,6 +550,23 @@
 @media (max-width: 480px) {
     .products-wrapper {
         grid-template-columns: 1fr;
+    }
+
+    .product-card {
+        border-radius: 12px;
+    }
+
+    .product-img {
+        height: 150px;
+        min-height: 150px;
+    }
+
+    .product-body {
+        padding: 0.85rem;
+    }
+
+    .product-actions {
+        gap: 0.55rem;
     }
 
     .category-page-header h1 {
@@ -689,7 +706,7 @@
                                 <h3 class="product-name"><a href="{{ route('medicines.show', $med->id) }}">{{ $med->nama_obat }}</a></h3>
                                 
                                 <div class="product-price">{{ $med->getFormattedPrice() }}</div>
-                                @php $stock = (int) ($med->stock_base_units ?? $med->stok); @endphp
+                                @php $stock = $med->available_stock_units; @endphp
                                 <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
                                     <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
                                     {{ $stock > 0 ? 'Stok: ' . $med->stock_breakdown : 'Stok habis' }}

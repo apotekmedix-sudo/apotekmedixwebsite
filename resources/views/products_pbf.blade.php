@@ -439,13 +439,13 @@
     <i class="fa-solid fa-syringe header-deco-icon header-deco-icon-3"></i>
 </div>
 
-<div class="products-main">
+<div class="products-main products-pbf">
     <div class="container">
 
         {{-- Flash: akses berhasil --}}
         @if(session('pbf_success'))
-        <div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-            <span style="color:#065f46;font-weight:700;font-size:0.9rem;display:flex;align-items:center;gap:0.5rem;">
+        <div class="pbf-access-alert pbf-access-alert-success" style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+            <span class="pbf-access-alert-text" style="color:#065f46;font-weight:700;font-size:0.9rem;display:flex;align-items:center;gap:0.5rem;">
                 <i class="fa-solid fa-circle-check"></i>
                 {{ session('pbf_success') }}
             </span>
@@ -453,8 +453,8 @@
         @endif
 
         {{-- Info bar: akses aktif + tombol keluar --}}
-        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:0.75rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-            <span style="color:#92400e;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
+        <div class="pbf-access-alert" style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:0.75rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+            <span class="pbf-access-alert-text" style="color:#92400e;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
                 <i class="fa-solid fa-shield-halved" style="color:#f59e0b;"></i>
                 Anda masuk sebagai mitra PBF terverifikasi
             </span>
@@ -540,16 +540,9 @@
                                 $promoPrice = $medicine->getChannelPromoPrice('b2b');
                             @endphp
                             <div class="medicine-card-details">
-                                <p><strong>Komposisi:</strong> {{ $medicine->komposisi ?: $medicine->nama_obat }}</p>
-                                @if($medicine->indikasi)
-                                    <p><strong>Indikasi:</strong> {{ $medicine->indikasi }}</p>
-                                @endif
-                                @if($medicine->dosis)
-                                    <p><strong>Dosis:</strong> {{ $medicine->dosis }}</p>
-                                @endif
-                                @if($medicine->golongan)
-                                    <p><strong>Golongan:</strong> {{ $medicine->golongan }}</p>
-                                @endif
+                                <p title="{{ $medicine->komposisi ?: $medicine->nama_obat }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($medicine->komposisi ?: $medicine->nama_obat, 15, '...') }}</p>
+                                <p title="{{ $medicine->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($medicine->indikasi ?: '—', 15, '...') }}</p>
+                                <p title="{{ $medicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($medicine->golongan ?: '—', 15, '...') }}</p>
                             </div>
                             @include('partials.product-unit-selector', [
                                 'medicine' => $medicine,
@@ -562,11 +555,16 @@
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
                                 {{ $stock > 0 ? 'Stok: ' . $medicine->getConvertedStockSummaryForUnits($stock) : 'Stok habis' }}
                             </span>
-                            @if($medicine->sediaan_label)
-                                <div class="medicine-meta" style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.6rem;">
-                                    <i class="fa-solid fa-cube"></i> <span>Sediaan: {{ $medicine->sediaan_label }}</span>
-                                </div>
-                            @endif
+                            <div class="medicine-meta medicine-meta-row">
+                                <span class="medicine-meta-sediaan">
+                                    @if($medicine->sediaan_label)
+                                        <i class="fa-solid fa-cube"></i> <span>Sediaan: {{ $medicine->sediaan_label }}</span>
+                                    @endif
+                                </span>
+                                <span class="medicine-sold-badge" data-sold-product-id="{{ $medicine->id }}">
+                                    <i class="fa-solid fa-fire-flame-curved"></i> Terjual {{ number_format((int) $medicine->terjual, 0, ',', '.') }}
+                                </span>
+                            </div>
                             @if($basePrice > 0)
                                 <button class="btn-cart" data-stock-cart @disabled($stock <= 0)
                                         data-product-id="{{ $medicine->id }}"
@@ -646,5 +644,6 @@ window.cartSettings = {
     receiptFilePrefix: 'struk-pt-surya-sharone-abadi'
 };
 </script>
+@include('partials.shopping-access-lock', ['channel' => 'b2b'])
 @include('partials.cart')
 @endsection

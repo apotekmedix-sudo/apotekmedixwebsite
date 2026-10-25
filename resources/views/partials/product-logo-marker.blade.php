@@ -9,5 +9,5 @@
 @endphp
 @if($logoColor)
     <span class="product-logo-marker product-logo-marker--{{ $logoColor }}"
-          role="img" aria-label="Logo {{ ['green' => 'hijau', 'red' => 'merah', 'blue' => 'biru'][$logoColor] }}"></span>
+          role="img" aria-label="Logo {{ ['green' => 'hijau', 'red' => 'merah', 'blue' => 'biru'][$logoColor] }}">{{ $logoColor === 'red' ? 'K' : '' }}</span>
 @endif

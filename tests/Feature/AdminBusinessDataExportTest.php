@@ -23,7 +23,6 @@ class AdminBusinessDataExportTest extends TestCase
             'kategori' => 'PT Principal',
             'kategori_produk' => 'OBAT',
             'harga' => 15500,
-            'harga_internal' => 15000,
             'harga_modal' => 10000,
             'harga_grosir' => 14000,
             'harga_retail' => 16000,
@@ -32,7 +31,6 @@ class AdminBusinessDataExportTest extends TestCase
             'deskripsi' => 'Produk untuk tes export',
             'gambar' => 'medicines/produk-export.jpg',
             'gambar_tambahan' => ['medicines/produk-export-2.jpg'],
-            'promo_internal_percent' => 5,
             'promo_b2b_percent' => 10,
             'promo_b2c_percent' => 15,
             'is_resep' => true,
@@ -52,11 +50,13 @@ class AdminBusinessDataExportTest extends TestCase
             'PRINCIPLE',
             'HARGA JUAL PER TABLET',
             'LINK FOTO',
+            'HARGA JUAL B2B',
+            'HARGA JUAL B2C',
             'http://localhost/storage/medicines/produk-export.jpg',
         ] as $expected) {
             $this->assertStringContainsString($expected, $content);
         }
-        foreach (['LINK FOTO UTAMA', 'ID PRODUK', 'PROMO B2C PERCENT', 'GAMBAR TAMBAHAN'] as $unexpected) {
+        foreach (['LINK FOTO UTAMA', 'ID PRODUK', 'PROMO B2C PERCENT', 'GAMBAR TAMBAHAN', 'HARGA JUAL INTERNAL'] as $unexpected) {
             $this->assertStringNotContainsString($unexpected, $content);
         }
 
@@ -77,7 +77,6 @@ class AdminBusinessDataExportTest extends TestCase
 
         $product = Medicine::where('nama_obat', 'Produk Ekspor')->firstOrFail();
         $this->assertSame($originalId, $product->id);
-        $this->assertSame(5, $product->promo_internal_percent);
         $this->assertSame(10, $product->promo_b2b_percent);
         $this->assertSame(15, $product->promo_b2c_percent);
         $this->assertTrue($product->is_resep);
@@ -95,7 +94,6 @@ class AdminBusinessDataExportTest extends TestCase
             'nama_obat' => 'Nama Lama',
             'kategori' => 'Principal Lama',
             'harga' => 10000,
-            'harga_internal' => 10000,
             'harga_modal' => 5000,
             'harga_retail' => 11000,
             'stok' => 2,
@@ -109,13 +107,13 @@ class AdminBusinessDataExportTest extends TestCase
         fputcsv($stream, [
             'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
-            'MODAL', 'HARGA JUAL INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
+            'MODAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
             'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO',
         ]);
         fputcsv($stream, [
             $product->id, 'Principal Baru', 'Nama Baru', 'MERAH', 'Obat Bebas', 'Komposisi baru',
             'Indikasi baru', 'BOX', '10 strip @ 10 tablet', 'TABLET', '2', '10', '100',
-            '6000', '12000', '13000', '14000', '1500', '150',
+            '6000', '13000', '14000', '1500', '150',
             'http://localhost/storage/medicines/baru.jpg',
         ]);
         fclose($stream);
@@ -131,10 +129,8 @@ class AdminBusinessDataExportTest extends TestCase
         $this->assertSame('Nama Baru', $product->nama_obat);
         $this->assertSame('Principal Baru', $product->kategori);
         $this->assertSame(10000.0, (float) $product->harga);
-        $this->assertSame(12000.0, (float) $product->harga_internal);
         $this->assertSame(13000.0, (float) $product->harga_grosir);
         $this->assertSame(14000.0, (float) $product->price_box);
-        $this->assertSame(0, $product->promo_internal_percent);
         $this->assertSame(200, $product->stock_base_units);
         $this->assertSame('medicines/baru.jpg', $product->gambar);
         $this->assertSame(['medicines/lama-2.jpg'], $product->gambar_tambahan);
@@ -150,7 +146,6 @@ class AdminBusinessDataExportTest extends TestCase
             'kategori' => 'Principal Terisi',
             'logo' => 'HIJAU',
             'harga' => 10000,
-            'harga_internal' => 10000,
             'harga_modal' => 0,
             'harga_retail' => 0,
             'stok' => 0,
@@ -161,17 +156,17 @@ class AdminBusinessDataExportTest extends TestCase
         $headers = [
             'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
-            'MODAL', 'HARGA JUAL INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
+            'MODAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
         ];
         $existingRow = [
             'Principal Baru', 'Produk Sama', 'MERAH', 'Obat Bebas', 'Komposisi diisi',
             'Indikasi diisi', 'BOX', '10 strip @ 10 tablet', 'TABLET', '2', '10', '100',
-            '6000', '12000', '13000', '14000',
+            '6000', '13000', '14000',
         ];
         $newRow = [
             'Principal Baru', 'Produk Tambahan', 'BIRU', 'Obat Bebas', 'Komposisi baru',
             'Indikasi baru', 'BOX', '', 'TABLET', '5', '0', '0',
-            '5000', '7000', '8000', '9000',
+            '5000', '8000', '9000',
         ];
         file_put_contents($path, implode("\n", [
             implode(',', $headers),
@@ -193,7 +188,6 @@ class AdminBusinessDataExportTest extends TestCase
         $this->assertSame('Komposisi diisi', $existing->komposisi);
         $this->assertSame(10000.0, (float) $existing->harga);
         $this->assertSame(6000.0, (float) $existing->harga_modal);
-        $this->assertSame(10000.0, (float) $existing->harga_internal);
         $this->assertSame(200, $existing->stock_base_units);
         $this->assertSame(2, Medicine::count());
         $this->assertDatabaseHas('medicines', [
@@ -286,15 +280,15 @@ class AdminBusinessDataExportTest extends TestCase
         }
     }
 
-    public function test_customer_export_separates_customers_by_internal_b2b_and_b2c_sheet(): void
+    public function test_customer_export_separates_customers_by_offline_b2b_and_b2c_sheet(): void
     {
         $this->get(route('admin.customers.export'))->assertRedirect(route('login'));
 
         $customers = [
-            'Internal Sheet Customer' => Customer::create([
+            'Offline Sheet Customer' => Customer::create([
                 'identity_key' => str_repeat('b', 64),
                 'buyer_type' => 'umum',
-                'name' => 'Internal Sheet Customer',
+                'name' => 'Offline Sheet Customer',
                 'phone' => '081111111111',
             ]),
             'B2B Sheet Customer' => Customer::create([
@@ -318,7 +312,7 @@ class AdminBusinessDataExportTest extends TestCase
                 'buyer_name' => $name,
                 'items' => [],
                 'total' => 0,
-                'transaction_channel' => $name === 'Internal Sheet Customer' ? 'offline' : 'online',
+                'transaction_channel' => $name === 'Offline Sheet Customer' ? 'offline' : 'online',
                 'pbf_name' => $name === 'B2B Sheet Customer' ? 'PBF Contoh' : null,
                 'payment_status' => 'pending',
             ]);
@@ -344,7 +338,7 @@ class AdminBusinessDataExportTest extends TestCase
                 fn ($sheet) => (string) $sheet['name'],
                 $workbook->xpath('//*[local-name()="sheet"]')
             );
-            $this->assertSame(['Customer Internal', 'Customer B2B', 'Customer B2C'], $sheetNames);
+            $this->assertSame(['Customer Offline', 'Customer B2B', 'Customer B2C'], $sheetNames);
 
             foreach ($sheetNames as $index => $sheetName) {
                 $sheetXml = simplexml_load_string(
@@ -357,7 +351,7 @@ class AdminBusinessDataExportTest extends TestCase
 
                 foreach ($customers as $customerName => $customer) {
                     $expectedSheet = match ($customerName) {
-                        'Internal Sheet Customer' => 'Customer Internal',
+                        'Offline Sheet Customer' => 'Customer Offline',
                         'B2B Sheet Customer' => 'Customer B2B',
                         default => 'Customer B2C',
                     };

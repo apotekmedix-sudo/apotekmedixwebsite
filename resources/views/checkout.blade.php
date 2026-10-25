@@ -483,6 +483,72 @@
   .co-pay-opt.active i {
     color: #0E7490;
   }
+  .co-pay-opt:disabled {
+    border-color: #e2e8f0;
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .co-pay-opt:disabled i {
+    color: #94a3b8;
+  }
+  .co-tempo-disabled-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 500;
+  }
+  .co-tempo-disabled-label[hidden] {
+    display: none;
+  }
+  .co-payment-detail {
+    margin: 0 0 0.85rem;
+    padding: 0.9rem;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #334155;
+    text-align: center;
+  }
+  .co-payment-detail[hidden] {
+    display: none;
+  }
+  .co-qris-dummy {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 0.6rem;
+    padding: 0.55rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+  }
+  .co-payment-detail-title {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #0f172a;
+    font-size: 0.88rem;
+    font-weight: 800;
+  }
+  .co-payment-detail-note {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.77rem;
+    line-height: 1.45;
+  }
+  .co-transfer-number {
+    display: block;
+    margin: 0.3rem 0;
+    color: #0f172a;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+  .co-cash-amount {
+    display: block;
+    color: #0e7490;
+    font-size: 1.3rem;
+    font-weight: 800;
+  }
 
   /* ===== BILLING ADDRESS RADIO GROUP ===== */
   .co-radio-group {
@@ -808,17 +874,33 @@
               <h2 class="co-sec-title">Data PBF Tujuan</h2>
             </div>
             <div class="co-field">
+              <select id="co_pbf_profile" class="co-input">
+                <option value="medix">Identitas Apotek Medix</option>
+                <option value="medikpedia">Identitas Apotek Medikpedia</option>
+              </select>
+            </div>
+            <div class="co-field">
+              <select id="co_pbf_order_type" class="co-input">
+                <option value="regular">SP Biasa (Obat Reguler)</option>
+                <option value="oot">SP OOT (Obat-Obat Tertentu)</option>
+                <option value="precursor">SP Prekursor</option>
+              </select>
+            </div>
+            <div class="co-field">
               <input type="text" id="co_pbf_name" class="co-input" placeholder="Nama PBF tujuan *">
             </div>
             <div class="co-field">
               <input type="text" id="co_pbf_address" class="co-input" placeholder="Alamat PBF tujuan *">
+            </div>
+            <div class="co-field">
+              <input type="tel" id="co_pbf_phone" class="co-input" maxlength="50" placeholder="Nomor telepon PBF *">
             </div>
             <div class="co-row-2">
               <div class="co-field">
                 <input type="text" id="co_signer_name" class="co-input" value="Apt. Hendri Setiyono, S Farm" placeholder="Nama Apoteker *">
               </div>
               <div class="co-field">
-                <input type="text" id="co_signer_title" class="co-input" value="Apoteker" placeholder="Jabatan *">
+                <input type="text" id="co_signer_title" class="co-input" value="Apoteker Penanggung Jawab" placeholder="Jabatan *">
               </div>
             </div>
             <div class="co-row-2">
@@ -995,10 +1077,28 @@
               <i class="fa-solid fa-money-bill-wave"></i>
               <span>Cash</span>
             </button>
-            <button type="button" class="co-pay-opt" id="coTempoOption" data-pay-method="Tempo" onclick="selectPaymentMethod('Tempo')">
+            <button type="button" class="co-pay-opt" id="coTempoOption" data-pay-method="Tempo" onclick="selectPaymentMethod('Tempo')" aria-disabled="false">
               <i class="fa-solid fa-calendar-day"></i>
-              <span>Tempo</span>
+              <span>Tempo<small id="coTempoDisabledLabel" class="co-tempo-disabled-label" hidden>B2B</small></span>
             </button>
+          </div>
+
+          <div id="coQrisDetails" class="co-payment-detail" aria-live="polite">
+            <svg class="co-qris-dummy" viewBox="0 0 21 21" role="img" aria-label="Ilustrasi QRIS dummy, bukan kode pembayaran aktif">
+              <rect width="21" height="21" fill="#fff"/>
+              <path fill="#0f172a" d="M1 1h7v7H1zm1 1v5h5V2zm2 1h2v2H4zM13 1h7v7h-7zm1 1v5h5V2zm2 1h2v2h-2zM1 13h7v7H1zm1 1v5h5v-5zm2 1h2v2H4zM10 1h1v2h-1zm0 4h2v1h-2zm-1 3h2v2H9zm4 0h1v3h-1zm2 0h2v1h-2zm3 0h2v2h-2zm-8 3h2v2h-2zm3 1h2v1h-2zm3-1h1v3h-1zm3 1h1v2h-1zm-9 2h2v2h-2zm3 2h2v1h-2zm3 0h1v3h-1zm2 1h2v2h-2zm-9 1h2v1h-2z"/>
+            </svg>
+            <span class="co-payment-detail-title">QRIS Dummy</span>
+            <p class="co-payment-detail-note">Contoh tampilan saja. QRIS ini belum dapat digunakan untuk pembayaran.</p>
+          </div>
+          <div id="coTransferDetails" class="co-payment-detail" aria-live="polite" hidden>
+            <span class="co-payment-detail-title">Transfer Bank BCA</span>
+            <span class="co-transfer-number">6540126787</span>
+            <p class="co-payment-detail-note">Atas nama Ruly Haykal</p>
+          </div>
+          <div id="coCashDetails" class="co-payment-detail" aria-live="polite" hidden>
+            <span class="co-payment-detail-title">Nominal pembayaran</span>
+            <span id="coCashAmount" class="co-cash-amount">Rp 0,00</span>
           </div>
 
           <div id="coTempoDaysWrap" style="display:none;margin-bottom:0.75rem;">
@@ -1027,7 +1127,6 @@
 
   let activeCtx = {
     storageKey: 'apotekmedix_cart_retail',
-    kioskOrder: false,
     wholesaleOrder: false,
     adminPbfOrder: false,
     adminPurchaseOrderBase: null,
@@ -1043,7 +1142,7 @@
 
   let checkoutCart = JSON.parse(localStorage.getItem(activeCtx.storageKey) || '[]');
   if (!checkoutCart.length) {
-    for (const key of ['apotekmedix_cart_retail', 'apotekmedix_cart', 'apotekmedix_cart_apotek', 'apotekmedix_cart_internal', 'apotekmedix_cart_pbf']) {
+    for (const key of ['apotekmedix_cart_retail', 'apotekmedix_cart', 'apotekmedix_cart_apotek', 'apotekmedix_cart_pbf']) {
       const candidate = JSON.parse(localStorage.getItem(key) || '[]');
       if (candidate.length) {
         activeCtx.storageKey = key;
@@ -1053,7 +1152,7 @@
     }
   }
 
-  let deliveryMode = activeCtx.kioskOrder ? 'pickup' : 'ship';
+  let deliveryMode = 'ship';
   let extraVoucherDiscount = 0;
   let appliedVoucher = null;
 
@@ -1116,7 +1215,7 @@
       const qty = Number(item.qty || 1);
       const price = Number(item.price || 0);
       const lineSub = price * qty;
-      const disc = activeCtx.kioskOrder ? 0 : Number(item.discount || 0);
+      const disc = Number(item.discount || 0);
       const unit = item.saleUnit || 'box';
       const unitLabel = item.unitLabel || item.unitLabels?.[unit] || '';
 
@@ -1168,6 +1267,8 @@
     }
 
     grandEl.textContent = formatIdrDecimal(grandTotal);
+    const cashAmount = document.getElementById('coCashAmount');
+    if (cashAmount) cashAmount.textContent = formatIdrDecimal(grandTotal);
   }
 
   async function applyCheckoutDiscount() {
@@ -1186,7 +1287,7 @@
 
     const subtotalAfterItemDisc = checkoutCart.reduce((s, i) => {
       const sub = Number(i.price || 0) * Number(i.qty || 1);
-      const disc = activeCtx.kioskOrder ? 0 : Number(i.discount || 0);
+      const disc = Number(i.discount || 0);
       return s + Math.max(0, sub - disc);
     }, 0);
 
@@ -1282,6 +1383,7 @@
   }
 
   function selectPaymentMethod(method) {
+    if (method === 'Tempo' && !isTempoAvailable()) return;
     const input = document.getElementById('co_payment_method');
     if (input) input.value = method;
     document.querySelectorAll('#coPayOptionsGrid .co-pay-opt').forEach(btn => {
@@ -1291,10 +1393,33 @@
   }
 
   function onPaymentMethodChange() {
-    const payMethod = document.getElementById('co_payment_method').value;
+    const payMethod = document.getElementById('co_payment_method')?.value || 'QRIS';
     const tempoWrap = document.getElementById('coTempoDaysWrap');
     if (tempoWrap) {
       tempoWrap.style.display = payMethod === 'Tempo' ? 'block' : 'none';
+    }
+    document.getElementById('coQrisDetails').hidden = payMethod !== 'QRIS';
+    document.getElementById('coTransferDetails').hidden = payMethod !== 'Transfer';
+    document.getElementById('coCashDetails').hidden = payMethod !== 'Cash';
+  }
+
+  function isTempoAvailable() {
+    return Boolean(activeCtx.wholesaleOrder || activeCtx.adminPbfOrder);
+  }
+
+  function configureTempoOption() {
+    const tempoOption = document.getElementById('coTempoOption');
+    const disabledLabel = document.getElementById('coTempoDisabledLabel');
+    if (!tempoOption) return;
+    const available = isTempoAvailable();
+    tempoOption.disabled = !available;
+    tempoOption.setAttribute('aria-disabled', String(!available));
+    if (disabledLabel) {
+      disabledLabel.hidden = available;
+      disabledLabel.style.display = available ? 'none' : 'block';
+    }
+    if (!available && document.getElementById('co_payment_method')?.value === 'Tempo') {
+      selectPaymentMethod('QRIS');
     }
   }
 
@@ -1329,9 +1454,7 @@
     const totalDiscount = Math.min(originalTotal, itemDiscounts + extraVoucherDiscount);
     const discountedTotal = Math.max(0, originalTotal - totalDiscount);
 
-    const paymentMethod = activeCtx.kioskOrder
-      ? 'Tunai'
-      : document.getElementById('co_payment_method').value;
+    const paymentMethod = document.getElementById('co_payment_method').value;
     const paymentTermDays = Number(document.getElementById('co_payment_term_days')?.value || 0);
 
     const mappedItems = checkoutCart.map((it) => ({
@@ -1354,13 +1477,16 @@
       approval_status: 'pending',
       payment_method: paymentMethod,
       payment_term_days: paymentMethod === 'Tempo' ? paymentTermDays : null,
-      transaction_channel: activeCtx.kioskOrder ? 'offline' : 'online',
+      transaction_channel: 'online',
       is_pbf_purchase_order: Boolean(activeCtx.adminPbfOrder)
     };
 
     if (activeCtx.adminPbfOrder) {
       payload.pbf_name = document.getElementById('co_pbf_name').value.trim();
       payload.pbf_address = document.getElementById('co_pbf_address').value.trim();
+      payload.pbf_phone = document.getElementById('co_pbf_phone').value.trim();
+      payload.purchase_order_type = document.getElementById('co_pbf_order_type').value;
+      payload.purchase_order_profile = document.getElementById('co_pbf_profile').value;
       payload.buyer_name = 'Apotek Medix';
       payload.phone = '085890007359';
       payload.address = 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat';
@@ -1368,8 +1494,8 @@
       payload.apj = document.getElementById('co_signer_title').value.trim();
       payload.sia = document.getElementById('co_signer_sia').value.trim();
       payload.sipa = document.getElementById('co_signer_sipa').value.trim();
-      if (!payload.pbf_name || !payload.pbf_address) {
-        errBox.textContent = 'Nama PBF dan alamat PBF wajib diisi.';
+      if (!payload.pbf_name || !payload.pbf_address || !payload.pbf_phone) {
+        errBox.textContent = 'Nama PBF, alamat PBF, dan nomor telepon PBF wajib diisi.';
         errBox.style.display = 'block';
         return;
       }
@@ -1394,9 +1520,7 @@
 
       payload.buyer_name = fullName;
       payload.phone = phoneVal;
-      payload.address = activeCtx.kioskOrder
-        ? ''
-        : (billingDetails ? `${baseAddress} (Alamat Penagihan: ${billingDetails})` : baseAddress);
+      payload.address = billingDetails ? `${baseAddress} (Alamat Penagihan: ${billingDetails})` : baseAddress;
 
       if (billingMode === 'different' && (!billingNameVal || !billingAddrVal)) {
         errBox.textContent = 'Nama lengkap dan alamat penagihan wajib diisi jika memakai alamat penagihan lain.';
@@ -1414,7 +1538,7 @@
         errBox.style.display = 'block';
         return;
       }
-      if (!activeCtx.kioskOrder && deliveryMode === 'ship' && !addressVal) {
+      if (deliveryMode === 'ship' && !addressVal) {
         errBox.textContent = 'Alamat pengiriman wajib diisi.';
         errBox.style.display = 'block';
         return;
@@ -1461,11 +1585,6 @@
         ? activeCtx.adminPurchaseOrderBase.replace('__ORDER__', result.id)
         : result.invoice_url;
 
-      if (activeCtx.kioskOrder) {
-        document.getElementById('coSuccessDesc').textContent = 'Struk pesanan internal telah dibuat. Tunjukkan struk ini kepada kasir untuk menyelesaikan pembayaran.';
-        document.getElementById('coWhatsappBtn').style.display = 'none';
-      }
-
       document.getElementById('coFormWrapper').style.display = 'none';
       const payRight = document.getElementById('coPaymentRightWrapper');
       if (payRight) payRight.style.display = 'none';
@@ -1503,14 +1622,11 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    configureTempoOption();
     if (activeCtx.adminPbfOrder) {
       document.getElementById('coAdminPbfFields').style.display = 'block';
     }
-    if (activeCtx.kioskOrder) {
-      setDeliveryMode('pickup');
-    } else {
-      updateShippingMethodStatus();
-    }
+    updateShippingMethodStatus();
     onBuyerTypeChange();
     renderCheckoutSummary();
   });

@@ -1,6 +1,6 @@
 @extends('layouts.frontend')
 
-@section('title', ($internalOrder ?? false) ? 'Belanja Internal - Apotek Medix' : 'Produk Obat - Apotek Medix')
+@section('title', 'Produk Obat - Apotek Medix')
 
 @section('styles')
 <style>
@@ -313,23 +313,11 @@
             <span>/</span>
             <span class="current">Produk</span>
         </div>
-        @if($internalOrder ?? false)
-            <form action="{{ route('shopping.internal.logout') }}" method="POST" style="position:absolute;top:1rem;right:1rem;">
-                @csrf
-                <button type="submit" class="btn-reset">Keluar dari belanja internal</button>
-        </form>
-        @endif
         <h1>
-            <i class="fa-solid {{ ($internalOrder ?? false) ? 'fa-cash-register' : 'fa-pills' }}"></i>
-            {{ ($internalOrder ?? false) ? 'Belanja Internal' : 'Katalog Produk' }}
+            <i class="fa-solid fa-pills"></i>
+            Katalog Produk
         </h1>
-        <p>
-            @if($internalOrder ?? false)
-                Pilih produk untuk transaksi internal dan buat struk pembayaran di kasir.
-            @else
-                {{ $total }} produk tersedia dari berbagai perusahaan farmasi terpercaya
-            @endif
-        </p>
+        <p>{{ $total }} produk tersedia dari berbagai perusahaan farmasi terpercaya</p>
     </div>
     <i class="fa-solid fa-pills header-deco-icon header-deco-icon-1"></i>
     <i class="fa-solid fa-capsules header-deco-icon header-deco-icon-2"></i>
@@ -339,7 +327,7 @@
 <div class="products-main">
     <div class="container">
 
-        <form method="GET" action="{{ ($internalOrder ?? false) ? route('shopping.internal') : route('products.index') }}" class="filter-bar">
+        <form method="GET" action="{{ route('products.index') }}" class="filter-bar">
             @if($kategoriPilihan ?? false)
                 <input type="hidden" name="kategori_pilihan" value="{{ $kategoriPilihan }}">
             @endif
@@ -382,7 +370,7 @@
                     <i class="fa-solid fa-magnifying-glass"></i> Cari
                 </button>
                 @if($search || ($kategori_produk ?? '') || $perusahaan || ($indikasi ?? '') || ($komposisi ?? '') || ($sediaan ?? '') || ($dosis ?? '') || ($golongan ?? '') || $sort !== 'terbaru')
-                    <a href="{{ ($internalOrder ?? false) ? route('shopping.internal') : route('products.index') }}" class="btn-reset">✕ Reset</a>
+                    <a href="{{ route('products.index') }}" class="btn-reset">✕ Reset</a>
                 @endif
             </div>
 
@@ -412,38 +400,36 @@
                             <h3 class="medicine-name"><a href="{{ route('medicines.show', $medicine->id) }}">{{ $medicine->nama_obat }}</a></h3>
 
                             @php
-                                $priceChannel = ($internalOrder ?? false) ? 'internal' : 'b2c';
+                                $priceChannel = 'b2c';
                                 $promoPrice = $medicine->getChannelPromoPrice($priceChannel);
                             @endphp
                             <div class="medicine-card-details">
-                                <p><strong>Komposisi:</strong> {{ $medicine->komposisi ?: $medicine->nama_obat }}</p>
-                                @if($medicine->indikasi)
-                                    <p><strong>Indikasi:</strong> {{ $medicine->indikasi }}</p>
-                                @endif
-                                @if($medicine->dosis)
-                                    <p><strong>Dosis:</strong> {{ $medicine->dosis }}</p>
-                                @endif
-                                @if($medicine->golongan)
-                                    <p><strong>Golongan:</strong> {{ $medicine->golongan }}</p>
-                                @endif
+                                <p title="{{ $medicine->komposisi ?: $medicine->nama_obat }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($medicine->komposisi ?: $medicine->nama_obat, 15, '...') }}</p>
+                                <p title="{{ $medicine->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($medicine->indikasi ?: '—', 15, '...') }}</p>
+                                <p title="{{ $medicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($medicine->golongan ?: '—', 15, '...') }}</p>
                             </div>
                             @include('partials.product-unit-selector', [
                                 'medicine' => $medicine,
                                 'unitSelectId' => 'product-unit-' . $medicine->id,
                                 'priceChannel' => $priceChannel,
-                                'showUnitChoices' => !($internalOrder ?? false),
+                                'showUnitChoices' => true,
                             ])
                             @php $stock = (int) $medicine->available_stock_units; @endphp
                             <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
                                 {{ $stock > 0 ? 'Stok: ' . $medicine->getConvertedStockSummaryForUnits($stock) : 'Stok habis' }}
                             </span>
-                            @if($medicine->sediaan_label)
-                                <div class="medicine-meta" style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.6rem;">
-                                    <i class="fa-solid fa-cube"></i> <span>Sediaan: {{ $medicine->sediaan_label }}</span>
-                                </div>
-                            @endif
-                            <button class="btn-cart" data-stock-cart @disabled($stock <= 0)
+                            <div class="medicine-meta medicine-meta-row">
+                                <span class="medicine-meta-sediaan">
+                                    @if($medicine->sediaan_label)
+                                        <i class="fa-solid fa-cube"></i> <span>Sediaan: {{ $medicine->sediaan_label }}</span>
+                                    @endif
+                                </span>
+                                <span class="medicine-sold-badge" data-sold-product-id="{{ $medicine->id }}">
+                                    <i class="fa-solid fa-fire-flame-curved"></i> Terjual {{ number_format((int) $medicine->terjual, 0, ',', '.') }}
+                                </span>
+                            </div>
+                            <button class="btn-cart {{ ($medicine->isRedLogo() && !($b2cAccess ?? false)) ? 'is-red-logo-locked' : '' }}" data-stock-cart @disabled($stock <= 0)
                                     data-product-id="{{ $medicine->id }}"
                                     data-package-unit-label="{{ $medicine->package_unit_label }}"
                                     data-product-name="{{ $medicine->nama_obat }}"
@@ -497,7 +483,7 @@
                     @endif
                 </p>
                 @if($search || ($kategori_produk ?? '') || $perusahaan)
-                    <a href="{{ ($internalOrder ?? false) ? route('shopping.internal') : route('products.index') }}" class="btn-reset" style="display:inline-block;margin-top:1rem;">✕ Hapus Filter</a>
+                    <a href="{{ route('products.index') }}" class="btn-reset" style="display:inline-block;margin-top:1rem;">✕ Hapus Filter</a>
                 @endif
             </div>
         @endif
@@ -508,6 +494,6 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: '{{ ($internalOrder ?? false) ? 'apotekmedix_cart_internal' : 'apotekmedix_cart_retail' }}', kioskOrder: @json($internalOrder ?? false) };</script>
-@include('partials.cart', ['cartKioskOrder' => $internalOrder ?? false])
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_retail' };</script>
+@include('partials.cart')
 @endsection

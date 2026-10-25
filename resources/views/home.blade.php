@@ -12,17 +12,17 @@
     justify-content: space-between;
     gap: 1.5rem;
     max-width: 1200px;
-    min-height: 410px;
+    min-height: 340px;
     margin: 1.5rem auto 2rem;
     padding: 2.5rem clamp(1.5rem, 4vw, 3rem);
     overflow: hidden;
     border-radius: 18px;
     color: #fff;
     background:
-        radial-gradient(ellipse at 84% 18%, rgba(6, 182, 212, 0.38), transparent 37%),
-        radial-gradient(ellipse at 12% 110%, rgba(132, 204, 22, 0.18), transparent 42%),
-        linear-gradient(112deg, #0F172A 0%, #16243A 60%, #12394A 100%);
-    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+        radial-gradient(ellipse at 84% 18%, rgba(8, 217, 232, 0.28), transparent 37%),
+        radial-gradient(ellipse at 12% 110%, rgba(19, 220, 130, 0.16), transparent 42%),
+        linear-gradient(112deg, #063d9f 0%, #0754bd 60%, #0875c9 100%);
+    box-shadow: 0 18px 42px rgba(3, 34, 89, 0.2);
 }
 .home-brand-hero::before {
     position: absolute;
@@ -51,7 +51,7 @@
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.65rem;
-    color: #BEF264;
+    color: #7fffe2;
     font-size: 0.8rem;
     font-weight: 800;
     letter-spacing: 0.06em;
@@ -82,20 +82,31 @@
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    min-height: 68px;
+    min-height: 56px;
     padding: 0.85rem 1rem;
-    border: 1px solid rgba(255,255,255,0.55);
-    border-radius: 10px;
-    background: rgba(255,255,255,0.96);
-    box-shadow: 0 5px 14px rgba(0, 45, 69, 0.12);
-    color: #0E6470;
+    border: 1px solid rgba(255,255,255,0.62);
+    border-radius: 12px;
+    background: linear-gradient(135deg, #13dc82, #05bd78);
+    box-shadow: 0 5px 14px rgba(0, 45, 69, 0.18);
+    color: #fff;
     font-size: 1rem;
     font-weight: 700;
     text-decoration: none;
     transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
-.home-brand-hero-actions a i { width: 30px; text-align: center; font-size: 1.35rem; }
-.home-brand-hero-actions a:hover { transform: translateY(-2px); box-shadow: 0 9px 20px rgba(0, 45, 69, 0.18); background: #fff; }
+.home-brand-hero-actions a { gap: 0.7rem; }
+.home-brand-hero-actions a > span {
+    display: grid;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 10px;
+    background: #ecfdf5;
+    color: #078a68;
+}
+.home-brand-hero-actions a svg { width: 21px; height: 21px; }
+.home-brand-hero-actions a:hover { transform: translateY(-2px); box-shadow: 0 9px 20px rgba(0, 45, 69, 0.24); background: linear-gradient(135deg, #08c975, #04a968); }
 .home-brand-hero-mark {
     position: relative;
     z-index: 1;
@@ -130,7 +141,8 @@
     .home-brand-hero p { max-width: 330px; font-size: 0.92rem; }
     .home-brand-hero-actions { gap: 0.55rem; }
     .home-brand-hero-actions a { min-height: 58px; gap: 0.5rem; padding: 0.65rem 0.55rem; font-size: 0.78rem; }
-    .home-brand-hero-actions a i { width: 22px; font-size: 1rem; }
+    .home-brand-hero-actions a > span { flex-basis: 30px; width: 30px; height: 30px; border-radius: 8px; }
+    .home-brand-hero-actions a svg { width: 18px; height: 18px; }
 }
 
 <style>
@@ -678,7 +690,7 @@
 .featured-track .product-stock { align-self:flex-start; margin:.15rem 0; }
 .home-product-section-description { margin:.35rem 0 0; color:#64748b; font-size:.82rem; }
 .discounted-products-section { padding:2.75rem 0; background:#f8fafc; border-block:1px solid #e2e8f0; }
-.discounted-products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(205px,1fr)); gap:1rem; align-items:stretch; }
+.discounted-products-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1rem; align-items:stretch; }
 .discounted-product-card { position:relative; display:flex; min-width:0; flex-direction:column; overflow:hidden; border:1px solid #e2e8f0; border-radius:14px; background:#fff; box-shadow:0 5px 16px rgba(15,23,42,.06); transition:transform .2s,box-shadow .2s,border-color .2s; }
 .discounted-product-card:hover { transform:translateY(-3px); border-color:#bfdbfe; box-shadow:0 12px 26px rgba(15,23,42,.1); }
 .discounted-product-image { position:relative; display:flex; height:155px; align-items:center; justify-content:center; overflow:hidden; background:linear-gradient(135deg,#eff6ff,#ecfeff); }
@@ -702,13 +714,16 @@
 .discounted-product-actions a:hover { background:#dbeafe; }
 .discounted-product-actions button { color:#fff; background:#0f172a; }
 .discounted-product-actions button:hover { background:#1e293b; }
+@media(max-width:900px) {
+    .discounted-products-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
 @media(max-width:600px) {
     .discounted-products-section { padding:2rem 0; }
-    .discounted-products-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; }
-    .discounted-product-image { height:125px; }
-    .discounted-product-body { padding:.65rem; }
-    .discounted-product-name { font-size:.82rem; }
-    .discounted-product-body .product-unit-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .discounted-products-grid { grid-template-columns:minmax(0,1fr); gap:.85rem; }
+    .discounted-product-image { height:160px; }
+    .discounted-product-body { padding:.8rem; }
+    .discounted-product-name { font-size:.95rem; }
+    .discounted-product-body .product-unit-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 @media(max-width:768px) {
     .home-brand-hero { margin:.25rem .8rem .5rem;padding:1.75rem 1.25rem; }
@@ -997,9 +1012,24 @@
         <h1 id="homeHeroTitle">Solusi Kesehatan Terpercaya</h1>
         <p>Beli obat, suplemen, dan produk kesehatan dengan mudah. Tim Apotek Medix siap membantu Anda.</p>
         <div class="home-brand-hero-actions">
-            <a href="{{ route('shopping.internal') }}"><i class="fa-solid fa-cash-register"></i> Belanja Internal</a>
-            <a href="{{ route('products.pbf') }}"><i class="fa-solid fa-truck-ramp-box"></i> Belanja B2B</a>
-            <a href="{{ route('products.apotek') }}"><i class="fa-solid fa-prescription-bottle-medical"></i> Belanja B2C</a>
+            <a href="{{ route('products.pbf') }}">
+                <span aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m3 7 9-4 9 4v10l-9 4-9-4V7Z"/>
+                        <path d="m3 7 9 4 9-4M12 11v10M7.5 5l9 4"/>
+                    </svg>
+                </span>
+                Belanja B2B
+            </a>
+            <a href="{{ route('products.apotek') }}">
+                <span aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 8h14l1 13H4L5 8Z"/>
+                        <path d="M9 8a3 3 0 0 1 6 0M12 12v5M9.5 14.5h5"/>
+                    </svg>
+                </span>
+                Belanja B2C
+            </a>
         </div>
     </div>
     <div class="home-brand-hero-mark" aria-hidden="true">
@@ -1496,248 +1526,73 @@
     </div>
 </section>
 
-{{-- KATEGORI PILIHAN --}}
-@include('components.category-selection')
 
-@if(isset($featuredProducts) && $featuredProducts->count())
 <style>
-/* ===== FEATURED CAROUSEL ===== */
-.featured-section { padding: 3rem 0; }
+/* ===== HOME B2C 4x5 PRODUCT GRIDS ===== */
+.home-b2c-section { padding: 2.75rem 0; }
+.home-b2c-section--alt { background: #f8fafc; border-block: 1px solid #e2e8f0; }
 .featured-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 1.5rem; flex-wrap: wrap; gap: .75rem;
 }
-.featured-nav {
-    display: flex; align-items: center; gap: .5rem;
-}
-.featured-nav-btn {
-    width: 38px; height: 38px; border-radius: 50%;
-    border: 2px solid #e5e7eb; background: #fff;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: #374151; font-size: .85rem;
-    transition: all .2s; flex-shrink: 0;
-}
-.featured-nav-btn:hover,
-.featured-nav-btn.active-page { border-color: #1E88E5; background: #1E88E5; color: #fff; }
-.featured-nav-btn:disabled { opacity: .35; cursor: not-allowed; }
-
-/* Track geser */
-.featured-track-wrap {
-    overflow: hidden;
-    border-radius: 16px;
-}
-.featured-track {
-    display: flex;
+.home-b2c-grid-4x5,
+.discounted-products-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
-    transition: transform .4s cubic-bezier(.25,.8,.25,1);
-    will-change: transform;
+    align-items: stretch;
 }
-
-/* Card di carousel — lebar tetap */
-.featured-track .prod-card {
-    flex: 0 0 calc(20% - .8rem); /* 5 per baris desktop */
+.home-b2c-grid-4x5 .prod-card,
+.discounted-products-grid .discounted-product-card {
     min-width: 0;
+    height: 100%;
 }
-
-/* Dots */
-.featured-dots {
-    display: flex; justify-content: center; gap: .5rem; margin-top: 1.25rem;
-}
-.featured-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #d1d5db; border: none; cursor: pointer;
-    transition: all .25s; padding: 0;
-}
-.featured-dot.active { background: #1E88E5; width: 24px; border-radius: 4px; }
-
-/* CTA bawah */
+.home-b2c-grid-4x5 .product-unit-section { margin: .55rem 0; text-align: left; }
+.home-b2c-grid-4x5 .product-unit-heading { color: #64748b; font-size: .7rem; }
+.home-b2c-grid-4x5 .product-unit-grid { grid-template-columns: repeat(auto-fit, minmax(74px, 1fr)); }
+.home-b2c-grid-4x5 .product-unit-grid-1 { grid-template-columns: minmax(92px, 1fr); }
+.home-b2c-grid-4x5 .product-unit-card { gap: .35rem; padding: .45rem; }
+.home-b2c-grid-4x5 .product-unit-card.is-selected { border-color: #1e88e5; background: #eff6ff; box-shadow: 0 0 0 1px #1e88e5; }
+.home-b2c-grid-4x5 .product-unit-choice { min-height: 2.7rem; }
+.home-b2c-grid-4x5 .product-unit-name,
+.home-b2c-grid-4x5 .product-unit-price { font-size: .72rem; }
+.home-b2c-grid-4x5 .product-unit-quantity { border-color: #dbe3ec; }
+.home-b2c-grid-4x5 .product-unit-quantity button { width: 1.35rem; height: 1.35rem; cursor: pointer; }
+.home-b2c-grid-4x5 .product-unit-quantity input { width: 2.2rem; }
+.home-b2c-grid-4x5 .prod-body { gap: .35rem; }
+.home-b2c-grid-4x5 .prod-name { min-height: 2.4em; }
+.home-b2c-grid-4x5 .product-stock { align-self: flex-start; margin: .15rem 0; }
 .featured-cta { text-align: center; margin-top: 1.75rem; }
 
-/* ===== MOBILE: 4 card terlihat, sisa geser ===== */
-@media (max-width: 768px) {
-    .featured-track .prod-card {
-        flex: 0 0 calc(50% - .5rem); /* 2 per baris → 4 visible */
+@media (max-width: 992px) {
+    .home-b2c-grid-4x5,
+    .discounted-products-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .featured-nav { display: none; } /* sembunyikan tombol prev/next di mobile */
-    .featured-track-wrap { overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-    .featured-track { transition: none; }
-    .featured-track .prod-card { scroll-snap-align: start; }
 }
-@media (max-width: 480px) {
-    .featured-track .prod-card {
-        flex: 0 0 calc(50% - .5rem);
+@media (max-width: 600px) {
+    .home-b2c-grid-4x5,
+    .discounted-products-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .75rem;
     }
 }
 </style>
 
-<section class="featured-section">
-  <div class="container">
-    <div class="featured-header">
-      <div class="sec-head-left">
-        <span class="sec-tag">🔥 Terlaris B2C</span>
-        <h2 class="sec-title" style="margin:0;">Produk Terlaris</h2>
-        <p class="home-product-section-description">Produk pilihan untuk belanja retail B2C.</p>
-      </div>
-      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-        @php $totalPages = ceil($featuredProducts->count() / 10); @endphp
-        @if($featuredProducts->count() > 0)
-        <div class="featured-nav">
-          <button class="featured-nav-btn" id="featPrev" onclick="featMove(-1)" disabled>
-            <i class="fa-solid fa-chevron-left"></i>
-          </button>
-          <span id="featPageInfo" style="font-size:.82rem;color:#6b7280;min-width:50px;text-align:center;">1 / {{ $totalPages }}</span>
-          <button class="featured-nav-btn" id="featNext" onclick="featMove(1)" {{ $totalPages <= 1 ? 'disabled' : '' }}>
-            <i class="fa-solid fa-chevron-right"></i>
-          </button>
-        </div>
-        @endif
-        <a href="{{ route('products.apotek') }}" class="sec-link">Belanja B2C <i class="fa-solid fa-arrow-right"></i></a>
-      </div>
-    </div>
-
-    @if($featuredProducts->count() > 0)
-    <div class="featured-track-wrap" id="featWrap">
-      <div class="featured-track" id="featTrack">
-        @foreach($featuredProducts as $med)
-        <div class="prod-card">
-          <div class="prod-img">
-            @include('partials.product-gallery-image', ['medicine' => $med])
-            @include('partials.product-logo-marker', ['medicine' => $med])
-            @if($med->kategori_produk)
-              <span class="prod-badge-label">{{ $med->kategori_produk==='SKINCARE & KOSMETIK'?'✨':($med->kategori_produk==='ALAT KESEHATAN'?'🩺':'💊') }}</span>
-            @endif
-            @if($med->getPromoPercent('b2c') > 0)
-              <span style="position:absolute;top:.65rem;right:.65rem;padding:.3rem .5rem;border-radius:999px;background:#ef4444;color:#fff;font-size:.7rem;font-weight:800;">-{{ $med->getPromoPercent('b2c') }}%</span>
-            @endif
-          </div>
-          <div class="prod-body">
-            @if($med->kategori)<span class="prod-brand-tag">{{ $med->kategori }}</span>@endif
-            <h3 class="prod-name"><a href="{{ route('medicines.show', $med->id) }}">{{ $med->nama_obat }}</a></h3>
-            @php
-              $homeBasePrice = $med->getChannelBasePrice('b2c');
-              $homePromoPrice = $med->getChannelPromoPrice('b2c');
-            @endphp
-            <div class="prod-price" id="home-price-a-{{ $med->id }}">
-              @if($med->getPromoPercent('b2c') > 0)<small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($homeBasePrice, 0, ',', '.') }}</small>@endif
-              <span id="home-price-current-a-{{ $med->id }}">Rp {{ number_format($homePromoPrice, 0, ',', '.') }}</span>
-            </div>
-            @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-a-' . $med->id, 'priceTargetId' => 'home-price-current-a-' . $med->id, 'priceChannel' => 'b2c'])
-            @php $stock = (int) $med->available_stock_units; @endphp
-            <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $med->id }}">
-              <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-              {{ $stock > 0 ? 'Stok: ' . $med->getConvertedStockSummaryForUnits($stock) : 'Stok habis' }}
-            </span>
-            @if($med->sediaan_label)
-              <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.35rem;">
-                <i class="fa-solid fa-cube"></i> <span>{{ $med->sediaan_label }}</span>
-              </div>
-            @endif
-            <a href="{{ route('medicines.show', $med->id) }}" class="btn-detail">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-            <button class="btn-cart" data-stock-cart @disabled($stock <= 0) data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $homePromoPrice }},'{{ $med->image_url ?: '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this,'home-unit-a-{{ $med->id }}')">
-              <i class="fa-solid fa-cart-plus"></i> Keranjang
-            </button>
-          </div>
-        </div>
-        @endforeach
-      </div>
-    </div>
-
-    {{-- Dots pagination --}}
-    @if($totalPages > 1)
-    <div class="featured-dots" id="featDots">
-      @for($i = 0; $i < $totalPages; $i++)
-        <button class="featured-dot {{ $i===0?'active':'' }}" onclick="featGoTo({{ $i }})"></button>
-      @endfor
-    </div>
-    @endif
-
-    @else
-    <div style="text-align:center;padding:3rem;background:#fff;border-radius:16px;border:1px solid #e5e7eb;">
-      <i class="fa-solid fa-box-open" style="font-size:3rem;color:#d1d5db;display:block;margin-bottom:1rem;"></i>
-      <p style="color:#6b7280;margin:0;">Belum ada produk tersedia saat ini.</p>
-    </div>
-    @endif
-
-    <div class="featured-cta">
-      <a href="{{ route('products.apotek') }}" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 2.25rem;background:linear-gradient(135deg,#1E88E5,#1565C0);color:#fff;border-radius:50px;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.25s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-        <i class="fa-solid fa-store"></i> Lihat Semua Produk B2C
-      </a>
-    </div>
-  </div>
-</section>
-
-<script>
-(function () {
-    const ITEMS_PER_PAGE = 10;
-    let currentPage = 0;
-    const track = document.getElementById('featTrack');
-    const wrap  = document.getElementById('featWrap');
-    const dots  = document.querySelectorAll('.featured-dot');
-    const prevBtn = document.getElementById('featPrev');
-    const nextBtn = document.getElementById('featNext');
-    const pageInfo = document.getElementById('featPageInfo');
-
-    if (!track) return;
-
-    const cards  = track.querySelectorAll('.prod-card');
-    const total  = cards.length;
-    const pages  = Math.ceil(total / ITEMS_PER_PAGE);
-
-    function getCardWidth() {
-        if (!cards.length) return 0;
-        const style = getComputedStyle(track);
-        const gap   = parseFloat(style.gap) || 16;
-        return cards[0].getBoundingClientRect().width + gap;
-    }
-
-    function goTo(page) {
-        if (page < 0 || page >= pages) return;
-        currentPage = page;
-
-        // Geser track sebesar (page * 10 cards)
-        const cardW  = getCardWidth();
-        const offset = currentPage * ITEMS_PER_PAGE * cardW;
-        track.style.transform = `translateX(-${offset}px)`;
-
-        // Update dots
-        dots.forEach((d, i) => d.classList.toggle('active', i === currentPage));
-
-        // Update nav buttons
-        if (prevBtn) prevBtn.disabled = currentPage === 0;
-        if (nextBtn) nextBtn.disabled = currentPage >= pages - 1;
-        if (pageInfo) pageInfo.textContent = (currentPage + 1) + ' / ' + pages;
-    }
-
-    window.featMove = function (dir) { goTo(currentPage + dir); };
-    window.featGoTo = function (p)   { goTo(p); };
-
-    // Touch / swipe support
-    let touchStartX = 0;
-    wrap && wrap.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
-    wrap && wrap.addEventListener('touchend', e => {
-        const diff = touchStartX - e.changedTouches[0].clientX;
-        if (Math.abs(diff) > 50) goTo(currentPage + (diff > 0 ? 1 : -1));
-    });
-})();
-</script>
-
-@endif
-
-
-{{-- PROMO HARGA PRODUK --}}
-@if(isset($discountedProducts) && $discountedProducts->isNotEmpty())
-<section class="discounted-products-section">
+{{-- 1. PRODUK PROMO (B2C) — 4 ke kanan x 5 ke bawah --}}
+<section class="discounted-products-section home-b2c-section home-b2c-section--alt">
   <div class="container">
     <div class="featured-header">
       <div class="sec-head-left">
         <span class="sec-tag">🏷️ Promo B2C</span>
-        <h2 class="sec-title" style="margin:0;">Promo Produk</h2>
+        <h2 class="sec-title" style="margin:0;">Produk Promo</h2>
         <p class="home-product-section-description">Harga retail spesial untuk belanja B2C.</p>
       </div>
       <a href="{{ route('products.apotek') }}" class="sec-link">Lihat Semua Promo <i class="fa-solid fa-arrow-right"></i></a>
     </div>
-    <div class="discounted-products-grid">
-      @foreach($discountedProducts as $promoMedicine)
+    @if(isset($discountedProducts) && $discountedProducts->isNotEmpty())
+    <div class="discounted-products-grid home-b2c-grid-4x5">
+      @foreach($discountedProducts->take(20) as $promoMedicine)
         @php
           $promoBasePrice = $promoMedicine->getChannelBasePrice('b2c');
           $promoPrice = $promoMedicine->getChannelPromoPrice('b2c');
@@ -1745,6 +1600,7 @@
         @endphp
         <article class="discounted-product-card">
           <span class="discounted-product-badge">Diskon {{ $promoMedicine->getPromoPercent('b2c') }}%</span>
+          <div class="medicine-card-brand">Apotek Medix</div>
           <a class="discounted-product-image" href="{{ route('medicines.show', $promoMedicine->id) }}" aria-label="Lihat {{ $promoMedicine->nama_obat }}">
             @include('partials.product-logo-marker', ['medicine' => $promoMedicine])
             @if($promoMedicine->gambar)
@@ -1758,9 +1614,16 @@
           </a>
           <div class="discounted-product-body">
             @if($promoMedicine->brand ?: $promoMedicine->kategori)
-              <span class="discounted-product-brand">{{ $promoMedicine->brand ?: $promoMedicine->kategori }}</span>
+              <div class="medicine-card-principal">{{ $promoMedicine->brand ?: $promoMedicine->kategori }}</div>
+            @else
+              <div class="medicine-card-principal" aria-hidden="true"></div>
             @endif
-            <h3 class="discounted-product-name">{{ $promoMedicine->nama_obat }}</h3>
+            <h3 class="discounted-product-name"><a href="{{ route('medicines.show', $promoMedicine->id) }}" style="color:inherit;text-decoration:none;">{{ $promoMedicine->nama_obat }}</a></h3>
+            <div class="medicine-card-details">
+              <p title="{{ $promoMedicine->komposisi ?: $promoMedicine->nama_obat }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->komposisi ?: $promoMedicine->nama_obat, 15, '...') }}</p>
+              <p title="{{ $promoMedicine->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->indikasi ?: '—', 15, '...') }}</p>
+              <p title="{{ $promoMedicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->golongan ?: '—', 15, '...') }}</p>
+            </div>
             <div class="discounted-product-prices">
               <span class="discounted-product-old-price">Rp {{ number_format($promoBasePrice, 0, ',', '.') }}</span>
               <strong class="discounted-product-current-price" id="home-price-b-{{ $promoMedicine->id }}">Rp {{ number_format($promoPrice, 0, ',', '.') }}</strong>
@@ -1771,17 +1634,187 @@
               <i class="fa-solid {{ $promoStock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
               {{ $promoStock > 0 ? 'Stok: ' . $promoMedicine->getConvertedStockSummaryForUnits($promoStock) : 'Stok habis' }}
             </span>
-            <div class="discounted-product-actions">
-              <a href="{{ route('medicines.show', $promoMedicine->id) }}">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-              <button class="btn-cart" data-stock-cart @disabled($promoStock <= 0) data-package-unit-label="{{ $promoMedicine->package_unit_label }}" onclick="addToCart({{ $promoMedicine->id }}, '{{ addslashes($promoMedicine->nama_obat) }}', {{ $promoPrice }}, '{{ $promoMedicine->image_url ?: '' }}', '{{ addslashes($promoMedicine->brand ?: $promoMedicine->kategori) }}', this, '{{ $promoUnitId }}')"><i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang</button>
+            <div class="medicine-meta medicine-meta-row">
+              <span class="medicine-meta-sediaan">
+                @if($promoMedicine->sediaan_label)
+                  <i class="fa-solid fa-cube"></i> <span>{{ $promoMedicine->sediaan_label }}</span>
+                @endif
+              </span>
+              <span class="medicine-sold-badge" data-sold-product-id="{{ $promoMedicine->id }}">
+                <i class="fa-solid fa-fire-flame-curved"></i> Terjual {{ number_format((int) $promoMedicine->terjual, 0, ',', '.') }}
+              </span>
             </div>
+            <button class="btn-cart {{ ($promoMedicine->isRedLogo() && !($b2cAccess ?? false)) ? 'is-red-logo-locked' : '' }}" data-stock-cart @disabled($promoStock <= 0) data-package-unit-label="{{ $promoMedicine->package_unit_label }}" data-requires-prescription="{{ $promoMedicine->isRedLogo() ? '1' : '0' }}" data-sales-channel="b2c" onclick="addToCart({{ $promoMedicine->id }}, '{{ addslashes($promoMedicine->nama_obat) }}', {{ $promoPrice }}, '{{ $promoMedicine->image_url ?: '' }}', '{{ addslashes($promoMedicine->brand ?: $promoMedicine->kategori) }}', this, '{{ $promoUnitId }}')"><i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang</button>
           </div>
         </article>
       @endforeach
     </div>
+    @else
+    <div style="text-align:center;padding:2.5rem;background:#fff;border-radius:16px;border:1px solid #e5e7eb;">
+      <i class="fa-solid fa-tags" style="font-size:2.5rem;color:#d1d5db;display:block;margin-bottom:.75rem;"></i>
+      <p style="color:#6b7280;margin:0;">Belum ada produk promo B2C saat ini.</p>
+    </div>
+    @endif
   </div>
 </section>
-@endif
+
+{{-- 2. PRODUK TERLARIS (B2C) — 4 ke kanan x 5 ke bawah --}}
+<section class="featured-section home-b2c-section">
+  <div class="container">
+    <div class="featured-header">
+      <div class="sec-head-left">
+        <span class="sec-tag">🔥 Terlaris B2C</span>
+        <h2 class="sec-title" style="margin:0;">Produk Terlaris</h2>
+        <p class="home-product-section-description">Produk pilihan terlaris untuk belanja retail B2C.</p>
+      </div>
+      <a href="{{ route('products.apotek') }}" class="sec-link">Belanja B2C <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+
+    @if(isset($featuredProducts) && $featuredProducts->count() > 0)
+    <div class="home-b2c-grid-4x5">
+      @foreach($featuredProducts->take(20) as $med)
+      <div class="prod-card">
+        <div class="medicine-card-brand">Apotek Medix</div>
+        <div class="prod-img">
+          @include('partials.product-gallery-image', ['medicine' => $med])
+          @include('partials.product-logo-marker', ['medicine' => $med])
+          @if($med->kategori_produk)
+            <span class="prod-badge-label">{{ $med->kategori_produk==='SKINCARE & KOSMETIK'?'✨':($med->kategori_produk==='ALAT KESEHATAN'?'🩺':'💊') }}</span>
+          @endif
+          @if($med->getPromoPercent('b2c') > 0)
+            <span style="position:absolute;bottom:.55rem;left:.55rem;z-index:2;padding:.25rem .55rem;border-radius:999px;background:#ef4444;color:#fff!important;font-size:.7rem;font-weight:800;">-{{ $med->getPromoPercent('b2c') }}%</span>
+          @endif
+        </div>
+        <div class="prod-body">
+          <div class="medicine-card-principal">{{ $med->brand ?: $med->kategori }}</div>
+          <h3 class="prod-name"><a href="{{ route('medicines.show', $med->id) }}">{{ $med->nama_obat }}</a></h3>
+          <div class="medicine-card-details">
+            <p title="{{ $med->komposisi ?: $med->nama_obat }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($med->komposisi ?: $med->nama_obat, 15, '...') }}</p>
+            <p title="{{ $med->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($med->indikasi ?: '—', 15, '...') }}</p>
+            <p title="{{ $med->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($med->golongan ?: '—', 15, '...') }}</p>
+          </div>
+          @php
+            $homeBasePrice = $med->getChannelBasePrice('b2c');
+            $homePromoPrice = $med->getChannelPromoPrice('b2c');
+          @endphp
+          <div class="prod-price" id="home-price-a-{{ $med->id }}">
+            @if($med->getPromoPercent('b2c') > 0)<small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($homeBasePrice, 0, ',', '.') }}</small>@endif
+            <span id="home-price-current-a-{{ $med->id }}">Rp {{ number_format($homePromoPrice, 0, ',', '.') }}</span>
+          </div>
+          @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-a-' . $med->id, 'priceTargetId' => 'home-price-current-a-' . $med->id, 'priceChannel' => 'b2c'])
+          @php $stock = (int) $med->available_stock_units; @endphp
+          <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $med->id }}">
+            <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
+            {{ $stock > 0 ? 'Stok: ' . $med->getConvertedStockSummaryForUnits($stock) : 'Stok habis' }}
+          </span>
+          <div class="medicine-meta medicine-meta-row">
+            <span class="medicine-meta-sediaan">
+              @if($med->sediaan_label)
+                <i class="fa-solid fa-cube"></i> <span>{{ $med->sediaan_label }}</span>
+              @endif
+            </span>
+            <span class="medicine-sold-badge" data-sold-product-id="{{ $med->id }}">
+              <i class="fa-solid fa-fire-flame-curved"></i> Terjual {{ number_format((int) $med->terjual, 0, ',', '.') }}
+            </span>
+          </div>
+          <button class="btn-cart {{ ($med->isRedLogo() && !($b2cAccess ?? false)) ? 'is-red-logo-locked' : '' }}" data-stock-cart @disabled($stock <= 0) data-package-unit-label="{{ $med->package_unit_label }}" data-requires-prescription="{{ $med->isRedLogo() ? '1' : '0' }}" data-sales-channel="b2c" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $homePromoPrice }},'{{ $med->image_url ?: '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this,'home-unit-a-{{ $med->id }}')">
+            <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang
+          </button>
+        </div>
+      </div>
+      @endforeach
+    </div>
+    @else
+    <div style="text-align:center;padding:3rem;background:#fff;border-radius:16px;border:1px solid #e5e7eb;">
+      <i class="fa-solid fa-box-open" style="font-size:3rem;color:#d1d5db;display:block;margin-bottom:1rem;"></i>
+      <p style="color:#6b7280;margin:0;">Belum ada produk terlaris tersedia saat ini.</p>
+    </div>
+    @endif
+  </div>
+</section>
+
+{{-- 3. SEMUA PRODUK (B2C) — 4 ke kanan x 5 ke bawah --}}
+<section class="all-b2c-products-section home-b2c-section home-b2c-section--alt">
+  <div class="container">
+    <div class="featured-header">
+      <div class="sec-head-left">
+        <span class="sec-tag">🛍️ Katalog B2C</span>
+        <h2 class="sec-title" style="margin:0;">Semua Produk</h2>
+        <p class="home-product-section-description">Semua produk retail B2C yang tersedia di Apotek Medix.</p>
+      </div>
+      <a href="{{ route('products.apotek') }}" class="sec-link">Lihat Semua Produk <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+
+    @if(isset($allB2cProducts) && $allB2cProducts->count() > 0)
+    <div class="home-b2c-grid-4x5">
+      @foreach($allB2cProducts->take(20) as $med)
+      <div class="prod-card">
+        <div class="medicine-card-brand">Apotek Medix</div>
+        <div class="prod-img">
+          @include('partials.product-gallery-image', ['medicine' => $med])
+          @include('partials.product-logo-marker', ['medicine' => $med])
+          @if($med->kategori_produk)
+            <span class="prod-badge-label">{{ $med->kategori_produk==='SKINCARE & KOSMETIK'?'✨':($med->kategori_produk==='ALAT KESEHATAN'?'🩺':'💊') }}</span>
+          @endif
+          @if($med->getPromoPercent('b2c') > 0)
+            <span style="position:absolute;bottom:.55rem;left:.55rem;z-index:2;padding:.25rem .55rem;border-radius:999px;background:#ef4444;color:#fff!important;font-size:.7rem;font-weight:800;">-{{ $med->getPromoPercent('b2c') }}%</span>
+          @endif
+        </div>
+        <div class="prod-body">
+          <div class="medicine-card-principal">{{ $med->brand ?: $med->kategori }}</div>
+          <h3 class="prod-name"><a href="{{ route('medicines.show', $med->id) }}">{{ $med->nama_obat }}</a></h3>
+          <div class="medicine-card-details">
+            <p title="{{ $med->komposisi ?: $med->nama_obat }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($med->komposisi ?: $med->nama_obat, 15, '...') }}</p>
+            <p title="{{ $med->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($med->indikasi ?: '—', 15, '...') }}</p>
+            <p title="{{ $med->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($med->golongan ?: '—', 15, '...') }}</p>
+          </div>
+          @php
+            $allBasePrice = $med->getChannelBasePrice('b2c');
+            $allPromoPrice = $med->getChannelPromoPrice('b2c');
+          @endphp
+          <div class="prod-price" id="home-price-all-{{ $med->id }}">
+            @if($med->getPromoPercent('b2c') > 0)<small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($allBasePrice, 0, ',', '.') }}</small>@endif
+            <span id="home-price-current-all-{{ $med->id }}">Rp {{ number_format($allPromoPrice, 0, ',', '.') }}</span>
+          </div>
+          @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-all-' . $med->id, 'priceTargetId' => 'home-price-current-all-' . $med->id, 'priceChannel' => 'b2c'])
+          @php $allStock = (int) $med->available_stock_units; @endphp
+          <span class="product-stock {{ $allStock <= 0 ? 'empty' : ($allStock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $med->id }}">
+            <i class="fa-solid {{ $allStock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
+            {{ $allStock > 0 ? 'Stok: ' . $med->getConvertedStockSummaryForUnits($allStock) : 'Stok habis' }}
+          </span>
+          <div class="medicine-meta medicine-meta-row">
+            <span class="medicine-meta-sediaan">
+              @if($med->sediaan_label)
+                <i class="fa-solid fa-cube"></i> <span>{{ $med->sediaan_label }}</span>
+              @endif
+            </span>
+            <span class="medicine-sold-badge" data-sold-product-id="{{ $med->id }}">
+              <i class="fa-solid fa-fire-flame-curved"></i> Terjual {{ number_format((int) $med->terjual, 0, ',', '.') }}
+            </span>
+          </div>
+          <button class="btn-cart {{ ($med->isRedLogo() && !($b2cAccess ?? false)) ? 'is-red-logo-locked' : '' }}" data-stock-cart @disabled($allStock <= 0) data-package-unit-label="{{ $med->package_unit_label }}" data-requires-prescription="{{ $med->isRedLogo() ? '1' : '0' }}" data-sales-channel="b2c" onclick="addToCart({{ $med->id }},'{{ addslashes($med->nama_obat) }}',{{ $allPromoPrice }},'{{ $med->image_url ?: '' }}','{{ addslashes($med->brand ?: $med->kategori) }}',this,'home-unit-all-{{ $med->id }}')">
+            <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang
+          </button>
+        </div>
+      </div>
+      @endforeach
+    </div>
+    @else
+    <div style="text-align:center;padding:3rem;background:#fff;border-radius:16px;border:1px solid #e5e7eb;">
+      <i class="fa-solid fa-box-open" style="font-size:3rem;color:#d1d5db;display:block;margin-bottom:1rem;"></i>
+      <p style="color:#6b7280;margin:0;">Belum ada produk B2C tersedia saat ini.</p>
+    </div>
+    @endif
+
+    <div class="featured-cta">
+      <a href="{{ route('products.apotek') }}" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 2.25rem;background:linear-gradient(135deg,#1E88E5,#1565C0);color:#fff;border-radius:50px;text-decoration:none;font-weight:700;font-size:0.9rem;transition:all 0.25s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+        <i class="fa-solid fa-store"></i> Lihat Semua Produk B2C
+      </a>
+    </div>
+  </div>
+</section>
+{{-- KATEGORI PILIHAN / IKUTI KAMI --}}
+@include('components.category-selection')
 
 {{-- PROMO PRODUK --}}
 @if(isset($promoProducts) && $promoProducts->count())
@@ -2241,8 +2274,6 @@
   </div>
 </section>
 
-@endsection
-
 <style>
 .promo-products-section { background:#f8fafc;color:#1e293b; }
 .promo-products-header .sec-tag { border:1px solid #bae6fd;background:#ecfeff;color:#0052cc; }
@@ -2267,7 +2298,8 @@
 .home-category-grid { display:grid;grid-auto-columns:minmax(145px,1fr);grid-auto-flow:column;gap:.8rem;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#bfdbfe transparent;padding:.15rem .1rem .65rem; }
 .home-category-card { display:flex;min-height:154px;flex-direction:column;align-items:center;justify-content:center;gap:.65rem;padding:.75rem;border:1px solid #e2e8f0;border-radius:14px;background:#fff;color:#1e293b;text-align:center;text-decoration:none;transition:border-color .2s,transform .2s,box-shadow .2s;scroll-snap-align:start; }
 .home-category-card:hover { transform:translateY(-2px);border-color:#93c5fd;box-shadow:0 8px 18px rgba(0,82,204,.08); }
-.home-category-card > span { display:grid;width:76px;height:76px;place-items:center;border-radius:50%;background:#0052cc;color:#fff;font-size:1.8rem; }
+.home-category-card > span { display:grid;width:76px;height:76px;place-items:center;border-radius:50%;background:#0052cc!important;color:#fff!important;font-size:1.8rem; }
+.home-category-card > span i { color:#fff!important; }
 .home-category-card strong { max-width:145px;font-size:.9rem;line-height:1.35;font-weight:600; }
 .home-category-card:focus-visible,.home-category-heading a:focus-visible,.home-category-scroll:focus-visible { outline:3px solid #00d1b2;outline-offset:3px;border-radius:5px; }
 .category-selection-section,.cat-section { background:#fff; }
@@ -2299,6 +2331,7 @@
     .promo-scroll-button { transition:none; }
 }
 </style>
+@endsection
 
 @section('scripts')
 <script>window.cartSettings = { storageKey: 'apotekmedix_cart_retail' };</script>

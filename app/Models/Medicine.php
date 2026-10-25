@@ -25,6 +25,8 @@ class Medicine extends Model
                 'unit_packaging_enabled',
                 'tablets_per_strip',
                 'strips_per_box',
+                'satuan',
+                'sediaan',
             ]);
 
             if (Schema::hasColumn('medicines', 'stock_base_units')
@@ -49,11 +51,9 @@ class Medicine extends Model
         'brand',
         'kategori_produk',
         'harga',
-        'harga_internal',
         'harga_modal',
         'harga_grosir',
         'harga_retail',
-        'promo_internal_percent',
         'promo_b2b_percent',
         'promo_b2c_percent',
         'is_resep',
@@ -78,11 +78,9 @@ class Medicine extends Model
 
     protected $casts = [
         'harga'   => 'decimal:2',
-        'harga_internal' => 'decimal:2',
         'harga_modal'  => 'decimal:2',
         'harga_grosir' => 'decimal:2',
         'harga_retail' => 'decimal:2',
-        'promo_internal_percent' => 'integer',
         'promo_b2b_percent' => 'integer',
         'promo_b2c_percent' => 'integer',
         'is_resep' => 'boolean',
@@ -393,6 +391,19 @@ class Medicine extends Model
         });
     }
 
+    public function scopeWithoutRedLogo($query)
+    {
+        return $query->where(function ($catalogQuery) {
+            $catalogQuery->whereNull('logo')
+                ->orWhereRaw('LOWER(TRIM(logo)) NOT IN (?, ?)', ['merah', 'red']);
+        });
+    }
+
+    public function hasRedLogo(): bool
+    {
+        return in_array(mb_strtolower(trim((string) $this->logo)), ['merah', 'red'], true);
+    }
+
     public function isAvailable(): bool
     {
         return $this->available_stock_units > 0;
@@ -404,12 +415,50 @@ class Medicine extends Model
             return max(0, (int) $this->attributes['available_stock_units']);
         }
 
-        return max(0, (int) ($this->stock_base_units ?? $this->stok ?? 0));
+        return $this->getPhysicalStockUnits();
+    }
+
+    public function getPhysicalStockUnits(): int
+    {
+        $stock = $this->usesTabletPackaging()
+            ? ($this->stock_base_units ?? $this->stok)
+            : $this->stok;
+
+        return max(0, (int) ($stock ?? 0));
+    }
+
+    public static function supportsTabletPackaging(?string $unit, ?string $form): bool
+    {
+        $unit = mb_strtolower(trim((string) $unit));
+        $form = mb_strtolower(trim((string) $form));
+        $packageUnit = $unit !== '' ? $unit : ($form === 'box' ? $form : '');
+
+        if ($packageUnit !== 'box') {
+            return false;
+        }
+
+        $nonTabletPackage = '/botol|bottle|tube|tabung|sachet|flacon|\bfls\b|vial|ampul|ampoule|\bpot\b|sirup|syrup|suspensi|drops|tetes|krim|cream|salep|ointment|\bgel\b|inhaler|nebule|suppositoria|ovula|enema|\bpen\b/u';
+
+        if (preg_match($nonTabletPackage, $form)) {
+            return false;
+        }
+
+        if ($form === '' || $form === 'box') {
+            return true;
+        }
+
+        return preg_match('/tablet|kaplet|caplet|kapsul|capsule|blister|\bstrip\b|\bpil\b|\bbox\b/u', $form) === 1;
+    }
+
+    public function usesTabletPackaging(): bool
+    {
+        return (bool) $this->unit_packaging_enabled
+            && self::supportsTabletPackaging((string) $this->satuan, (string) $this->sediaan);
     }
 
     public function getUnitsPerBoxAttribute(): int
     {
-        if (!$this->unit_packaging_enabled) {
+        if (!$this->usesTabletPackaging()) {
             return 1;
         }
 
@@ -428,9 +477,7 @@ class Medicine extends Model
 
     public function getStockPackagesAttribute(): float
     {
-        $stockUnits = array_key_exists('available_stock_units', $this->attributes)
-            ? max(0, (int) $this->attributes['available_stock_units'])
-            : (int) ($this->stock_base_units ?? $this->stok);
+        $stockUnits = $this->available_stock_units;
 
         return $stockUnits / $this->units_per_box;
     }
@@ -463,7 +510,7 @@ class Medicine extends Model
         $unitsPerBox = max(1, $this->units_per_box);
         $tabletsPerStrip = max(1, (int) $this->tablets_per_strip);
 
-        if (!$this->unit_packaging_enabled) {
+        if (!$this->usesTabletPackaging()) {
             return [
                 'box' => $units,
                 'box_decimal' => (float) $units,
@@ -492,7 +539,7 @@ class Medicine extends Model
             return '0 ' . $this->package_unit_label;
         }
 
-        if (!$this->unit_packaging_enabled) {
+        if (!$this->usesTabletPackaging()) {
             return number_format($units, 0, ',', '.') . ' ' . $this->package_unit_label;
         }
 
@@ -509,9 +556,7 @@ class Medicine extends Model
 
     public function getStockBreakdownAttribute(): string
     {
-        $stockUnits = array_key_exists('available_stock_units', $this->attributes)
-            ? max(0, (int) $this->attributes['available_stock_units'])
-            : (int) ($this->stock_base_units ?? $this->stok);
+        $stockUnits = $this->available_stock_units;
 
         return $this->getStockBreakdownForUnits($stockUnits);
     }
@@ -522,7 +567,7 @@ class Medicine extends Model
             return '0 ' . $this->package_unit_label;
         }
 
-        if (!$this->unit_packaging_enabled) {
+        if (!$this->usesTabletPackaging()) {
             return number_format($stockUnits, 0, ',', '.') . ' ' . $this->package_unit_label;
         }
 
@@ -548,7 +593,7 @@ class Medicine extends Model
 
     public function getSaleUnitFactor(string $unit): int
     {
-        if (!$this->unit_packaging_enabled) {
+        if (!$this->usesTabletPackaging()) {
             return $unit === 'box' ? 1 : 0;
         }
 
@@ -562,12 +607,12 @@ class Medicine extends Model
 
     public function getSaleUnitPrice(string $unit): ?float
     {
-        if (!$this->unit_packaging_enabled) {
+        if (!$this->usesTabletPackaging()) {
             if ($unit !== 'box') {
                 return null;
             }
 
-            $retailPrice = (float) $this->harga_retail;
+            $retailPrice = (float) ($this->harga_retail ?: $this->price_box);
 
             return $retailPrice > 0 ? $retailPrice : (float) $this->harga;
         }
@@ -650,7 +695,6 @@ class Medicine extends Model
     public function getPromoPercent(string $channel): int
     {
         $column = match ($channel) {
-            'internal' => 'promo_internal_percent',
             'b2b' => 'promo_b2b_percent',
             'b2c' => 'promo_b2c_percent',
             default => null,
@@ -664,7 +708,7 @@ class Medicine extends Model
         if ($channel === 'b2b') {
             $boxPrice = (float) $this->harga_grosir;
 
-            if (!$this->unit_packaging_enabled || $unit === 'box') {
+            if (!$this->usesTabletPackaging() || $unit === 'box') {
                 return $boxPrice;
             }
 
@@ -673,25 +717,21 @@ class Medicine extends Model
             return $factor > 0 ? $boxPrice * $factor / $this->units_per_box : 0;
         }
 
-        if ($this->unit_packaging_enabled && $channel === 'b2c') {
+        if ($this->usesTabletPackaging() && $channel === 'b2c') {
             return (float) ($this->getSaleUnitPrice($unit) ?? 0);
         }
 
-        $legacyRetailPrice = (float) $this->harga_retail;
+        $legacyRetailPrice = (float) ($this->harga_retail ?: $this->price_box);
         if ($legacyRetailPrice <= 0) {
             $legacyRetailPrice = (float) $this->harga;
         }
-        $boxPrice = $channel === 'internal' && $this->harga_internal !== null
-            ? (float) $this->harga_internal
-            : $legacyRetailPrice;
-
-        if ($this->unit_packaging_enabled && $unit !== 'box') {
+        if ($this->usesTabletPackaging() && $unit !== 'box') {
             $factor = $this->getSaleUnitFactor($unit);
 
-            return $factor > 0 ? $boxPrice * $factor / $this->units_per_box : 0;
+            return $factor > 0 ? $legacyRetailPrice * $factor / $this->units_per_box : 0;
         }
 
-        return $boxPrice;
+        return $legacyRetailPrice;
     }
 
     public function getChannelPromoPrice(string $channel, string $unit = 'box'): float

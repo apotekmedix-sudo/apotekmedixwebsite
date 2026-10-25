@@ -10,7 +10,7 @@ use App\Http\Controllers\CustomerAccountController;
 use App\Http\Controllers\AdminCustomerController;
 use App\Http\Controllers\AdminShoppingAccessCodeController;
 use App\Http\Controllers\CashierController;
-use App\Http\Controllers\InternalShoppingAccessController;
+use App\Http\Controllers\ShoppingAccessController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminMedicineController;
 use App\Http\Controllers\AdminMedicineImportController;
@@ -48,19 +48,17 @@ Route::get('/storage/{folder}/{filename}', function (string $folder, string $fil
 // Products routes
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/stock-availability', [ProductController::class, 'stockAvailability'])->name('products.stock-availability');
-Route::get('/belanja-internal/akses', [InternalShoppingAccessController::class, 'show'])->name('shopping.internal.access');
-Route::post('/belanja-internal/akses', [InternalShoppingAccessController::class, 'verify'])
-    ->middleware('throttle:5,1')
-    ->name('shopping.internal.verify');
-Route::post('/belanja-internal/keluar', [InternalShoppingAccessController::class, 'logout'])->name('shopping.internal.logout');
-Route::get('/belanja-internal', [ProductController::class, 'index'])
-    ->middleware('internal.access')
-    ->name('shopping.internal');
+Route::post('/shopping/access/lock/{channel}', [ShoppingAccessController::class, 'lock'])
+    ->where('channel', 'b2b')
+    ->name('shopping.access.lock');
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/products-pbf', [ProductController::class, 'pbf'])->name('products.pbf');
 Route::post('/products-pbf/verify', [ProductController::class, 'pbfVerify'])->middleware('throttle:5,1')->name('products.pbf.verify');
 Route::post('/products-pbf/logout', [ProductController::class, 'pbfLogout'])->name('products.pbf.logout');
 Route::get('/products-apotek', [ProductController::class, 'apotek'])->name('products.apotek');
+Route::post('/products-apotek/activate', [ProductController::class, 'apotekActivate'])
+    ->middleware('throttle:5,1')
+    ->name('products.apotek.activate');
 Route::get('/keranjang', [ProductController::class, 'cart'])->name('cart.index');
 Route::get('/cart', [ProductController::class, 'cart'])->name('cart.page');
 Route::get('/checkout', [ProductController::class, 'checkout'])->name('checkout.index');
@@ -129,6 +127,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/purchase-history/{order}', [AdminDashboardController::class, 'destroy'])->name('purchase-history.destroy');
     Route::delete('/purchase-history', [AdminDashboardController::class, 'destroyAll'])->name('purchase-history.destroyAll');
     Route::get('/customers/export', [AdminCustomerController::class, 'export'])->name('customers.export');
+    Route::get('/customers/export/master', [AdminCustomerController::class, 'exportMaster'])->name('customers.export.master');
+    Route::get('/customers/import/template', [AdminCustomerController::class, 'downloadImportTemplate'])->name('customers.import.template');
+    Route::post('/customers/import', [AdminCustomerController::class, 'import'])->name('customers.import');
     Route::resource('customers', AdminCustomerController::class)->except('show');
     Route::get('/access-codes', [AdminShoppingAccessCodeController::class, 'index'])->name('access-codes.index');
     Route::post('/access-codes/{channel}/generate', [AdminShoppingAccessCodeController::class, 'generate'])
@@ -164,6 +165,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('produk/bulk-delete', [AdminProdukController::class, 'destroyMany'])->name('produk.destroyMany');
     Route::get('produk-pbf', [AdminProdukController::class, 'indexPbf'])->name('produk-pbf.index');
     Route::post('produk-pbf/suppliers', [AdminProdukController::class, 'storePbfSupplier'])->name('produk-pbf.suppliers.store');
+    Route::get('produk-pbf/suppliers/export', [AdminProdukController::class, 'exportPbfSuppliers'])->name('produk-pbf.suppliers.export');
+    Route::get('produk-pbf/suppliers/import/template', [AdminProdukController::class, 'downloadPbfSupplierImportTemplate'])->name('produk-pbf.suppliers.import.template');
+    Route::post('produk-pbf/suppliers/import', [AdminProdukController::class, 'importPbfSuppliers'])->name('produk-pbf.suppliers.import');
     Route::put('produk-pbf/suppliers/{supplier}', [AdminProdukController::class, 'updatePbfSupplier'])->name('produk-pbf.suppliers.update');
     Route::delete('produk-pbf/suppliers/{supplier}', [AdminProdukController::class, 'destroyPbfSupplier'])->name('produk-pbf.suppliers.destroy');
     Route::get('produk-export', [AdminProdukController::class, 'export'])->name('produk.export');

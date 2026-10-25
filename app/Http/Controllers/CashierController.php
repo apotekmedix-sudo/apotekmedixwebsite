@@ -49,7 +49,7 @@ class CashierController extends Controller
     public function dashboard(Request $request): View
     {
         $filters = $request->validate([
-            'channel' => ['nullable', Rule::in(['all', 'internal', 'b2b', 'b2c'])],
+            'channel' => ['nullable', Rule::in(['all', 'offline', 'b2b', 'b2c'])],
             'status' => ['nullable', Rule::in(['all', 'pending', 'verified', 'printed', 'cancelled'])],
             'payment_status' => ['nullable', Rule::in(['all', 'pending', 'paid', 'cancelled'])],
             'payment_method' => ['nullable', 'string', 'max:255'],
@@ -61,7 +61,7 @@ class CashierController extends Controller
         $query = PurchaseHistory::query();
         if (!empty($filters['channel']) && $filters['channel'] !== 'all') {
             match ($filters['channel']) {
-                'internal' => $query->where('transaction_channel', 'offline'),
+                'offline' => $query->where('transaction_channel', 'offline'),
                 'b2b' => $query->where('transaction_channel', 'online')
                     ->where(fn ($orders) => $orders->whereIn('buyer_type', ['apotik', 'dokter', 'pbf'])
                         ->orWhere(fn ($namedPbf) => $namedPbf->whereNotNull('pbf_name')->where('pbf_name', '!=', ''))),
@@ -139,12 +139,12 @@ class CashierController extends Controller
 
                 foreach ($reservations as $reservation) {
                     $product = $products->get($reservation->medicine_id);
-                    if (!$product || (int) ($product->stock_base_units ?? $product->stok) < $reservation->quantity_units) {
+                    if (!$product || (int) $product->available_stock_units < $reservation->quantity_units) {
                         throw ValidationException::withMessages([
                             'order' => 'Stok produk tidak mencukupi untuk menyelesaikan transaksi ini.',
                         ]);
                     }
-                    $remainingUnits = (int) ($product->stock_base_units ?? $product->stok) - $reservation->quantity_units;
+                    $remainingUnits = (int) $product->available_stock_units - $reservation->quantity_units;
                     $product->update([
                         'stock_base_units' => $remainingUnits,
                         'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
@@ -247,7 +247,7 @@ class CashierController extends Controller
 
                 foreach ($quantities as $productId => $quantity) {
                     $product = $products->get($productId);
-                    $remainingUnits = (int) ($product->stock_base_units ?? $product->stok) + $quantity;
+                    $remainingUnits = (int) $product->available_stock_units + $quantity;
                     $product->update([
                         'stock_base_units' => $remainingUnits,
                         'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),

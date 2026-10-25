@@ -79,9 +79,9 @@
                         <td style="font-size:0.82rem;color:#6b7280;">{{ $p->kategori }}</td>
                         <td>{{ $p->getFormattedPrice() }}</td>
                         <td>
-                            @if(($p->stock_base_units ?? $p->stok) > 10)
+                            @if($p->available_stock_units > 10)
                                 <span style="color:#10b981;font-weight:700;">{{ $p->stock_breakdown }}</span>
-                            @elseif(($p->stock_base_units ?? $p->stok) > 0)
+                            @elseif($p->available_stock_units > 0)
                                 <span style="color:#f59e0b;font-weight:700;">{{ $p->stock_breakdown }}</span>
                             @else
                                 <span style="color:#ef4444;font-weight:700;">Habis</span>

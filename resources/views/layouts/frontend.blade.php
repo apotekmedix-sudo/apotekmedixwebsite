@@ -55,7 +55,7 @@
     <style>
         /* ===== BOOTSTRAP GRID REPLACEMENT ===== */
         *, *::before, *::after { box-sizing: border-box; }
-        html, body { overflow-x: hidden; max-width: 100%; }
+        html, body { overflow-x: clip; max-width: 100%; }
         body { margin: 0; }
         img, svg, video { max-width: 100%; height: auto; display: block; }
         button, input, textarea, select { max-width: 100%; }
@@ -990,8 +990,9 @@
             .navbar-brand span { font-size: 0.95rem; }
         }
     </style>
+    <link rel="stylesheet" href="{{ asset('css/medix-public-theme.css') }}?v={{ @filemtime(public_path('css/medix-public-theme.css')) ?: '2' }}">
 </head>
-<body>
+<body class="public-theme">
 
     <!-- ===== PARTIKEL STATIS MEDIS ===== -->
     <div class="med-particles" aria-hidden="true">

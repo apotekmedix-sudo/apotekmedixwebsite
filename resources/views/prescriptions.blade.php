@@ -331,7 +331,7 @@
                             <h3 class="medicine-name"><a href="{{ route('medicines.show', $medicine->id) }}">{{ $medicine->nama_obat }}</a></h3>
                             
                             <div class="medicine-price">{{ $medicine->getFormattedPrice() }}</div>
-                            @php $stock = (int) ($medicine->stock_base_units ?? $medicine->stok); @endphp
+                            @php $stock = $medicine->available_stock_units; @endphp
                             <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
                                 {{ $stock > 0 ? 'Stok: ' . $medicine->stock_breakdown : 'Stok habis' }}

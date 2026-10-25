@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Banner;
 use App\Models\Medicine;
 use App\Models\PromoProduct;
+use App\Models\ShoppingAccessCode;
 use App\Support\StockAvailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -14,39 +15,69 @@ class HomeController extends Controller
     // Halaman utama
     public function index(Request $request)
     {
-        $featuredProducts = Medicine::nonPbf()
-                                    ->availableForB2c()
-                                    ->where('grade', 'A')
-                                    ->orderByDesc('terjual')
-                                    ->orderBy('nama_obat')
-                                    ->limit(8)
-                                    ->get();
+        $b2cAccess = ShoppingAccessCode::hasActiveB2cSession();
+        $b2cCatalogQuery = fn () => Medicine::nonPbf()
+            ->availableForB2c();
 
-        $totalProducts = Medicine::nonPbf()->count();
+        $featuredProducts = $b2cCatalogQuery()
+            ->where('grade', 'A')
+            ->orderByDesc('terjual')
+            ->orderBy('nama_obat')
+            ->limit(20)
+            ->get();
+
+        if ($featuredProducts->isEmpty()) {
+            $featuredProducts = $b2cCatalogQuery()
+                ->orderByDesc('terjual')
+                ->orderBy('nama_obat')
+                ->limit(20)
+                ->get();
+        }
+
+        $totalProducts = $b2cCatalogQuery()->count();
 
         // Hitung total produk per kategori produk
         $categoryColumn = Schema::hasColumn('medicines', 'kategori_produk') ? 'kategori_produk' : 'kategori';
 
-        $kategoryCounts = Medicine::selectRaw($categoryColumn . ', COUNT(*) as total')
-                                  ->nonPbf()
-                                  ->whereNotNull($categoryColumn)
-                                  ->groupBy($categoryColumn)
-                                  ->pluck('total', $categoryColumn);
+        $kategoryCounts = $b2cCatalogQuery()
+            ->selectRaw($categoryColumn . ', COUNT(*) as total')
+            ->whereNotNull($categoryColumn)
+            ->groupBy($categoryColumn)
+            ->pluck('total', $categoryColumn);
 
         // Promo produk aktif & Banner aktif
         $promoProducts = Schema::hasTable('promo_products') ? PromoProduct::aktif()->get() : collect();
         $banners = Schema::hasTable('banners') ? Banner::aktif()->get() : collect();
-        $discountedProducts = Medicine::nonPbf()
-            ->availableForB2c()
+
+        $discountedProducts = $b2cCatalogQuery()
             ->where('promo_b2c_percent', '>', 0)
             ->orderByDesc('promo_b2c_percent')
             ->orderByDesc('terjual')
-            ->limit(8)
+            ->limit(20)
             ->get();
 
-        StockAvailability::annotate($featuredProducts->concat($discountedProducts)->unique('id'));
+        $allB2cProducts = $b2cCatalogQuery()
+            ->latest()
+            ->limit(20)
+            ->get();
 
-        return view('home', compact('featuredProducts', 'kategoryCounts', 'totalProducts', 'promoProducts', 'discountedProducts', 'banners'));
+        StockAvailability::annotate(
+            $featuredProducts
+                ->concat($discountedProducts)
+                ->concat($allB2cProducts)
+                ->unique('id')
+        );
+
+        return view('home', compact(
+            'featuredProducts',
+            'kategoryCounts',
+            'totalProducts',
+            'promoProducts',
+            'discountedProducts',
+            'allB2cProducts',
+            'banners',
+            'b2cAccess'
+        ));
     }
 
     // Halaman Tentang Kami
@@ -62,15 +93,21 @@ class HomeController extends Controller
     }
 
     // Detail obat
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $medicine = Medicine::findOrFail($id);
 
+        StockAvailability::annotate($medicine->newCollection([$medicine]));
+
         // Related products dari kategori yang sama
-        $relatedMedicines = Medicine::where('kategori', $medicine->kategori)
-                                    ->where('id', '!=', $medicine->id)
-                                    ->limit(4)
-                                    ->get();
+        $relatedMedicines = Medicine::nonPbf()
+            ->availableForB2c()
+            ->where('kategori', $medicine->kategori)
+            ->where('id', '!=', $medicine->id)
+            ->limit(4)
+            ->get();
+
+        StockAvailability::annotate($relatedMedicines);
 
         return view('medicines.detail', [
             'medicine' => $medicine,
@@ -83,11 +120,11 @@ class HomeController extends Controller
     {
         // Hanya tampilkan produk OTC di halaman kategori publik
         $medicines = Medicine::where('kategori', $kategori)
-                            ->where('is_resep', false)
-                            ->paginate(12);
+            ->where('is_resep', false)
+            ->paginate(12);
         $allCategories = Medicine::where('is_resep', false)
-                                ->distinct()
-                                ->pluck('kategori');
+            ->distinct()
+            ->pluck('kategori');
 
         return view('medicines.category', [
             'medicines' => $medicines,
@@ -95,6 +132,4 @@ class HomeController extends Controller
             'allCategories' => $allCategories,
         ]);
     }
-
-    // Farmakologi page removed; legacy template was not used in active routes.
 }

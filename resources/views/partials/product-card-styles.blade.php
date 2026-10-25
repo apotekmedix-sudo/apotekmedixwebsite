@@ -43,7 +43,16 @@
         box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
     }
     .product-logo-marker--green { background: #22a447; }
-    .product-logo-marker--red { background: #dc2626; }
+    .product-logo-marker--red {
+        background: #dc2626;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #0f172a;
+        font-size: 0.72rem;
+        font-weight: 900;
+        line-height: 1;
+    }
     .product-logo-marker--blue { background: #2563eb; }
     .products-main .medicine-image img {
         object-fit: contain;
@@ -237,6 +246,43 @@
         margin: 0;
         font-size: 0.72rem;
     }
+    .medicine-meta-row {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 0.4rem !important;
+        width: 100%;
+    }
+    .medicine-meta-sediaan {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #64748b;
+    }
+    .medicine-sold-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.14rem 0.5rem;
+        border-radius: 999px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #c2410c;
+        font-size: 0.68rem;
+        font-weight: 700;
+        line-height: 1.25;
+        white-space: nowrap;
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+    .medicine-sold-badge i {
+        color: #ea580c;
+        font-size: 0.66rem;
+    }
     .products-main .medicine-meta {
         margin: 0 !important;
         color: #475569;
@@ -255,6 +301,35 @@
         background: transparent;
         box-shadow: none;
         transform: none;
+    }
+    .product-unit-card.is-red-logo-locked {
+        background: #e2e8f0 !important;
+        border-color: #94a3b8 !important;
+        box-shadow: none !important;
+    }
+    .product-unit-card.is-red-logo-locked .product-unit-name,
+    .product-unit-card.is-red-logo-locked .product-unit-price,
+    .product-unit-card.is-red-logo-locked .product-unit-old-price,
+    .product-unit-card.is-red-logo-locked .product-unit-stock {
+        color: #64748b !important;
+    }
+    .product-unit-card.is-red-logo-locked .product-unit-quantity {
+        background: #cbd5e1 !important;
+        border-color: #94a3b8 !important;
+    }
+    .product-unit-card.is-red-logo-locked .product-unit-quantity button,
+    .product-unit-card.is-red-logo-locked .product-unit-quantity input {
+        color: #64748b !important;
+    }
+    .btn-cart.is-red-logo-locked {
+        background: #94a3b8 !important;
+        border-color: #64748b !important;
+        color: #f8fafc !important;
+        box-shadow: none !important;
+    }
+    .btn-cart.is-red-logo-locked:hover {
+        background: #64748b !important;
+        color: #ffffff !important;
     }
     .products-main .btn-cart {
         margin-top: auto;
@@ -277,7 +352,7 @@
     @media (max-width: 1100px) {
         .products-main .medicines-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
-    @media (max-width: 760px) {
+    @media (max-width: 900px) {
         .products-main .medicines-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .products-main .medicine-card { padding: 0.6rem; border-radius: 14px; }
         .products-main .medicine-name { font-size: 0.95rem; }
@@ -286,10 +361,91 @@
         .product-unit-name { font-size: 0.7rem; }
         .product-unit-price { font-size: 0.7rem; }
         .products-main .medicine-btn,
-        .products-main .btn-cart { font-size: 0.74rem; }
+        .product-unit-card.is-red-logo-locked {
+        background: #e2e8f0 !important;
+        border-color: #94a3b8 !important;
+        box-shadow: none !important;
+    }
+    .product-unit-card.is-red-logo-locked .product-unit-name,
+    .product-unit-card.is-red-logo-locked .product-unit-price,
+    .product-unit-card.is-red-logo-locked .product-unit-old-price,
+    .product-unit-card.is-red-logo-locked .product-unit-stock {
+        color: #64748b !important;
+    }
+    .product-unit-card.is-red-logo-locked .product-unit-quantity {
+        background: #cbd5e1 !important;
+        border-color: #94a3b8 !important;
+    }
+    .product-unit-card.is-red-logo-locked .product-unit-quantity button,
+    .product-unit-card.is-red-logo-locked .product-unit-quantity input {
+        color: #64748b !important;
+    }
+    .btn-cart.is-red-logo-locked {
+        background: #94a3b8 !important;
+        border-color: #64748b !important;
+        color: #f8fafc !important;
+        box-shadow: none !important;
+    }
+    .btn-cart.is-red-logo-locked:hover {
+        background: #64748b !important;
+        color: #ffffff !important;
+    }
+    .products-main .btn-cart { font-size: 0.74rem; }
+    }
+    @media (max-width: 600px) {
+        .products-main { padding: 1.25rem 0 3rem; }
+        .products-main .medicines-grid { grid-template-columns: minmax(0, 1fr); gap: 0.9rem; }
+        .products-main .medicine-card { padding: 0.75rem; border-radius: 16px; }
+        .products-main .medicine-image { aspect-ratio: 1.9 / 1; }
+        .products-main .medicine-body { padding: 0.7rem 0.1rem 0.1rem; gap: 0.4rem; }
+        .products-main .medicine-name { font-size: 1rem; }
+        .medicine-card-details { font-size: 0.82rem; }
+        .product-unit-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.45rem; }
+        .product-unit-card { padding: 0.45rem 0.35rem; }
+        .product-unit-name,
+        .product-unit-price { font-size: 0.76rem; }
+        .product-unit-stock { font-size: 0.7rem; }
+        .products-main .medicine-btn,
+        .product-unit-card.is-red-logo-locked {
+        background: #e2e8f0 !important;
+        border-color: #94a3b8 !important;
+        box-shadow: none !important;
+    }
+    .product-unit-card.is-red-logo-locked .product-unit-name,
+    .product-unit-card.is-red-logo-locked .product-unit-price,
+    .product-unit-card.is-red-logo-locked .product-unit-old-price,
+    .product-unit-card.is-red-logo-locked .product-unit-stock {
+        color: #64748b !important;
+    }
+    .product-unit-card.is-red-logo-locked .product-unit-quantity {
+        background: #cbd5e1 !important;
+        border-color: #94a3b8 !important;
+    }
+    .product-unit-card.is-red-logo-locked .product-unit-quantity button,
+    .product-unit-card.is-red-logo-locked .product-unit-quantity input {
+        color: #64748b !important;
+    }
+    .btn-cart.is-red-logo-locked {
+        background: #94a3b8 !important;
+        border-color: #64748b !important;
+        color: #f8fafc !important;
+        box-shadow: none !important;
+    }
+    .btn-cart.is-red-logo-locked:hover {
+        background: #64748b !important;
+        color: #ffffff !important;
+    }
+    .products-main .btn-cart { min-height: 42px; font-size: 0.84rem; }
     }
     @media (max-width: 380px) {
+        .products-main .medicine-image { aspect-ratio: 1.6 / 1; }
         .products-main .medicines-grid { grid-template-columns: minmax(0, 1fr); }
-        .product-unit-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .product-unit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (hover: none) {
+        .products-main .medicine-card:hover {
+            transform: none;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+        }
     }
 </style>

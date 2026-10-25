@@ -80,6 +80,10 @@
     .converted-stock-pill--box { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
     .converted-stock-pill--strip { background:#f0f9ff; border-color:#bae6fd; color:#0369a1; }
     .converted-stock-pill--tablet { background:#ecfdf5; border-color:#a7f3d0; color:#047857; }
+    .converted-stock-pill--editable { flex-wrap:wrap; }
+    .stock-quantity-input { width:78px; padding:0.12rem 0.25rem; border:1px solid currentColor; border-radius:0.25rem; background:rgba(255,255,255,0.9); color:inherit; font-size:0.74rem; font-weight:700; text-align:right; }
+    .stock-conversion-edit { display:flex; align-items:center; gap:0.2rem; font-size:0.66rem; font-weight:600; white-space:nowrap; }
+    .stock-conversion-edit input { width:42px; padding:0.12rem 0.2rem; border:1px solid currentColor; border-radius:0.25rem; background:rgba(255,255,255,0.85); color:inherit; font:inherit; }
 
     .action-wrap { display:flex; gap:0.4rem; }
     .btn-edit, .btn-del { display:inline-flex; align-items:center; gap:0.3rem; padding:0.35rem 0.75rem; border-radius:0.4rem; font-size:0.78rem; font-weight:600; text-decoration:none; border:none; cursor:pointer; transition:all 0.2s; }
@@ -141,6 +145,9 @@
     <div class="page-header-actions">
         <a href="{{ route('admin.produk.import') }}" class="btn-icon btn-icon-outline">
             <i class="fa-solid fa-file-import"></i> Import Excel
+        </a>
+        <a href="{{ route('admin.produk.export') }}" class="btn-icon btn-icon-outline">
+            <i class="fa-solid fa-file-export"></i> Export Produk
         </a>
         <a href="{{ route('admin.business-data.export') }}" class="btn-icon btn-icon-success">
             <i class="fa-solid fa-database"></i> Backup Data Bisnis
@@ -238,11 +245,10 @@
                     <th>Sediaan</th>
                     <th>Kategori</th>
                     <th>Modal</th>
-                    <th>Harga Internal</th>
                     <th>Harga B2B</th>
                     <th>Harga B2C</th>
                     <th>Harga Strip / Tablet</th>
-                    <th>Stok (Box / Strip / Tablet)</th>
+                    <th>Stok Kemasan / Konversi</th>
                     <th>Ditambahkan</th>
                     <th style="width:130px;">Aksi</th>
                 </tr>
@@ -252,7 +258,7 @@
                 @php
                     $converted = $medicine->getConvertedUnitStocksForUnits($medicine->available_stock_units);
                 @endphp
-                <tr data-product-row="{{ $medicine->id }}" data-unit-label="{{ $medicine->package_unit_label }}">
+                <tr data-product-row="{{ $medicine->id }}" data-unit-label="{{ $medicine->package_unit_label }}" data-tablet-packaging="{{ \App\Models\Medicine::supportsTabletPackaging((string) $medicine->satuan, (string) $medicine->sediaan) ? '1' : '0' }}">
                     <td style="text-align:center;">
                         <input type="checkbox" class="product-checkbox" name="produk_ids[]" value="{{ $medicine->id }}">
                     </td>
@@ -280,19 +286,6 @@
                     </td>
                     <td>
                         <div style="font-weight:700;">{{ $medicine->satuan ?: $medicine->package_unit_label }}</div>
-                        <div class="price-unit-fields" style="margin-top:0.35rem;">
-                            <div class="price-unit-field">
-                                <label for="strips-per-box-{{ $medicine->id }}">1 {{ $medicine->package_unit_label }} = ... Strip</label>
-                                <input id="strips-per-box-{{ $medicine->id }}" class="inline-number price-unit-input js-row-strips" type="number" name="strips_per_box" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->unit_packaging_enabled ? ($medicine->strips_per_box ?? 0) : 0 }}" min="0" step="1" aria-label="Strip per {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
-                            </div>
-                            <div class="price-unit-field">
-                                <label for="tablets-per-strip-{{ $medicine->id }}">1 Strip = ... Tablet</label>
-                                <input id="tablets-per-strip-{{ $medicine->id }}" class="inline-number price-unit-input js-row-tablets" type="number" name="tablets_per_strip" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->unit_packaging_enabled ? ($medicine->tablets_per_strip ?? 0) : 0 }}" min="0" step="1" aria-label="Tablet per strip {{ $medicine->nama_obat }}">
-                            </div>
-                        </div>
-                        @if($medicine->unit_packaging_enabled)
-                            <small class="med-meta" style="display:block;margin-top:0.25rem;">{{ $medicine->strips_per_box }} strip / {{ $medicine->tablets_per_strip * $medicine->strips_per_box }} tablet per {{ strtolower($medicine->package_unit_label) }}</small>
-                        @endif
                     </td>
                     <td>
                         @if($medicine->sediaan)
@@ -317,44 +310,54 @@
                         <input class="inline-number" type="number" name="harga_modal" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->harga_modal ?: $medicine->harga }}" min="0" step="0.01" aria-label="Harga modal {{ $medicine->nama_obat }}">
                     </td>
                     <td>
-                        <input class="inline-number" type="number" name="harga_internal" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->getChannelBasePrice('internal') }}" min="0" step="0.01" aria-label="Harga jual internal {{ $medicine->nama_obat }}">
-                    </td>
-                    <td>
                         <input class="inline-number" type="number" name="harga_grosir" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->harga_grosir ?: $medicine->harga_modal ?: $medicine->harga }}" min="0" step="0.01" aria-label="Harga jual B2B {{ $medicine->nama_obat }}">
                     </td>
                     <td>
                         <input class="inline-number" type="number" name="harga_retail" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_box ?? ($medicine->harga_retail ?: $medicine->harga) }}" min="0" step="0.01" aria-label="Harga jual B2C {{ $medicine->nama_obat }}">
                     </td>
                     <td>
-                        <div class="price-unit-fields">
-                            <div class="price-unit-field">
-                                <label for="price-strip-{{ $medicine->id }}">Strip</label>
-                                <input id="price-strip-{{ $medicine->id }}" class="inline-number price-unit-input" type="number" name="price_strip" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_strip ?? 0 }}" min="0" step="0.01" aria-label="Harga strip {{ $medicine->nama_obat }}">
+                        @if(\App\Models\Medicine::supportsTabletPackaging((string) $medicine->satuan, (string) $medicine->sediaan))
+                            <div class="price-unit-fields">
+                                <div class="price-unit-field">
+                                    <label for="price-strip-{{ $medicine->id }}">Strip</label>
+                                    <input id="price-strip-{{ $medicine->id }}" class="inline-number price-unit-input" type="number" name="price_strip" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_strip ?? 0 }}" min="0" step="0.01" aria-label="Harga strip {{ $medicine->nama_obat }}">
+                                </div>
+                                <div class="price-unit-field">
+                                    <label for="price-tablet-{{ $medicine->id }}">Tablet</label>
+                                    <input id="price-tablet-{{ $medicine->id }}" class="inline-number price-unit-input" type="number" name="price_tablet" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_tablet ?? 0 }}" min="0" step="0.01" aria-label="Harga tablet {{ $medicine->nama_obat }}">
+                                </div>
                             </div>
-                            <div class="price-unit-field">
-                                <label for="price-tablet-{{ $medicine->id }}">Tablet</label>
-                                <input id="price-tablet-{{ $medicine->id }}" class="inline-number price-unit-input" type="number" name="price_tablet" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_tablet ?? 0 }}" min="0" step="0.01" aria-label="Harga tablet {{ $medicine->nama_obat }}">
-                            </div>
-                        </div>
+                        @else
+                            <span class="med-meta">-</span>
+                        @endif
                     </td>
                     <td>
-                        <div class="price-unit-field">
-                            <label for="stok-box-{{ $medicine->id }}">Stok {{ $medicine->package_unit_label }}</label>
-                            <input id="stok-box-{{ $medicine->id }}" class="inline-number js-row-stock" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ rtrim(rtrim(number_format($medicine->stock_packages, 6, '.', ''), '0'), '.') }}" min="0" step="0.000001" aria-label="Stok {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
-                        </div>
                         <div class="converted-stock-pills" data-converted-stock-pills>
-                            <div class="converted-stock-pill converted-stock-pill--box">
+                            <div class="converted-stock-pill converted-stock-pill--box converted-stock-pill--editable">
                                 <span>{{ $medicine->package_unit_label }}:</span>
-                                <strong data-pill-box>{{ number_format($converted['box'], 0, ',', '.') }} {{ $medicine->package_unit_label }}</strong>
+                                <label class="stock-conversion-edit" for="stok-box-{{ $medicine->id }}">
+                                    <input id="stok-box-{{ $medicine->id }}" class="stock-quantity-input js-row-stock" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ rtrim(rtrim(number_format($medicine->stock_packages, 6, '.', ''), '0'), '.') }}" min="0" step="0.000001" aria-label="Stok {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
+                                    {{ $medicine->package_unit_label }}
+                                </label>
                             </div>
-                            <div class="converted-stock-pill converted-stock-pill--strip" @if(!$medicine->unit_packaging_enabled) style="display:none;" @endif data-pill-strip-wrap>
-                                <span>Strip:</span>
-                                <strong data-pill-strip>{{ number_format($converted['strip'], 0, ',', '.') }} Strip</strong>
-                            </div>
-                            <div class="converted-stock-pill converted-stock-pill--tablet" @if(!$medicine->unit_packaging_enabled) style="display:none;" @endif data-pill-tablet-wrap>
-                                <span>Tablet:</span>
-                                <strong data-pill-tablet>{{ number_format($converted['tablet'], 0, ',', '.') }} Tablet</strong>
-                            </div>
+                            @if(\App\Models\Medicine::supportsTabletPackaging((string) $medicine->satuan, (string) $medicine->sediaan))
+                                <div class="converted-stock-pill converted-stock-pill--strip converted-stock-pill--editable" data-pill-strip-wrap>
+                                    <span>Strip:</span>
+                                    <input class="stock-quantity-input js-row-strip-quantity" type="number" value="{{ $converted['strip'] }}" min="0" step="1" aria-label="Jumlah stok strip {{ $medicine->nama_obat }}">
+                                    <label class="stock-conversion-edit" for="strips-per-box-{{ $medicine->id }}">
+                                        1 Box =
+                                        <input id="strips-per-box-{{ $medicine->id }}" class="js-row-strips" type="number" name="strips_per_box" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->unit_packaging_enabled ? ($medicine->strips_per_box ?? 0) : 0 }}" min="0" step="1" aria-label="Strip per Box {{ $medicine->nama_obat }}">
+                                    </label>
+                                </div>
+                                <div class="converted-stock-pill converted-stock-pill--tablet converted-stock-pill--editable" data-pill-tablet-wrap>
+                                    <span>Tablet:</span>
+                                    <input class="stock-quantity-input js-row-tablet-quantity" type="number" value="{{ $converted['tablet'] }}" min="0" step="1" aria-label="Jumlah stok tablet {{ $medicine->nama_obat }}">
+                                    <label class="stock-conversion-edit" for="tablets-per-strip-{{ $medicine->id }}">
+                                        1 Strip =
+                                        <input id="tablets-per-strip-{{ $medicine->id }}" class="js-row-tablets" type="number" name="tablets_per_strip" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->unit_packaging_enabled ? ($medicine->tablets_per_strip ?? 0) : 0 }}" min="0" step="1" aria-label="Tablet per strip {{ $medicine->nama_obat }}">
+                                    </label>
+                                </div>
+                            @endif
                         </div>
                         <small style="display:block;margin-top:.25rem;color:#64748b;" data-row-breakdown>Sisa: {{ $medicine->stock_breakdown }}</small>
                     </td>
@@ -567,40 +570,50 @@ document.querySelectorAll('tr[data-product-row]').forEach(function (row) {
     const stockInput = row.querySelector('.js-row-stock');
     const stripsInput = row.querySelector('.js-row-strips');
     const tabletsInput = row.querySelector('.js-row-tablets');
-    const unitLabel = row.dataset.unitLabel || 'Box';
-    const boxEl = row.querySelector('[data-pill-box]');
+    const stripQuantityInput = row.querySelector('.js-row-strip-quantity');
+    const tabletQuantityInput = row.querySelector('.js-row-tablet-quantity');
     const stripWrap = row.querySelector('[data-pill-strip-wrap]');
-    const stripEl = row.querySelector('[data-pill-strip]');
     const tabletWrap = row.querySelector('[data-pill-tablet-wrap]');
-    const tabletEl = row.querySelector('[data-pill-tablet]');
+    const roundStock = (value) => Number((Math.max(0, value) || 0).toFixed(6));
 
-    function updateRowStockPreview() {
-        const stockBoxes = Math.max(0, parseFloat(stockInput?.value || '0') || 0);
-        const stripsPerBox = Math.max(0, parseInt(stripsInput?.value || '0', 10) || 0);
-        const tabletsPerStrip = Math.max(0, parseInt(tabletsInput?.value || '0', 10) || 0);
-        const fmt = (n) => Number(n || 0).toLocaleString('id-ID');
-
-        if (stripsPerBox > 0 && tabletsPerStrip > 0) {
-            const unitsPerBox = stripsPerBox * tabletsPerStrip;
-            const totalTablets = Math.round(stockBoxes * unitsPerBox);
-            const totalStrips = Math.floor(totalTablets / tabletsPerStrip);
-            const wholeBoxes = Math.floor(totalTablets / unitsPerBox);
-            if (boxEl) boxEl.textContent = `${fmt(wholeBoxes)} ${unitLabel}`;
-            if (stripWrap) stripWrap.style.display = 'flex';
-            if (stripEl) stripEl.textContent = `${fmt(totalStrips)} Strip`;
-            if (tabletWrap) tabletWrap.style.display = 'flex';
-            if (tabletEl) tabletEl.textContent = `${fmt(totalTablets)} Tablet`;
-        } else {
-            const wholeBoxes = Math.floor(stockBoxes);
-            if (boxEl) boxEl.textContent = `${fmt(wholeBoxes)} ${unitLabel}`;
-            if (stripWrap) stripWrap.style.display = 'none';
-            if (tabletWrap) tabletWrap.style.display = 'none';
-        }
+    function getPackageFactors() {
+        return {
+            stripsPerBox: Math.max(0, parseInt(stripsInput?.value || '0', 10) || 0),
+            tabletsPerStrip: Math.max(0, parseInt(tabletsInput?.value || '0', 10) || 0)
+        };
     }
 
-    stockInput?.addEventListener('input', updateRowStockPreview);
-    stripsInput?.addEventListener('input', updateRowStockPreview);
-    tabletsInput?.addEventListener('input', updateRowStockPreview);
+    function syncStockQuantities(source) {
+        const factors = getPackageFactors();
+        if (row.dataset.tabletPackaging !== '1' || factors.stripsPerBox < 1 || factors.tabletsPerStrip < 1) return;
+
+        const unitsPerBox = factors.stripsPerBox * factors.tabletsPerStrip;
+        let totalTablets;
+        if (source === 'strip') {
+            const strips = Math.max(0, parseInt(stripQuantityInput?.value || '0', 10) || 0);
+            totalTablets = strips * factors.tabletsPerStrip;
+            if (stockInput) stockInput.value = roundStock(totalTablets / unitsPerBox);
+            if (tabletQuantityInput) tabletQuantityInput.value = totalTablets;
+        } else if (source === 'tablet') {
+            totalTablets = Math.max(0, parseInt(tabletQuantityInput?.value || '0', 10) || 0);
+            if (stockInput) stockInput.value = roundStock(totalTablets / unitsPerBox);
+            if (stripQuantityInput) stripQuantityInput.value = Math.floor(totalTablets / factors.tabletsPerStrip);
+        } else {
+            const boxes = Math.max(0, parseFloat(stockInput?.value || '0') || 0);
+            totalTablets = Math.round(boxes * unitsPerBox);
+            if (stripQuantityInput) stripQuantityInput.value = Math.floor(totalTablets / factors.tabletsPerStrip);
+            if (tabletQuantityInput) tabletQuantityInput.value = totalTablets;
+        }
+
+        if (stripWrap) stripWrap.style.display = 'flex';
+        if (tabletWrap) tabletWrap.style.display = 'flex';
+    }
+
+    stockInput?.addEventListener('input', () => syncStockQuantities('box'));
+    stripQuantityInput?.addEventListener('input', () => syncStockQuantities('strip'));
+    tabletQuantityInput?.addEventListener('input', () => syncStockQuantities('tablet'));
+    stripsInput?.addEventListener('input', () => syncStockQuantities('box'));
+    tabletsInput?.addEventListener('input', () => syncStockQuantities('box'));
 });
 
 // Tutup modal jika klik overlay

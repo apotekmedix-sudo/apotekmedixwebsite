@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Masuk Kasir - Apotek Medix</title>
+    <link rel="stylesheet" href="{{ asset('css/medix-public-theme.css') }}">
     <style>
         *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:1rem;background:#f8fafc;color:#1e293b;font-family:Arial,sans-serif}
         main{width:min(100%,420px);padding:2rem;border:1px solid #e2e8f0;border-radius:1rem;background:#fff;box-shadow:0 18px 48px #0f172a18}
@@ -16,7 +17,7 @@
         .error{color:#b91c1c}.back{display:block;margin-top:1rem;text-align:center;color:#0e7490}
     </style>
 </head>
-<body>
+<body class="public-theme public-theme-standalone">
 <main>
     <h1>Masuk Kasir</h1>
     <p>Masuk dengan akun kasir untuk menerima pembayaran pesanan.</p>

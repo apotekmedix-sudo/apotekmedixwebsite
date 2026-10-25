@@ -36,6 +36,36 @@
         font-weight: 800; color: white;
         margin-bottom: 0.5rem; position: relative;
     }
+    .b2c-secret-trigger {
+        padding: 0 .12em;
+        border: 0;
+        border-radius: 2px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-weight: inherit;
+        cursor: pointer;
+    }
+    .b2c-secret-trigger:focus-visible { outline: 3px solid #bfdbfe; outline-offset: 3px; }
+    .b2c-access-status { display: inline-flex; gap: .4rem; align-items: center; margin: .25rem 0 .5rem; padding: .35rem .65rem; border-radius: 999px; background: rgba(220,252,231,.16); color: #dcfce7; font-size: .82rem; font-weight: 700; }
+    .b2c-code-dialog { position:fixed; inset:0; width:min(440px,calc(100% - 2rem)); max-width:440px; max-height:calc(100dvh - 2rem); margin:auto; padding:0; overflow-y:auto; border:1px solid #fed7aa; border-radius:18px; background:#fff; color:#0f172a; box-shadow:0 24px 70px rgba(15,23,42,.35); }
+    .b2c-code-dialog[open] { display:block; }
+    .b2c-code-dialog::backdrop { background:rgba(15,23,42,.68); backdrop-filter:blur(3px); }
+    .b2c-code-dialog-content { padding:0 1.5rem 1.5rem; color:#0f172a; }
+    .b2c-code-dialog-header { margin:0 -1.5rem 1.25rem; padding:1.1rem 1.5rem; border-bottom:1px solid #fed7aa; background:#fff7ed; }
+    .b2c-code-dialog-notice { display:inline-flex; align-items:center; gap:.4rem; margin:0 0 .3rem!important; color:#9a3412!important; font-size:.72rem!important; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+    .b2c-code-dialog-hint { margin:0!important; font-size:.75rem!important; color:#64748b!important; }
+    .b2c-code-dialog h2 { margin:0 0 .45rem; font-size:1.25rem; }
+    .b2c-code-dialog p { margin: 0 0 1rem; color: #64748b; font-size: .9rem; line-height: 1.5; }
+    .b2c-code-dialog label { display: block; margin-bottom: .4rem; color: #334155; font-size: .85rem; font-weight: 700; }
+    .b2c-code-dialog input { width: 100%; padding: .75rem .85rem; border: 1px solid #cbd5e1; border-radius: 10px; font: inherit; letter-spacing: .18em; }
+    .b2c-code-dialog-actions { display: flex; justify-content: flex-end; gap: .65rem; margin-top: 1.1rem; }
+    .b2c-code-dialog-actions button { padding: .65rem .9rem; border: 0; border-radius: 9px; font: inherit; font-weight: 700; cursor: pointer; }
+    .b2c-code-submit { background: #0052cc; color: white; }
+    .b2c-code-cancel { background: #f1f5f9; color: #334155; }
+    .b2c-code-submit:hover { background:#003eaa; }
+    .b2c-code-cancel:hover { background:#e2e8f0; }
+    .b2c-code-error { margin: .8rem 0 0!important; color: #b91c1c!important; }
     .products-header p { color: rgba(255,255,255,0.8); font-size: 1rem; position: relative; }
     .breadcrumb-custom { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; position: relative; }
     .breadcrumb-custom a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; }
@@ -313,13 +343,34 @@
             <span>/</span>
             <span class="current">Belanja B2C</span>
         </div>
-        <h1><i class="fa-solid fa-store"></i> Belanja B2C</h1>
+        <h1><i class="fa-solid fa-store"></i> Belanja <button type="button" class="b2c-secret-trigger" aria-label="Masukkan kode akses B2C" aria-haspopup="dialog" onclick="document.getElementById('b2cCodeDialog').showModal()">B2C</button></h1>
+        @if($b2cAccess)
+            <div class="b2c-access-status"><i class="fa-solid fa-unlock-keyhole" aria-hidden="true"></i> Produk khusus terbuka</div>
+        @endif
         <p>{{ $total }} produk tersedia dari berbagai perusahaan farmasi terpercaya</p>
     </div>
     <i class="fa-solid fa-pills header-deco-icon header-deco-icon-1"></i>
     <i class="fa-solid fa-capsules header-deco-icon header-deco-icon-2"></i>
     <i class="fa-solid fa-syringe header-deco-icon header-deco-icon-3"></i>
 </div>
+
+<dialog id="b2cCodeDialog" class="b2c-code-dialog" aria-labelledby="b2cCodeDialogNotice">
+    <form action="{{ route('products.apotek.activate') }}" method="POST" class="b2c-code-dialog-content">
+        @csrf
+        <div class="b2c-code-dialog-header">
+            <p id="b2cCodeDialogNotice" class="b2c-code-dialog-notice"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Peringatan</p>
+            <p class="b2c-code-dialog-hint">Anda salah klik</p>
+        </div>
+        <label class="sr-only" for="b2cAccessCode">Kode akses</label>
+        <input id="b2cAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" aria-label="Kode akses" required>
+        @if($errors->has('kode'))
+            <p class="b2c-code-error" role="alert">{{ $errors->first('kode') }}</p>
+        @endif
+        <div class="b2c-code-dialog-actions">
+            <button type="submit" class="b2c-code-submit">Kirim</button>
+        </div>
+    </form>
+</dialog>
 
 <div class="products-main">
     <div class="container">
@@ -397,16 +448,9 @@
                                 $promoPrice = $medicine->getChannelPromoPrice('b2c');
                             @endphp
                             <div class="medicine-card-details">
-                                <p><strong>Komposisi:</strong> {{ $medicine->komposisi ?: $medicine->nama_obat }}</p>
-                                @if($medicine->indikasi)
-                                    <p><strong>Indikasi:</strong> {{ $medicine->indikasi }}</p>
-                                @endif
-                                @if($medicine->dosis)
-                                    <p><strong>Dosis:</strong> {{ $medicine->dosis }}</p>
-                                @endif
-                                @if($medicine->golongan)
-                                    <p><strong>Golongan:</strong> {{ $medicine->golongan }}</p>
-                                @endif
+                                <p title="{{ $medicine->komposisi ?: $medicine->nama_obat }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($medicine->komposisi ?: $medicine->nama_obat, 15, '...') }}</p>
+                                <p title="{{ $medicine->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($medicine->indikasi ?: '—', 15, '...') }}</p>
+                                <p title="{{ $medicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($medicine->golongan ?: '—', 15, '...') }}</p>
                             </div>
                             @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => 'b2c'])
                             @php $stock = (int) $medicine->available_stock_units; @endphp
@@ -414,12 +458,17 @@
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
                                 {{ $stock > 0 ? 'Stok: ' . $medicine->getConvertedStockSummaryForUnits($stock) : 'Stok habis' }}
                             </span>
-                            @if($medicine->sediaan_label)
-                                <div class="medicine-meta" style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.6rem;">
-                                    <i class="fa-solid fa-cube"></i> <span>Sediaan: {{ $medicine->sediaan_label }}</span>
-                                </div>
-                            @endif
-                            <button class="btn-cart" data-stock-cart @disabled($stock <= 0)
+                            <div class="medicine-meta medicine-meta-row">
+                                <span class="medicine-meta-sediaan">
+                                    @if($medicine->sediaan_label)
+                                        <i class="fa-solid fa-cube"></i> <span>Sediaan: {{ $medicine->sediaan_label }}</span>
+                                    @endif
+                                </span>
+                                <span class="medicine-sold-badge" data-sold-product-id="{{ $medicine->id }}">
+                                    <i class="fa-solid fa-fire-flame-curved"></i> Terjual {{ number_format((int) $medicine->terjual, 0, ',', '.') }}
+                                </span>
+                            </div>
+                            <button class="btn-cart {{ ($medicine->isRedLogo() && !($b2cAccess ?? false)) ? 'is-red-logo-locked' : '' }}" data-stock-cart @disabled($stock <= 0)
                                     data-product-id="{{ $medicine->id }}"
                                     data-package-unit-label="{{ $medicine->package_unit_label }}"
                                     data-product-name="{{ $medicine->nama_obat }}"
@@ -486,4 +535,11 @@
 @section('scripts')
 <script>window.cartSettings = { storageKey: 'apotekmedix_cart_apotek', wholesaleOrder: false };</script>
 @include('partials.cart', ['cartWholesaleOrder' => false])
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    @if($errors->has('kode') || session('b2c_activation_required'))
+    document.getElementById('b2cCodeDialog')?.showModal();
+    @endif
+});
+</script>
 @endsection

@@ -22,18 +22,6 @@ class PurchaseHistoryController extends Controller
             abort_unless(Auth::check() && Auth::user()->isAdmin(), 403);
         }
 
-        if ($request->input('transaction_channel') === 'offline') {
-            abort_unless(
-                (int) $request->session()->get('internal_shopping_expires_at', 0) > now()->timestamp
-                    && ShoppingAccessCode::matchesSession(
-                        ShoppingAccessCode::CHANNEL_INTERNAL,
-                        $request->session()->get('internal_shopping_code_hash')
-                    ),
-                403,
-                'Kode akses belanja internal diperlukan untuk membuat transaksi.'
-            );
-        }
-
         $data = $request->validate([
             'buyer_type'      => ['required', 'string', 'in:umum,apotik,dokter,pbf'],
             'buyer_name'      => ['required_unless:buyer_type,apotik,dokter', 'nullable', 'string', 'max:255'],
@@ -41,6 +29,9 @@ class PurchaseHistoryController extends Controller
             'outlet_name'     => ['nullable', 'string', 'max:255'],
             'pbf_name'        => ['nullable', 'string', 'max:255'],
             'pbf_address'     => ['nullable', 'string'],
+            'pbf_phone'       => ['nullable', 'string', 'max:50'],
+            'purchase_order_type' => ['nullable', 'string', 'in:regular,oot,precursor'],
+            'purchase_order_profile' => ['nullable', 'string', 'in:medix,medikpedia'],
             'phone'           => ['nullable', 'string', 'max:255'],
             'address'         => ['nullable', 'string'],
             'kecamatan'       => ['nullable', 'string', 'max:255'],
@@ -49,11 +40,11 @@ class PurchaseHistoryController extends Controller
             'sipa'            => ['nullable', 'string', 'max:255'],
             'no_izin_pbf'     => ['nullable', 'string', 'max:255'],
             'apj'             => ['nullable', 'string', 'max:255'],
-            'items'           => ['required_if:transaction_channel,offline', 'array'],
-            'items.*.id'      => ['required_if:transaction_channel,offline', 'nullable', 'integer', 'exists:medicines,id'],
+            'items'           => ['nullable', 'array'],
+            'items.*.id'      => ['nullable', 'integer', 'exists:medicines,id'],
             'items.*.nama_obat' => ['nullable', 'string', 'max:255'],
             'items.*.name'     => ['nullable', 'string', 'max:255'],
-            'items.*.quantity'=> ['required_if:transaction_channel,offline', 'nullable', 'integer', 'min:1'],
+            'items.*.quantity'=> ['nullable', 'integer', 'min:1'],
             'items.*.qty'     => ['nullable', 'integer', 'min:1'],
             'items.*.sale_unit' => ['nullable', 'string', 'in:tablet,strip,box'],
             'items.*.harga'   => ['nullable', 'integer', 'min:0'],
@@ -68,7 +59,7 @@ class PurchaseHistoryController extends Controller
             'approval_status' => ['nullable', 'string', 'in:pending,approved,rejected'],
             'payment_method'  => ['nullable', 'string', 'max:255'],
             'payment_term_days' => ['nullable', 'integer', 'min:1'],
-            'transaction_channel' => ['nullable', 'string', 'in:online,offline'],
+            'transaction_channel' => ['nullable', 'string', 'in:online'],
             'is_pbf_purchase_order' => ['nullable', 'boolean'],
             'discount_code'   => ['nullable', 'string', 'max:64'],
         ]);
@@ -78,6 +69,8 @@ class PurchaseHistoryController extends Controller
             $data['buyer_type'] !== 'apotik'
             || empty($data['pbf_name'])
             || empty($data['pbf_address'])
+            || empty($data['pbf_phone'])
+            || empty($data['purchase_order_type'])
             || empty($data['requester_name'])
             || empty($data['apj'])
             || empty($data['sia'])
@@ -87,25 +80,17 @@ class PurchaseHistoryController extends Controller
         )) {
             return response()->json([
                 'message' => 'Data surat pesanan belum lengkap.',
-                'errors' => ['pbf_name' => ['Lengkapi data distributor, penandatangan, dan produk untuk membuat surat pesanan.']],
+                'errors' => ['pbf_name' => ['Lengkapi jenis surat pesanan, nama, alamat, dan nomor telepon distributor, data penandatangan, serta produk.']],
             ], 422);
         }
 
         if ($isPbfPurchaseOrder) {
             $data['buyer_name'] = 'Apotek Medix';
-        }
-
-        if ($channel === 'offline') {
-            if ($data['buyer_type'] !== 'umum' || empty($data['buyer_name']) || empty($data['phone'])) {
-                return response()->json([
-                    'message' => 'Nama dan nomor telepon wajib diisi untuk pesanan internal.',
-                    'errors' => ['buyer_name' => ['Nama dan nomor telepon wajib diisi untuk pesanan internal.']],
-                ], 422);
-            }
-            $data['payment_method'] = 'Tunai';
-            $data['address'] = null;
-            $data['kecamatan'] = null;
-            $data['kota'] = null;
+            $data['purchase_order_profile'] = $data['purchase_order_profile'] ?? 'medix';
+        } else {
+            $data['purchase_order_type'] = 'regular';
+            $data['purchase_order_profile'] = 'medix';
+            $data['pbf_phone'] = null;
         }
 
         if (!$isPbfPurchaseOrder && in_array($data['buyer_type'], ['apotik', 'dokter'], true)) {
@@ -114,7 +99,18 @@ class PurchaseHistoryController extends Controller
 
         $paymentMethod = trim((string) ($data['payment_method'] ?? ''));
         $paymentTermDays = (int) ($data['payment_term_days'] ?? 0);
-        if (in_array($data['buyer_type'], ['apotik', 'dokter'], true) && $paymentMethod === 'Tempo' && $paymentTermDays < 1) {
+        if (
+            $channel === 'online'
+            && $data['buyer_type'] === 'umum'
+            && $paymentMethod === 'Tempo'
+        ) {
+            return response()->json([
+                'message' => 'Metode pembayaran Tempo tidak tersedia untuk transaksi B2C.',
+                'errors' => ['payment_method' => ['Pilih QRIS, Transfer, atau Cash untuk transaksi B2C.']],
+            ], 422);
+        }
+
+        if ($paymentMethod === 'Tempo' && $paymentTermDays < 1) {
             return response()->json([
                 'message' => 'Jumlah hari tempo wajib diisi untuk metode pembayaran Tempo.',
                 'errors' => ['payment_term_days' => ['Jumlah hari tempo wajib diisi untuk metode pembayaran Tempo.']],
@@ -128,6 +124,7 @@ class PurchaseHistoryController extends Controller
         $items = is_array($data['items'] ?? null) ? $data['items'] : [];
         $originalTotal = 0;
         $discountedTotal = 0;
+        $hasB2cAccess = null;
 
         foreach ($items as $index => $item) {
             $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
@@ -142,13 +139,29 @@ class PurchaseHistoryController extends Controller
                 ], 422);
             }
 
-            $promoChannel = $channel === 'offline'
-                ? 'internal'
-                : (($product && $product->kelompok === 'PBF') || $data['buyer_type'] === 'pbf' || !empty($data['pbf_name'])
+            $promoChannel = (($product && $product->kelompok === 'PBF') || $data['buyer_type'] === 'pbf' || !empty($data['pbf_name'])
                     ? 'b2b'
                     : 'b2c');
 
-            if ($product && in_array($promoChannel, ['internal', 'b2b'], true) && $unit !== 'box') {
+            if ($product?->hasRedLogo() && $promoChannel === 'b2c') {
+                if ($hasB2cAccess === null) {
+                    $b2cAccessExpiresAt = (int) $request->session()->get('b2c_access_expires_at', 0);
+                    $hasB2cAccess = $b2cAccessExpiresAt > now()->timestamp
+                        && ShoppingAccessCode::matchesSession(
+                            ShoppingAccessCode::CHANNEL_B2C,
+                            $request->session()->get('b2c_access_code_hash')
+                        );
+                }
+
+                if (!$hasB2cAccess) {
+                    return response()->json([
+                        'message' => 'Aktifkan kode akses B2C untuk memesan produk berlogo merah.',
+                        'errors' => ['items' => ['Produk berlogo merah memerlukan kode akses B2C aktif.']],
+                    ], 403);
+                }
+            }
+
+            if ($product && $promoChannel === 'b2b' && $unit !== 'box') {
                 return response()->json([
                     'message' => "Kanal {$promoChannel} hanya mendukung pembelian per kemasan.",
                     'errors' => ['items' => ["Produk {$product->nama_obat} hanya dapat dibeli per kemasan pada kanal ini."]],
@@ -168,12 +181,15 @@ class PurchaseHistoryController extends Controller
                 if ($isPbfPurchaseOrder) {
                     $items[$index]['harga_modal'] = $price;
                     $items[$index]['brand'] = $product->brand ?: $product->kategori;
+                    $items[$index]['komposisi'] = $product->komposisi;
+                    $items[$index]['sediaan'] = $product->sediaan ?: $product->kemasan ?: $product->satuan;
+                    $items[$index]['dosis'] = $product->dosis;
                 }
             }
             $subtotal = $qty * $price;
             $promoPercent = $isPbfPurchaseOrder ? 0 : ($product?->getPromoPercent($promoChannel) ?? 0);
             $promoDiscount = (int) round($price * $promoPercent / 100) * $qty;
-            $manualDiscount = $channel === 'offline' || $isPbfPurchaseOrder
+            $manualDiscount = $isPbfPurchaseOrder
                 ? 0
                 : (int) ($item['potongan'] ?? $item['discount'] ?? 0);
             $discount = min($promoDiscount + $manualDiscount, $subtotal);
@@ -238,7 +254,7 @@ class PurchaseHistoryController extends Controller
 
                 foreach ($requiredUnits as $productId => $quantity) {
                     $product = $products->get($productId);
-                    $availableUnits = (int) ($product?->stock_base_units ?? $product?->stok ?? 0)
+                    $availableUnits = (int) ($product?->available_stock_units ?? 0)
                         - (int) $reservedUnits->get($productId, 0);
                     if (!$product || $availableUnits < $quantity) {
                         $productName = $product?->nama_obat ?? 'Produk #' . $productId;
@@ -372,6 +388,10 @@ class PurchaseHistoryController extends Controller
             }
             return $item;
         }, $items);
+
+        if ($order->buyer_type === 'umum' && $order->transaction_channel !== 'offline') {
+            return view('orders.b2c-receipt', compact('order', 'items'));
+        }
 
         return view('orders.invoice', compact('order', 'items'));
     }

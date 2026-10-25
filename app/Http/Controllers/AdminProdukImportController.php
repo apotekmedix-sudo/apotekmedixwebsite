@@ -39,16 +39,16 @@ class AdminProdukImportController extends Controller
         $columns = [
             'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
-            'MODAL', 'HARGA JUAL INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
+            'MODAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
             'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET',
         ];
-        $widths = [8, 25, 28, 12, 18, 28, 28, 12, 22, 12, 12, 12, 12, 15, 20, 18, 18, 20, 20];
+        $widths = [8, 25, 28, 12, 18, 28, 28, 12, 22, 12, 12, 12, 12, 15, 18, 18, 20, 20];
 
         $rows = [
-            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '10', '100', '117771', '123660', '135437', '153102', '16841', '15463'],
-            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '1', '4', '200000', '200000', '205000', '220000', '55000', '0'],
-            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '0', '0', '12000', '12000', '12500', '14000', '0', '0'],
-            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '0', '0', '50000', '49000', '51000', '55000', '0', '0'],
+            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '10', '100', '117771', '135437', '153102', '16841', '15463'],
+            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '1', '4', '200000', '205000', '220000', '55000', '0'],
+            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '0', '0', '12000', '12500', '14000', '0', '0'],
+            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '0', '0', '50000', '51000', '55000', '0', '0'],
         ];
 
         return \App\Helpers\XlsxWriter::download('template_produk.xlsx', $columns, $rows, $widths);
@@ -288,20 +288,16 @@ class AdminProdukImportController extends Controller
                 $hargaRaw = $data['HARGA'] ?? '0';
                 $legacyRetail = $this->parseHarga($this->getValue($data, ['HARGA RETAIL', 'HARGA', 'RETAIL']));
                 $hargaModal = $this->parseHarga($this->getValue($data, ['MODAL', 'HARGA MODAL']));
-                $hasHargaInternal = isset($data['HARGA_JUAL_INTERNAL']) && $data['HARGA_JUAL_INTERNAL'] !== '';
-                $hargaInternal = $hasHargaInternal
-                    ? $this->parseHarga($data['HARGA_JUAL_INTERNAL'])
-                    : $legacyRetail;
                 $hargaB2b = $this->parseHarga($data['HARGA_JUAL_B2B'] ?? '');
                 $hasHargaB2c = isset($data['HARGA_JUAL_B2C']) && $data['HARGA_JUAL_B2C'] !== '';
                 $hargaB2c = $hasHargaB2c
                     ? $this->parseHarga($data['HARGA_JUAL_B2C'])
                     : $legacyRetail;
-                $hargaBox = $hasHargaB2c ? $hargaB2c : $hargaInternal;
+                $hargaBox = $hasHargaB2c ? $hargaB2c : $legacyRetail;
                 $hasExplicitLegacyPrice = isset($data['HARGA']) && $data['HARGA'] !== '';
                 $hargaStored = $hasExplicitLegacyPrice
                     ? $this->parseHarga($data['HARGA'])
-                    : ($hasHargaInternal ? $hargaInternal : ($legacyRetail ?: $this->parseHarga($hargaRaw)));
+                    : ($legacyRetail ?: $this->parseHarga($hargaRaw));
                 $stok = max(0, $this->parseHarga($data['STOK_SATUAN'] ?? $data['STOK'] ?? '0'));
 
                 $katRaw    = strtoupper(trim((string) ($data['KATEGORI'] ?? '')));
@@ -345,6 +341,8 @@ class AdminProdukImportController extends Controller
                 if (array_key_exists('UNIT_PACKAGING_ENABLED', $data)) {
                     $packagingEnabled = $this->parseBoolean($data['UNIT_PACKAGING_ENABLED'], 'UNIT PACKAGING ENABLED');
                 }
+                $packagingEnabled = $packagingEnabled
+                    && Medicine::supportsTabletPackaging($satuan !== '' ? $satuan : null, $sediaan);
                 if ($packagingEnabled && ($stripsPerBox < 1 || $tabletsPerStrip < 1)) {
                     throw new \InvalidArgumentException('Kemasan strip/tablet harus diisi jika UNIT PACKAGING ENABLED aktif.');
                 }
@@ -445,9 +443,6 @@ class AdminProdukImportController extends Controller
                 if (array_key_exists('HARGA_JUAL_B2B', $data) && $data['HARGA_JUAL_B2B'] !== '') {
                     $attributes['harga_grosir'] = $hargaB2b;
                 }
-                if ($hasHargaInternal) {
-                    $attributes['harga_internal'] = $hargaInternal;
-                }
                 if ($hasPackagingColumns) {
                     $attributes += [
                         'unit_packaging_enabled' => $packagingEnabled,
@@ -469,7 +464,6 @@ class AdminProdukImportController extends Controller
                     $attributes['gambar'] = $this->parseProductImageLink($data['LINK_FOTO']);
                 }
                 foreach ([
-                    'PROMO_INTERNAL_PERCENT' => 'promo_internal_percent',
                     'PROMO_B2B_PERCENT' => 'promo_b2b_percent',
                     'PROMO_B2C_PERCENT' => 'promo_b2c_percent',
                 ] as $header => $column) {
@@ -504,7 +498,6 @@ class AdminProdukImportController extends Controller
                         'grade' => ['GRADE'],
                         'deskripsi' => ['DESKRIPSI'],
                         'harga' => ['HARGA'],
-                        'promo_internal_percent' => ['PROMO_INTERNAL_PERCENT'],
                         'promo_b2b_percent' => ['PROMO_B2B_PERCENT'],
                         'promo_b2c_percent' => ['PROMO_B2C_PERCENT'],
                         'is_resep' => ['IS_RESEP'],
@@ -554,8 +547,7 @@ class AdminProdukImportController extends Controller
             'kategori' => ['PABRIK', 'PRINCIPAL'],
             'brand' => ['BRAND'],
             'kategori_produk' => ['KATEGORI'],
-            'harga' => ['HARGA', 'HARGA_JUAL_INTERNAL', 'HARGA RETAIL', 'HARGA_JUAL_B2C'],
-            'harga_internal' => ['HARGA_JUAL_INTERNAL', 'HARGA RETAIL', 'HARGA'],
+            'harga' => ['HARGA', 'HARGA RETAIL', 'HARGA_JUAL_B2C'],
             'harga_modal' => ['MODAL'],
             'harga_grosir' => ['HARGA_JUAL_B2B'],
             'harga_retail' => ['HARGA_JUAL_B2C', 'HARGA RETAIL', 'HARGA'],
@@ -574,7 +566,6 @@ class AdminProdukImportController extends Controller
             'indikasi' => ['INDIKASI'],
             'gambar' => ['GAMBAR', 'LINK_FOTO'],
             'gambar_tambahan' => ['GAMBAR_TAMBAHAN'],
-            'promo_internal_percent' => ['PROMO_INTERNAL_PERCENT'],
             'promo_b2b_percent' => ['PROMO_B2B_PERCENT'],
             'promo_b2c_percent' => ['PROMO_B2C_PERCENT'],
             'is_resep' => ['IS_RESEP'],
@@ -625,7 +616,6 @@ class AdminProdukImportController extends Controller
             'STOK_SATUAN' => ['STOKSATUAN', 'STOCKUNIT'],
             'PER_STRIP' => ['PERSTRIP', 'STRIPPERBOX', 'STRIPS'],
             'PER_TABLET' => ['PERTABLET', 'TABLETPERBOX', 'TABLETS'],
-            'HARGA_JUAL_INTERNAL' => ['HARGAJUALINTERNAL', 'HARGAINTERNAL'],
             'HARGA_JUAL_B2B' => ['HARGAJUALB2B', 'HARGAB2B'],
             'HARGA_JUAL_B2C' => ['HARGAJUALB2C', 'HARGAB2C'],
             'HARGA_JUAL_PER_STRIP' => ['HARGAJUALPERSTRIP', 'HARGAPERSTRIP'],
@@ -640,7 +630,6 @@ class AdminProdukImportController extends Controller
             'KATEGORI' => ['KATEGORI', 'KATEGORIPRODUK', 'CATEGORY', 'TIPE', 'JENIS'],
             'SEDIAAN' => ['SEDIAAN'],
             'KELOMPOK' => ['KELOMPOK', 'GROUP', 'GRUP'],
-            'PROMO_INTERNAL_PERCENT' => ['PROMOINTERNALPERCENT'],
             'PROMO_B2B_PERCENT' => ['PROMOB2BPERCENT'],
             'PROMO_B2C_PERCENT' => ['PROMOB2CPERCENT'],
             'IS_RESEP' => ['ISRESEP'],

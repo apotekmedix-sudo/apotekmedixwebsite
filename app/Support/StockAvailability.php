@@ -19,7 +19,7 @@ class StockAvailability
             ->pluck('reserved_units', 'medicine_id');
 
         return $medicines->mapWithKeys(function (Medicine $medicine) use ($reservedUnits) {
-            $physicalUnits = (int) ($medicine->stock_base_units ?? $medicine->stok);
+            $physicalUnits = $medicine->getPhysicalStockUnits();
 
             return [$medicine->id => max(0, $physicalUnits - (int) $reservedUnits->get($medicine->id, 0))];
         })->all();

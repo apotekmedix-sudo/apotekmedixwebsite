@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Apotek Medix</title>
+    <link rel="stylesheet" href="{{ asset('css/medix-public-theme.css') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -186,7 +187,7 @@
         }
     </style>
 </head>
-<body>
+<body class="public-theme public-theme-standalone">
     <div class="login-container">
         <div class="login-header">
             <div class="login-logo">

@@ -9,5 +9,6 @@ class PbfSupplier extends Model
     protected $fillable = [
         'name',
         'address',
+        'phone',
     ];
 }

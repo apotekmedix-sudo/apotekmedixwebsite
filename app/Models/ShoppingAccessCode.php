@@ -11,8 +11,8 @@ use Illuminate\Support\Str;
 
 class ShoppingAccessCode extends Model
 {
-    public const CHANNEL_INTERNAL = 'internal';
     public const CHANNEL_B2B = 'b2b';
+    public const CHANNEL_B2C = 'b2c';
 
     protected $fillable = [
         'channel',
@@ -75,6 +75,18 @@ class ShoppingAccessCode extends Model
             'expires_at' => now()->addDays((int) config('internal.code_validity_days', 30)),
             'generated_by' => auth()->id(),
         ])->save();
+    }
+
+    public static function hasActiveB2cSession(): bool
+    {
+        $expiresAt = (int) session('b2c_access_expires_at', 0);
+        $codeHash = session('b2c_access_code_hash');
+
+        if ($expiresAt <= now()->timestamp || !$codeHash) {
+            return false;
+        }
+
+        return self::matchesSession(self::CHANNEL_B2C, $codeHash);
     }
 
     public static function matchesSession(string $channel, ?string $sessionHash): bool

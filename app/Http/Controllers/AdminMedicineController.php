@@ -209,13 +209,19 @@ class AdminMedicineController extends Controller
 
     private function applyPackagingFields(Request $request, array &$validated): void
     {
-        $enabled = $request->boolean('unit_packaging_enabled');
+        $enabled = $request->boolean('unit_packaging_enabled')
+            && Medicine::supportsTabletPackaging(null, isset($validated['sediaan']) ? (string) $validated['sediaan'] : null);
         $validated['unit_packaging_enabled'] = $enabled;
 
         if ($enabled) {
             $validated['harga'] = $validated['price_box'];
             $validated['harga_retail'] = $validated['price_box'];
             return;
+        }
+
+        if ($request->boolean('unit_packaging_enabled')) {
+            $validated['harga'] = $validated['harga'] ?? $validated['price_box'] ?? 0;
+            $validated['harga_retail'] = $validated['harga_retail'] ?? $validated['price_box'] ?? 0;
         }
 
         foreach (['tablets_per_strip', 'strips_per_box', 'price_tablet', 'price_strip', 'price_box'] as $field) {

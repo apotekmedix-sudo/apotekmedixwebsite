@@ -19,15 +19,16 @@ class AdminShoppingAccessCodeController extends Controller
     public function generate(string $channel): RedirectResponse
     {
         abort_unless(in_array($channel, [
-            ShoppingAccessCode::CHANNEL_INTERNAL,
             ShoppingAccessCode::CHANNEL_B2B,
+            ShoppingAccessCode::CHANNEL_B2C,
         ], true), 404);
 
         $code = ShoppingAccessCode::generate($channel);
+        $channelLabel = strtoupper($channel);
 
         return redirect()
             ->route('admin.access-codes.index')
-            ->with('success', 'Kode ' . ($channel === ShoppingAccessCode::CHANNEL_INTERNAL ? 'Internal' : 'B2B') . " berhasil dibuat: {$code}");
+            ->with('success', "Kode {$channelLabel} berhasil dibuat: {$code}");
     }
 
     public function update(Request $request, ShoppingAccessCode $accessCode): RedirectResponse
@@ -55,7 +56,11 @@ class AdminShoppingAccessCodeController extends Controller
 
     public function destroy(ShoppingAccessCode $accessCode): RedirectResponse
     {
-        $channel = $accessCode->channel === ShoppingAccessCode::CHANNEL_INTERNAL ? 'Internal' : 'B2B';
+        abort_unless(in_array($accessCode->channel, [
+            ShoppingAccessCode::CHANNEL_B2B,
+            ShoppingAccessCode::CHANNEL_B2C,
+        ], true), 404);
+        $channel = strtoupper($accessCode->channel);
         $accessCode->delete();
 
         return redirect()->route('admin.access-codes.index')

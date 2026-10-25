@@ -53,7 +53,6 @@ class AdminMedicinePromotionController extends Controller
     public function update(Request $request, Medicine $medicine)
     {
         $data = $request->validate([
-            'promo_internal_percent' => ['required', 'integer', 'between:0,100'],
             'promo_b2b_percent' => ['required', 'integer', 'between:0,100'],
             'promo_b2c_percent' => ['required', 'integer', 'between:0,100'],
         ]);
