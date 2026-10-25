@@ -450,7 +450,6 @@
                             <div class="medicine-card-details">
                                 <p><strong>Komposisi:</strong> <?php echo e($medicine->komposisi ?: $medicine->nama_obat); ?></p>
                                 <p><strong>Indikasi:</strong> <?php echo e($medicine->indikasi ?: '—'); ?></p>
-                                <p><strong>Dosis:</strong> <?php echo e($medicine->dosis ?: '—'); ?></p>
                                 <p><strong>Golongan:</strong> <?php echo e($medicine->golongan ?: '—'); ?></p>
                             </div>
                             <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => 'b2c'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>

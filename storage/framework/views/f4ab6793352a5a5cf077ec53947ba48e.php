@@ -1642,7 +1642,6 @@
             <div class="medicine-card-details">
               <p><strong>Komposisi:</strong> <?php echo e($med->komposisi ?: $med->nama_obat); ?></p>
               <p><strong>Indikasi:</strong> <?php echo e($med->indikasi ?: '—'); ?></p>
-              <p><strong>Dosis:</strong> <?php echo e($med->dosis ?: '—'); ?></p>
               <p><strong>Golongan:</strong> <?php echo e($med->golongan ?: '—'); ?></p>
             </div>
             <?php
@@ -1800,7 +1799,6 @@
           <div class="medicine-card-details">
             <p><strong>Komposisi:</strong> <?php echo e($promoMedicine->komposisi ?: $promoMedicine->nama_obat); ?></p>
             <p><strong>Indikasi:</strong> <?php echo e($promoMedicine->indikasi ?: '—'); ?></p>
-            <p><strong>Dosis:</strong> <?php echo e($promoMedicine->dosis ?: '—'); ?></p>
             <p><strong>Golongan:</strong> <?php echo e($promoMedicine->golongan ?: '—'); ?></p>
           </div>
           <div class="discounted-product-prices">

@@ -461,7 +461,7 @@ body.public-theme main h3 {
     color: #fff !important;
 }
 
-body.public-theme main a:not([class*="btn"]):not(.cart-drawer a):not(.cart-popup a):not(.modal-content a):not(dialog a):not(.home-brand-hero-actions a):not(:where(.products-main .medicine-card a, .prod-card a, .product-card a, .discounted-product-card a)) {
+body.public-theme main a:not([class*="btn"]):not(.cart-drawer a):not(.cart-popup a):not(.modal-content a):not(dialog a):not(.home-brand-hero-actions a):not(:where([class*="card"] a, [class*="panel"] a, [class*="box"] a)) {
     color: #55f3e8 !important;
 }
 
@@ -1612,4 +1612,235 @@ body.public-theme main .products-main .btn-cart:disabled {
     body.public-theme main .products-main .product-unit-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+}
+
+body.public-theme main .products-pbf .medicine-card-details {
+    height: 4rem;
+    min-height: 4rem;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: .2rem;
+    padding: .5rem .65rem;
+    border-color: #cfe2f7;
+    border-radius: 12px;
+    background: #f1f7ff !important;
+    font-size: .76rem;
+}
+
+body.public-theme main .products-pbf .medicine-card-details,
+body.public-theme main .products-pbf .medicine-card-details p {
+    color: #25364d !important;
+}
+
+body.public-theme main .products-pbf .medicine-card-details strong {
+    color: #0646a5 !important;
+    font-weight: 800;
+}
+
+body.public-theme main .products-pbf .medicine-card-details p {
+    white-space: nowrap;
+}
+
+body.public-theme main .products-pbf .stock-badge {
+    display: inline-flex;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 2rem;
+    align-items: center;
+    align-self: flex-start;
+    gap: .4rem;
+    margin: .15rem 0;
+    padding: .35rem .65rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.35;
+    white-space: normal;
+}
+
+body.public-theme main .products-pbf .stock-available {
+    color: #166534 !important;
+    background: #dcfce7 !important;
+    border-color: #bbf7d0;
+}
+
+body.public-theme main .products-pbf .stock-low {
+    color: #92400e !important;
+    background: #fef3c7 !important;
+    border-color: #fde68a;
+}
+
+body.public-theme main .products-pbf .stock-out {
+    color: #991b1b !important;
+    background: #fee2e2 !important;
+    border-color: #fecaca;
+}
+
+body.public-theme main .products-pbf .medicine-meta {
+    min-height: 1.2rem;
+    align-items: center;
+    margin: 0 !important;
+    color: #64748b !important;
+    font-size: .72rem;
+}
+
+body.public-theme main :is([class*="card"], [class*="panel"], [class*="box"]):not(:is(
+    .home-trust-item, .co-left-col, .co-right-col, .co-radio-group, .co-delivery-tabs,
+    .co-radio-row, .co-pay-opt, .co-payment-detail, .co-summary-card, .co-section-card,
+    .cart-page-card, .cart-summary, .cart-item, .gass-access-card, .promo-card,
+    .medicine-card-details, .product-unit-card
+)) {
+    color: #172b4d !important;
+    background: #fff !important;
+    border-color: #d7e2ee !important;
+    box-shadow: 0 8px 22px rgba(15, 35, 65, .09);
+}
+
+body.public-theme main :is([class*="card"], [class*="panel"], [class*="box"]):not(:is(
+    .home-trust-item, .co-left-col, .co-right-col, .co-radio-group, .co-delivery-tabs,
+    .co-radio-row, .co-pay-opt, .co-payment-detail, .co-summary-card, .co-section-card,
+    .cart-page-card, .cart-summary, .cart-item, .gass-access-card, .promo-card,
+    .medicine-card-details, .product-unit-card
+)) :is(h1, h2, h3, h4, h5, p, label, small, li, strong, b, span):not(:where(button *, a[class*="btn"] *)) {
+    color: #26384f !important;
+}
+
+body.public-theme main :is([class*="card"], [class*="panel"], [class*="box"]):not(:is(
+    .home-trust-item, .co-left-col, .co-right-col, .co-radio-group, .co-delivery-tabs,
+    .co-radio-row, .co-pay-opt, .co-payment-detail, .co-summary-card, .co-section-card,
+    .cart-page-card, .cart-summary, .cart-item, .gass-access-card, .promo-card,
+    .medicine-card-details, .product-unit-card
+)) :is(h1, h2, h3, h4, h5) {
+    color: #172b4d !important;
+}
+
+body.public-theme main :is([class*="card"], [class*="panel"], [class*="box"]):not(:is(
+    .home-trust-item, .co-left-col, .co-right-col, .co-radio-group, .co-delivery-tabs,
+    .co-radio-row, .co-pay-opt, .co-payment-detail, .co-summary-card, .co-section-card,
+    .cart-page-card, .cart-summary, .cart-item, .gass-access-card, .promo-card
+)) a:not([class*="btn"]) {
+    color: #0755c8 !important;
+}
+
+body.public-theme main :is(.medicine-card, .prod-card, .product-card, .discounted-product-card) {
+    background: #fff !important;
+    border-color: #d7e2ee !important;
+    box-shadow: 0 8px 22px rgba(15, 35, 65, .09);
+}
+
+body.public-theme main :is(.medicine-card-details, .product-unit-card) {
+    background: #f2f7ff !important;
+}
+
+body.public-theme main :is(.medicine-card-details, .product-unit-card) :is(p, strong, span, small, button) {
+    color: #26384f !important;
+}
+
+body.public-theme main :is(.medicine-card-details, .product-unit-card) strong,
+body.public-theme main :is(.medicine-card-details, .product-unit-card) .product-unit-price {
+    color: #0646a5 !important;
+}
+
+body.public-theme main .product-unit-quantity {
+    background: #fff !important;
+}
+
+body.public-theme main table {
+    overflow: hidden;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #d7e2ee;
+    border-radius: 12px;
+    background: #fff !important;
+}
+
+body.public-theme main td {
+    color: #26384f !important;
+    background: #fff !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.public-theme main input,
+body.public-theme main select,
+body.public-theme main textarea {
+    color: #172b4d !important;
+    background-color: #fff !important;
+    border-color: #94a3b8 !important;
+}
+
+body.public-theme main input::placeholder,
+body.public-theme main textarea::placeholder {
+    color: #64748b !important;
+    opacity: 1;
+}
+
+body.public-theme main :is(input, select, textarea, button, a):focus-visible {
+    outline: 3px solid #0870df !important;
+    outline-offset: 2px;
+}
+
+body.public-theme main a:not([class*="btn"]):not(:where([class*="card"] a, [class*="panel"] a, [class*="box"] a)) {
+    color: #fff !important;
+    text-decoration-color: rgba(255, 255, 255, .65);
+}
+
+body.public-theme main a:not([class*="btn"]):not(:where([class*="card"] a, [class*="panel"] a, [class*="box"] a)):hover {
+    color: #a5f3fc !important;
+}
+
+body.public-theme main :is(.home-trust-icon, .sec-tag) {
+    color: #0646a5 !important;
+    background: #eaf4ff !important;
+    border-color: #b8d8fa !important;
+}
+
+body.public-theme main :is(button[type="submit"], .btn-primary, .btn-submit, .btn-checkout, .btn-verify, .btn-submit-wa, .gass-access-button, .co-submit-btn, .co-disc-btn, .filter-bar button) {
+    color: #fff !important;
+    background: #047857 !important;
+    border-color: #047857 !important;
+}
+
+body.public-theme main :is(button[type="submit"], .btn-primary, .btn-submit, .btn-checkout, .btn-verify, .btn-submit-wa, .gass-access-button, .co-submit-btn, .co-disc-btn, .filter-bar button):hover:not(:disabled) {
+    color: #fff !important;
+    background: #065f46 !important;
+    border-color: #065f46 !important;
+}
+
+body.public-theme main .cart-item .btn-cart,
+body.public-theme main :is(.co-delivery-tab, .co-payment-tab, .co-pay-opt) {
+    color: #fff !important;
+    background: #0755c8 !important;
+    border-color: #0755c8 !important;
+}
+
+body.public-theme main :is(.co-delivery-tab.active, .co-payment-tab.active, .co-pay-opt.active) {
+    color: #fff !important;
+    background: #047857 !important;
+    border-color: #047857 !important;
+}
+
+body.public-theme main :is(.product-stock.available, .product-stock.stock-available, .stock-ok, .stock-available) {
+    color: #14532d !important;
+}
+
+body.public-theme main :is(.product-stock.low, .product-stock.stock-low, .stock-low) {
+    color: #78350f !important;
+}
+
+body.public-theme main :is(.product-stock.empty, .product-stock.stock-out, .stock-out) {
+    color: #7f1d1d !important;
+}
+
+body.public-theme main .products-pbf .pbf-access-alert-text,
+body.public-theme main .products-pbf .pbf-access-alert-text :is(i, span, strong) {
+    color: #78350f !important;
+}
+
+body.public-theme main .products-pbf .pbf-access-alert-success .pbf-access-alert-text,
+body.public-theme main .products-pbf .pbf-access-alert-success .pbf-access-alert-text :is(i, span, strong) {
+    color: #065f46 !important;
+}
+
+body.public-theme main .products-pbf .pbf-access-alert-text .fa-shield-halved {
+    color: #b45309 !important;
 }

@@ -408,9 +408,6 @@
                                 @if($medicine->indikasi)
                                     <p><strong>Indikasi:</strong> {{ $medicine->indikasi }}</p>
                                 @endif
-                                @if($medicine->dosis)
-                                    <p><strong>Dosis:</strong> {{ $medicine->dosis }}</p>
-                                @endif
                                 @if($medicine->golongan)
                                     <p><strong>Golongan:</strong> {{ $medicine->golongan }}</p>
                                 @endif

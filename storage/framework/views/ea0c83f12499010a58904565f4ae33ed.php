@@ -439,13 +439,13 @@
     <i class="fa-solid fa-syringe header-deco-icon header-deco-icon-3"></i>
 </div>
 
-<div class="products-main">
+<div class="products-main products-pbf">
     <div class="container">
 
         
         <?php if(session('pbf_success')): ?>
-        <div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-            <span style="color:#065f46;font-weight:700;font-size:0.9rem;display:flex;align-items:center;gap:0.5rem;">
+        <div class="pbf-access-alert pbf-access-alert-success" style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+            <span class="pbf-access-alert-text" style="color:#065f46;font-weight:700;font-size:0.9rem;display:flex;align-items:center;gap:0.5rem;">
                 <i class="fa-solid fa-circle-check"></i>
                 <?php echo e(session('pbf_success')); ?>
 
@@ -454,8 +454,8 @@
         <?php endif; ?>
 
         
-        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:0.75rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-            <span style="color:#92400e;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
+        <div class="pbf-access-alert" style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:0.75rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+            <span class="pbf-access-alert-text" style="color:#92400e;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
                 <i class="fa-solid fa-shield-halved" style="color:#f59e0b;"></i>
                 Anda masuk sebagai mitra PBF terverifikasi
             </span>
@@ -542,14 +542,11 @@
                             ?>
                             <div class="medicine-card-details">
                                 <p><strong>Komposisi:</strong> <?php echo e($medicine->komposisi ?: $medicine->nama_obat); ?></p>
-                                <?php if($medicine->indikasi): ?>
-                                    <p><strong>Indikasi:</strong> <?php echo e($medicine->indikasi); ?></p>
-                                <?php endif; ?>
-                                <?php if($medicine->dosis): ?>
-                                    <p><strong>Dosis:</strong> <?php echo e($medicine->dosis); ?></p>
-                                <?php endif; ?>
+                                <p><strong>Indikasi:</strong> <?php echo e($medicine->indikasi ?: '—'); ?></p>
                                 <?php if($medicine->golongan): ?>
                                     <p><strong>Golongan:</strong> <?php echo e($medicine->golongan); ?></p>
+                                <?php else: ?>
+                                    <p><strong>Golongan:</strong> —</p>
                                 <?php endif; ?>
                             </div>
                             <?php echo $__env->make('partials.product-unit-selector', [
@@ -568,6 +565,8 @@
                                 <div class="medicine-meta" style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.6rem;">
                                     <i class="fa-solid fa-cube"></i> <span>Sediaan: <?php echo e($medicine->sediaan_label); ?></span>
                                 </div>
+                            <?php else: ?>
+                                <div class="medicine-meta medicine-meta-placeholder" aria-hidden="true"></div>
                             <?php endif; ?>
                             <?php if($basePrice > 0): ?>
                                 <button class="btn-cart" data-stock-cart <?php if($stock <= 0): echo 'disabled'; endif; ?>

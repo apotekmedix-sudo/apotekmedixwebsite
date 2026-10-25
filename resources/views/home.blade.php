@@ -1646,7 +1646,6 @@
             <div class="medicine-card-details">
               <p><strong>Komposisi:</strong> {{ $med->komposisi ?: $med->nama_obat }}</p>
               <p><strong>Indikasi:</strong> {{ $med->indikasi ?: '—' }}</p>
-              <p><strong>Dosis:</strong> {{ $med->dosis ?: '—' }}</p>
               <p><strong>Golongan:</strong> {{ $med->golongan ?: '—' }}</p>
             </div>
             @php
@@ -1803,7 +1802,6 @@
           <div class="medicine-card-details">
             <p><strong>Komposisi:</strong> {{ $promoMedicine->komposisi ?: $promoMedicine->nama_obat }}</p>
             <p><strong>Indikasi:</strong> {{ $promoMedicine->indikasi ?: '—' }}</p>
-            <p><strong>Dosis:</strong> {{ $promoMedicine->dosis ?: '—' }}</p>
             <p><strong>Golongan:</strong> {{ $promoMedicine->golongan ?: '—' }}</p>
           </div>
           <div class="discounted-product-prices">

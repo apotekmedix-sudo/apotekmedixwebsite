@@ -450,7 +450,6 @@
                             <div class="medicine-card-details">
                                 <p><strong>Komposisi:</strong> {{ $medicine->komposisi ?: $medicine->nama_obat }}</p>
                                 <p><strong>Indikasi:</strong> {{ $medicine->indikasi ?: '—' }}</p>
-                                <p><strong>Dosis:</strong> {{ $medicine->dosis ?: '—' }}</p>
                                 <p><strong>Golongan:</strong> {{ $medicine->golongan ?: '—' }}</p>
                             </div>
                             @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => 'b2c'])
