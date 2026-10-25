@@ -123,13 +123,12 @@ class CustomerAccountTest extends TestCase
         $this->assertDatabaseCount('customers', 2);
     }
 
-    public function test_shopping_channels_open_their_respective_pages(): void
+    public function test_shopping_channels_open_their_respective_pages_without_internal_shopping(): void
     {
         $this->get('/kiosk')->assertNotFound();
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('Belanja Internal')
             ->assertSee('Belanja B2B')
             ->assertSee('Belanja B2C')
             ->assertSee('<a href="' . route('products.apotek') . '"><i class="fa-solid fa-store"></i> Belanja B2C</a>', false)
@@ -137,11 +136,8 @@ class CustomerAccountTest extends TestCase
             ->assertDontSee('Pesan di Toko')
             ->assertDontSee('Buka Kios Toko');
 
-        $this->get(route('shopping.internal'))
-            ->assertOk()
-            ->assertSee('Belanja Internal')
-            ->assertSee('Pilih produk untuk transaksi internal')
-            ->assertSee('apotekmedix_cart_internal');
+        $this->get('/belanja-internal')->assertNotFound();
+        $this->get('/belanja-internal/akses')->assertNotFound();
 
         $this->get(route('products.index'))
             ->assertOk()

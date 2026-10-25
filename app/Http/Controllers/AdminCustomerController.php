@@ -21,7 +21,7 @@ class AdminCustomerController extends Controller
     public function index(Request $request): View
     {
         $filters = $request->validate([
-            'channel' => ['nullable', Rule::in(['all', 'internal', 'b2b', 'b2c'])],
+            'channel' => ['nullable', Rule::in(['all', 'offline', 'b2b', 'b2c'])],
             'search' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -29,14 +29,14 @@ class AdminCustomerController extends Controller
             ->withCount('purchaseHistories')
             ->withSum('purchaseHistories as total_pesanan', 'total')
             ->withCount([
-                'purchaseHistories as internal_orders_count' => fn ($query) => $query->where('transaction_channel', 'offline'),
+                'purchaseHistories as offline_orders_count' => fn ($query) => $query->where('transaction_channel', 'offline'),
                 'purchaseHistories as b2b_orders_count' => fn ($query) => $this->applyB2bFilter($query),
                 'purchaseHistories as b2c_orders_count' => fn ($query) => $this->applyB2cFilter($query),
             ]);
 
         if (!empty($filters['channel']) && $filters['channel'] !== 'all') {
             match ($filters['channel']) {
-                'internal' => $customers->whereHas('purchaseHistories', fn ($query) => $query->where('transaction_channel', 'offline')),
+                'offline' => $customers->whereHas('purchaseHistories', fn ($query) => $query->where('transaction_channel', 'offline')),
                 'b2b' => $customers->whereHas('purchaseHistories', fn ($query) => $this->applyB2bFilter($query)),
                 'b2c' => $customers->whereHas('purchaseHistories', fn ($query) => $this->applyB2cFilter($query)),
             };
@@ -60,7 +60,7 @@ class AdminCustomerController extends Controller
         $customers = $customers->latest('last_order_at')->latest('id')->paginate(25)->withQueryString();
         $summary = [
             'total' => Customer::count(),
-            'internal' => Customer::whereHas('purchaseHistories', fn ($query) => $query->where('transaction_channel', 'offline'))->count(),
+            'offline' => Customer::whereHas('purchaseHistories', fn ($query) => $query->where('transaction_channel', 'offline'))->count(),
             'b2b' => Customer::whereHas('purchaseHistories', fn ($query) => $this->applyB2bFilter($query))->count(),
             'b2c' => Customer::whereHas('purchaseHistories', fn ($query) => $this->applyB2cFilter($query))->count(),
         ];
@@ -71,7 +71,7 @@ class AdminCustomerController extends Controller
     public function export()
     {
         $sheets = [
-            $this->customerSheet('Internal', fn (Builder $query) => $query->where('transaction_channel', 'offline')),
+            $this->customerSheet('Offline', fn (Builder $query) => $query->where('transaction_channel', 'offline')),
             $this->customerSheet('B2B', fn (Builder $query) => $this->applyB2bFilter($query)),
             $this->customerSheet('B2C', fn (Builder $query) => $this->applyB2cFilter($query)),
         ];

@@ -12,17 +12,17 @@
     justify-content: space-between;
     gap: 1.5rem;
     max-width: 1200px;
-    min-height: 410px;
+    min-height: 340px;
     margin: 1.5rem auto 2rem;
     padding: 2.5rem clamp(1.5rem, 4vw, 3rem);
     overflow: hidden;
     border-radius: 18px;
     color: #fff;
     background:
-        radial-gradient(ellipse at 84% 18%, rgba(6, 182, 212, 0.38), transparent 37%),
-        radial-gradient(ellipse at 12% 110%, rgba(132, 204, 22, 0.18), transparent 42%),
-        linear-gradient(112deg, #0F172A 0%, #16243A 60%, #12394A 100%);
-    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+        radial-gradient(ellipse at 84% 18%, rgba(8, 217, 232, 0.28), transparent 37%),
+        radial-gradient(ellipse at 12% 110%, rgba(19, 220, 130, 0.16), transparent 42%),
+        linear-gradient(112deg, #063d9f 0%, #0754bd 60%, #0875c9 100%);
+    box-shadow: 0 18px 42px rgba(3, 34, 89, 0.2);
 }
 .home-brand-hero::before {
     position: absolute;
@@ -51,7 +51,7 @@
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.65rem;
-    color: #BEF264;
+    color: #7fffe2;
     font-size: 0.8rem;
     font-weight: 800;
     letter-spacing: 0.06em;
@@ -82,20 +82,31 @@
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    min-height: 68px;
+    min-height: 56px;
     padding: 0.85rem 1rem;
-    border: 1px solid rgba(255,255,255,0.55);
-    border-radius: 10px;
-    background: rgba(255,255,255,0.96);
-    box-shadow: 0 5px 14px rgba(0, 45, 69, 0.12);
-    color: #0E6470;
+    border: 1px solid rgba(255,255,255,0.62);
+    border-radius: 12px;
+    background: linear-gradient(135deg, #13dc82, #05bd78);
+    box-shadow: 0 5px 14px rgba(0, 45, 69, 0.18);
+    color: #fff;
     font-size: 1rem;
     font-weight: 700;
     text-decoration: none;
     transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
-.home-brand-hero-actions a i { width: 30px; text-align: center; font-size: 1.35rem; }
-.home-brand-hero-actions a:hover { transform: translateY(-2px); box-shadow: 0 9px 20px rgba(0, 45, 69, 0.18); background: #fff; }
+.home-brand-hero-actions a { gap: 0.7rem; }
+.home-brand-hero-actions a > span {
+    display: grid;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 10px;
+    background: #ecfdf5;
+    color: #078a68;
+}
+.home-brand-hero-actions a svg { width: 21px; height: 21px; }
+.home-brand-hero-actions a:hover { transform: translateY(-2px); box-shadow: 0 9px 20px rgba(0, 45, 69, 0.24); background: linear-gradient(135deg, #08c975, #04a968); }
 .home-brand-hero-mark {
     position: relative;
     z-index: 1;
@@ -130,7 +141,8 @@
     .home-brand-hero p { max-width: 330px; font-size: 0.92rem; }
     .home-brand-hero-actions { gap: 0.55rem; }
     .home-brand-hero-actions a { min-height: 58px; gap: 0.5rem; padding: 0.65rem 0.55rem; font-size: 0.78rem; }
-    .home-brand-hero-actions a i { width: 22px; font-size: 1rem; }
+    .home-brand-hero-actions a > span { flex-basis: 30px; width: 30px; height: 30px; border-radius: 8px; }
+    .home-brand-hero-actions a svg { width: 18px; height: 18px; }
 }
 
 <style>
@@ -996,9 +1008,24 @@
         <h1 id="homeHeroTitle">Solusi Kesehatan Terpercaya</h1>
         <p>Beli obat, suplemen, dan produk kesehatan dengan mudah. Tim Apotek Medix siap membantu Anda.</p>
         <div class="home-brand-hero-actions">
-            <a href="<?php echo e(route('shopping.internal')); ?>"><i class="fa-solid fa-cash-register"></i> Belanja Internal</a>
-            <a href="<?php echo e(route('products.pbf')); ?>"><i class="fa-solid fa-truck-ramp-box"></i> Belanja B2B</a>
-            <a href="<?php echo e(route('products.apotek')); ?>"><i class="fa-solid fa-prescription-bottle-medical"></i> Belanja B2C</a>
+            <a href="<?php echo e(route('products.pbf')); ?>">
+                <span aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m3 7 9-4 9 4v10l-9 4-9-4V7Z"/>
+                        <path d="m3 7 9 4 9-4M12 11v10M7.5 5l9 4"/>
+                    </svg>
+                </span>
+                Belanja B2B
+            </a>
+            <a href="<?php echo e(route('products.apotek')); ?>">
+                <span aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 8h14l1 13H4L5 8Z"/>
+                        <path d="M9 8a3 3 0 0 1 6 0M12 12v5M9.5 14.5h5"/>
+                    </svg>
+                </span>
+                Belanja B2C
+            </a>
         </div>
     </div>
     <div class="home-brand-hero-mark" aria-hidden="true">
@@ -1599,6 +1626,7 @@
       <div class="featured-track" id="featTrack">
         <?php $__currentLoopData = $featuredProducts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $med): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <div class="prod-card">
+          <div class="medicine-card-brand">Apotek Medix</div>
           <div class="prod-img">
             <?php echo $__env->make('partials.product-gallery-image', ['medicine' => $med], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             <?php if($med->kategori_produk): ?>
@@ -1609,8 +1637,14 @@
             <?php endif; ?>
           </div>
           <div class="prod-body">
-            <?php if($med->kategori): ?><span class="prod-brand-tag"><?php echo e($med->kategori); ?></span><?php endif; ?>
+            <div class="medicine-card-principal"><?php echo e($med->brand ?: $med->kategori); ?></div>
             <h3 class="prod-name"><a href="<?php echo e(route('medicines.show', $med->id)); ?>"><?php echo e($med->nama_obat); ?></a></h3>
+            <div class="medicine-card-details">
+              <p><strong>Komposisi:</strong> <?php echo e($med->komposisi ?: $med->nama_obat); ?></p>
+              <p><strong>Indikasi:</strong> <?php echo e($med->indikasi ?: '—'); ?></p>
+              <p><strong>Dosis:</strong> <?php echo e($med->dosis ?: '—'); ?></p>
+              <p><strong>Golongan:</strong> <?php echo e($med->golongan ?: '—'); ?></p>
+            </div>
             <?php
               $homeBasePrice = $med->getChannelBasePrice('b2c');
               $homePromoPrice = $med->getChannelPromoPrice('b2c');
@@ -1627,13 +1661,14 @@
 
             </span>
             <?php if($med->sediaan_label): ?>
-              <div style="font-size:0.75rem;color:#6b7280;margin-bottom:0.35rem;display:flex;align-items:center;gap:0.35rem;">
+              <div class="medicine-meta">
                 <i class="fa-solid fa-cube"></i> <span><?php echo e($med->sediaan_label); ?></span>
               </div>
+            <?php else: ?>
+              <div class="medicine-meta medicine-meta-placeholder" aria-hidden="true"></div>
             <?php endif; ?>
-            <a href="<?php echo e(route('medicines.show', $med->id)); ?>" class="btn-detail">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
             <button class="btn-cart" data-stock-cart <?php if($stock <= 0): echo 'disabled'; endif; ?> data-package-unit-label="<?php echo e($med->package_unit_label); ?>" onclick="addToCart(<?php echo e($med->id); ?>,'<?php echo e(addslashes($med->nama_obat)); ?>',<?php echo e($homePromoPrice); ?>,'<?php echo e($med->image_url ?: ''); ?>','<?php echo e(addslashes($med->brand ?: $med->kategori)); ?>',this,'home-unit-a-<?php echo e($med->id); ?>')">
-              <i class="fa-solid fa-cart-plus"></i> Keranjang
+              <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang
             </button>
           </div>
         </div>
@@ -1744,6 +1779,7 @@
         ?>
         <article class="discounted-product-card">
           <span class="discounted-product-badge">Diskon <?php echo e($promoMedicine->getPromoPercent('b2c')); ?>%</span>
+          <div class="medicine-card-brand">Apotek Medix</div>
           <a class="discounted-product-image" href="<?php echo e(route('medicines.show', $promoMedicine->id)); ?>" aria-label="Lihat <?php echo e($promoMedicine->nama_obat); ?>">
             <?php if($promoMedicine->gambar): ?>
               <img src="<?php echo e($promoMedicine->image_url); ?>" alt="<?php echo e($promoMedicine->nama_obat); ?>" loading="lazy">
@@ -1756,12 +1792,20 @@
           </a>
           <div class="discounted-product-body">
             <?php if($promoMedicine->brand ?: $promoMedicine->kategori): ?>
-              <span class="discounted-product-brand"><?php echo e($promoMedicine->brand ?: $promoMedicine->kategori); ?></span>
-            <?php endif; ?>
-            <h3 class="discounted-product-name"><?php echo e($promoMedicine->nama_obat); ?></h3>
-            <div class="discounted-product-prices">
-              <span class="discounted-product-old-price">Rp <?php echo e(number_format($promoBasePrice, 0, ',', '.')); ?></span>
-              <strong class="discounted-product-current-price" id="home-price-b-<?php echo e($promoMedicine->id); ?>">Rp <?php echo e(number_format($promoPrice, 0, ',', '.')); ?></strong>
+            <div class="medicine-card-principal"><?php echo e($promoMedicine->brand ?: $promoMedicine->kategori); ?></div>
+          <?php else: ?>
+            <div class="medicine-card-principal" aria-hidden="true"></div>
+          <?php endif; ?>
+          <h3 class="discounted-product-name"><?php echo e($promoMedicine->nama_obat); ?></h3>
+          <div class="medicine-card-details">
+            <p><strong>Komposisi:</strong> <?php echo e($promoMedicine->komposisi ?: $promoMedicine->nama_obat); ?></p>
+            <p><strong>Indikasi:</strong> <?php echo e($promoMedicine->indikasi ?: '—'); ?></p>
+            <p><strong>Dosis:</strong> <?php echo e($promoMedicine->dosis ?: '—'); ?></p>
+            <p><strong>Golongan:</strong> <?php echo e($promoMedicine->golongan ?: '—'); ?></p>
+          </div>
+          <div class="discounted-product-prices">
+            <span class="discounted-product-old-price">Rp <?php echo e(number_format($promoBasePrice, 0, ',', '.')); ?></span>
+            <strong class="discounted-product-current-price" id="home-price-b-<?php echo e($promoMedicine->id); ?>">Rp <?php echo e(number_format($promoPrice, 0, ',', '.')); ?></strong>
             </div>
             <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $promoMedicine, 'unitSelectId' => $promoUnitId, 'priceTargetId' => 'home-price-b-' . $promoMedicine->id, 'priceChannel' => 'b2c'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             <?php $promoStock = (int) $promoMedicine->available_stock_units; ?>
@@ -1770,10 +1814,12 @@
               <?php echo e($promoStock > 0 ? 'Stok: ' . $promoMedicine->getConvertedStockSummaryForUnits($promoStock) : 'Stok habis'); ?>
 
             </span>
-            <div class="discounted-product-actions">
-              <a href="<?php echo e(route('medicines.show', $promoMedicine->id)); ?>">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-              <button class="btn-cart" data-stock-cart <?php if($promoStock <= 0): echo 'disabled'; endif; ?> data-package-unit-label="<?php echo e($promoMedicine->package_unit_label); ?>" onclick="addToCart(<?php echo e($promoMedicine->id); ?>, '<?php echo e(addslashes($promoMedicine->nama_obat)); ?>', <?php echo e($promoPrice); ?>, '<?php echo e($promoMedicine->image_url ?: ''); ?>', '<?php echo e(addslashes($promoMedicine->brand ?: $promoMedicine->kategori)); ?>', this, '<?php echo e($promoUnitId); ?>')"><i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang</button>
-            </div>
+            <?php if($promoMedicine->sediaan_label): ?>
+              <div class="medicine-meta"><i class="fa-solid fa-cube"></i> <span>Sediaan: <?php echo e($promoMedicine->sediaan_label); ?></span></div>
+            <?php else: ?>
+              <div class="medicine-meta medicine-meta-placeholder" aria-hidden="true"></div>
+            <?php endif; ?>
+            <button class="btn-cart" data-stock-cart <?php if($promoStock <= 0): echo 'disabled'; endif; ?> data-package-unit-label="<?php echo e($promoMedicine->package_unit_label); ?>" onclick="addToCart(<?php echo e($promoMedicine->id); ?>, '<?php echo e(addslashes($promoMedicine->nama_obat)); ?>', <?php echo e($promoPrice); ?>, '<?php echo e($promoMedicine->image_url ?: ''); ?>', '<?php echo e(addslashes($promoMedicine->brand ?: $promoMedicine->kategori)); ?>', this, '<?php echo e($promoUnitId); ?>')"><i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang</button>
           </div>
         </article>
       <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>

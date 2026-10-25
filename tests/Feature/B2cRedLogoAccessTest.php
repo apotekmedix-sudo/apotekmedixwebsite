@@ -25,6 +25,14 @@ class B2cRedLogoAccessTest extends TestCase
             ->assertSee('Produk Logo Hijau')
             ->assertDontSee('Produk Logo Merah')
             ->assertSee('aria-label="Masukkan kode akses B2C"', false)
+            ->assertSee('Peringatan')
+            ->assertSee('Anda salah klik')
+            ->assertSee('>Kirim</button>', false)
+            ->assertSee('position:fixed', false)
+            ->assertDontSee('placeholder="5 digit"', false)
+            ->assertSee('id="b2cAccessCode" name="kode" type="password"', false)
+            ->assertDontSee('Produk berlogo merah hanya dapat dibuka')
+            ->assertDontSee('Masukkan kode aktivasi 5 digit')
             ->assertSee(route('products.apotek.activate'), false);
 
         $this->get(route('products.show', $redMedicine))

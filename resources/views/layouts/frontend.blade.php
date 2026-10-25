@@ -990,8 +990,9 @@
             .navbar-brand span { font-size: 0.95rem; }
         }
     </style>
+    <link rel="stylesheet" href="{{ asset('css/medix-public-theme.css') }}">
 </head>
-<body>
+<body class="public-theme">
 
     <!-- ===== PARTIKEL STATIS MEDIS ===== -->
     <div class="med-particles" aria-hidden="true">

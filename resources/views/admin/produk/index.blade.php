@@ -146,6 +146,9 @@
         <a href="{{ route('admin.produk.import') }}" class="btn-icon btn-icon-outline">
             <i class="fa-solid fa-file-import"></i> Import Excel
         </a>
+        <a href="{{ route('admin.produk.export') }}" class="btn-icon btn-icon-outline">
+            <i class="fa-solid fa-file-export"></i> Export Produk
+        </a>
         <a href="{{ route('admin.business-data.export') }}" class="btn-icon btn-icon-success">
             <i class="fa-solid fa-database"></i> Backup Data Bisnis
         </a>
@@ -242,7 +245,6 @@
                     <th>Sediaan</th>
                     <th>Kategori</th>
                     <th>Modal</th>
-                    <th>Harga Internal</th>
                     <th>Harga B2B</th>
                     <th>Harga B2C</th>
                     <th>Harga Strip / Tablet</th>
@@ -306,9 +308,6 @@
                     </td>
                     <td>
                         <input class="inline-number" type="number" name="harga_modal" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->harga_modal ?: $medicine->harga }}" min="0" step="0.01" aria-label="Harga modal {{ $medicine->nama_obat }}">
-                    </td>
-                    <td>
-                        <input class="inline-number" type="number" name="harga_internal" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->getChannelBasePrice('internal') }}" min="0" step="0.01" aria-label="Harga jual internal {{ $medicine->nama_obat }}">
                     </td>
                     <td>
                         <input class="inline-number" type="number" name="harga_grosir" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->harga_grosir ?: $medicine->harga_modal ?: $medicine->harga }}" min="0" step="0.01" aria-label="Harga jual B2B {{ $medicine->nama_obat }}">

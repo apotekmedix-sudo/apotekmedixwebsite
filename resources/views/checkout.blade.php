@@ -874,17 +874,33 @@
               <h2 class="co-sec-title">Data PBF Tujuan</h2>
             </div>
             <div class="co-field">
+              <select id="co_pbf_profile" class="co-input">
+                <option value="medix">Identitas Apotek Medix</option>
+                <option value="medikpedia">Identitas Apotek Medikpedia</option>
+              </select>
+            </div>
+            <div class="co-field">
+              <select id="co_pbf_order_type" class="co-input">
+                <option value="regular">SP Biasa (Obat Reguler)</option>
+                <option value="oot">SP OOT (Obat-Obat Tertentu)</option>
+                <option value="precursor">SP Prekursor</option>
+              </select>
+            </div>
+            <div class="co-field">
               <input type="text" id="co_pbf_name" class="co-input" placeholder="Nama PBF tujuan *">
             </div>
             <div class="co-field">
               <input type="text" id="co_pbf_address" class="co-input" placeholder="Alamat PBF tujuan *">
+            </div>
+            <div class="co-field">
+              <input type="tel" id="co_pbf_phone" class="co-input" maxlength="50" placeholder="Nomor telepon PBF *">
             </div>
             <div class="co-row-2">
               <div class="co-field">
                 <input type="text" id="co_signer_name" class="co-input" value="Apt. Hendri Setiyono, S Farm" placeholder="Nama Apoteker *">
               </div>
               <div class="co-field">
-                <input type="text" id="co_signer_title" class="co-input" value="Apoteker" placeholder="Jabatan *">
+                <input type="text" id="co_signer_title" class="co-input" value="Apoteker Penanggung Jawab" placeholder="Jabatan *">
               </div>
             </div>
             <div class="co-row-2">
@@ -1063,7 +1079,7 @@
             </button>
             <button type="button" class="co-pay-opt" id="coTempoOption" data-pay-method="Tempo" onclick="selectPaymentMethod('Tempo')" aria-disabled="false">
               <i class="fa-solid fa-calendar-day"></i>
-              <span>Tempo<small id="coTempoDisabledLabel" class="co-tempo-disabled-label" hidden>B2B &amp; Internal</small></span>
+              <span>Tempo<small id="coTempoDisabledLabel" class="co-tempo-disabled-label" hidden>B2B</small></span>
             </button>
           </div>
 
@@ -1111,7 +1127,6 @@
 
   let activeCtx = {
     storageKey: 'apotekmedix_cart_retail',
-    kioskOrder: false,
     wholesaleOrder: false,
     adminPbfOrder: false,
     adminPurchaseOrderBase: null,
@@ -1127,7 +1142,7 @@
 
   let checkoutCart = JSON.parse(localStorage.getItem(activeCtx.storageKey) || '[]');
   if (!checkoutCart.length) {
-    for (const key of ['apotekmedix_cart_retail', 'apotekmedix_cart', 'apotekmedix_cart_apotek', 'apotekmedix_cart_internal', 'apotekmedix_cart_pbf']) {
+    for (const key of ['apotekmedix_cart_retail', 'apotekmedix_cart', 'apotekmedix_cart_apotek', 'apotekmedix_cart_pbf']) {
       const candidate = JSON.parse(localStorage.getItem(key) || '[]');
       if (candidate.length) {
         activeCtx.storageKey = key;
@@ -1137,7 +1152,7 @@
     }
   }
 
-  let deliveryMode = activeCtx.kioskOrder ? 'pickup' : 'ship';
+  let deliveryMode = 'ship';
   let extraVoucherDiscount = 0;
   let appliedVoucher = null;
 
@@ -1200,7 +1215,7 @@
       const qty = Number(item.qty || 1);
       const price = Number(item.price || 0);
       const lineSub = price * qty;
-      const disc = activeCtx.kioskOrder ? 0 : Number(item.discount || 0);
+      const disc = Number(item.discount || 0);
       const unit = item.saleUnit || 'box';
       const unitLabel = item.unitLabel || item.unitLabels?.[unit] || '';
 
@@ -1272,7 +1287,7 @@
 
     const subtotalAfterItemDisc = checkoutCart.reduce((s, i) => {
       const sub = Number(i.price || 0) * Number(i.qty || 1);
-      const disc = activeCtx.kioskOrder ? 0 : Number(i.discount || 0);
+      const disc = Number(i.discount || 0);
       return s + Math.max(0, sub - disc);
     }, 0);
 
@@ -1389,7 +1404,7 @@
   }
 
   function isTempoAvailable() {
-    return Boolean(activeCtx.kioskOrder || activeCtx.wholesaleOrder || activeCtx.adminPbfOrder);
+    return Boolean(activeCtx.wholesaleOrder || activeCtx.adminPbfOrder);
   }
 
   function configureTempoOption() {
@@ -1462,13 +1477,16 @@
       approval_status: 'pending',
       payment_method: paymentMethod,
       payment_term_days: paymentMethod === 'Tempo' ? paymentTermDays : null,
-      transaction_channel: activeCtx.kioskOrder ? 'offline' : 'online',
+      transaction_channel: 'online',
       is_pbf_purchase_order: Boolean(activeCtx.adminPbfOrder)
     };
 
     if (activeCtx.adminPbfOrder) {
       payload.pbf_name = document.getElementById('co_pbf_name').value.trim();
       payload.pbf_address = document.getElementById('co_pbf_address').value.trim();
+      payload.pbf_phone = document.getElementById('co_pbf_phone').value.trim();
+      payload.purchase_order_type = document.getElementById('co_pbf_order_type').value;
+      payload.purchase_order_profile = document.getElementById('co_pbf_profile').value;
       payload.buyer_name = 'Apotek Medix';
       payload.phone = '085890007359';
       payload.address = 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat';
@@ -1476,8 +1494,8 @@
       payload.apj = document.getElementById('co_signer_title').value.trim();
       payload.sia = document.getElementById('co_signer_sia').value.trim();
       payload.sipa = document.getElementById('co_signer_sipa').value.trim();
-      if (!payload.pbf_name || !payload.pbf_address) {
-        errBox.textContent = 'Nama PBF dan alamat PBF wajib diisi.';
+      if (!payload.pbf_name || !payload.pbf_address || !payload.pbf_phone) {
+        errBox.textContent = 'Nama PBF, alamat PBF, dan nomor telepon PBF wajib diisi.';
         errBox.style.display = 'block';
         return;
       }
@@ -1502,9 +1520,7 @@
 
       payload.buyer_name = fullName;
       payload.phone = phoneVal;
-      payload.address = activeCtx.kioskOrder
-        ? ''
-        : (billingDetails ? `${baseAddress} (Alamat Penagihan: ${billingDetails})` : baseAddress);
+      payload.address = billingDetails ? `${baseAddress} (Alamat Penagihan: ${billingDetails})` : baseAddress;
 
       if (billingMode === 'different' && (!billingNameVal || !billingAddrVal)) {
         errBox.textContent = 'Nama lengkap dan alamat penagihan wajib diisi jika memakai alamat penagihan lain.';
@@ -1522,7 +1538,7 @@
         errBox.style.display = 'block';
         return;
       }
-      if (!activeCtx.kioskOrder && deliveryMode === 'ship' && !addressVal) {
+      if (deliveryMode === 'ship' && !addressVal) {
         errBox.textContent = 'Alamat pengiriman wajib diisi.';
         errBox.style.display = 'block';
         return;
@@ -1569,11 +1585,6 @@
         ? activeCtx.adminPurchaseOrderBase.replace('__ORDER__', result.id)
         : result.invoice_url;
 
-      if (activeCtx.kioskOrder) {
-        document.getElementById('coSuccessDesc').textContent = 'Struk pesanan internal telah dibuat. Tunjukkan struk ini kepada kasir untuk menyelesaikan pembayaran.';
-        document.getElementById('coWhatsappBtn').style.display = 'none';
-      }
-
       document.getElementById('coFormWrapper').style.display = 'none';
       const payRight = document.getElementById('coPaymentRightWrapper');
       if (payRight) payRight.style.display = 'none';
@@ -1615,11 +1626,7 @@
     if (activeCtx.adminPbfOrder) {
       document.getElementById('coAdminPbfFields').style.display = 'block';
     }
-    if (activeCtx.kioskOrder) {
-      setDeliveryMode('pickup');
-    } else {
-      updateShippingMethodStatus();
-    }
+    updateShippingMethodStatus();
     onBuyerTypeChange();
     renderCheckoutSummary();
   });

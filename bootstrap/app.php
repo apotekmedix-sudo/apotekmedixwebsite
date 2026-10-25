@@ -15,7 +15,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin'    => \App\Http\Middleware\IsAdmin::class,
             'customer' => \App\Http\Middleware\IsCustomer::class,
             'cashier'  => \App\Http\Middleware\IsCashier::class,
-            'internal.access' => \App\Http\Middleware\EnsureInternalShoppingAccess::class,
             'staff' => \App\Http\Middleware\EnsureStaffAccess::class,
         ]);
         $middleware->appendToGroup('web', \App\Http\Middleware\LockShoppingAccessOnLeave::class);

@@ -1,6 +1,5 @@
 
 <?php
-  $isKioskOrder = !empty($cartKioskOrder);
   $isAdminPbfOrder = !empty($cartAdminPbfOrder);
   $defaultShippingAddress = auth()->check()
     && auth()->user()->isUser()
@@ -63,8 +62,8 @@
 .pbf-checkout-fields { padding:22px 24px; }
 .pbf-checkout-fields label { display:block; margin:0 0 6px; color:#334155; font-size:.76rem; font-weight:800; }
 .pbf-checkout-fields label span { color:#dc2626; }
-.pbf-checkout-fields input,.pbf-checkout-fields textarea { width:100%; margin:0 0 13px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:9px; outline:none; color:#0f172a; font:inherit; font-size:.85rem; }
-.pbf-checkout-fields input:focus,.pbf-checkout-fields textarea:focus { border-color:#0891b2; box-shadow:0 0 0 3px rgba(8,145,178,.12); }
+.pbf-checkout-fields input,.pbf-checkout-fields textarea,.pbf-checkout-fields select { width:100%; margin:0 0 13px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:9px; outline:none; color:#0f172a; font:inherit; font-size:.85rem; }
+.pbf-checkout-fields input:focus,.pbf-checkout-fields textarea:focus,.pbf-checkout-fields select:focus { border-color:#0891b2; box-shadow:0 0 0 3px rgba(8,145,178,.12); }
 .pbf-checkout-fields textarea { resize:vertical; }
 .pbf-supplier-picker { position:relative; display:flex; margin:0 0 13px; border:1px solid #cbd5e1; border-radius:9px; background:#fff; transition:border-color .18s,box-shadow .18s; }
 .pbf-supplier-picker:focus-within,.pbf-supplier-picker.is-open { border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.12); }
@@ -96,7 +95,7 @@
 .purchase-order-preview-panel { display:flex; flex-direction:column; width:min(1100px,100%); height:96vh; overflow:hidden; border-radius:14px; background:#fff; box-shadow:0 25px 60px rgba(0,0,0,.3); }
 .purchase-order-preview-toolbar { display:flex; flex:0 0 auto; justify-content:space-between; align-items:center; gap:12px; padding:10px 14px; color:#1e293b; font-weight:700; }
 .purchase-order-preview-toolbar button { padding:8px 12px; border:0; border-radius:8px; background:#e2e8f0; color:#1e293b; font-weight:700; cursor:pointer; }
-.purchase-order-preview iframe { flex:1 1 auto; width:100%; min-height:0; border:0; }
+.purchase-order-preview-panel iframe { display:block; flex:1 1 auto; width:100%; height:0; min-height:0; border:0; }
 .modal-head { background: linear-gradient(135deg,#1565C0,#1E88E5); padding: 1.25rem 1.5rem; border-radius: 20px 20px 0 0; display: flex; justify-content: space-between; align-items: center; }
 .modal-head h3 { color: #fff; margin: 0; font-size: 1rem; font-weight: 700; }
 .modal-head p { color: rgba(255,255,255,0.8); margin: 0; font-size: 0.75rem; }
@@ -164,7 +163,7 @@
 <div class="modal-overlay" id="orderOverlay" onclick="closeOrder()"></div>
 <div class="modal-box" id="orderModal">
   <div class="modal-head">
-    <div><h3><i class="fa-solid <?php echo e($isKioskOrder ? 'fa-store' : 'fa-file-invoice'); ?>"></i> <?php echo e($isKioskOrder ? 'Pesanan Internal' : 'Form Pemesanan'); ?></h3><p><?php echo e($isKioskOrder ? 'Tunjukkan struk pesanan kepada kasir untuk pembayaran.' : ($isAdminPbfOrder ? 'Isi data distributor dan penandatangan Apotek Medix.' : 'Lengkapi data untuk melanjutkan')); ?></p></div>
+    <div><h3><i class="fa-solid fa-file-invoice"></i> Form Pemesanan</h3><p><?php echo e($isAdminPbfOrder ? 'Isi data distributor dan penandatangan Apotek Medix.' : 'Lengkapi data untuk melanjutkan'); ?></p></div>
     <button class="modal-close" onclick="closeOrder()">&#x2715;</button>
   </div>
   <div class="modal-summary">
@@ -177,9 +176,7 @@
   </div>
   <div class="modal-form" id="orderFormPanel">
     <?php if(empty($cartWholesaleOrder)): ?>
-    <?php if($isKioskOrder): ?>
-    <input type="hidden" id="f_jenis" value="umum">
-    <?php elseif($isAdminPbfOrder): ?>
+    <?php if($isAdminPbfOrder): ?>
     <input type="hidden" id="f_jenis" value="apotik">
     <?php else: ?>
     <div id="standardBuyerFields">
@@ -208,12 +205,11 @@
       <label class="form-lbl">No. SIPA <span style="color:#ef4444;">*</span></label>
       <input id="f_signer_sipa" type="text" class="form-inp" value="1/b.19/31.71.03.1007.4k-1.b/4/tm.09/e/2026" placeholder="Nomor SIPA">
     </div>
-    <div id="buyerFieldsUmum" class="standard-buyer-fields" <?php if(!empty($cartWholesaleOrder)): ?> style="display:none;" <?php elseif($isKioskOrder): ?> style="display:block;" <?php endif; ?>>
+    <div id="buyerFieldsUmum" class="standard-buyer-fields" <?php if(!empty($cartWholesaleOrder)): ?> style="display:none;" <?php endif; ?>>
       <label class="form-lbl">Nama Pemesan <span style="color:#ef4444;">*</span></label>
       <input id="f_nama" type="text" class="form-inp" placeholder="Nama lengkap" value="<?php echo e($defaultShippingAddress?->name); ?>">
       <label class="form-lbl">No. HP / WA <span style="color:#ef4444;">*</span></label>
       <input id="f_hp" type="tel" class="form-inp" placeholder="08xxxxxxxxxx" value="<?php echo e($defaultShippingAddress?->phone); ?>">
-      <?php if (! ($isKioskOrder)): ?>
       <label class="form-lbl">Alamat Lengkap <span style="color:#ef4444;">*</span></label>
       <textarea id="f_alamat" rows="3" class="form-inp" style="resize:vertical;" placeholder="Jl. nama jalan, no. rumah, RT/RW..."><?php echo e($defaultShippingAddress?->address); ?></textarea>
       <div class="form-row">
@@ -224,7 +220,6 @@
         <div><label class="form-lbl">Provinsi</label><input id="f_provinsi" type="text" class="form-inp" placeholder="Provinsi" value="<?php echo e($defaultShippingAddress?->province); ?>"></div>
         <div><label class="form-lbl">Kode Pos</label><input id="f_kode_pos" type="text" class="form-inp" placeholder="Kode pos" value="<?php echo e($defaultShippingAddress?->postal_code); ?>"></div>
       </div>
-      <?php endif; ?>
     </div>
     <div id="buyerFieldsApotik" class="standard-buyer-fields" <?php if(!empty($cartWholesaleOrder)): ?> style="display:block;" <?php else: ?> style="display:none;" <?php endif; ?>>
       <label class="form-lbl">Nama Pemesan <span style="color:#ef4444;">*</span></label>
@@ -236,7 +231,7 @@
       <label class="form-lbl">Alamat <span style="color:#ef4444;">*</span></label>
       <textarea id="f_alamat_apotik" rows="3" class="form-inp" style="resize:vertical;" placeholder="Alamat lengkap apotik"></textarea>
     </div>
-    <?php if(empty($cartWholesaleOrder) && !$isKioskOrder && !$isAdminPbfOrder): ?>
+    <?php if(empty($cartWholesaleOrder) && !$isAdminPbfOrder): ?>
     <label class="form-lbl">Metode Pembayaran <span style="color:#ef4444;">*</span></label>
     <select id="f_payment" class="form-inp" onchange="toggleTempoFields()">
       <option value="">Pilih metode pembayaran</option>
@@ -254,11 +249,6 @@
       <input id="f_payment_term_days" type="number" min="1" step="1" class="form-inp" placeholder="Contoh: 14">
     </div>
     <?php endif; ?>
-    <?php if($isKioskOrder): ?>
-      <p style="padding:.75rem;background:#ecfeff;border-radius:.6rem;color:#155e75;font-size:.85rem;">
-        <i class="fa-solid fa-circle-info"></i> Pembayaran tunai dilakukan di kasir. Pesanan akan disimpan dan stok diperbarui setelah dibuat.
-      </p>
-    <?php endif; ?>
     <?php if($isAdminPbfOrder): ?>
       <p style="padding:.75rem;background:#eff6ff;border-radius:.6rem;color:#1e40af;font-size:.85rem;">
         <i class="fa-solid fa-circle-info"></i> Pesanan ini untuk pengadaan stok Apotek Medix. Tidak ada pembayaran online pada langkah ini; periksa surat pesanan sebelum dikirim ke distributor.
@@ -271,8 +261,7 @@
       </div>
     <?php else: ?>
     <button class="btn-submit-wa" onclick="submitOrder()">
-      <i class="fa-solid <?php echo e($isKioskOrder ? 'fa-receipt' : 'fa-paper-plane'); ?>"></i> <?php echo e($isKioskOrder ? 'Buat Struk Pesanan' : 'Lanjutkan'); ?>
-
+      <i class="fa-solid fa-paper-plane"></i> Lanjutkan
     </button>
     <?php endif; ?>
   </div>
@@ -305,7 +294,18 @@
         <div class="pbf-checkout-total"><span>Estimasi total harga modal</span><strong id="pbfOrderTotal">Rp 0</strong></div>
       </div>
       <div class="pbf-checkout-fields">
-        <div class="pbf-checkout-section-heading">Tujuan distributor</div>
+        <div class="pbf-checkout-section-heading">Identitas surat pesanan &amp; tujuan distributor</div>
+        <label for="pbfOrderProfile">Identitas apotek <span>*</span></label>
+        <select id="pbfOrderProfile">
+          <option value="medix">Apotek Medix</option>
+          <option value="medikpedia">Apotek Medikpedia</option>
+        </select>
+        <label for="pbfOrderType">Jenis surat pesanan <span>*</span></label>
+        <select id="pbfOrderType">
+          <option value="regular">SP Biasa (Obat Reguler)</option>
+          <option value="oot">SP OOT (Obat-Obat Tertentu)</option>
+          <option value="precursor">SP Prekursor</option>
+        </select>
         <label for="pbfOrderDistributor">Nama distributor / PBF <span>*</span></label>
         <div class="pbf-supplier-picker" id="pbfSupplierPicker">
           <input id="pbfOrderDistributor" type="text" role="combobox" placeholder="Pilih atau ketik nama supplier" autocomplete="off" aria-autocomplete="list" aria-controls="pbfSupplierMenu" aria-expanded="false">
@@ -314,11 +314,13 @@
         </div>
         <label for="pbfOrderAddress">Alamat distributor <span>*</span></label>
         <textarea id="pbfOrderAddress" rows="2" placeholder="Alamat lengkap distributor"></textarea>
-        <div class="pbf-checkout-section-heading pbf-signatory-heading">Penanggung jawab Apotek Medix</div>
+        <label for="pbfOrderPhone">Nomor telepon distributor <span>*</span></label>
+        <input id="pbfOrderPhone" type="tel" maxlength="50" placeholder="Nomor telepon PBF">
+        <div class="pbf-checkout-section-heading pbf-signatory-heading" id="pbfSignerHeading">Penanggung jawab Apotek Medix</div>
         <label for="pbfOrderSigner">Nama penandatangan <span>*</span></label>
         <input id="pbfOrderSigner" type="text" value="Apt. Hendri Setiyono, S Farm">
         <label for="pbfOrderTitleField">Jabatan <span>*</span></label>
-        <input id="pbfOrderTitleField" type="text" value="Apoteker">
+        <input id="pbfOrderTitleField" type="text" value="Apoteker Penanggung Jawab">
         <div class="pbf-checkout-field-row">
           <div><label for="pbfOrderSia">No. SIA <span>*</span></label><input id="pbfOrderSia" type="text" value="13042600890450001"></div>
           <div><label for="pbfOrderSipa">No. SIPA <span>*</span></label><input id="pbfOrderSipa" type="text" value="1/b.19/31.71.03.1007.4k-1.b/4/tm.09/e/2026"></div>
@@ -360,13 +362,35 @@ const CART_DEFAULT_SETTINGS = {
 };
 const CART_CONFIG = Object.assign({}, CART_DEFAULT_SETTINGS, window.cartSettings || {});
 let cart = JSON.parse(localStorage.getItem(CART_CONFIG.storageKey) || '[]');
-if (CART_CONFIG.kioskOrder) cart = cart.map(item => ({ ...item, discount: 0 }));
+function getCartPackageLabel(item) {
+  return String(item.packageUnitLabel || item.unitLabels?.box || (item.saleUnit === 'box' ? item.unitLabel : '') || 'Box').trim() || 'Box';
+}
+function isCartBoxPackage(item) {
+  return getCartPackageLabel(item).toLocaleLowerCase() === 'box';
+}
+function normalizeCartPackageUnits(item) {
+  const packageLabel = getCartPackageLabel(item);
+  item.packageUnitLabel = packageLabel;
+  if (isCartBoxPackage(item)) return item;
 
+  const packagePrice = Number(item.unitPrices?.box ?? item.price ?? 0);
+  item.saleUnit = 'box';
+  item.unitLabel = packageLabel;
+  item.price = packagePrice;
+  item.unitLabels = { box: packageLabel };
+  item.unitPrices = { box: packagePrice };
+  item.unitFactors = { box: 1 };
+  if (item.stockUnits !== null && item.stockUnits !== undefined && Number.isFinite(Number(item.stockUnits))) {
+    item.availableQty = Math.max(0, Number(item.stockUnits));
+  }
+
+  return item;
+}
+cart = cart.map(normalizeCartPackageUnits);
 function save() {
   localStorage.setItem(CART_CONFIG.storageKey, JSON.stringify(cart));
   localStorage.setItem('apotekmedix_active_cart_context', JSON.stringify({
     storageKey: CART_CONFIG.storageKey,
-    kioskOrder: Boolean(CART_CONFIG.kioskOrder),
     wholesaleOrder: Boolean(CART_CONFIG.wholesaleOrder),
     adminPbfOrder: Boolean(CART_CONFIG.adminPbfOrder),
     adminPurchaseOrderBase: CART_CONFIG.adminPurchaseOrderBase || null,
@@ -560,6 +584,7 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
       existing.unitLabel = unitLabel;
       existing.unitPrices = unitPrices;
       existing.unitFactors = unitFactors;
+      existing.packageUnitLabel = unitLabels.box || fallbackUnitLabel;
       existing.saleUnit = unit;
       existing.availableQty = availableQty;
       existing.stockUnits = stockUnits;
@@ -568,7 +593,8 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
       cart.push({
         id, name, price: Number(unitPrices[unit] || 0), img, brand: brand || '',
         qty: addition.qty, note: '', discount: 0, saleUnit: unit, unitLabel,
-        unitLabels, unitPrices, unitFactors, availableQty, stockUnits
+        unitLabels, unitPrices, unitFactors, availableQty, stockUnits,
+        packageUnitLabel: unitLabels.box || fallbackUnitLabel
       });
     }
 
@@ -587,6 +613,7 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
     ? JSON.parse(unitSelect.dataset.unitLabels || '{}')
     : { box: fallbackUnitLabel };
   const unitLabel = unitLabels?.[saleUnit] || saleUnit.charAt(0).toUpperCase() + saleUnit.slice(1);
+  const packageUnitLabel = unitLabels?.box || fallbackUnitLabel;
   const unitPrice = selectedOption ? Number(selectedOption.dataset.price) : Number(price);
   const unitFactor = unitFactors?.[saleUnit] || 1;
   const availableQty = unitSelect ? Math.floor(Number(unitSelect.dataset.stockUnits || 0) / unitFactor) : null;
@@ -601,9 +628,10 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
     ex.brand = brand;
     ex.unitLabels = unitLabels;
     ex.unitLabel = unitLabel;
+    ex.packageUnitLabel = packageUnitLabel;
   } else cart.push({
     id, name, price: unitPrice, img, brand: brand || '', qty: 1, note: '', discount: 0,
-    saleUnit, unitLabel, unitLabels, unitPrices, unitFactors, availableQty,
+    saleUnit, unitLabel, unitLabels, unitPrices, unitFactors, availableQty, packageUnitLabel,
     stockUnits: unitSelect ? Number(unitSelect.dataset.stockUnits || 0) : null
   });
   console.log('Cart item:', cart.find(i => i.id === id && (i.saleUnit || 'box') === saleUnit));
@@ -660,7 +688,6 @@ function setNote(id, value, unit = 'box') {
 }
 
 function setDiscount(id, value, unit = 'box') {
-  if (CART_CONFIG.kioskOrder) return;
   const it = cart.find(i => i.id === id && (i.saleUnit || 'box') === unit);
   if (!it) return;
   const raw = String(value).replace(/[^0-9]/g, '');
@@ -703,6 +730,10 @@ function render() {
   cart.forEach(it => {
     const unit = it.saleUnit || 'box';
     const unitLabel = it.unitLabel || it.unitLabels?.[unit] || unit.charAt(0).toUpperCase() + unit.slice(1);
+    const packageUnitLabel = getCartPackageLabel(it);
+    const unitOptions = isCartBoxPackage(it)
+      ? Object.entries(it.unitPrices || {})
+      : [['box', Number(it.unitPrices?.box ?? it.price)]];
     const key = `${it.id}-${unit}`;
     total += (it.price * it.qty) - (it.discount || 0);
     const imgHtml = it.img
@@ -714,7 +745,7 @@ function render() {
         <div class="cart-item-name">${it.name}</div>
           <div class="cart-item-price">${rp(it.price)} / ${unitLabel}</div>
           ${it.unitPrices ? `<select onchange="changeCartUnit(${it.id}, '${unit}', this.value)" style="width:100%;margin-top:.4rem;padding:.4rem;border:1px solid #cbd5e1;border-radius:8px;">
-            ${Object.entries(it.unitPrices).map(([value, unitPrice]) => `<option value="${value}" ${value === unit ? 'selected' : ''}>${it.unitLabels?.[value] || value.charAt(0).toUpperCase() + value.slice(1)} · ${rp(unitPrice)}</option>`).join('')}
+            ${unitOptions.map(([value, unitPrice]) => `<option value="${value}" ${value === unit ? 'selected' : ''}>${value === 'box' ? packageUnitLabel : (it.unitLabels?.[value] || value.charAt(0).toUpperCase() + value.slice(1))} · ${rp(unitPrice)}</option>`).join('')}
           </select>` : ''}
           <div class="cart-qty-row">
             <button class="qty-btn" onclick="changeQty(${it.id},-1,'${unit}')">−</button>
@@ -724,7 +755,7 @@ function render() {
           </div>
           <textarea class="cart-note" placeholder="Catatan produk..." onchange="setNote(${it.id}, this.value,'${unit}')"
           style="width:100%;margin-top:0.75rem;padding:0.65rem 0.85rem;border:1px solid #e5e7eb;border-radius:12px;font-size:0.9rem;min-height:72px;resize:vertical;">${it.note || ''}</textarea>
-        ${CART_CONFIG.kioskOrder ? '' : `<div style="margin-top:.6rem;">
+        <div style="margin-top:.6rem;">
           <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem;">
             <i class="fa-solid fa-tag" style="color:#ef4444;margin-right:.25rem;"></i>Ajuan Potongan Harga
           </label>
@@ -740,7 +771,7 @@ function render() {
           <div id="disc-preview-${key}" style="margin-top:.4rem;display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;min-height:1.2rem;font-size:.84rem;">
             ${it.discount > 0 ? `<span style="text-decoration:line-through;color:#9ca3af;">${rp(it.price * it.qty)}</span><span style="color:#ef4444;font-weight:700;font-size:.78rem;">-${rp(it.discount)}</span><span style="color:#10b981;font-weight:800;">${rp(it.price * it.qty - it.discount)}</span>` : ''}
           </div>
-        </div>`}
+        </div>
       </div>
       <button class="cart-item-del" onclick="removeItem(${it.id},'${unit}')"><i class="fa-solid fa-trash"></i></button>
     </div>`;
@@ -758,6 +789,10 @@ function updateCardUnitPrice(selectId, targetId) {
 function changeCartUnit(id, oldUnit, newUnit) {
   const item = cart.find(i => i.id === id && (i.saleUnit || 'box') === oldUnit);
   if (!item || !item.unitPrices || !item.unitFactors) return;
+  if (!isCartBoxPackage(item) && newUnit !== 'box') {
+    render();
+    return;
+  }
   const factor = item.unitFactors[newUnit];
   const available = item.stockUnits === null ? null : Math.floor(Number(item.stockUnits) / factor);
   if (available !== null && available < 1) {
@@ -769,6 +804,7 @@ function changeCartUnit(id, oldUnit, newUnit) {
   if (existing) {
     existing.unitLabel = item.unitLabels?.[newUnit] || newUnit.charAt(0).toUpperCase() + newUnit.slice(1);
     existing.unitLabels = item.unitLabels;
+    existing.packageUnitLabel = item.packageUnitLabel || getCartPackageLabel(item);
     existing.qty += item.qty;
     existing.availableQty = available;
     existing.discount = Math.min((existing.discount || 0) + (item.discount || 0), existing.price * existing.qty);
@@ -780,6 +816,7 @@ function changeCartUnit(id, oldUnit, newUnit) {
   } else {
     item.saleUnit = newUnit;
     item.unitLabel = item.unitLabels?.[newUnit] || newUnit.charAt(0).toUpperCase() + newUnit.slice(1);
+    item.packageUnitLabel = item.packageUnitLabel || getCartPackageLabel(item);
     item.price = Number(item.unitPrices[newUnit]);
     item.availableQty = available;
     if (available !== null && item.qty > available) {
@@ -1099,6 +1136,8 @@ async function submitPbfOrder() {
   const submitButton = document.getElementById('pbfSubmitOrderButton');
   const distributor = document.getElementById('pbfOrderDistributor').value.trim();
   const address = document.getElementById('pbfOrderAddress').value.trim();
+  const supplierPhone = document.getElementById('pbfOrderPhone').value.trim();
+  const purchaseOrderType = document.getElementById('pbfOrderType').value;
   const signer = document.getElementById('pbfOrderSigner').value.trim();
   const title = document.getElementById('pbfOrderTitleField').value.trim();
   const sia = document.getElementById('pbfOrderSia').value.trim();
@@ -1110,8 +1149,8 @@ async function submitPbfOrder() {
     errorPanel.style.display = 'block';
     return;
   }
-  if (!distributor || !address || !signer || !title || !sia || !sipa) {
-    errorPanel.textContent = 'Lengkapi nama dan alamat distributor serta semua data penandatangan.';
+  if (!distributor || !address || !supplierPhone || !signer || !title || !sia || !sipa) {
+    errorPanel.textContent = 'Lengkapi nama, alamat, nomor telepon distributor, serta semua data penandatangan.';
     errorPanel.style.display = 'block';
     return;
   }
@@ -1128,6 +1167,9 @@ async function submitPbfOrder() {
     address: 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat',
     pbf_name: distributor,
     pbf_address: address,
+    pbf_phone: supplierPhone,
+    purchase_order_type: purchaseOrderType,
+    purchase_order_profile: document.getElementById('pbfOrderProfile').value,
     items: cart.map(item => ({
       id: item.id,
       nama_obat: item.name,
@@ -1188,7 +1230,7 @@ async function submitOrder() {
 
   const originalTotal = cart.reduce((s, it) => s + (it.price * it.qty), 0);
   const discountedTotal = cart.reduce((s, it) => s + (it.price * it.qty) - (it.discount || 0), 0);
-  const paymentMethod = CART_CONFIG.kioskOrder ? 'Tunai' : (document.getElementById('f_payment')?.value.trim() || '');
+  const paymentMethod = document.getElementById('f_payment')?.value.trim() || '';
   const paymentTermDays = Number(document.getElementById('f_payment_term_days')?.value || 0);
   const payload = {
     buyer_type: jenis,
@@ -1199,7 +1241,7 @@ async function submitOrder() {
     approval_status: 'pending',
     payment_method: paymentMethod,
     payment_term_days: paymentMethod === 'Tempo' ? paymentTermDays : null,
-    transaction_channel: CART_CONFIG.kioskOrder ? 'offline' : 'online',
+    transaction_channel: 'online',
     is_pbf_purchase_order: Boolean(CART_CONFIG.adminPbfOrder),
   };
 
@@ -1234,23 +1276,17 @@ async function submitOrder() {
   } else {
     payload.buyer_name = document.getElementById('f_nama').value.trim();
     payload.phone    = document.getElementById('f_hp').value.trim();
-    if (CART_CONFIG.kioskOrder) {
-      payload.address = '';
-    } else {
-      const addressParts = [
-        document.getElementById('f_alamat').value.trim(),
-        document.getElementById('f_apartemen').value.trim(),
-        document.getElementById('f_kota').value.trim(),
-        document.getElementById('f_provinsi').value.trim(),
-        document.getElementById('f_kode_pos').value.trim(),
-      ].filter(Boolean);
-      payload.address = addressParts.join(', ');
-      payload.kota = document.getElementById('f_kota').value.trim();
-    }
-    if (!payload.buyer_name || !payload.phone || (!CART_CONFIG.kioskOrder && !payload.address)) {
-      err.textContent = CART_CONFIG.kioskOrder
-        ? 'Nama dan nomor telepon wajib diisi.'
-        : 'Nama, No. HP, dan Alamat wajib diisi.';
+    const addressParts = [
+      document.getElementById('f_alamat').value.trim(),
+      document.getElementById('f_apartemen').value.trim(),
+      document.getElementById('f_kota').value.trim(),
+      document.getElementById('f_provinsi').value.trim(),
+      document.getElementById('f_kode_pos').value.trim(),
+    ].filter(Boolean);
+    payload.address = addressParts.join(', ');
+    payload.kota = document.getElementById('f_kota').value.trim();
+    if (!payload.buyer_name || !payload.phone || !payload.address) {
+      err.textContent = 'Nama, No. HP, dan Alamat wajib diisi.';
       err.style.display = 'block'; return;
     }
   }
@@ -1281,14 +1317,6 @@ async function submitOrder() {
     document.getElementById('invoiceLink').href = CART_CONFIG.adminPurchaseOrderBase
       ? CART_CONFIG.adminPurchaseOrderBase.replace('__ORDER__', result.id)
       : result.invoice_url;
-    if (CART_CONFIG.kioskOrder) {
-      document.getElementById('orderSuccessMessage').textContent = 'Struk pesanan siap. Tunjukkan kepada kasir untuk membayar dan menyelesaikan transaksi.';
-      document.getElementById('invoiceLink').innerHTML = '<i class="fa-solid fa-receipt"></i> Buka / Cetak Struk';
-      document.getElementById('whatsappOrderButton').style.display = 'none';
-      cart = [];
-      save();
-      render();
-    }
     if (CART_CONFIG.adminPbfOrder) {
       document.getElementById('orderSuccessMessage').textContent = 'Surat pesanan berhasil dibuat. Pilih tindakan selanjutnya:';
       document.getElementById('invoiceLink').innerHTML = '<i class="fa-solid fa-file-invoice"></i> Lihat Invoice';
@@ -1356,10 +1384,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const supplierToggle = document.getElementById('pbfSupplierToggle');
   const supplierName = document.getElementById('pbfOrderDistributor');
   const supplierAddress = document.getElementById('pbfOrderAddress');
+  const supplierPhone = document.getElementById('pbfOrderPhone');
   const suppliers = Array.isArray(CART_CONFIG.suppliers) ? CART_CONFIG.suppliers : [];
-  if (supplierPicker && supplierMenu && supplierToggle && supplierName && supplierAddress) {
+  const orderProfile = document.getElementById('pbfOrderProfile');
+  const signerHeading = document.getElementById('pbfSignerHeading');
+  if (orderProfile && signerHeading) {
+    orderProfile.addEventListener('change', () => {
+      signerHeading.textContent = orderProfile.value === 'medikpedia'
+        ? 'Penanggung jawab Apotek Medikpedia'
+        : 'Penanggung jawab Apotek Medix';
+    });
+  }
+  if (supplierPicker && supplierMenu && supplierToggle && supplierName && supplierAddress && supplierPhone) {
     let activeSupplierIndex = -1;
     let autoFilledAddress = '';
+    let autoFilledPhone = '';
 
     const closeSupplierMenu = () => {
       supplierPicker.classList.remove('is-open');
@@ -1371,13 +1410,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderSupplierOptions = () => {
       const query = supplierName.value.trim().toLocaleLowerCase();
       const matches = suppliers.filter(supplier =>
-        `${supplier.name} ${supplier.address}`.toLocaleLowerCase().includes(query)
+        `${supplier.name} ${supplier.address} ${supplier.phone || ''}`.toLocaleLowerCase().includes(query)
       );
       supplierMenu.innerHTML = matches.length
         ? matches.map((supplier, index) => `
           <button class="pbf-supplier-option${index === activeSupplierIndex ? ' is-active' : ''}" type="button" role="option" aria-selected="${supplier.name.toLocaleLowerCase() === query}">
             <span class="pbf-supplier-option-name">${escapeHtml(supplier.name)}</span>
             <span class="pbf-supplier-option-address">${escapeHtml(supplier.address)}</span>
+            ${supplier.phone ? `<span class="pbf-supplier-option-address">${escapeHtml(supplier.phone)}</span>` : ''}
           </button>
         `).join('')
         : '<div class="pbf-supplier-empty">Supplier tidak ditemukan. Nama yang diketik tetap bisa digunakan.</div>';
@@ -1387,7 +1427,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const selected = matches[index];
           supplierName.value = selected.name;
           supplierAddress.value = selected.address;
+          supplierPhone.value = selected.phone || '';
           autoFilledAddress = selected.address;
+          autoFilledPhone = selected.phone || '';
           closeSupplierMenu();
         });
       });
@@ -1407,10 +1449,16 @@ document.addEventListener('DOMContentLoaded', () => {
       );
       if (selected) {
         supplierAddress.value = selected.address;
+        supplierPhone.value = selected.phone || '';
         autoFilledAddress = selected.address;
+        autoFilledPhone = selected.phone || '';
       } else if (autoFilledAddress && supplierAddress.value === autoFilledAddress) {
         supplierAddress.value = '';
         autoFilledAddress = '';
+      }
+      if (!selected && autoFilledPhone && supplierPhone.value === autoFilledPhone) {
+        supplierPhone.value = '';
+        autoFilledPhone = '';
       }
       activeSupplierIndex = -1;
       openSupplierMenu();

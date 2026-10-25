@@ -2,8 +2,8 @@
 (() => {
     const lockUrl = @json(route('shopping.access.lock', ['channel' => $channel]));
     const csrfToken = @json(csrf_token());
-    const channelPath = @json($channel === 'internal' ? '/belanja-internal' : '/products-pbf');
-    const logoutPath = @json($channel === 'internal' ? '/belanja-internal/keluar' : '/products-pbf/logout');
+    const channelPath = '/products-pbf';
+    const logoutPath = '/products-pbf/logout';
     let keepAccessForNavigation = false;
 
     const isShoppingFlowPath = (pathname) =>

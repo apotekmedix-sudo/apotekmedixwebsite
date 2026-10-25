@@ -406,7 +406,7 @@
                         <div class="stock-item-label">Stok <?php echo e($medicine->package_unit_label); ?></div>
                         <div class="stock-item-value"><?php echo e(number_format($detailConverted['box'], 0, ',', '.')); ?> <?php echo e($medicine->package_unit_label); ?></div>
                     </div>
-                    <?php if($medicine->unit_packaging_enabled): ?>
+                    <?php if($medicine->usesTabletPackaging()): ?>
                         <div class="stock-item">
                             <div class="stock-item-label">Stok Strip</div>
                             <div class="stock-item-value"><?php echo e(number_format($detailConverted['strip'], 0, ',', '.')); ?> Strip</div>

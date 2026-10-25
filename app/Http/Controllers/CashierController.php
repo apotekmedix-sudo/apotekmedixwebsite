@@ -49,7 +49,7 @@ class CashierController extends Controller
     public function dashboard(Request $request): View
     {
         $filters = $request->validate([
-            'channel' => ['nullable', Rule::in(['all', 'internal', 'b2b', 'b2c'])],
+            'channel' => ['nullable', Rule::in(['all', 'offline', 'b2b', 'b2c'])],
             'status' => ['nullable', Rule::in(['all', 'pending', 'verified', 'printed', 'cancelled'])],
             'payment_status' => ['nullable', Rule::in(['all', 'pending', 'paid', 'cancelled'])],
             'payment_method' => ['nullable', 'string', 'max:255'],
@@ -61,7 +61,7 @@ class CashierController extends Controller
         $query = PurchaseHistory::query();
         if (!empty($filters['channel']) && $filters['channel'] !== 'all') {
             match ($filters['channel']) {
-                'internal' => $query->where('transaction_channel', 'offline'),
+                'offline' => $query->where('transaction_channel', 'offline'),
                 'b2b' => $query->where('transaction_channel', 'online')
                     ->where(fn ($orders) => $orders->whereIn('buyer_type', ['apotik', 'dokter', 'pbf'])
                         ->orWhere(fn ($namedPbf) => $namedPbf->whereNotNull('pbf_name')->where('pbf_name', '!=', ''))),

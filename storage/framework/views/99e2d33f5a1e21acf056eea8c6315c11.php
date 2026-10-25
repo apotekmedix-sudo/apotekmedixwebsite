@@ -277,7 +277,7 @@
     @media (max-width: 1100px) {
         .products-main .medicines-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
-    @media (max-width: 760px) {
+    @media (max-width: 900px) {
         .products-main .medicines-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .products-main .medicine-card { padding: 0.6rem; border-radius: 14px; }
         .products-main .medicine-name { font-size: 0.95rem; }
@@ -288,9 +288,32 @@
         .products-main .medicine-btn,
         .products-main .btn-cart { font-size: 0.74rem; }
     }
+    @media (max-width: 600px) {
+        .products-main { padding: 1.25rem 0 3rem; }
+        .products-main .medicines-grid { grid-template-columns: minmax(0, 1fr); gap: 0.9rem; }
+        .products-main .medicine-card { padding: 0.75rem; border-radius: 16px; }
+        .products-main .medicine-image { aspect-ratio: 1.9 / 1; }
+        .products-main .medicine-body { padding: 0.7rem 0.1rem 0.1rem; gap: 0.4rem; }
+        .products-main .medicine-name { font-size: 1rem; }
+        .medicine-card-details { font-size: 0.82rem; }
+        .product-unit-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.45rem; }
+        .product-unit-card { padding: 0.45rem 0.35rem; }
+        .product-unit-name,
+        .product-unit-price { font-size: 0.76rem; }
+        .product-unit-stock { font-size: 0.7rem; }
+        .products-main .medicine-btn,
+        .products-main .btn-cart { min-height: 42px; font-size: 0.84rem; }
+    }
     @media (max-width: 380px) {
+        .products-main .medicine-image { aspect-ratio: 1.6 / 1; }
         .products-main .medicines-grid { grid-template-columns: minmax(0, 1fr); }
-        .product-unit-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .product-unit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (hover: none) {
+        .products-main .medicine-card:hover {
+            transform: none;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+        }
     }
 </style>
 <?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/partials/product-card-styles.blade.php ENDPATH**/ ?>

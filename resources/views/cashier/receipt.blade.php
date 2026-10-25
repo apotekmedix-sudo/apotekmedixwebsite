@@ -31,7 +31,7 @@
         <div class="rule"></div>
         <div class="row"><span>No. Pesanan</span><strong>#{{ $order->id }}</strong></div>
         <div class="row"><span>Tanggal</span><span>{{ $order->created_at?->format('d/m/Y H:i') }}</span></div>
-        <div class="row"><span>Kanal</span><span>{{ $order->transaction_channel === 'offline' ? 'Internal' : (in_array($order->buyer_type, ['apotik', 'dokter', 'pbf']) || filled($order->pbf_name) ? 'B2B' : 'B2C') }}</span></div>
+        <div class="row"><span>Kanal</span><span>{{ $order->transaction_channel === 'offline' ? 'Offline / Kios' : (in_array($order->buyer_type, ['apotik', 'dokter', 'pbf']) || filled($order->pbf_name) ? 'B2B' : 'B2C') }}</span></div>
         <div class="row"><span>Pelanggan</span><span>{{ $order->buyer_name ?: '-' }}</span></div>
         <div class="row"><span>Kasir</span><span>{{ auth()->user()->name }}</span></div>
         <div class="rule"></div>

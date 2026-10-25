@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Akses Belanja B2B - Apotek Medix</title>
+    <link rel="stylesheet" href="{{ asset('css/medix-public-theme.css') }}">
     <style>
         *{box-sizing:border-box}
         body{margin:0;min-height:100vh;display:grid;place-items:center;padding:1rem;background:#f8fafc;color:#1e293b;font-family:Arial,sans-serif}
@@ -31,7 +32,7 @@
         .back{display:block;margin-top:1rem;text-align:center;color:#0052cc;text-decoration:none}
     </style>
 </head>
-<body>
+<body class="public-theme public-theme-standalone">
 <main>
     <div class="icon" aria-hidden="true">🔒</div>
     <h1>Belanja B2B</h1>

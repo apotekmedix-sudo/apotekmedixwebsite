@@ -112,7 +112,7 @@ class AdminProdukController extends Controller
             'sediaanList'  => $attrOptions['sediaanList'],
             'golonganList' => $attrOptions['golonganList'],
             'total'        => Medicine::where('harga_modal', '>', 0)->count(),
-            'suppliers'    => Schema::hasTable('pbf_suppliers') ? PbfSupplier::orderBy('name')->get(['id', 'name', 'address']) : collect(),
+            'suppliers'    => Schema::hasTable('pbf_suppliers') ? PbfSupplier::orderBy('name')->get(['id', 'name', 'address', 'phone']) : collect(),
         ]);
     }
 
@@ -121,6 +121,7 @@ class AdminProdukController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:pbf_suppliers,name'],
             'address' => ['required', 'string', 'max:2000'],
+            'phone' => ['required', 'string', 'max:50'],
         ]);
 
         PbfSupplier::create($data);
@@ -137,6 +138,7 @@ class AdminProdukController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:pbf_suppliers,name,' . $supplier->id],
             'address' => ['required', 'string', 'max:2000'],
+            'phone' => ['required', 'string', 'max:50'],
         ]);
 
         $supplier->update($data);
@@ -157,20 +159,20 @@ class AdminProdukController extends Controller
 
     public function exportPbfSuppliers()
     {
-        $rows = PbfSupplier::query()->orderBy('id')->get(['id', 'name', 'address'])->map(
-            fn (PbfSupplier $supplier) => [$supplier->id, $supplier->name, $supplier->address]
+        $rows = PbfSupplier::query()->orderBy('id')->get(['id', 'name', 'address', 'phone'])->map(
+            fn (PbfSupplier $supplier) => [$supplier->id, $supplier->name, $supplier->address, $supplier->phone]
         );
 
         return CsvSpreadsheet::download(
             'data-supplier-pbf-'.now()->format('Ymd-His').'.csv',
-            ['ID', 'NAMA', 'ALAMAT'],
+            ['ID', 'NAMA', 'ALAMAT', 'TELEPON'],
             $rows
         );
     }
 
     public function downloadPbfSupplierImportTemplate()
     {
-        return CsvSpreadsheet::download('template-import-supplier-pbf.csv', ['ID', 'NAMA', 'ALAMAT'], []);
+        return CsvSpreadsheet::download('template-import-supplier-pbf.csv', ['ID', 'NAMA', 'ALAMAT', 'TELEPON'], []);
     }
 
     public function importPbfSuppliers(Request $request)
@@ -204,10 +206,15 @@ class AdminProdukController extends Controller
         $seenNames = [];
         foreach ($rows as $index => $row) {
             $line = $index + 2;
-            $data = ['name' => $row['nama'] ?? null, 'address' => $row['alamat'] ?? null];
+            $data = [
+                'name' => $row['nama'] ?? null,
+                'address' => $row['alamat'] ?? null,
+                'phone' => $row['telepon'] ?? null,
+            ];
             $validator = Validator::make($data, [
                 'name' => ['required', 'string', 'max:255'],
                 'address' => ['required', 'string', 'max:2000'],
+                'phone' => ['nullable', 'string', 'max:50'],
             ]);
             if ($validator->fails()) {
                 foreach ($validator->errors()->all() as $message) {
@@ -247,6 +254,10 @@ class AdminProdukController extends Controller
                 $supplier = $duplicate;
             }
 
+            if (!array_key_exists('telepon', $row) && $supplier) {
+                $data['phone'] = $supplier->phone;
+            }
+
             $prepared[] = ['supplier' => $supplier, 'data' => $data];
         }
 
@@ -280,7 +291,7 @@ class AdminProdukController extends Controller
         $columns = [
             'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
-            'MODAL', 'HARGA JUAL INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
+            'MODAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
             'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO',
         ];
         $rows = $products->map(fn ($product) => [
@@ -298,7 +309,6 @@ class AdminProdukController extends Controller
             $product->usesTabletPackaging() ? $product->strips_per_box : 0,
             $product->usesTabletPackaging() ? $product->units_per_box : 0,
             $product->harga_modal,
-            $product->getChannelBasePrice('internal'),
             $product->getChannelBasePrice('b2b'),
             $product->getChannelBasePrice('b2c'),
             $product->price_strip ?: 0,
@@ -307,8 +317,8 @@ class AdminProdukController extends Controller
         ])->all();
         $widths = array_fill(0, count($columns), 20);
         $widths[2] = $widths[5] = $widths[6] = 30;
-        $widths[8] = $widths[19] = 48;
-        $numericColumns = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+        $widths[8] = $widths[18] = 48;
+        $numericColumns = [0, 10, 11, 12, 13, 14, 15, 16, 17];
 
         return \App\Helpers\XlsxWriter::download('produk.xlsx', $columns, $rows, $widths, $numericColumns);
     }
@@ -329,11 +339,10 @@ class AdminProdukController extends Controller
             'kemasan'           => ['nullable', 'string', 'max:255'],
             'gambar'            => ['nullable', 'array', 'max:2'],
             'gambar.*'          => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'harga_internal'    => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
-            'harga'             => ['required_without:harga_internal', 'nullable', 'numeric', 'min:0'],
+            'harga'             => ['nullable', 'numeric', 'min:0'],
             'harga_modal'       => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
-            'harga_retail'      => ['nullable', 'numeric', 'min:0'],
+            'harga_retail'      => ['required', 'numeric', 'min:0'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
             'sediaan'           => ['nullable', 'string', 'max:255'],
             'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
@@ -363,9 +372,7 @@ class AdminProdukController extends Controller
         }
 
         $validated['kategori_produk'] = 'OBAT';
-        $validated['harga_internal'] = $validated['harga_internal'] ?? $validated['harga'];
-        $validated['harga'] = $validated['harga_internal'];
-        $validated['harga_retail'] = $validated['harga_retail'] ?? $validated['harga_internal'];
+        $validated['harga'] = $validated['harga_retail'];
         $this->applyPackagingFields($request, $validated);
         $images = $request->file('gambar', []);
         $imagePaths = array_map(
@@ -402,11 +409,10 @@ class AdminProdukController extends Controller
             'gambar.*'          => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'hapus_gambar'      => ['nullable', 'array'],
             'hapus_gambar.*'    => ['required', 'string', 'max:255'],
-            'harga_internal'    => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
-            'harga'             => ['required_without:harga_internal', 'nullable', 'numeric', 'min:0'],
+            'harga'             => ['nullable', 'numeric', 'min:0'],
             'harga_modal'       => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
-            'harga_retail'      => ['nullable', 'numeric', 'min:0'],
+            'harga_retail'      => ['required', 'numeric', 'min:0'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
             'sediaan'           => ['nullable', 'string', 'max:255'],
             'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
@@ -420,9 +426,7 @@ class AdminProdukController extends Controller
         ]);
 
         $this->validateTabletPackaging($request, $validated);
-        $validated['harga_internal'] = $validated['harga_internal'] ?? $validated['harga'];
-        $validated['harga'] = $validated['harga_internal'];
-        $validated['harga_retail'] = $validated['harga_retail'] ?? $validated['harga_internal'];
+        $validated['harga'] = $validated['harga_retail'];
         $this->applyPackagingFields($request, $validated);
         $images = $request->file('gambar', []);
         unset($validated['gambar']);
@@ -561,7 +565,6 @@ class AdminProdukController extends Controller
     {
         $validated = $request->validate([
             'harga_modal'       => ['required', 'numeric', 'min:0'],
-            'harga_internal'    => ['required', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
             'harga_retail'      => ['required', 'numeric', 'min:0'],
             'price_strip'       => ['nullable', 'numeric', 'min:0'],

@@ -37,7 +37,7 @@
         th{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc}
         td{font-size:12px;color:#334155}.order-id{font-weight:800;color:#0f172a}.muted{color:#64748b;font-size:11px;margin-top:4px}.buyer{font-weight:700;color:#1e293b}
         .channel,.status{display:inline-flex;border-radius:999px;padding:5px 8px;font-weight:800;font-size:10px;white-space:nowrap}
-        .channel.internal{background:#eff6ff;color:#1d4ed8}.channel.b2b{background:#ecfeff;color:#0e7490}.channel.b2c{background:#f0fdf4;color:#15803d}
+        .channel.offline{background:#eff6ff;color:#1d4ed8}.channel.b2b{background:#ecfeff;color:#0e7490}.channel.b2c{background:#f0fdf4;color:#15803d}
         .status.pending{background:#fff7ed;color:#c2410c}.status.verified{background:#eff6ff;color:#1d4ed8}.status.printed{background:#dcfce7;color:#15803d}.status.cancelled{background:#f1f5f9;color:#64748b}
         .items{margin:7px 0 0;padding-left:16px;color:#64748b;line-height:1.6}.amount{font-weight:800;white-space:nowrap;color:#0f172a}
         .actions{display:flex;gap:6px;flex-wrap:wrap}.actions form{margin:0}.empty{text-align:center;padding:54px 20px;color:#64748b}
@@ -63,7 +63,7 @@
 </header>
 <main>
     <div class="welcome">
-        <div><h2>Antrean transaksi</h2><p>Kelola pesanan Internal, B2B, dan B2C dalam satu layar.</p></div>
+        <div><h2>Antrean transaksi</h2><p>Kelola transaksi offline, B2B, dan B2C dalam satu layar.</p></div>
         <a class="refresh" href="{{ request()->fullUrl() }}">↻ Perbarui data</a>
     </div>
     @if(session('success'))<div class="notice">{{ session('success') }}</div>@endif
@@ -83,7 +83,7 @@
         <form method="GET" action="{{ route('cashier.dashboard') }}">
             <div class="filter-grid">
                 <div><label for="order_id">ID PESANAN</label><input id="order_id" name="order_id" type="number" min="1" value="{{ $filters['order_id'] ?? '' }}" placeholder="Contoh: 1024"></div>
-                <div><label for="channel">KANAL</label><select id="channel" name="channel"><option value="all">Semua kanal</option><option value="internal" @selected(($filters['channel'] ?? '') === 'internal')>Internal</option><option value="b2b" @selected(($filters['channel'] ?? '') === 'b2b')>B2B</option><option value="b2c" @selected(($filters['channel'] ?? '') === 'b2c')>B2C</option></select></div>
+                <div><label for="channel">KANAL</label><select id="channel" name="channel"><option value="all">Semua kanal</option><option value="offline" @selected(($filters['channel'] ?? '') === 'offline')>Offline / Kios</option><option value="b2b" @selected(($filters['channel'] ?? '') === 'b2b')>B2B</option><option value="b2c" @selected(($filters['channel'] ?? '') === 'b2c')>B2C</option></select></div>
                 <div><label for="payment_method">METODE BAYAR</label><select id="payment_method" name="payment_method"><option value="">Semua metode</option>@foreach($paymentMethods as $method)<option value="{{ $method }}" @selected(($filters['payment_method'] ?? '') === $method)>{{ $method }}</option>@endforeach</select></div>
                 <div><label for="payment_status">STATUS PEMBAYARAN</label><select id="payment_status" name="payment_status"><option value="all">Semua pembayaran</option><option value="pending" @selected(($filters['payment_status'] ?? '') === 'pending')>Menunggu pembayaran</option><option value="paid" @selected(($filters['payment_status'] ?? '') === 'paid')>Lunas</option><option value="cancelled" @selected(($filters['payment_status'] ?? '') === 'cancelled')>Dibatalkan</option></select></div>
                 <div><label for="from">DARI TANGGAL</label><input id="from" name="from" type="date" value="{{ $filters['from'] ?? '' }}"></div>
@@ -112,7 +112,7 @@
                     @php
                         $items = is_array($order->items) ? $order->items : [];
                         $channel = $order->transaction_channel === 'offline'
-                            ? ['internal', 'Internal']
+                            ? ['offline', 'Offline / Kios']
                             : (in_array($order->buyer_type, ['apotik', 'dokter', 'pbf']) || filled($order->pbf_name)
                                 ? ['b2b', 'B2B']
                                 : ['b2c', 'B2C']);

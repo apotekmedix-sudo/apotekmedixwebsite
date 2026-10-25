@@ -51,11 +51,9 @@ class Medicine extends Model
         'brand',
         'kategori_produk',
         'harga',
-        'harga_internal',
         'harga_modal',
         'harga_grosir',
         'harga_retail',
-        'promo_internal_percent',
         'promo_b2b_percent',
         'promo_b2c_percent',
         'is_resep',
@@ -80,11 +78,9 @@ class Medicine extends Model
 
     protected $casts = [
         'harga'   => 'decimal:2',
-        'harga_internal' => 'decimal:2',
         'harga_modal'  => 'decimal:2',
         'harga_grosir' => 'decimal:2',
         'harga_retail' => 'decimal:2',
-        'promo_internal_percent' => 'integer',
         'promo_b2b_percent' => 'integer',
         'promo_b2c_percent' => 'integer',
         'is_resep' => 'boolean',
@@ -684,7 +680,6 @@ class Medicine extends Model
     public function getPromoPercent(string $channel): int
     {
         $column = match ($channel) {
-            'internal' => 'promo_internal_percent',
             'b2b' => 'promo_b2b_percent',
             'b2c' => 'promo_b2c_percent',
             default => null,
@@ -715,17 +710,13 @@ class Medicine extends Model
         if ($legacyRetailPrice <= 0) {
             $legacyRetailPrice = (float) $this->harga;
         }
-        $boxPrice = $channel === 'internal' && $this->harga_internal !== null
-            ? (float) $this->harga_internal
-            : $legacyRetailPrice;
-
         if ($this->usesTabletPackaging() && $unit !== 'box') {
             $factor = $this->getSaleUnitFactor($unit);
 
-            return $factor > 0 ? $boxPrice * $factor / $this->units_per_box : 0;
+            return $factor > 0 ? $legacyRetailPrice * $factor / $this->units_per_box : 0;
         }
 
-        return $boxPrice;
+        return $legacyRetailPrice;
     }
 
     public function getChannelPromoPrice(string $channel, string $unit = 'box'): float

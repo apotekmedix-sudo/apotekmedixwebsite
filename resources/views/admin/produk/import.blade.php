@@ -27,7 +27,7 @@
     .info-box h3 { color:#1d4ed8; margin:0 0 0.75rem; font-size:0.95rem; font-weight:700; }
     .info-box ol { color:#1e40af; margin:0; padding-left:1.25rem; line-height:1.8; font-size:0.9rem; }
     .template-table { margin-top:1rem; background:#f9fafb; border-radius:0.5rem; padding:1rem; overflow-x:auto; }
-    .template-table table { min-width:2200px; border-collapse:collapse; font-size:0.8rem; }
+    .template-table table { min-width:1900px; border-collapse:collapse; font-size:0.8rem; }
     .template-table thead tr { background:#e5e7eb; }
     .template-table th { padding:0.4rem 0.75rem; text-align:left; border:1px solid #d1d5db; font-weight:700; color:#374151; }
     .template-table td { padding:0.4rem 0.75rem; border:1px solid #d1d5db; color:#6b7280; }
@@ -49,14 +49,14 @@
     <ol>
         <li>Pilih mode import sesuai tujuan: tambah/lengkapi produk atau edit massal dari hasil export</li>
         <li>Untuk edit massal, download file Export Produk di bawah, edit kolomnya, lalu pilih mode Edit massal</li>
-        <li>Isi stok pada kolom <strong>STOK SATUAN</strong> dan harga pada kolom <strong>MODAL</strong> serta harga jual Internal, B2B, dan B2C</li>
+        <li>Isi stok pada kolom <strong>STOK SATUAN</strong> dan harga pada kolom <strong>MODAL</strong>, B2B, dan B2C</li>
         <li>Isi <strong>PER STRIP</strong> dan <strong>PER TABLET</strong> hanya untuk kemasan <strong>BOX</strong> tablet/kapsul. Untuk Botol, Tube, dan satuan selain BOX, biarkan kedua kolom bernilai 0. Harga strip/tablet dapat diisi 0 jika tidak dijual satuan.</li>
         <li>Upload file <strong>.csv</strong>, <strong>.xls</strong>, atau <strong>.xlsx</strong></li>
         <li>Mode tambah/lengkapi mencocokkan nama produk: data yang kosong dilengkapi tanpa menimpa data yang sudah terisi; nama yang belum ada menjadi produk baru</li>
         <li>Mode edit massal hanya memperbarui produk berdasarkan ID pada kolom NO; data tidak akan membuat produk baru</li>
     </ol>
     <p style="color:#059669;margin:0.75rem 0 0;font-size:0.875rem;font-weight:600;">
-        ✅ Format baru terdiri dari 19 kolom, termasuk golongan, kemasan, harga per kanal, dan harga per unit
+        ✅ Format baru terdiri dari 18 kolom, termasuk golongan, kemasan, harga B2B/B2C, dan harga per unit
     </p>
 </div>
 
@@ -93,7 +93,6 @@
                         <th>PER STRIP</th>
                         <th>PER TABLET</th>
                         <th>MODAL</th>
-                        <th>HARGA JUAL INTERNAL</th>
                         <th>HARGA JUAL B2B</th>
                         <th>HARGA JUAL B2C</th>
                         <th>HARGA JUAL PER STRIP</th>
@@ -113,7 +112,7 @@
                         <td>10 blister @ 10 tablet</td>
                         <td>TABLET</td>
                         <td>10</td><td>10</td><td>100</td><td>117771</td>
-                        <td>123660</td><td>135437</td><td>153102</td><td>16841</td><td>15463</td>
+                        <td>135437</td><td>153102</td><td>16841</td><td>15463</td>
                     </tr>
                     <tr>
                         <td>2</td>
@@ -127,7 +126,7 @@
                         <td>1 blister @ 4 tablet</td>
                         <td>TABLET</td>
                         <td>1</td><td>1</td><td>4</td><td>200000</td>
-                        <td>200000</td><td>205000</td><td>220000</td><td>55000</td><td>0</td>
+                        <td>205000</td><td>220000</td><td>55000</td><td>0</td>
                     </tr>
                     <tr>
                         <td>3</td>
@@ -141,7 +140,7 @@
                         <td></td>
                         <td>SIRUP</td>
                         <td>1</td><td>0</td><td>0</td><td>12000</td>
-                        <td>12000</td><td>12500</td><td>14000</td><td>0</td><td>0</td>
+                        <td>12500</td><td>14000</td><td>0</td><td>0</td>
                     </tr>
                     <tr>
                         <td>4</td>
@@ -155,7 +154,7 @@
                         <td></td>
                         <td>KRIM</td>
                         <td>5</td><td>0</td><td>0</td><td>50000</td>
-                        <td>49000</td><td>51000</td><td>55000</td><td>0</td><td>0</td>
+                        <td>51000</td><td>55000</td><td>0</td><td>0</td>
                     </tr>
                 </tbody>
             </table>

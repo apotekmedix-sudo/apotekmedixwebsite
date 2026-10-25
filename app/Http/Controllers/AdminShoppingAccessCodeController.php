@@ -19,17 +19,12 @@ class AdminShoppingAccessCodeController extends Controller
     public function generate(string $channel): RedirectResponse
     {
         abort_unless(in_array($channel, [
-            ShoppingAccessCode::CHANNEL_INTERNAL,
             ShoppingAccessCode::CHANNEL_B2B,
             ShoppingAccessCode::CHANNEL_B2C,
         ], true), 404);
 
         $code = ShoppingAccessCode::generate($channel);
-        $channelLabel = match ($channel) {
-            ShoppingAccessCode::CHANNEL_INTERNAL => 'Internal',
-            ShoppingAccessCode::CHANNEL_B2B => 'B2B',
-            ShoppingAccessCode::CHANNEL_B2C => 'B2C',
-        };
+        $channelLabel = strtoupper($channel);
 
         return redirect()
             ->route('admin.access-codes.index')
@@ -61,12 +56,11 @@ class AdminShoppingAccessCodeController extends Controller
 
     public function destroy(ShoppingAccessCode $accessCode): RedirectResponse
     {
-        $channel = match ($accessCode->channel) {
-            ShoppingAccessCode::CHANNEL_INTERNAL => 'Internal',
-            ShoppingAccessCode::CHANNEL_B2B => 'B2B',
-            ShoppingAccessCode::CHANNEL_B2C => 'B2C',
-            default => 'Belanja',
-        };
+        abort_unless(in_array($accessCode->channel, [
+            ShoppingAccessCode::CHANNEL_B2B,
+            ShoppingAccessCode::CHANNEL_B2C,
+        ], true), 404);
+        $channel = strtoupper($accessCode->channel);
         $accessCode->delete();
 
         return redirect()->route('admin.access-codes.index')

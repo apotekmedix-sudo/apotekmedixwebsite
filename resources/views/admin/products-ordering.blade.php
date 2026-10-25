@@ -17,7 +17,7 @@
     .supplier-form-panel { display:none; margin:-.2rem 0 1.15rem; padding:1rem; border:1px solid #cbd5e1; border-radius:.75rem; background:#fff; box-shadow:0 2px 8px rgba(15,23,42,.06); }
     .supplier-form-panel.open { display:block; }
     .supplier-form-panel h3 { margin:0 0 .8rem; color:#1f2937; font-size:.95rem; }
-    .supplier-form { display:grid; grid-template-columns:minmax(180px,.8fr) minmax(250px,1.4fr) auto; gap:.65rem; align-items:end; }
+    .supplier-form { display:grid; grid-template-columns:minmax(180px,.8fr) minmax(250px,1.4fr) minmax(150px,.7fr) auto; gap:.65rem; align-items:end; }
     .supplier-form label { display:block; margin-bottom:.3rem; color:#475569; font-size:.75rem; font-weight:700; }
     .supplier-form input,.supplier-form textarea { width:100%; padding:.65rem .75rem; border:1px solid #cbd5e1; border-radius:.5rem; font:inherit; font-size:.85rem; }
     .supplier-form button { border:0; border-radius:.5rem; padding:.68rem .95rem; background:#1e88e5; color:#fff; font-weight:700; cursor:pointer; white-space:nowrap; transition:background .2s,box-shadow .2s; }
@@ -47,6 +47,7 @@
     .supplier-row-main { display:flex; justify-content:space-between; gap:1rem; align-items:center; }
     .supplier-row-name { margin:0; color:#1e293b; font-size:.88rem; font-weight:800; }
     .supplier-row-address { margin:.25rem 0 0; color:#64748b; font-size:.78rem; line-height:1.45; white-space:pre-line; }
+    .supplier-row-phone { margin:.25rem 0 0; color:#475569; font-size:.78rem; }
     .supplier-row-actions { display:flex; flex:0 0 auto; gap:.4rem; }
     .supplier-row-actions button { padding:.45rem .65rem; border:1px solid #bfdbfe; border-radius:7px; background:#eff6ff; color:#1d4ed8; font-size:.76rem; font-weight:700; cursor:pointer; }
     .supplier-row-actions .supplier-delete-button { border-color:#fecaca; background:#fef2f2; color:#b91c1c; }
@@ -59,6 +60,7 @@
     .supplier-edit-actions button[type="button"] { background:#e2e8f0; color:#334155; }
     .supplier-list-empty { padding:2rem 1rem; color:#64748b; text-align:center; }
     .supplier-search-empty { display:none; padding:2rem 1rem; color:#64748b; text-align:center; }
+    @media (max-width: 760px) { .supplier-form { grid-template-columns:1fr; } }
     .ordering-search { display:flex; gap:.55rem; max-width:430px; width:100%; }
     .ordering-search input { flex:1; min-width:0; padding:.65rem .8rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.88rem; }
     .ordering-search button { border:0; border-radius:.5rem; padding:.65rem 1rem; background:#1e88e5; color:white; font-weight:700; cursor:pointer; }
@@ -121,6 +123,10 @@
             <label for="newSupplierAddress">Alamat supplier</label>
             <textarea id="newSupplierAddress" name="address" rows="1" maxlength="2000" required placeholder="Alamat lengkap supplier">{{ old('address') }}</textarea>
         </div>
+        <div>
+            <label for="newSupplierPhone">Nomor telepon supplier</label>
+            <input id="newSupplierPhone" name="phone" type="tel" value="{{ old('phone') }}" maxlength="50" required placeholder="Contoh: 021-12345678">
+        </div>
         <button type="submit"><i class="fa-solid fa-floppy-disk"></i> Simpan Supplier</button>
     </form>
 </div>
@@ -133,7 +139,7 @@
         <div class="supplier-modal-body">
             <label class="supplier-manager-search" for="supplierManagerSearch">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input id="supplierManagerSearch" type="search" placeholder="Cari nama atau alamat supplier..." autocomplete="off">
+                <input id="supplierManagerSearch" type="search" placeholder="Cari nama, alamat, atau telepon supplier..." autocomplete="off">
                 <span class="supplier-manager-count" id="supplierManagerCount">{{ $suppliers->count() }} supplier</span>
             </label>
             <div class="supplier-data-tools">
@@ -155,9 +161,9 @@
             @else
                 <div class="supplier-list">
                     @foreach($suppliers as $supplier)
-                        <article class="supplier-row" data-supplier-search="{{ \Illuminate\Support\Str::lower($supplier->name . ' ' . $supplier->address) }}">
+                        <article class="supplier-row" data-supplier-search="{{ \Illuminate\Support\Str::lower($supplier->name . ' ' . $supplier->address . ' ' . $supplier->phone) }}">
                             <div class="supplier-row-main">
-                                <div><h4 class="supplier-row-name">{{ $supplier->name }}</h4><p class="supplier-row-address">{{ $supplier->address }}</p></div>
+                                <div><h4 class="supplier-row-name">{{ $supplier->name }}</h4><p class="supplier-row-address">{{ $supplier->address }}</p><p class="supplier-row-phone"><i class="fa-solid fa-phone"></i> {{ $supplier->phone ?: 'Nomor telepon belum tersedia' }}</p></div>
                                 <div class="supplier-row-actions">
                                     <button type="button" onclick="toggleSupplierEdit({{ $supplier->id }})"><i class="fa-solid fa-pen"></i> Edit</button>
                                     <form method="POST" action="{{ route('admin.produk-pbf.suppliers.destroy', $supplier) }}" onsubmit="return confirm('Yakin ingin menghapus supplier ini?')">
@@ -174,6 +180,8 @@
                                 <input id="supplierName{{ $supplier->id }}" name="name" value="{{ $supplier->name }}" maxlength="255" required>
                                 <label for="supplierAddress{{ $supplier->id }}">Alamat supplier</label>
                                 <textarea id="supplierAddress{{ $supplier->id }}" name="address" rows="2" maxlength="2000" required>{{ $supplier->address }}</textarea>
+                                <label for="supplierPhone{{ $supplier->id }}">Nomor telepon supplier</label>
+                                <input id="supplierPhone{{ $supplier->id }}" name="phone" type="tel" value="{{ $supplier->phone }}" maxlength="50" required>
                                 <div class="supplier-edit-actions">
                                     <button type="button" onclick="toggleSupplierEdit({{ $supplier->id }})">Batal</button>
                                     <button type="submit"><i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan</button>
@@ -219,7 +227,7 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'apotekmedix_cart_pbf_admin', receiptStoreName: 'APOTEK MEDIX', receiptStoreAddress: 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat', receiptFilePrefix: 'surat-pesanan-apotek-medix', adminPbfOrder: true, adminPurchaseOrderBase: '{{ str_replace('/0/', '/__ORDER__/', route('admin.purchase-history.purchase-order', ['order' => 0])) }}', suppliers: @json($suppliers) };
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_pbf_admin', receiptStoreName: 'APOTEK MEDIX', receiptStoreAddress: 'Jl. Raya Tajur No. 256 C, Bogor Timur, Kota Bogor, 16146', receiptFilePrefix: 'surat-pesanan-apotek-medix', adminPbfOrder: true, adminPurchaseOrderBase: '{{ str_replace('/0/', '/__ORDER__/', route('admin.purchase-history.purchase-order', ['order' => 0])) }}', suppliers: @json($suppliers) };
 function toggleSupplierForm() { document.getElementById('supplierFormPanel').classList.toggle('open'); }
 function openSupplierManager() { document.getElementById('supplierManagerBackdrop').classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeSupplierManager(event) { if (event && event.target !== event.currentTarget) return; document.getElementById('supplierManagerBackdrop').classList.remove('open'); document.body.style.overflow = ''; }

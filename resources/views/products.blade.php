@@ -1,6 +1,6 @@
 @extends('layouts.frontend')
 
-@section('title', ($internalOrder ?? false) ? 'Belanja Internal - Apotek Medix' : 'Produk Obat - Apotek Medix')
+@section('title', 'Produk Obat - Apotek Medix')
 
 @section('styles')
 <style>
@@ -313,23 +313,11 @@
             <span>/</span>
             <span class="current">Produk</span>
         </div>
-        @if($internalOrder ?? false)
-            <form action="{{ route('shopping.internal.logout') }}" method="POST" style="position:absolute;top:1rem;right:1rem;">
-                @csrf
-                <button type="submit" class="btn-reset">Keluar dari belanja internal</button>
-        </form>
-        @endif
         <h1>
-            <i class="fa-solid {{ ($internalOrder ?? false) ? 'fa-cash-register' : 'fa-pills' }}"></i>
-            {{ ($internalOrder ?? false) ? 'Belanja Internal' : 'Katalog Produk' }}
+            <i class="fa-solid fa-pills"></i>
+            Katalog Produk
         </h1>
-        <p>
-            @if($internalOrder ?? false)
-                Pilih produk untuk transaksi internal dan buat struk pembayaran di kasir.
-            @else
-                {{ $total }} produk tersedia dari berbagai perusahaan farmasi terpercaya
-            @endif
-        </p>
+        <p>{{ $total }} produk tersedia dari berbagai perusahaan farmasi terpercaya</p>
     </div>
     <i class="fa-solid fa-pills header-deco-icon header-deco-icon-1"></i>
     <i class="fa-solid fa-capsules header-deco-icon header-deco-icon-2"></i>
@@ -339,7 +327,7 @@
 <div class="products-main">
     <div class="container">
 
-        <form method="GET" action="{{ ($internalOrder ?? false) ? route('shopping.internal') : route('products.index') }}" class="filter-bar">
+        <form method="GET" action="{{ route('products.index') }}" class="filter-bar">
             @if($kategoriPilihan ?? false)
                 <input type="hidden" name="kategori_pilihan" value="{{ $kategoriPilihan }}">
             @endif
@@ -382,7 +370,7 @@
                     <i class="fa-solid fa-magnifying-glass"></i> Cari
                 </button>
                 @if($search || ($kategori_produk ?? '') || $perusahaan || ($indikasi ?? '') || ($komposisi ?? '') || ($sediaan ?? '') || ($dosis ?? '') || ($golongan ?? '') || $sort !== 'terbaru')
-                    <a href="{{ ($internalOrder ?? false) ? route('shopping.internal') : route('products.index') }}" class="btn-reset">✕ Reset</a>
+                    <a href="{{ route('products.index') }}" class="btn-reset">✕ Reset</a>
                 @endif
             </div>
 
@@ -412,7 +400,7 @@
                             <h3 class="medicine-name"><a href="{{ route('medicines.show', $medicine->id) }}">{{ $medicine->nama_obat }}</a></h3>
 
                             @php
-                                $priceChannel = ($internalOrder ?? false) ? 'internal' : 'b2c';
+                                $priceChannel = 'b2c';
                                 $promoPrice = $medicine->getChannelPromoPrice($priceChannel);
                             @endphp
                             <div class="medicine-card-details">
@@ -431,7 +419,7 @@
                                 'medicine' => $medicine,
                                 'unitSelectId' => 'product-unit-' . $medicine->id,
                                 'priceChannel' => $priceChannel,
-                                'showUnitChoices' => !($internalOrder ?? false),
+                                'showUnitChoices' => true,
                             ])
                             @php $stock = (int) $medicine->available_stock_units; @endphp
                             <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}">
@@ -497,7 +485,7 @@
                     @endif
                 </p>
                 @if($search || ($kategori_produk ?? '') || $perusahaan)
-                    <a href="{{ ($internalOrder ?? false) ? route('shopping.internal') : route('products.index') }}" class="btn-reset" style="display:inline-block;margin-top:1rem;">✕ Hapus Filter</a>
+                    <a href="{{ route('products.index') }}" class="btn-reset" style="display:inline-block;margin-top:1rem;">✕ Hapus Filter</a>
                 @endif
             </div>
         @endif
@@ -508,9 +496,6 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: '{{ ($internalOrder ?? false) ? 'apotekmedix_cart_internal' : 'apotekmedix_cart_retail' }}', kioskOrder: @json($internalOrder ?? false) };</script>
-@if($internalOrder ?? false)
-    @include('partials.shopping-access-lock', ['channel' => 'internal'])
-@endif
-@include('partials.cart', ['cartKioskOrder' => $internalOrder ?? false])
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_retail' };</script>
+@include('partials.cart')
 @endsection

@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 class ProductController extends Controller
 {
     /**
-     * Halaman Produk Kami (frontend) & Belanja Internal
+     * Halaman katalog produk.
      */
     public function index(Request $request)
     {
@@ -25,23 +25,7 @@ class ProductController extends Controller
         $dosis           = $request->get('dosis', '');
         $golongan        = $request->get('golongan', '');
         $sort            = $request->get('sort', 'terbaru');
-        $internalOrder   = $request->routeIs('shopping.internal');
-
-        $catalogQuery = Medicine::query();
-        if ($internalOrder) {
-            $catalogQuery->where(function ($query) {
-                $query->where('harga_internal', '>', 0)
-                      ->orWhere(function ($legacyQuery) {
-                          $legacyQuery->whereNull('harga_internal')
-                              ->where(function ($priceQuery) {
-                                  $priceQuery->where('harga_retail', '>', 0)
-                                      ->orWhere('harga', '>', 0);
-                              });
-                      });
-            });
-        } else {
-            $catalogQuery->nonPbf();
-        }
+        $catalogQuery = Medicine::nonPbf();
         $query = clone $catalogQuery;
 
         $categoryFilters = [
@@ -137,7 +121,6 @@ class ProductController extends Controller
             'total'           => $total,
             'kategoriOptions' => $kategoriOptions,
             'perusahaanList'  => $perusahaanList,
-            'internalOrder'   => $internalOrder,
         ]);
     }
 
@@ -164,11 +147,6 @@ class ProductController extends Controller
             ShoppingAccessCode::CHANNEL_B2B,
             'pbf_access_expires_at',
             'pbf_access_code_hash'
-        ) || $this->hasShoppingAccess(
-            $request,
-            ShoppingAccessCode::CHANNEL_INTERNAL,
-            'internal_shopping_expires_at',
-            'internal_shopping_code_hash'
         );
         if ($medicine->hasRedLogo() && !$b2cAccess && !$hasOtherChannelAccess) {
             return redirect()

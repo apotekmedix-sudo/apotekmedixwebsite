@@ -316,7 +316,7 @@
 <div id="tabPanelChannels" class="promo-tab-panel {{ $currentTab === 'channels' ? 'active' : '' }}" role="tabpanel">
   <div class="card">
     <div class="card-title">Atur Diskon per Kanal</div>
-    <p style="margin:0 0 1rem;color:#64748b;">Atur persentase promo secara terpisah untuk harga Internal, B2B, dan B2C. Isi 0 untuk menonaktifkan promo pada kanal tersebut.</p>
+    <p style="margin:0 0 1rem;color:#64748b;">Atur persentase promo secara terpisah untuk harga B2B dan B2C. Isi 0 untuk menonaktifkan promo pada kanal tersebut.</p>
 
     <form method="GET" action="{{ route('admin.promotions.index') }}" style="margin-bottom:1rem;">
       <input type="hidden" name="tab" value="channels">
@@ -335,7 +335,6 @@
         <thead>
           <tr>
             <th>Produk</th>
-            <th>Harga Internal<br><small>Diskon %</small></th>
             <th>Harga B2B<br><small>Diskon %</small></th>
             <th>Harga B2C<br><small>Diskon %</small></th>
             <th>Aksi</th>
@@ -345,11 +344,6 @@
           @forelse($medicines as $medicine)
             @php
               $channelPrices = [
-                'internal' => [
-                  'field' => 'promo_internal_percent',
-                  'percent' => $medicine->promo_internal_percent,
-                  'base' => $medicine->getChannelBasePrice('internal'),
-                ],
                 'b2b' => [
                   'field' => 'promo_b2b_percent',
                   'percent' => $medicine->promo_b2b_percent,
@@ -365,7 +359,7 @@
             <tr>
               <td>
                 <strong>{{ $medicine->nama_obat }}</strong>
-                <div style="font-size:.78rem;color:#64748b;">{{ $medicine->sku ?: $medicine->kategori }} · {{ $medicine->kelompok === 'PBF' ? 'Produk B2B' : 'Produk Internal/B2C' }}</div>
+                <div style="font-size:.78rem;color:#64748b;">{{ $medicine->sku ?: $medicine->kategori }} · {{ $medicine->kelompok === 'PBF' ? 'Produk B2B' : 'Produk B2C' }}</div>
                 <form id="promotion-{{ $medicine->id }}" method="POST" action="{{ route('admin.promotions.update', $medicine) }}">
                   @csrf
                   @method('PUT')
@@ -387,7 +381,7 @@
               <td><button form="promotion-{{ $medicine->id }}" class="btn btn-primary btn-sm" type="submit">Simpan</button></td>
             </tr>
           @empty
-            <tr><td colspan="5" style="text-align:center;padding:2rem;color:#64748b;">Produk tidak ditemukan.</td></tr>
+            <tr><td colspan="4" style="text-align:center;padding:2rem;color:#64748b;">Produk tidak ditemukan.</td></tr>
           @endforelse
         </tbody>
       </table>

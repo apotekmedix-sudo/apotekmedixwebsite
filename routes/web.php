@@ -10,7 +10,7 @@ use App\Http\Controllers\CustomerAccountController;
 use App\Http\Controllers\AdminCustomerController;
 use App\Http\Controllers\AdminShoppingAccessCodeController;
 use App\Http\Controllers\CashierController;
-use App\Http\Controllers\InternalShoppingAccessController;
+use App\Http\Controllers\ShoppingAccessController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminMedicineController;
 use App\Http\Controllers\AdminMedicineImportController;
@@ -48,17 +48,9 @@ Route::get('/storage/{folder}/{filename}', function (string $folder, string $fil
 // Products routes
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/stock-availability', [ProductController::class, 'stockAvailability'])->name('products.stock-availability');
-Route::get('/belanja-internal/akses', [InternalShoppingAccessController::class, 'show'])->name('shopping.internal.access');
-Route::post('/belanja-internal/akses', [InternalShoppingAccessController::class, 'verify'])
-    ->middleware('throttle:5,1')
-    ->name('shopping.internal.verify');
-Route::post('/belanja-internal/keluar', [InternalShoppingAccessController::class, 'logout'])->name('shopping.internal.logout');
-Route::post('/shopping/access/lock/{channel}', [InternalShoppingAccessController::class, 'lock'])
-    ->where('channel', 'internal|b2b')
+Route::post('/shopping/access/lock/{channel}', [ShoppingAccessController::class, 'lock'])
+    ->where('channel', 'b2b')
     ->name('shopping.access.lock');
-Route::get('/belanja-internal', [ProductController::class, 'index'])
-    ->middleware('internal.access')
-    ->name('shopping.internal');
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/products-pbf', [ProductController::class, 'pbf'])->name('products.pbf');
 Route::post('/products-pbf/verify', [ProductController::class, 'pbfVerify'])->middleware('throttle:5,1')->name('products.pbf.verify');

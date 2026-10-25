@@ -45,7 +45,6 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             $table->string('brand')->nullable();
             $table->string('kategori_produk')->nullable();
             $table->decimal('harga', 12, 2)->default(0);
-            $table->decimal('harga_internal', 12, 2)->nullable();
             $table->decimal('harga_modal', 12, 2)->default(0);
             $table->decimal('harga_grosir', 12, 2)->default(0);
             $table->decimal('harga_retail', 12, 2)->default(0);
@@ -171,8 +170,8 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
     {
         $path = tempnam(sys_get_temp_dir(), 'import');
         file_put_contents($path, implode("\n", [
-            'NO,PRINCIPLE,NAMA PRODUK,LOGO,GOLONGAN,KOMPOSISI,INDIKASI,SATUAN,KEMASAN,SEDIAAN,STOK SATUAN,PER STRIP,PER TABLET,MODAL,HARGA JUAL INTERNAL,HARGA JUAL B2B,HARGA JUAL B2C,HARGA JUAL PER STRIP,HARGA JUAL PER TABLET',
-            '1,PT KALBE FARMA,Promag Tablet,HIJAU,Obat Bebas,"Antasida, Simetikon","Meredakan sakit maag, dan perih",BOX,10 blister @ 6 tablet,TABLET,2,10,60,100000,123000,130000,140000,16000,1600',
+            'NO,PRINCIPLE,NAMA PRODUK,LOGO,GOLONGAN,KOMPOSISI,INDIKASI,SATUAN,KEMASAN,SEDIAAN,STOK SATUAN,PER STRIP,PER TABLET,MODAL,HARGA JUAL B2B,HARGA JUAL B2C,HARGA JUAL PER STRIP,HARGA JUAL PER TABLET',
+            '1,PT KALBE FARMA,Promag Tablet,HIJAU,Obat Bebas,"Antasida, Simetikon","Meredakan sakit maag, dan perih",BOX,10 blister @ 6 tablet,TABLET,2,10,60,100000,130000,140000,16000,1600',
         ]) . "\n");
 
         $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
@@ -190,8 +189,8 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame('HIJAU', $product->logo);
         $this->assertSame('Obat Bebas', $product->golongan);
         $this->assertSame('Antasida, Simetikon', $product->komposisi);
-        $this->assertSame(123000.0, $product->getChannelBasePrice('internal'));
         $this->assertSame(130000.0, $product->getChannelBasePrice('b2b'));
+        $this->assertSame(140000.0, $product->getChannelBasePrice('b2c'));
         $this->assertSame(16000.0, $product->getChannelBasePrice('b2c', 'strip'));
         $this->assertSame(120, (int) $product->stock_base_units);
 
@@ -246,7 +245,6 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'kategori' => 'PT KALBE FARMA',
             'harga' => 123660,
             'harga_retail' => 15310230000000000,
-            'harga_internal' => 123660,
             'harga_grosir' => 135437,
             'kelompok' => null,
             'stok' => 1,
@@ -296,7 +294,6 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'komposisi' => 'Komposisi contoh',
             'indikasi' => 'Indikasi contoh',
             'harga_modal' => 117771,
-            'harga_internal' => 123660,
             'harga_grosir' => 135437,
             'harga_retail' => 153102,
             'stok' => 10,
@@ -324,7 +321,6 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame(10, (int) $product->strips_per_box);
         $this->assertSame(10, (int) $product->tablets_per_strip);
         $this->assertSame(1000, (int) $product->stock_base_units);
-        $this->assertSame(123660.0, $product->getChannelBasePrice('internal'));
         $this->assertSame(135437.0, $product->getChannelBasePrice('b2b'));
         $this->assertSame(153102.0, $product->getChannelBasePrice('b2c'));
 
@@ -350,7 +346,6 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
 
         $controller->updateInline(new Request([
             'harga_modal' => 120000,
-            'harga_internal' => 124000,
             'harga_grosir' => 136000,
             'harga_retail' => 154000,
             'price_strip' => 15400,
@@ -358,7 +353,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'stok' => 9,
         ]), $product);
         $product->refresh();
-        $this->assertSame(124000.0, $product->getChannelBasePrice('internal'));
+        $this->assertSame(154000.0, $product->getChannelBasePrice('b2c'));
         $this->assertSame(136000.0, $product->getChannelBasePrice('b2b'));
         $this->assertSame(15400.0, (float) $product->price_strip);
         $this->assertSame(1540.0, (float) $product->price_tablet);

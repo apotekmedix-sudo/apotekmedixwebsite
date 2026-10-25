@@ -48,10 +48,14 @@
     }
     .b2c-secret-trigger:focus-visible { outline: 3px solid #bfdbfe; outline-offset: 3px; }
     .b2c-access-status { display: inline-flex; gap: .4rem; align-items: center; margin: .25rem 0 .5rem; padding: .35rem .65rem; border-radius: 999px; background: rgba(220,252,231,.16); color: #dcfce7; font-size: .82rem; font-weight: 700; }
-    .b2c-code-dialog { width: min(420px, calc(100% - 2rem)); padding: 0; border: 0; border-radius: 18px; box-shadow: 0 24px 70px rgba(15,23,42,.35); }
-    .b2c-code-dialog::backdrop { background: rgba(15,23,42,.68); backdrop-filter: blur(3px); }
-    .b2c-code-dialog-content { padding: 1.5rem; color: #0f172a; }
-    .b2c-code-dialog h2 { margin: 0 0 .45rem; font-size: 1.25rem; }
+    .b2c-code-dialog { position:fixed; inset:0; width:min(440px,calc(100% - 2rem)); max-width:440px; max-height:calc(100dvh - 2rem); margin:auto; padding:0; overflow-y:auto; border:1px solid #fed7aa; border-radius:18px; background:#fff; color:#0f172a; box-shadow:0 24px 70px rgba(15,23,42,.35); }
+    .b2c-code-dialog[open] { display:block; }
+    .b2c-code-dialog::backdrop { background:rgba(15,23,42,.68); backdrop-filter:blur(3px); }
+    .b2c-code-dialog-content { padding:0 1.5rem 1.5rem; color:#0f172a; }
+    .b2c-code-dialog-header { margin:0 -1.5rem 1.25rem; padding:1.1rem 1.5rem; border-bottom:1px solid #fed7aa; background:#fff7ed; }
+    .b2c-code-dialog-notice { display:inline-flex; align-items:center; gap:.4rem; margin:0 0 .3rem!important; color:#9a3412!important; font-size:.72rem!important; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+    .b2c-code-dialog-hint { margin:0!important; font-size:.75rem!important; color:#64748b!important; }
+    .b2c-code-dialog h2 { margin:0 0 .45rem; font-size:1.25rem; }
     .b2c-code-dialog p { margin: 0 0 1rem; color: #64748b; font-size: .9rem; line-height: 1.5; }
     .b2c-code-dialog label { display: block; margin-bottom: .4rem; color: #334155; font-size: .85rem; font-weight: 700; }
     .b2c-code-dialog input { width: 100%; padding: .75rem .85rem; border: 1px solid #cbd5e1; border-radius: 10px; font: inherit; letter-spacing: .18em; }
@@ -59,6 +63,8 @@
     .b2c-code-dialog-actions button { padding: .65rem .9rem; border: 0; border-radius: 9px; font: inherit; font-weight: 700; cursor: pointer; }
     .b2c-code-submit { background: #0052cc; color: white; }
     .b2c-code-cancel { background: #f1f5f9; color: #334155; }
+    .b2c-code-submit:hover { background:#003eaa; }
+    .b2c-code-cancel:hover { background:#e2e8f0; }
     .b2c-code-error { margin: .8rem 0 0!important; color: #b91c1c!important; }
     .products-header p { color: rgba(255,255,255,0.8); font-size: 1rem; position: relative; }
     .breadcrumb-custom { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; position: relative; }
@@ -348,19 +354,20 @@
     <i class="fa-solid fa-syringe header-deco-icon header-deco-icon-3"></i>
 </div>
 
-<dialog id="b2cCodeDialog" class="b2c-code-dialog" aria-labelledby="b2cCodeDialogTitle">
+<dialog id="b2cCodeDialog" class="b2c-code-dialog" aria-labelledby="b2cCodeDialogNotice">
     <form action="{{ route('products.apotek.activate') }}" method="POST" class="b2c-code-dialog-content">
         @csrf
-        <h2 id="b2cCodeDialogTitle">Akses Produk Khusus B2C</h2>
-        <p>Masukkan kode aktivasi untuk membuka produk dengan logo merah. Kode dapat diperoleh dari administrator.</p>
-        <label for="b2cAccessCode">Kode aktivasi</label>
-        <input id="b2cAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" autocomplete="one-time-code" placeholder="5 digit" value="{{ old('kode') }}" required>
+        <div class="b2c-code-dialog-header">
+            <p id="b2cCodeDialogNotice" class="b2c-code-dialog-notice"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Peringatan</p>
+            <p class="b2c-code-dialog-hint">Anda salah klik</p>
+        </div>
+        <label class="sr-only" for="b2cAccessCode">Kode akses</label>
+        <input id="b2cAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" aria-label="Kode akses" required>
         @if($errors->has('kode'))
             <p class="b2c-code-error" role="alert">{{ $errors->first('kode') }}</p>
         @endif
         <div class="b2c-code-dialog-actions">
-            <button type="button" class="b2c-code-cancel" onclick="document.getElementById('b2cCodeDialog').close()">Batal</button>
-            <button type="submit" class="b2c-code-submit">Buka Produk</button>
+            <button type="submit" class="b2c-code-submit">Kirim</button>
         </div>
     </form>
 </dialog>
@@ -442,15 +449,9 @@
                             @endphp
                             <div class="medicine-card-details">
                                 <p><strong>Komposisi:</strong> {{ $medicine->komposisi ?: $medicine->nama_obat }}</p>
-                                @if($medicine->indikasi)
-                                    <p><strong>Indikasi:</strong> {{ $medicine->indikasi }}</p>
-                                @endif
-                                @if($medicine->dosis)
-                                    <p><strong>Dosis:</strong> {{ $medicine->dosis }}</p>
-                                @endif
-                                @if($medicine->golongan)
-                                    <p><strong>Golongan:</strong> {{ $medicine->golongan }}</p>
-                                @endif
+                                <p><strong>Indikasi:</strong> {{ $medicine->indikasi ?: '—' }}</p>
+                                <p><strong>Dosis:</strong> {{ $medicine->dosis ?: '—' }}</p>
+                                <p><strong>Golongan:</strong> {{ $medicine->golongan ?: '—' }}</p>
                             </div>
                             @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => 'b2c'])
                             @php $stock = (int) $medicine->available_stock_units; @endphp
@@ -462,6 +463,8 @@
                                 <div class="medicine-meta" style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.6rem;">
                                     <i class="fa-solid fa-cube"></i> <span>Sediaan: {{ $medicine->sediaan_label }}</span>
                                 </div>
+                            @else
+                                <div class="medicine-meta medicine-meta-placeholder" aria-hidden="true"></div>
                             @endif
                             <button class="btn-cart" data-stock-cart @disabled($stock <= 0)
                                     data-product-id="{{ $medicine->id }}"

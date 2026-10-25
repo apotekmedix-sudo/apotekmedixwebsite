@@ -32,7 +32,7 @@
             'strip' => 'Strip',
         ] + $unitLabels;
     }
-    $availableUnits = $medicine->unit_packaging_enabled
+    $availableUnits = $medicine->usesTabletPackaging()
         ? array_filter(
             $unitKeys,
             fn ($unit) => $unitBasePriceValues[$unit] > 0 && $unitFactors[$unit] > 0

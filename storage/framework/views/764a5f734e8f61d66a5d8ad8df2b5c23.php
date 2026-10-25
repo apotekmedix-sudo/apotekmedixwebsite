@@ -23,7 +23,7 @@
     .customer-filters input,.customer-filters select{min-width:190px;padding:9px 11px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
     .customer-filters button,.customer-actions button{padding:9px 12px;border:0;border-radius:8px;background:#0052cc;color:#fff;font-weight:700;cursor:pointer}
     .channel-badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
-    .channel-internal{background:#dbeafe;color:#1d4ed8}.channel-b2b{background:#cffafe;color:#0e7490}.channel-b2c{background:#dcfce7;color:#15803d}
+    .channel-offline{background:#dbeafe;color:#1d4ed8}.channel-b2b{background:#cffafe;color:#0e7490}.channel-b2c{background:#dcfce7;color:#15803d}
     .customer-subtext{display:block;margin-top:4px;color:#64748b;font-size:12px}
     .customer-actions{display:flex;gap:6px;align-items:center}.customer-actions form{margin:0}.customer-action.edit{background:#eaf2ff;color:#0052cc}.customer-actions button.delete{background:#fff1f2;color:#be123c}
     .flash-success{padding:12px 14px;margin-bottom:14px;border-radius:8px;background:#dcfce7;color:#166534}
@@ -39,7 +39,7 @@
 
 <section class="customer-summary" aria-label="Ringkasan customer dan kanal">
     <div class="customer-summary-card"><span>MASTER CUSTOMER</span><strong><?php echo e(number_format($summary['total'])); ?></strong></div>
-    <div class="customer-summary-card"><span>CUSTOMER INTERNAL</span><strong><?php echo e(number_format($summary['internal'])); ?></strong></div>
+    <div class="customer-summary-card"><span>CUSTOMER OFFLINE / KIOS</span><strong><?php echo e(number_format($summary['offline'])); ?></strong></div>
     <div class="customer-summary-card"><span>CUSTOMER B2B</span><strong><?php echo e(number_format($summary['b2b'])); ?></strong></div>
     <div class="customer-summary-card"><span>CUSTOMER B2C</span><strong><?php echo e(number_format($summary['b2c'])); ?></strong></div>
 </section>
@@ -48,7 +48,7 @@
     <div class="customer-heading">
         <div>
             <div class="card-title">Master Customer</div>
-            <p style="color:#64748b;margin-top:-.75rem;">Data customer otomatis dihimpun dari pesanan Internal, B2B, dan B2C. Pesanan berulang dengan identitas yang cocok akan masuk ke satu profil.</p>
+            <p style="color:#64748b;margin-top:-.75rem;">Data customer otomatis dihimpun dari pesanan offline, B2B, dan B2C. Pesanan berulang dengan identitas yang cocok akan masuk ke satu profil.</p>
         </div>
         <div class="customer-tools">
             <a class="customer-add customer-export" href="<?php echo e(route('admin.customers.export.master')); ?>">Export Master CSV</a>
@@ -73,7 +73,7 @@
             <label for="customer-channel">Kanal pesanan</label>
             <select id="customer-channel" name="channel">
                 <option value="all">Semua customer</option>
-                <option value="internal" <?php if(($filters['channel'] ?? '') === 'internal'): echo 'selected'; endif; ?>>Pernah belanja Internal</option>
+                <option value="offline" <?php if(($filters['channel'] ?? '') === 'offline'): echo 'selected'; endif; ?>>Pernah transaksi offline</option>
                 <option value="b2b" <?php if(($filters['channel'] ?? '') === 'b2b'): echo 'selected'; endif; ?>>Pernah belanja B2B</option>
                 <option value="b2c" <?php if(($filters['channel'] ?? '') === 'b2c'): echo 'selected'; endif; ?>>Pernah belanja B2C</option>
             </select>
@@ -111,7 +111,7 @@
                             <span class="customer-subtext"><?php echo e(collect([$customer->address, $customer->kecamatan, $customer->kota])->filter()->join(', ') ?: 'Alamat tidak dicantumkan'); ?></span>
                         </td>
                         <td>
-                            <?php if($customer->internal_orders_count): ?><span class="channel-badge channel-internal">Internal <?php echo e($customer->internal_orders_count); ?></span><?php endif; ?>
+                            <?php if($customer->offline_orders_count): ?><span class="channel-badge channel-offline">Offline / Kios <?php echo e($customer->offline_orders_count); ?></span><?php endif; ?>
                             <?php if($customer->b2b_orders_count): ?><span class="channel-badge channel-b2b">B2B <?php echo e($customer->b2b_orders_count); ?></span><?php endif; ?>
                             <?php if($customer->b2c_orders_count): ?><span class="channel-badge channel-b2c">B2C <?php echo e($customer->b2c_orders_count); ?></span><?php endif; ?>
                             <?php if(!$customer->purchase_histories_count): ?><span class="customer-subtext">Belum ada pesanan</span><?php endif; ?>

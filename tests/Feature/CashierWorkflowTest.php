@@ -15,212 +15,42 @@ class CashierWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_kiosk_order_is_saved_pending_and_uses_catalog_price(): void
+    public function test_offline_order_submission_is_no_longer_available(): void
     {
-        $accessCode = ShoppingAccessCode::create([
-            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
-            'code_hash' => Hash::make('12345'),
-            'code_value' => encrypt('12345'),
-            'expires_at' => now()->addDays(30),
-        ]);
-        $medicine = Medicine::create([
-            'nama_obat' => 'Vitamin Kios',
-            'kategori' => 'MEDIX',
-            'harga' => 1000,
-            'harga_internal' => 2000,
-            'harga_retail' => 2500,
-            'promo_internal_percent' => 10,
-            'stok' => 8,
-            'deskripsi' => 'Produk untuk transaksi kios',
-        ]);
-
-        $response = $this->withSession([
-            'internal_shopping_expires_at' => now()->addDays(30)->timestamp,
-            'internal_shopping_code_hash' => $accessCode->code_hash,
-        ])->postJson(route('orders.history.store'), [
+        $this->postJson(route('orders.history.store'), [
             'buyer_type' => 'umum',
-            'buyer_name' => 'Pembeli Toko',
+            'buyer_name' => 'Pembeli',
             'phone' => '081234567890',
             'transaction_channel' => 'offline',
-            'items' => [
-                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 2, 'harga' => 1, 'potongan' => 5000],
-            ],
-            'total' => 2,
-        ])->assertOk()->assertJsonStructure(['success', 'id', 'invoice_url']);
+            'items' => [],
+            'total' => 0,
+        ])->assertUnprocessable();
 
-        $order = PurchaseHistory::findOrFail($response->json('id'));
-        $this->assertSame('offline', $order->transaction_channel);
-        $this->assertSame('pending', $order->payment_status);
-        $this->assertSame('Tunai', $order->payment_method);
-        $this->assertSame(3600, $order->total);
-        $this->assertSame(2000, $order->items[0]['harga']);
-        $this->assertSame(400, $order->items[0]['potongan']);
-        $this->assertSame(10, $order->items[0]['promo_percent']);
-        $this->assertDatabaseHas('medicines', ['id' => $medicine->id, 'stok' => 8]);
-        $this->assertDatabaseHas('purchase_stock_reservations', [
-            'medicine_id' => $medicine->id,
-            'quantity_units' => 2,
-        ]);
+        $this->assertDatabaseCount('purchase_histories', 0);
     }
 
-    public function test_kiosk_order_preserves_selected_qris_payment_method(): void
+    public function test_internal_shopping_page_and_routes_are_removed(): void
     {
-        $accessCode = ShoppingAccessCode::create([
-            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
-            'code_hash' => Hash::make('12345'),
-            'code_value' => encrypt('12345'),
-            'expires_at' => now()->addDays(30),
-        ]);
-        $medicine = Medicine::create([
-            'nama_obat' => 'Produk QRIS Internal',
-            'kategori' => 'MEDIX',
-            'harga' => 1000,
-            'harga_internal' => 1000,
-            'stok' => 3,
-            'deskripsi' => 'Produk untuk uji pembayaran internal',
-        ]);
-
-        $response = $this->withSession([
-            'internal_shopping_expires_at' => now()->addDays(30)->timestamp,
-            'internal_shopping_code_hash' => $accessCode->code_hash,
-        ])->postJson(route('orders.history.store'), [
-            'buyer_type' => 'umum',
-            'buyer_name' => 'Pembeli Internal',
-            'phone' => '081234567890',
-            'transaction_channel' => 'offline',
-            'payment_method' => 'QRIS',
-            'items' => [[
-                'id' => $medicine->id,
-                'nama_obat' => $medicine->nama_obat,
-                'quantity' => 1,
-                'sale_unit' => 'box',
-            ]],
-            'total' => 1000,
-        ])->assertOk();
-
-        $this->assertDatabaseHas('purchase_histories', [
-            'id' => $response->json('id'),
-            'transaction_channel' => 'offline',
-            'payment_method' => 'QRIS',
-        ]);
-    }
-
-    public function test_kiosk_order_can_use_tempo_with_a_payment_term(): void
-    {
-        $accessCode = ShoppingAccessCode::create([
-            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
-            'code_hash' => Hash::make('12345'),
-            'code_value' => encrypt('12345'),
-            'expires_at' => now()->addDays(30),
-        ]);
-        $medicine = Medicine::create([
-            'nama_obat' => 'Produk Tempo Internal',
-            'kategori' => 'MEDIX',
-            'harga' => 1000,
-            'harga_internal' => 1000,
-            'stok' => 3,
-            'deskripsi' => 'Produk untuk uji tempo internal',
-        ]);
-
-        $response = $this->withSession([
-            'internal_shopping_expires_at' => now()->addDays(30)->timestamp,
-            'internal_shopping_code_hash' => $accessCode->code_hash,
-        ])->postJson(route('orders.history.store'), [
-            'buyer_type' => 'umum',
-            'buyer_name' => 'Pembeli Internal Tempo',
-            'phone' => '081234567890',
-            'transaction_channel' => 'offline',
-            'payment_method' => 'Tempo',
-            'payment_term_days' => 14,
-            'items' => [[
-                'id' => $medicine->id,
-                'nama_obat' => $medicine->nama_obat,
-                'quantity' => 1,
-                'sale_unit' => 'box',
-            ]],
-            'total' => 1000,
-        ])->assertOk();
-
-        $this->assertDatabaseHas('purchase_histories', [
-            'id' => $response->json('id'),
-            'transaction_channel' => 'offline',
-            'payment_method' => 'Tempo',
-            'payment_term_days' => 14,
-        ]);
-    }
-
-    public function test_internal_shopping_requires_access_code(): void
-    {
-        $this->get(route('shopping.internal'))
-            ->assertRedirect(route('shopping.internal.access'));
-
-        $accessCode = ShoppingAccessCode::create([
-            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
-            'code_hash' => Hash::make('58294'),
-            'expires_at' => now()->addDays(30),
-        ]);
-
-        $this->get(route('shopping.internal.access'))->assertOk()->assertSee('Kode akses');
-        $this->from(route('shopping.internal.access'))
-            ->post(route('shopping.internal.verify'), ['code' => '00000'])
-            ->assertRedirect(route('shopping.internal.access'))
-            ->assertSessionHasErrors('code');
-
-        $this->post(route('shopping.internal.verify'), ['code' => '58294'])
-            ->assertRedirect(route('shopping.internal'));
-        $this->assertSame($accessCode->code_hash, session('internal_shopping_code_hash'));
-
-        $this->assertLessThanOrEqual(
-            now()->addDays(30)->timestamp,
-            session('internal_shopping_expires_at')
-        );
-        $this->get(route('shopping.internal'))
+        $this->get('/belanja-internal')->assertNotFound();
+        $this->get('/belanja-internal/akses')->assertNotFound();
+        $this->get(route('home'))
             ->assertOk()
-            ->assertSee('Belanja Internal')
-            ->assertSee('navigator.sendBeacon');
+            ->assertDontSee('Belanja Internal');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)
+            ->get(route('admin.access-codes.index'))
+            ->assertOk()
+            ->assertDontSee('Belanja Internal');
     }
 
-    public function test_internal_access_code_can_be_closed_and_requires_reentry(): void
+    public function test_leaving_b2b_catalog_locks_access_until_the_code_is_entered_again(): void
     {
-        $accessCode = ShoppingAccessCode::create([
-            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
-            'code_hash' => Hash::make('12345'),
-            'code_value' => encrypt('12345'),
-            'expires_at' => now()->addDays(30),
-        ]);
-        $this->withSession([
-            'internal_shopping_expires_at' => now()->addHour()->timestamp,
-            'internal_shopping_code_hash' => $accessCode->code_hash,
-        ])->post(route('shopping.internal.logout'))
-            ->assertRedirect(route('home'))
-            ->assertSessionMissing('internal_shopping_expires_at');
-
-        $this->get(route('shopping.internal'))
-            ->assertRedirect(route('shopping.internal.access'));
-    }
-
-    public function test_leaving_internal_or_b2b_catalog_locks_access_until_the_code_is_entered_again(): void
-    {
-        $internalCode = ShoppingAccessCode::create([
-            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
-            'code_hash' => Hash::make('12345'),
-            'expires_at' => now()->addDays(30),
-        ]);
         $b2bCode = ShoppingAccessCode::create([
             'channel' => ShoppingAccessCode::CHANNEL_B2B,
             'code_hash' => Hash::make('54321'),
             'expires_at' => now()->addDays(30),
         ]);
-
-        $this->withSession([
-            'internal_shopping_expires_at' => now()->addDays(10)->timestamp,
-            'internal_shopping_code_hash' => $internalCode->code_hash,
-        ])->get(route('home'))
-            ->assertOk()
-            ->assertSessionMissing('internal_shopping_expires_at')
-            ->assertSessionMissing('internal_shopping_code_hash');
-        $this->get(route('shopping.internal'))
-            ->assertRedirect(route('shopping.internal.access'));
 
         $this->withSession([
             'pbf_access_expires_at' => now()->addDays(10)->timestamp,
@@ -236,69 +66,39 @@ class CashierWorkflowTest extends TestCase
 
     public function test_cart_and_checkout_keep_shopping_channel_access_active(): void
     {
-        $internalCode = ShoppingAccessCode::create([
-            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
-            'code_hash' => Hash::make('12345'),
+        $b2bCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2B,
+            'code_hash' => Hash::make('54321'),
             'expires_at' => now()->addDays(30),
         ]);
 
         $session = [
-            'internal_shopping_expires_at' => now()->addDays(10)->timestamp,
-            'internal_shopping_code_hash' => $internalCode->code_hash,
+            'pbf_access_expires_at' => now()->addDays(10)->timestamp,
+            'pbf_access_code_hash' => $b2bCode->code_hash,
         ];
 
         $this->withSession($session)->get(route('cart.index'))
             ->assertOk()
-            ->assertSessionHas('internal_shopping_code_hash', $internalCode->code_hash);
+            ->assertSessionHas('pbf_access_code_hash', $b2bCode->code_hash);
         $this->get(route('checkout.index'))
             ->assertOk()
-            ->assertSessionHas('internal_shopping_code_hash', $internalCode->code_hash);
+            ->assertSessionHas('pbf_access_code_hash', $b2bCode->code_hash);
     }
 
-    public function test_access_lock_endpoint_only_locks_the_requested_channel(): void
+    public function test_access_lock_endpoint_only_locks_b2b_sessions(): void
     {
         $this->withSession([
-            'internal_shopping_expires_at' => now()->addDays(10)->timestamp,
-            'internal_shopping_code_hash' => 'internal-hash',
             'pbf_access_expires_at' => now()->addDays(10)->timestamp,
             'pbf_access_code_hash' => 'b2b-hash',
-        ])->post(route('shopping.access.lock', ['channel' => 'internal']))
+        ])->post(route('shopping.access.lock', ['channel' => 'b2b']))
             ->assertNoContent()
-            ->assertSessionMissing('internal_shopping_expires_at')
-            ->assertSessionMissing('internal_shopping_code_hash')
+            ->assertSessionMissing('pbf_access_expires_at')
+            ->assertSessionMissing('pbf_access_code_hash');
+
+        $this->withSession(['pbf_access_code_hash' => 'b2b-hash'])
+            ->post(route('shopping.access.lock', ['channel' => 'internal']))
+            ->assertNotFound()
             ->assertSessionHas('pbf_access_code_hash', 'b2b-hash');
-    }
-
-    public function test_access_is_not_granted_when_code_is_not_configured(): void
-    {
-        $this        ->post(route('shopping.internal.verify'), ['code' => '12345'])
-            ->assertSessionHasErrors('code');
-
-        $this->get(route('shopping.internal'))
-            ->assertRedirect(route('shopping.internal.access'));
-    }
-
-    public function test_guest_cannot_create_internal_order_directly_without_access_code(): void
-    {
-        $this->postJson(route('orders.history.store'), [
-            'buyer_type' => 'umum',
-            'buyer_name' => 'Pembeli',
-            'phone' => '081234567890',
-            'transaction_channel' => 'offline',
-            'items' => [],
-            'total' => 0,
-        ])->assertForbidden();
-
-        $this->withSession([
-            'internal_shopping_expires_at' => now()->subMinute()->timestamp,
-        ])->postJson(route('orders.history.store'), [
-            'buyer_type' => 'umum',
-            'buyer_name' => 'Pembeli',
-            'phone' => '081234567890',
-            'transaction_channel' => 'offline',
-            'items' => [],
-            'total' => 0,
-        ])->assertForbidden();
     }
 
     public function test_cashier_can_verify_and_mark_an_order_printed_once(): void
@@ -608,7 +408,7 @@ class CashierWorkflowTest extends TestCase
             ->assertSee('Chat WhatsApp untuk meminta kode');
     }
 
-    public function test_admin_can_generate_replacement_codes_for_internal_and_b2b(): void
+    public function test_admin_can_generate_and_replace_b2b_access_codes(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
@@ -617,24 +417,6 @@ class CashierWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee('Aktivasi Kode Belanja')
             ->assertDontSee('Kelola Kasir');
-
-        $this->post(route('admin.access-codes.generate', ShoppingAccessCode::CHANNEL_INTERNAL))
-            ->assertRedirect(route('admin.access-codes.index'));
-        $internalCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_INTERNAL)->firstOrFail()->readCode();
-        $this->assertMatchesRegularExpression('/^[0-9]{5}$/', $internalCode);
-        $internalRecord = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_INTERNAL)->firstOrFail();
-        $this->assertTrue($internalRecord->verify($internalCode));
-        $this->assertNotSame($internalCode, $internalRecord->code_hash);
-        $this->assertSame($internalCode, $internalRecord->readCode());
-        $this->get(route('admin.access-codes.index'))
-            ->assertOk()
-            ->assertSee($internalCode)
-            ->assertSee('Daftar Kode Akses');
-        $this->assertTrue($internalRecord->expires_at->between(now()->addDays(29), now()->addDays(30)->addMinute()));
-        $this->post(route('shopping.internal.verify'), ['code' => $internalCode])
-            ->assertRedirect(route('shopping.internal'));
-        $this->assertGreaterThan(now()->timestamp, session('internal_shopping_expires_at'));
-        $this->assertLessThanOrEqual($internalRecord->expires_at->timestamp, session('internal_shopping_expires_at'));
 
         $this->post(route('admin.access-codes.generate', ShoppingAccessCode::CHANNEL_B2B))
             ->assertRedirect(route('admin.access-codes.index'));
@@ -648,19 +430,19 @@ class CashierWorkflowTest extends TestCase
         $this->assertGreaterThan(now()->timestamp, session('pbf_access_expires_at'));
         $this->assertLessThanOrEqual($b2bRecord->expires_at->timestamp, session('pbf_access_expires_at'));
 
-        $this->post(route('admin.access-codes.generate', ShoppingAccessCode::CHANNEL_INTERNAL))
+        $this->post(route('admin.access-codes.generate', ShoppingAccessCode::CHANNEL_B2B))
             ->assertRedirect(route('admin.access-codes.index'));
-        $replacementCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_INTERNAL)->firstOrFail()->readCode();
-        $this->assertNotSame($internalCode, $replacementCode);
-        $this->assertFalse(ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_INTERNAL)->firstOrFail()->verify($internalCode));
-        $this->assertTrue(ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_INTERNAL)->firstOrFail()->verify($replacementCode));
+        $replacementCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2B)->firstOrFail()->readCode();
+        $this->assertNotSame($b2bCode, $replacementCode);
+        $this->assertFalse(ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2B)->firstOrFail()->verify($b2bCode));
+        $this->assertTrue(ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2B)->firstOrFail()->verify($replacementCode));
     }
 
     public function test_admin_access_code_page_handles_codes_encrypted_with_an_old_key(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $accessCode = ShoppingAccessCode::create([
-            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
+            'channel' => ShoppingAccessCode::CHANNEL_B2B,
             'code_hash' => Hash::make('12345'),
             'code_value' => 'invalid-encrypted-value',
             'expires_at' => now()->addDays(30),
@@ -675,7 +457,7 @@ class CashierWorkflowTest extends TestCase
         $this->assertNull($accessCode->readCode());
         $this->assertTrue($accessCode->verify('12345'));
 
-        $this->post(route('admin.access-codes.generate', ShoppingAccessCode::CHANNEL_INTERNAL))
+        $this->post(route('admin.access-codes.generate', ShoppingAccessCode::CHANNEL_B2B))
             ->assertRedirect(route('admin.access-codes.index'));
 
         $accessCode->refresh();
@@ -703,14 +485,12 @@ class CashierWorkflowTest extends TestCase
             ->assertSee('Vitamin Promo Medix');
 
         $this->put(route('admin.promotions.update', $medicine), [
-            'promo_internal_percent' => 10,
             'promo_b2b_percent' => 20,
             'promo_b2c_percent' => 30,
         ])->assertRedirect(route('admin.promotions.index'));
 
         $this->assertDatabaseHas('medicines', [
             'id' => $medicine->id,
-            'promo_internal_percent' => 10,
             'promo_b2b_percent' => 20,
             'promo_b2c_percent' => 30,
         ]);
@@ -718,7 +498,6 @@ class CashierWorkflowTest extends TestCase
         $this->get(route('admin.promotions.index'))
             ->assertOk()
             ->assertSee('Harga asli:')
-            ->assertSee('Harga promo: Rp 2.250')
             ->assertSee('Harga promo: Rp 1.440')
             ->assertSee('Harga promo: Rp 1.750')
             ->assertSee('input.addEventListener(\'input\', updateCalculatedPrice)', false);
@@ -767,7 +546,7 @@ class CashierWorkflowTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $code = ShoppingAccessCode::create([
-            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
+            'channel' => ShoppingAccessCode::CHANNEL_B2B,
             'code_hash' => Hash::make('12345'),
             'code_value' => encrypt('12345'),
             'expires_at' => now()->addDays(30),
@@ -782,53 +561,31 @@ class CashierWorkflowTest extends TestCase
         $this->assertSame('54321', $code->readCode());
         $this->assertFalse($code->verify('12345'));
         $this->assertTrue($code->verify('54321'));
-        $this->assertFalse(ShoppingAccessCode::matchesSession(ShoppingAccessCode::CHANNEL_INTERNAL, $oldHash));
+        $this->assertFalse(ShoppingAccessCode::matchesSession(ShoppingAccessCode::CHANNEL_B2B, $oldHash));
 
         $this->withSession([
-            'internal_shopping_expires_at' => now()->addDays(20)->timestamp,
-            'internal_shopping_code_hash' => $oldHash,
-        ])->get(route('shopping.internal'))
-            ->assertRedirect(route('shopping.internal.access'))
-            ->assertSessionMissing('internal_shopping_code_hash');
+            'pbf_access_expires_at' => now()->addDays(20)->timestamp,
+            'pbf_access_code_hash' => $oldHash,
+        ])->get(route('products.pbf'))
+            ->assertOk()
+            ->assertSee('Masukkan kode angka 5 digit.')
+            ->assertSessionMissing('pbf_access_code_hash');
 
         $this->delete(route('admin.access-codes.destroy', $code))
             ->assertRedirect(route('admin.access-codes.index'));
         $this->assertDatabaseMissing('shopping_access_codes', ['id' => $code->id]);
     }
 
-    public function test_orders_from_all_channels_create_and_aggregate_customer_profiles(): void
+    public function test_online_orders_create_and_aggregate_customer_profiles(): void
     {
         $medicine = Medicine::create([
-            'nama_obat' => 'Produk Pesanan Internal',
+            'nama_obat' => 'Produk Pesanan Online',
             'kategori' => 'MEDIX',
             'harga' => 1000,
             'harga_retail' => 1000,
             'stok' => 5,
             'deskripsi' => 'Produk untuk uji sinkronisasi customer',
         ]);
-        $accessCode = ShoppingAccessCode::create([
-            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
-            'code_hash' => Hash::make('12345'),
-            'code_value' => encrypt('12345'),
-            'expires_at' => now()->addDays(30),
-        ]);
-        $internal = $this->withSession([
-            'internal_shopping_expires_at' => now()->addHour()->timestamp,
-            'internal_shopping_code_hash' => $accessCode->code_hash,
-        ])->postJson(route('orders.history.store'), [
-            'buyer_type' => 'umum',
-            'buyer_name' => 'Pembeli Internal',
-            'phone' => '081111111111',
-            'transaction_channel' => 'offline',
-            'items' => [[
-                'id' => $medicine->id,
-                'nama_obat' => $medicine->nama_obat,
-                'quantity' => 1,
-                'sale_unit' => 'box',
-            ]],
-            'total' => 1000,
-        ])->assertOk();
-
         $b2b = $this->postJson(route('orders.history.store'), [
             'buyer_type' => 'apotik',
             'buyer_name' => 'Apotek Mitra',
@@ -857,31 +614,27 @@ class CashierWorkflowTest extends TestCase
             'total' => 0,
         ])->assertOk();
 
-        $this->assertDatabaseHas('purchase_histories', ['id' => $internal->json('id'), 'customer_id' => Customer::where('phone', '081111111111')->value('id')]);
         $this->assertDatabaseHas('purchase_histories', ['id' => $b2b->json('id'), 'customer_id' => Customer::where('phone', '082222222222')->value('id')]);
         $this->assertDatabaseHas('purchase_histories', ['id' => $b2c->json('id'), 'customer_id' => Customer::where('phone', '083333333333')->value('id')]);
         $this->assertDatabaseHas('purchase_histories', ['id' => $repeatB2c->json('id'), 'customer_id' => Customer::where('phone', '083333333333')->value('id')]);
-        $this->assertSame(3, Customer::count());
+        $this->assertSame(2, Customer::count());
         $this->assertSame(2, Customer::where('phone', '083333333333')->firstOrFail()->purchaseHistories()->count());
 
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin)->get(route('admin.customers.index'))
             ->assertOk()
             ->assertSee('Export Customer per Kanal')
-            ->assertSee('Pembeli Internal')
             ->assertSee('Sari')
             ->assertSee('Pembeli Online')
             ->assertSee('<th>Total pesanan</th>', false)
             ->assertSee('Rp 0', false)
             ->assertDontSee('<th>Outlet / PBF</th>', false)
-            ->assertSee('Internal 1')
             ->assertSee('B2B 1')
             ->assertSee('B2C 2');
 
         $this->get(route('admin.customers.index', ['channel' => 'b2b']))
             ->assertOk()
             ->assertSee('Sari')
-            ->assertDontSee('Pembeli Internal')
             ->assertDontSee('Pembeli Online');
     }
 
