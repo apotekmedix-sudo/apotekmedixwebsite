@@ -121,7 +121,9 @@ class ProductController extends Controller
             'total'           => $total,
             'kategoriOptions' => $kategoriOptions,
             'perusahaanList'  => $perusahaanList,
-            'b2cAccess'       => $this->hasB2cAccess($request),
+            'b2cAccess'       => $b2cAccess = $this->hasB2cAccess($request),
+            'internalAccess'  => $internalAccess = $this->hasInternalAccess($request),
+            'redLogoAccess'   => $b2cAccess || $internalAccess,
         ]);
     }
 

@@ -326,4 +326,112 @@ class PurchaseHistoryTest extends TestCase
             'payment_method' => 'Tempo',
         ]);
     }
+
+    public function test_discount_code_decrements_used_count_when_verified_order_is_cancelled_and_omzet_excludes_cancelled_and_pbf_po(): void
+    {
+        $admin = \App\Models\User::factory()->create(['role' => 'admin']);
+        $medicine = Medicine::create([
+            'nama_obat' => 'Obat Uji Bug',
+            'kategori' => 'MEDIX',
+            'logo' => 'K',
+            'golongan' => 'Obat Keras',
+            'harga' => 20000,
+            'harga_retail' => 20000,
+            'harga_modal' => 12000,
+            'stok' => 10,
+            'deskripsi' => 'Produk uji bug',
+        ]);
+
+        $this->assertTrue($medicine->hasRedLogo());
+
+        // Admin edit produk harus 200 OK (tanpa TypeError StockAvailability::annotate)
+        $this->withMiddleware()
+            ->actingAs($admin)
+            ->get(route('admin.produk.edit', $medicine))
+            ->assertOk();
+
+        $voucher = \App\Models\DiscountCode::create([
+            'code' => 'HEMAT5K',
+            'description' => 'Potongan 5rb',
+            'discount_type' => 'fixed',
+            'discount_value' => 5000,
+            'is_unlimited' => false,
+            'usage_limit' => 2,
+            'used_count' => 0,
+            'is_active' => true,
+        ]);
+
+        // Simpan pesanan dengan voucher diskon
+        $b2cCode = \App\Models\ShoppingAccessCode::create([
+            'channel' => \App\Models\ShoppingAccessCode::CHANNEL_B2C,
+            'code_hash' => \Illuminate\Support\Facades\Hash::make('11111'),
+            'expires_at' => now()->addDays(30),
+        ]);
+
+        $res = $this->withSession([
+            'b2c_access_expires_at' => now()->addDay()->timestamp,
+            'b2c_access_code_hash' => $b2cCode->code_hash,
+        ])->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pelanggan Voucher',
+            'phone' => '08123456000',
+            'discount_code' => 'HEMAT5K',
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 1, 'harga' => 20000],
+            ],
+            'total' => 15000,
+        ])->assertOk();
+
+        $order = \App\Models\PurchaseHistory::findOrFail($res->json('id'));
+        $this->assertSame(1, $voucher->fresh()->used_count);
+        $this->assertSame(15000, $order->effective_total);
+
+        // Verifikasi oleh kasir -> effective_total tetap 15000 & approval_status = approved
+        $this->withMiddleware()
+            ->actingAs($admin)
+            ->post(route('cashier.orders.verify', $order))
+            ->assertRedirect();
+
+        $order->refresh();
+        $this->assertSame('verified', $order->receipt_status);
+        $this->assertSame('approved', $order->approval_status);
+        $this->assertSame(15000, $order->effective_total);
+
+        // Buat PO Admin ke PBF (tidak boleh masuk omzet penjualan atau antrean kasir)
+        \App\Models\PurchaseHistory::create([
+            'buyer_type' => 'apotik',
+            'buyer_name' => 'Apotek Medix',
+            'pbf_name' => 'PT PBF Distributor',
+            'items' => [['id' => $medicine->id, 'quantity' => 5, 'harga' => 12000]],
+            'total' => 60000,
+            'original_total' => 60000,
+            'discounted_total' => 60000,
+            'transaction_channel' => 'online',
+            'is_pbf_purchase_order' => true,
+            'payment_status' => 'pending',
+        ]);
+
+        // Cek totalOmzet di dashboard admin hanya 15000 (bukan 75000)
+        $dashboardResp = $this->withMiddleware()
+            ->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk();
+        $this->assertSame(15000, (int) $dashboardResp->viewData('totalOmzet'));
+
+        // Batalkan pesanan yang sudah verified -> stok kembali, kuota voucher kembali (used_count = 0), omzet jadi 0
+        $this->withMiddleware()
+            ->actingAs($admin)
+            ->post(route('cashier.orders.cancel', $order))
+            ->assertRedirect();
+
+        $this->assertSame('cancelled', $order->fresh()->receipt_status);
+        $this->assertSame(0, $voucher->fresh()->used_count);
+        $this->assertSame(10, $medicine->fresh()->stok);
+
+        $dashboardAfterCancel = $this->withMiddleware()
+            ->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk();
+        $this->assertSame(0, (int) $dashboardAfterCancel->viewData('totalOmzet'));
+    }
 }

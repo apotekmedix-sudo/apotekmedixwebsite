@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Medicine;
+use App\Support\StockAvailability;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -22,8 +23,8 @@ class CategoryController extends Controller
             abort(404, 'Kategori tidak ditemukan');
         }
 
-        // Query produk berdasarkan kategori
-        $query = Medicine::query();
+        // Query produk berdasarkan kategori (non-PBF dan siap jual B2C)
+        $query = Medicine::nonPbf()->availableForB2c();
 
         // Filter berdasarkan kategori dan sub-kategori
         $query = $this->filterByCategory($query, $mainCategory, $subCategory);
@@ -35,6 +36,7 @@ class CategoryController extends Controller
         $query->filterByAttributes($request->only(['indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan']));
 
         $medicines = $query->latest()->paginate(12)->withQueryString();
+        StockAvailability::annotate($medicines->getCollection());
 
         return view('category-layer2', compact(
             'mainCategory',
@@ -106,9 +108,7 @@ class CategoryController extends Controller
                 } elseif ($mainCategory === 'apotik') {
                     $q->where('kategori_produk', 'like', '%OBAT%')
                       ->orWhere('kategori_produk', 'like', '%APOTIK%')
-                      ->orWhere('kategori', 'like', '%Apotik%')
-                      ->orWhere('is_resep', true)
-                      ->orWhere('is_resep', false);
+                      ->orWhere('kategori', 'like', '%Apotik%');
                 } else {
                     $q->where('kategori', 'like', "%{$mainCategoryName}%");
                 }

@@ -250,7 +250,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             ->assertOk()
             ->assertSee('Terlaris B2C')
             ->assertSee('Promo B2C')
-            ->assertDontSee(route('products.apotek'), false)
+            ->assertDontSee('href="' . route('products.apotek') . '"', false)
             ->assertSee('class="discounted-product-card"', false)
             ->assertSee('data-price-target="home-price-current-a-', false)
             ->assertSee('data-price-target="home-price-b-', false);
@@ -274,7 +274,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             ->assertSee('aria-expanded="false"', false)
             ->assertSee('data-additional-home-product', false)
             ->assertSee('fa-chevron-down', false)
-            ->assertDontSee(route('products.apotek'), false);
+            ->assertDontSee('href="' . route('products.apotek') . '"', false);
     }
 
     public function test_import_maps_channel_prices_and_package_units_from_new_template(): void

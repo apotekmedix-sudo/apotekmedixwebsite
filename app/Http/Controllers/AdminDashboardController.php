@@ -233,6 +233,12 @@ class AdminDashboardController extends Controller
 
     private function releaseOrRestoreOrderStock(PurchaseHistory $order): void
     {
+        if ($order->receipt_status !== 'cancelled' && $order->approval_status !== 'rejected' && !empty($order->discount_code) && Schema::hasTable('discount_codes')) {
+            $voucher = \App\Models\DiscountCode::where('code', $order->discount_code)->lockForUpdate()->first();
+            if ($voucher && $voucher->used_count > 0) {
+                $voucher->decrement('used_count');
+            }
+        }
         if (Schema::hasTable('purchase_stock_reservations')) {
             $reservations = PurchaseStockReservation::where('purchase_history_id', $order->id)->get();
             foreach ($reservations as $reservation) {
@@ -393,9 +399,9 @@ class AdminDashboardController extends Controller
                         $index === 0 ? $order->id                                              : '',
                         $index === 0 ? $order->created_at->format('d/m/Y H:i')                : '',
                         $index === 0 ? ($order->buyer_name ?? '')                             : '',
-                        $index === 0 ? ($order->buyer_type === 'apotik' ? 'Apotik' : 'Umum') : '',
+                        $index === 0 ? (match ($order->buyer_type) { 'apotik' => 'Apotik', 'dokter' => 'Dokter / Klinik', 'pbf' => 'B2B / PBF', default => 'Umum' }) : '',
                         $index === 0 ? ($order->transaction_channel === 'offline' ? 'Offline / Kios' : 'Online') : '',
-                        $index === 0 ? ($order->payment_status === 'paid' ? 'Lunas' : 'Menunggu pembayaran') : '',
+                        $index === 0 ? (match ($order->payment_status) { 'paid' => 'Lunas', 'cancelled' => 'Dibatalkan', default => 'Menunggu pembayaran' }) : '',
                         $index === 0 ? ($order->cashier?->name ?? '') : '',
                         $index === 0 ? ($order->paid_at?->format('d/m/Y H:i') ?? '') : '',
                         $index === 0 ? ($order->phone ?? '')                                   : '',
@@ -417,9 +423,9 @@ class AdminDashboardController extends Controller
                     $order->id,
                     $order->created_at->format('d/m/Y H:i'),
                     $order->buyer_name ?? '',
-                    $order->buyer_type === 'apotik' ? 'Apotik' : 'Umum',
+                    match ($order->buyer_type) { 'apotik' => 'Apotik', 'dokter' => 'Dokter / Klinik', 'pbf' => 'B2B / PBF', default => 'Umum' },
                     $order->transaction_channel === 'offline' ? 'Offline / Kios' : 'Online',
-                    $order->payment_status === 'paid' ? 'Lunas' : 'Menunggu pembayaran',
+                    match ($order->payment_status) { 'paid' => 'Lunas', 'cancelled' => 'Dibatalkan', default => 'Menunggu pembayaran' },
                     $order->cashier?->name ?? '',
                     $order->paid_at?->format('d/m/Y H:i') ?? '',
                     $order->phone    ?? '',
@@ -437,7 +443,9 @@ class AdminDashboardController extends Controller
                 ];
             }
 
-            $grandTotal += $order->effective_total;
+            if (!$order->is_pbf_purchase_order && $order->receipt_status !== 'cancelled' && $order->payment_status !== 'cancelled' && $order->approval_status !== 'rejected') {
+                $grandTotal += $order->effective_total;
+            }
         }
 
         // Baris kosong pemisah
@@ -459,6 +467,30 @@ class AdminDashboardController extends Controller
     private function revenueOrders()
     {
         $query = PurchaseHistory::query();
+        if (Schema::hasColumn('purchase_histories', 'is_pbf_purchase_order')) {
+            $query->where(function ($q) {
+                $q->whereNull('is_pbf_purchase_order')
+                    ->orWhere('is_pbf_purchase_order', false);
+            });
+        }
+        if (Schema::hasColumn('purchase_histories', 'receipt_status')) {
+            $query->where(function ($q) {
+                $q->whereNull('receipt_status')
+                    ->orWhere('receipt_status', '!=', 'cancelled');
+            });
+        }
+        if (Schema::hasColumn('purchase_histories', 'approval_status')) {
+            $query->where(function ($q) {
+                $q->whereNull('approval_status')
+                    ->orWhere('approval_status', '!=', 'rejected');
+            });
+        }
+        if (Schema::hasColumn('purchase_histories', 'payment_status')) {
+            $query->where(function ($q) {
+                $q->whereNull('payment_status')
+                    ->orWhere('payment_status', '!=', 'cancelled');
+            });
+        }
         if (Schema::hasColumn('purchase_histories', 'transaction_channel')
             && Schema::hasColumn('purchase_histories', 'payment_status')) {
             $query->where(function ($orders) {

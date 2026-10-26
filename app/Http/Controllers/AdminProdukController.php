@@ -350,7 +350,7 @@ class AdminProdukController extends Controller
             'harga_modal'       => ['nullable', 'numeric', 'min:0'],
             'harga_internal'    => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
-            'harga_retail'      => ['required', 'numeric', 'min:0'],
+            'harga_retail'      => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
             'sediaan'           => ['nullable', 'string', 'max:255'],
             'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
@@ -380,6 +380,7 @@ class AdminProdukController extends Controller
         }
 
         $validated['kategori_produk'] = 'OBAT';
+        $validated['harga_retail'] = $validated['harga_retail'] ?? ($validated['harga'] ?? 0);
         $validated['harga'] = $validated['harga_retail'];
         $this->applyPackagingFields($request, $validated);
         $images = $request->file('gambar', []);
@@ -399,7 +400,7 @@ class AdminProdukController extends Controller
 
     public function edit(Medicine $produk)
     {
-        StockAvailability::annotate([$produk]);
+        StockAvailability::annotate($produk->newCollection([$produk]));
 
         return view('admin.produk.edit', ['medicine' => $produk]);
     }
@@ -421,7 +422,7 @@ class AdminProdukController extends Controller
             'harga_modal'       => ['nullable', 'numeric', 'min:0'],
             'harga_internal'    => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
-            'harga_retail'      => ['required', 'numeric', 'min:0'],
+            'harga_retail'      => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
             'sediaan'           => ['nullable', 'string', 'max:255'],
             'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
@@ -435,6 +436,7 @@ class AdminProdukController extends Controller
         ]);
 
         $this->validateTabletPackaging($request, $validated);
+        $validated['harga_retail'] = $validated['harga_retail'] ?? ($validated['harga'] ?? 0);
         $validated['harga'] = $validated['harga_retail'];
         $this->applyPackagingFields($request, $validated);
         $images = $request->file('gambar', []);
@@ -571,7 +573,7 @@ class AdminProdukController extends Controller
             'harga_modal'       => ['required', 'numeric', 'min:0'],
             'harga_internal'    => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
-            'harga_retail'      => ['required', 'numeric', 'min:0'],
+            'harga_retail'      => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
             'price_strip'       => ['nullable', 'numeric', 'min:0'],
             'price_tablet'      => ['nullable', 'numeric', 'min:0'],
             'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],

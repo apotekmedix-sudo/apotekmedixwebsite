@@ -59,7 +59,7 @@ class CashierController extends Controller
             'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
 
-        $query = PurchaseHistory::query();
+        $query = $this->salesOrdersQuery();
         if (!empty($filters['channel']) && $filters['channel'] !== 'all') {
             match ($filters['channel']) {
                 'offline' => $query->where('transaction_channel', 'offline'),
@@ -92,14 +92,14 @@ class CashierController extends Controller
 
         $orders = $query->latest()->paginate(20)->withQueryString();
         $metrics = [
-            'total' => PurchaseHistory::count(),
-            'pending' => PurchaseHistory::where('receipt_status', 'pending')->count(),
-            'verified' => PurchaseHistory::where('receipt_status', 'verified')->count(),
-            'printed' => PurchaseHistory::where('receipt_status', 'printed')->count(),
-            'cancelled' => PurchaseHistory::where('receipt_status', 'cancelled')->count(),
+            'total' => $this->salesOrdersQuery()->count(),
+            'pending' => $this->salesOrdersQuery()->where('receipt_status', 'pending')->count(),
+            'verified' => $this->salesOrdersQuery()->where('receipt_status', 'verified')->count(),
+            'printed' => $this->salesOrdersQuery()->where('receipt_status', 'printed')->count(),
+            'cancelled' => $this->salesOrdersQuery()->where('receipt_status', 'cancelled')->count(),
         ];
-        $metrics['latest_pending_id'] = PurchaseHistory::where('receipt_status', 'pending')->max('id');
-        $paymentMethods = PurchaseHistory::query()
+        $metrics['latest_pending_id'] = $this->salesOrdersQuery()->where('receipt_status', 'pending')->max('id');
+        $paymentMethods = $this->salesOrdersQuery()
             ->whereNotNull('payment_method')
             ->where('payment_method', '!=', '')
             ->distinct()
@@ -111,7 +111,7 @@ class CashierController extends Controller
 
     public function updates(): \Illuminate\Http\JsonResponse
     {
-        $pending = PurchaseHistory::where('receipt_status', 'pending');
+        $pending = $this->salesOrdersQuery()->where('receipt_status', 'pending');
 
         return response()->json([
             'pending' => (clone $pending)->count(),
@@ -166,6 +166,7 @@ class CashierController extends Controller
             $isCreditTerm = strcasecmp(trim((string) $lockedOrder->payment_method), 'Tempo') === 0;
             $lockedOrder->update([
                 'receipt_status' => 'verified',
+                'approval_status' => 'approved',
                 'payment_status' => $isCreditTerm ? $lockedOrder->payment_status : 'paid',
                 'cashier_id' => Auth::id(),
                 'paid_at' => $isCreditTerm ? null : now(),
@@ -224,7 +225,7 @@ class CashierController extends Controller
     {
         $cancelled = DB::transaction(function () use ($order): bool {
             $lockedOrder = PurchaseHistory::whereKey($order->id)->lockForUpdate()->firstOrFail();
-            if (!in_array($lockedOrder->receipt_status, ['pending', 'printed'], true)) {
+            if (!in_array($lockedOrder->receipt_status, ['pending', 'verified', 'printed'], true)) {
                 return false;
             }
 
@@ -302,6 +303,13 @@ class CashierController extends Controller
                 'cancelled_at' => now(),
             ]);
 
+            if (!empty($lockedOrder->discount_code) && \Illuminate\Support\Facades\Schema::hasTable('discount_codes')) {
+                $voucher = \App\Models\DiscountCode::where('code', $lockedOrder->discount_code)->lockForUpdate()->first();
+                if ($voucher && $voucher->used_count > 0) {
+                    $voucher->decrement('used_count');
+                }
+            }
+
             return true;
         });
 
@@ -321,5 +329,18 @@ class CashierController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('cashier.login');
+    }
+
+    private function salesOrdersQuery()
+    {
+        $query = PurchaseHistory::query();
+        if (\Illuminate\Support\Facades\Schema::hasColumn('purchase_histories', 'is_pbf_purchase_order')) {
+            $query->where(function ($q) {
+                $q->whereNull('is_pbf_purchase_order')
+                    ->orWhere('is_pbf_purchase_order', false);
+            });
+        }
+
+        return $query;
     }
 }

@@ -31,6 +31,12 @@ class Medicine extends Model
         });
 
         static::creating(function (Medicine $medicine): void {
+            if ($medicine->kategori === null) {
+                $medicine->kategori = '';
+            }
+            if ($medicine->deskripsi === null) {
+                $medicine->deskripsi = (string) ($medicine->nama_obat ?? '');
+            }
             if (Schema::hasColumn('medicines', 'stock_base_units') && $medicine->stock_base_units === null) {
                 $medicine->stock_base_units = (int) $medicine->stok * $medicine->units_per_box;
             }
@@ -430,7 +436,7 @@ class Medicine extends Model
 
     public function hasRedLogo(): bool
     {
-        return in_array(mb_strtolower(trim((string) $this->logo)), ['merah', 'red'], true);
+        return $this->isRedLogo();
     }
 
     public function isAvailable(): bool

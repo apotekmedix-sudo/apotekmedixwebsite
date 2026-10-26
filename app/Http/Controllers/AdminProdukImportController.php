@@ -307,7 +307,7 @@ class AdminProdukImportController extends Controller
                     ? $this->parseHarga($data['HARGA'])
                     : ($legacyRetail ?: $this->parseHarga($hargaRaw));
                 $stockQuantity = $data['STOK_KEMASAN'] ?? $data['STOK_SATUAN'] ?? $data['STOK'] ?? '0';
-                $stok = max(0, $this->parseStockQuantity($stockQuantity));
+                $stok = max(0.0, $this->parseStockQuantity($stockQuantity));
 
                 $katRaw    = strtoupper(trim((string) ($data['KATEGORI'] ?? '')));
                 $katProduk = in_array($katRaw, $validKategori) ? $katRaw : 'OBAT';
@@ -362,7 +362,7 @@ class AdminProdukImportController extends Controller
                 if ($packagingEnabled && ($stripsPerBox < 1 || $tabletsPerStrip < 1)) {
                     throw new \InvalidArgumentException('Kemasan strip/tablet harus diisi jika UNIT PACKAGING ENABLED aktif.');
                 }
-                if (!$packagingEnabled && $stok !== floor($stok)) {
+                if (!$packagingEnabled && (float) $stok !== floor((float) $stok)) {
                     throw new \InvalidArgumentException('Stok pecahan hanya dapat digunakan untuk kemasan tablet/kapsul dengan rasio strip dan tablet.');
                 }
                 $hasPackagingColumns = $newPackagingColumns
@@ -606,7 +606,7 @@ class AdminProdukImportController extends Controller
             'komposisi' => ['KOMPOSISI'],
             'indikasi' => ['INDIKASI'],
             'gambar' => ['GAMBAR', 'LINK_FOTO'],
-            'gambar_tambahan' => ['GAMBAR_TAMBAHAN'],
+            'dosis' => ['DOSIS'],
             'promo_b2b_percent' => ['PROMO_B2B_PERCENT'],
             'promo_b2c_percent' => ['PROMO_B2C_PERCENT'],
             'is_resep' => ['IS_RESEP'],
