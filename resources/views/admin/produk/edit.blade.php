@@ -191,6 +191,13 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Deskripsi Produk</label>
+                    <textarea name="deskripsi" class="form-input" rows="3"
+                              placeholder="Jelaskan informasi umum produk">{{ old('deskripsi', $medicine->deskripsi) }}</textarea>
+                    @error('deskripsi')<div class="form-error">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Komposisi</label>
                     <textarea name="komposisi" class="form-input" rows="3"
                               placeholder="Contoh: Paracetamol 500 mg, Aqua, Glycerin...">{{ old('komposisi', $medicine->komposisi) }}</textarea>

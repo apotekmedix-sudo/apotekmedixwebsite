@@ -40,17 +40,17 @@ class AdminProdukImportController extends Controller
     public function downloadTemplate()
     {
         $columns = [
-            'NO CONTOH', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KATEGORI', 'KOMPOSISI', 'INDIKASI',
+            'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KATEGORI', 'KOMPOSISI', 'INDIKASI', 'DESKRIPSI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'MODAL', 'HARGA INTERNAL',
             'HARGA JUAL B2B', 'HARGA JUAL B2C', 'LINK FOTO 1', 'LINK FOTO 2',
         ];
-        $widths = [8, 25, 28, 12, 18, 22, 28, 28, 12, 22, 12, 12, 15, 16, 18, 18, 48, 48];
+        $widths = [8, 25, 28, 12, 18, 22, 28, 28, 36, 12, 22, 12, 12, 15, 16, 18, 18, 48, 48];
 
         $rows = [
-            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'OBAT', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '117771', '120000', '135437', '153102', '', ''],
-            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'OBAT', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '200000', '210000', '205000', '220000', '', ''],
-            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'OBAT', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '12000', '13000', '12500', '14000', '', ''],
-            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'OBAT', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '50000', '52000', '51000', '55000', '', ''],
+            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'obat-resep', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'Membantu meredakan rasa tidak nyaman akibat asam lambung.', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '117771', '120000', '135437', '153102', '', ''],
+            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'obat-resep', 'Sildenafil', 'Disfungsi ereksi', 'Obat resep untuk terapi sesuai petunjuk tenaga kesehatan.', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '200000', '210000', '205000', '220000', '', ''],
+            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'flu-batuk', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'Sirup untuk membantu meredakan gejala flu dan batuk.', 'BOTOL', '', 'SIRUP', '1', '12000', '13000', '12500', '14000', '', ''],
+            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'obat-resep', 'Diclofenac', 'Membantu meredakan nyeri otot', 'Gel untuk membantu meredakan nyeri otot sesuai petunjuk.', 'TUBE', '', 'KRIM', '5', '50000', '52000', '51000', '55000', '', ''],
         ];
 
         return \App\Helpers\XlsxWriter::download('template_produk.xlsx', $columns, $rows, $widths);
@@ -310,11 +310,7 @@ class AdminProdukImportController extends Controller
                 $stok = max(0.0, $this->parseStockQuantity($stockQuantity));
 
                 $katRaw = trim((string) ($data['KATEGORI'] ?? ''));
-                $legacyCategory = strtoupper($katRaw);
-                $categoryKey = strtolower($katRaw);
-                $katProduk = in_array($categoryKey, $validKategori, true)
-                    ? $categoryKey
-                    : (in_array($legacyCategory, Companies::LIST, true) ? $legacyCategory : 'OBAT');
+                $katProduk = $this->resolveProductCategory($katRaw, $validKategori);
 
                 $sku      = trim((string) ($data['SKU'] ?? ''));
                 $distributor = trim((string) ($data['DISTRIBUTOR'] ?? ''));
@@ -440,15 +436,7 @@ class AdminProdukImportController extends Controller
                 }
                 }
 
-                // Susun deskripsi dari DESKRIPSI, KOMPOSISI, INDIKASI — fallback ke nama produk
-                $deskripsiBagian = array_filter(array_map('trim', [
-                    $data['DESKRIPSI']  ?? '',
-                    $data['KOMPOSISI']  ?? '',
-                    $data['INDIKASI']   ?? '',
-                ]));
-                $deskripsiValue = !empty($deskripsiBagian)
-                    ? implode(' | ', $deskripsiBagian)
-                    : $namaProduk;
+                $deskripsiValue = trim((string) ($data['DESKRIPSI'] ?? ''));
 
                 $attributes = [
                         'sku'              => $sku ?: null,
@@ -626,7 +614,7 @@ class AdminProdukImportController extends Controller
             'price_tablet' => ['HARGA_JUAL_PER_TABLET'],
             'terjual' => ['TERJUAL'],
             'grade' => ['GRADE'],
-            'deskripsi' => ['DESKRIPSI', 'KOMPOSISI', 'INDIKASI'],
+            'deskripsi' => ['DESKRIPSI'],
             'komposisi' => ['KOMPOSISI'],
             'indikasi' => ['INDIKASI'],
             'gambar' => ['GAMBAR', 'LINK_FOTO'],
@@ -660,6 +648,33 @@ class AdminProdukImportController extends Controller
         }
 
         return $attributes;
+    }
+
+    private function resolveProductCategory(string $value, array $validCategories): string
+    {
+        $legacyCategory = strtoupper(trim($value));
+        if (in_array($legacyCategory, Companies::LIST, true)) {
+            return $legacyCategory;
+        }
+
+        $normalize = static function (string $category): string {
+            $category = mb_strtolower(trim($category));
+            $category = preg_replace('/[^\p{L}\p{N}&]+/u', ' ', $category) ?? $category;
+
+            return trim(preg_replace('/\s+/', ' ', $category) ?? $category);
+        };
+
+        $normalizedValue = $normalize($value);
+        foreach (HomepageProductCategories::options() as $key => $label) {
+            if (
+                in_array($key, $validCategories, true)
+                && ($normalizedValue === $normalize($key) || $normalizedValue === $normalize($label))
+            ) {
+                return $key;
+            }
+        }
+
+        return 'OBAT';
     }
 
     private function resolveHeaderKey(string $header): string

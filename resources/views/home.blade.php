@@ -1760,7 +1760,7 @@
             @endif
             <h3 class="discounted-product-name"><a href="{{ route('medicines.show', ['id' => $promoMedicine->id, 'from' => 'home']) }}" style="color:inherit;text-decoration:none;">{{ $promoMedicine->nama_obat }}</a></h3>
             <div class="medicine-card-details">
-              <p title="{{ $promoMedicine->komposisi ?: $promoMedicine->nama_obat }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->komposisi ?: $promoMedicine->nama_obat, 15, '...') }}</p>
+              <p title="{{ $promoMedicine->komposisi ?: '—' }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->komposisi ?: '—', 15, '...') }}</p>
               <p title="{{ $promoMedicine->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->indikasi ?: '—', 15, '...') }}</p>
               <p title="{{ $promoMedicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->golongan ?: '—', 15, '...') }}</p>
             </div>
@@ -1830,7 +1830,7 @@
           <div class="medicine-card-principal">{{ $med->brand ?: $med->kategori }}</div>
           <h3 class="prod-name"><a href="{{ route('medicines.show', ['id' => $med->id, 'from' => 'home']) }}">{{ $med->nama_obat }}</a></h3>
           <div class="medicine-card-details">
-            <p title="{{ $med->komposisi ?: $med->nama_obat }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($med->komposisi ?: $med->nama_obat, 15, '...') }}</p>
+            <p title="{{ $med->komposisi ?: '—' }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($med->komposisi ?: '—', 15, '...') }}</p>
             <p title="{{ $med->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($med->indikasi ?: '—', 15, '...') }}</p>
             <p title="{{ $med->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($med->golongan ?: '—', 15, '...') }}</p>
           </div>
@@ -1917,7 +1917,7 @@
           <div class="medicine-card-principal">{{ $med->brand ?: $med->kategori }}</div>
           <h3 class="prod-name"><a href="{{ route('medicines.show', ['id' => $med->id, 'from' => 'home', 'search' => $search ?: null]) }}">{{ $med->nama_obat }}</a></h3>
           <div class="medicine-card-details">
-            <p title="{{ $med->komposisi ?: $med->nama_obat }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($med->komposisi ?: $med->nama_obat, 15, '...') }}</p>
+            <p title="{{ $med->komposisi ?: '—' }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($med->komposisi ?: '—', 15, '...') }}</p>
             <p title="{{ $med->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($med->indikasi ?: '—', 15, '...') }}</p>
             <p title="{{ $med->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($med->golongan ?: '—', 15, '...') }}</p>
           </div>

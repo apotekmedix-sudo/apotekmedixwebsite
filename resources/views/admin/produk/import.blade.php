@@ -51,6 +51,7 @@
         <li>Untuk edit massal, download file Export Produk di bawah, edit kolomnya, lalu pilih mode Edit massal</li>
         <li>Isi jumlah stok sesuai satuan pada kolom <strong>SATUAN</strong> di <strong>STOK SATUAN</strong>, misalnya stok 5 botol diisi <strong>5</strong>.</li>
         <li>Isi satu harga B2C untuk satuan kemasan produk pada kolom <strong>HARGA JUAL B2C</strong>. Template ini tidak lagi meminta harga atau rasio per strip/tablet.</li>
+        <li>Isi kolom <strong>DESKRIPSI</strong>, <strong>KOMPOSISI</strong>, dan <strong>INDIKASI</strong> secara terpisah sesuai informasi produk.</li>
         <li>Isi <strong>LINK FOTO 1</strong> dan <strong>LINK FOTO 2</strong> dengan URL HTTPS langsung ke file gambar publik. Foto akan diunduh dan disimpan di website saat import; ukuran maksimal 5 MB per foto.</li>
         <li>Kolom opsional boleh dikosongkan; baris tanpa nama produk akan dilewati.</li>
         <li>Upload file <strong>.csv</strong>, <strong>.xls</strong>, atau <strong>.xlsx</strong></li>
@@ -58,7 +59,7 @@
         <li>Mode edit massal hanya memperbarui produk berdasarkan ID pada kolom NO; data tidak akan membuat produk baru</li>
     </ol>
     <p style="color:#059669;margin:0.75rem 0 0;font-size:0.875rem;font-weight:600;">
-        ✅ Template berisi 17 kolom: data produk, stok satuan, harga, dan dua kolom LINK FOTO
+        ✅ Template berisi 19 kolom: kategori, deskripsi, komposisi, indikasi, data produk, harga, dan dua kolom LINK FOTO
     </p>
 </div>
 
@@ -81,13 +82,15 @@
             <table>
                 <thead>
                     <tr>
-                        <th>NO CONTOH</th>
+                        <th>NO</th>
                         <th>PRINCIPLE</th>
                         <th>NAMA PRODUK</th>
                         <th>LOGO</th>
                         <th>GOLONGAN</th>
+                        <th>KATEGORI</th>
                         <th>KOMPOSISI</th>
                         <th>INDIKASI</th>
+                        <th>DESKRIPSI</th>
                         <th>SATUAN</th>
                         <th>KEMASAN</th>
                         <th>SEDIAAN</th>
@@ -107,8 +110,10 @@
                         <td>Promag Tablet</td>
                         <td>HIJAU</td>
                         <td>Obat Bebas</td>
+                        <td>obat-resep</td>
                         <td>Antasida &amp; Simetikon</td>
                         <td>Membantu meredakan sakit maag</td>
+                        <td>Membantu meredakan rasa tidak nyaman akibat asam lambung.</td>
                         <td>BOX</td>
                         <td>10 blister @ 10 tablet</td>
                         <td>TABLET</td>
@@ -121,8 +126,10 @@
                         <td>Viagra 100mg</td>
                         <td>MERAH</td>
                         <td>Obat Keras</td>
+                        <td>obat-resep</td>
                         <td>Sildenafil</td>
                         <td>Disfungsi ereksi</td>
+                        <td>Obat resep untuk terapi sesuai petunjuk tenaga kesehatan.</td>
                         <td>BOX</td>
                         <td>1 blister @ 4 tablet</td>
                         <td>TABLET</td>
@@ -135,8 +142,10 @@
                         <td>Anakod Sirup</td>
                         <td>BIRU</td>
                         <td>Bebas Terbatas</td>
+                        <td>flu-batuk</td>
                         <td>Paracetamol</td>
                         <td>Membantu meredakan batuk dan flu</td>
+                        <td>Sirup untuk membantu meredakan gejala flu dan batuk.</td>
                         <td>BOTOL</td>
                         <td></td>
                         <td>SIRUP</td>
@@ -149,8 +158,10 @@
                         <td>Voltaren Gel</td>
                         <td>MERAH</td>
                         <td>Obat Keras</td>
+                        <td>obat-resep</td>
                         <td>Diclofenac</td>
                         <td>Membantu meredakan nyeri otot</td>
+                        <td>Gel untuk membantu meredakan nyeri otot sesuai petunjuk.</td>
                         <td>TUBE</td>
                         <td></td>
                         <td>KRIM</td>

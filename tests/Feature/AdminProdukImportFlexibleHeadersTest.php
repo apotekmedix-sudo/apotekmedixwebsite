@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Http\Controllers\AdminProdukImportController;
 use App\Http\Controllers\AdminProdukController;
 use App\Http\Controllers\HomeController;
+use App\Helpers\XlsxWriter;
 use App\Models\Medicine;
 use App\Models\User;
 use App\Services\ProductImageDownloader;
@@ -313,8 +314,8 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
     {
         $path = tempnam(sys_get_temp_dir(), 'import');
         file_put_contents($path, implode("\n", [
-            'NO CONTOH,PRINCIPLE,NAMA PRODUK,LOGO,GOLONGAN,KATEGORI,KOMPOSISI,INDIKASI,SATUAN,KEMASAN,SEDIAAN,STOK SATUAN,MODAL,HARGA INTERNAL,HARGA JUAL B2B,HARGA JUAL B2C,LINK FOTO 1,LINK FOTO 2',
-            '1,PT KALBE FARMA,Promag Tablet,HIJAU,Obat Bebas,vitamin-suplemen,"Antasida, Simetikon","Meredakan sakit maag, dan perih",BOX,10 blister @ 6 tablet,TABLET,2,100000,110000,130000,140000,,',
+            'NO,PRINCIPLE,NAMA PRODUK,LOGO,GOLONGAN,KATEGORI,KOMPOSISI,INDIKASI,DESKRIPSI,SATUAN,KEMASAN,SEDIAAN,STOK SATUAN,MODAL,HARGA INTERNAL,HARGA JUAL B2B,HARGA JUAL B2C,LINK FOTO 1,LINK FOTO 2',
+            '1,PT KALBE FARMA,Promag Tablet,HIJAU,Obat Bebas,vitamin-suplemen,"Antasida, Simetikon","Meredakan sakit maag, dan perih","Deskripsi yang diisi terpisah",BOX,10 blister @ 6 tablet,TABLET,2,100000,110000,130000,140000,,',
         ]) . "\n");
 
         $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
@@ -333,6 +334,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame('Obat Bebas', $product->golongan);
         $this->assertSame('vitamin-suplemen', $product->kategori_produk);
         $this->assertSame('Antasida, Simetikon', $product->komposisi);
+        $this->assertSame('Deskripsi yang diisi terpisah', $product->deskripsi);
         $this->assertSame(110000.0, (float) $product->harga_internal);
         $this->assertSame(130000.0, $product->getChannelBasePrice('b2b'));
         $this->assertSame(140000.0, $product->getChannelBasePrice('b2c'));
@@ -340,6 +342,56 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame(2, (int) $product->stock_base_units);
 
         @unlink($path);
+    }
+
+    public function test_import_maps_display_category_names_and_does_not_fill_composition_from_product_name(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'category-composition-import');
+        file_put_contents($path, XlsxWriter::build(
+            ['NAMA PRODUK', 'KATEGORI', 'KOMPOSISI', 'DESKRIPSI'],
+            [
+                ['Produk OTC', 'OTC', '', 'Deskripsi OTC'],
+                ['Produk Flu', 'Flu & Batuk', '', ''],
+                ['Produk Resep', 'Obat Resep', '', ''],
+            ]
+        ));
+        $file = new UploadedFile(
+            $path,
+            'products.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        try {
+            $response = (new AdminProdukImportController())->import($request);
+            $errors = $response->getSession()->get('errors');
+            $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
+        } finally {
+            @unlink($path);
+        }
+
+        $this->assertDatabaseHas('medicines', [
+            'nama_obat' => 'Produk OTC',
+            'kategori_produk' => 'otc',
+            'komposisi' => null,
+            'deskripsi' => 'Deskripsi OTC',
+        ]);
+        $this->assertDatabaseHas('medicines', [
+            'nama_obat' => 'Produk Flu',
+            'kategori_produk' => 'flu-batuk',
+            'komposisi' => null,
+            'deskripsi' => '',
+        ]);
+        $this->assertDatabaseHas('medicines', [
+            'nama_obat' => 'Produk Resep',
+            'kategori_produk' => 'obat-resep',
+            'komposisi' => null,
+            'deskripsi' => '',
+        ]);
     }
 
     public function test_import_accepts_blank_optional_product_columns_and_incomplete_packaging_columns(): void
@@ -408,6 +460,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         );
         $request = new Request();
         $request->setMethod('POST');
+        $request->merge(['mode' => 'complete']);
         $request->files->set('file', $file);
 
         $response = $controller->import($request);
@@ -421,12 +474,15 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'harga_grosir' => 135437,
             'harga_retail' => 153102,
             'golongan' => 'Obat Bebas',
-            'kategori_produk' => 'OBAT',
+            'kategori_produk' => 'obat-resep',
+            'deskripsi' => 'Membantu meredakan rasa tidak nyaman akibat asam lambung.',
         ]);
         $this->assertDatabaseHas('medicines', [
             'nama_obat' => 'Anakod Sirup',
             'satuan' => 'BOTOL',
             'unit_packaging_enabled' => false,
+            'kategori_produk' => 'flu-batuk',
+            'deskripsi' => 'Sirup untuk membantu meredakan gejala flu dan batuk.',
         ]);
 
         @unlink($path);
@@ -490,6 +546,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'harga_grosir' => 135437,
             'harga_retail' => 153102,
             'stok' => 10,
+            'deskripsi' => 'Deskripsi CRUD terpisah',
         ];
         $controller = new AdminProdukController();
         $payload['gambar'] = [
@@ -506,6 +563,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame('SKINCARE & KOSMETIK', $product->kategori_produk);
         $this->assertSame('HIJAU', $product->logo);
         $this->assertSame('Obat Bebas', $product->golongan);
+        $this->assertSame('Deskripsi CRUD terpisah', $product->deskripsi);
         $this->assertSame(125000.0, (float) $product->harga_internal);
         $this->assertSame('10 strip @ 10 tablet', $product->kemasan);
         $this->assertFalse($product->unit_packaging_enabled);
@@ -530,6 +588,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $controller->update(Request::create('/', 'PUT', $payload), $product);
         $product->refresh();
         $this->assertSame('Produk CRUD Diperbarui', $product->nama_obat);
+        $this->assertSame('Deskripsi CRUD terpisah', $product->deskripsi);
         $this->assertSame(10, (int) $product->stock_base_units);
         $this->assertSame('MERAH', $product->logo);
         $this->assertSame('PBF', $product->kelompok);
@@ -537,6 +596,16 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame('A', $product->grade);
         $this->assertSame(4, (int) $product->terjual);
         $this->assertSame('Distributor Lama', $product->distributor);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)
+            ->get(route('admin.produk.create'))
+            ->assertOk()
+            ->assertSee('name="deskripsi"', false);
+        $this->get(route('admin.produk.edit', $product))
+            ->assertOk()
+            ->assertSee('name="deskripsi"', false)
+            ->assertSee('Deskripsi CRUD terpisah');
 
         $controller->updateInline(new Request([
             'harga_modal' => 120000,
@@ -584,6 +653,28 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame(7, (int) $product->stock_base_units);
         $this->assertSame(7, $product->getPhysicalStockUnits());
         $this->assertFalse($product->usesTabletPackaging());
+    }
+
+    public function test_product_create_and_edit_forms_include_a_separate_description_field(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $product = Medicine::create([
+            'nama_obat' => 'Produk Form Deskripsi',
+            'kategori' => 'Pabrik Contoh',
+            'kategori_produk' => 'otc',
+            'deskripsi' => 'Deskripsi form',
+            'harga' => 10000,
+            'stok' => 1,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.produk.create'))
+            ->assertOk()
+            ->assertSee('name="deskripsi"', false);
+        $this->get(route('admin.produk.edit', $product))
+            ->assertOk()
+            ->assertSee('name="deskripsi"', false)
+            ->assertSee('Deskripsi form');
     }
 
     public function test_admin_product_index_loads_without_missing_company_class(): void

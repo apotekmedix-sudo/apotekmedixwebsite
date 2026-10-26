@@ -2,13 +2,13 @@
     $accessReturnTo = $accessReturnTo ?? 'products.apotek';
 @endphp
 <style>
-    .catalog-access-controls { display:inline-flex; align-items:center; gap:.45rem; vertical-align:middle; }
-    .catalog-access-trigger,.catalog-access-exit { display:inline-grid; place-items:center; width:34px; height:34px; border:1px solid rgba(255,255,255,.55); border-radius:50%; color:#fff; cursor:pointer; box-shadow:0 3px 10px rgba(15,23,42,.2); transition:transform .18s,filter .18s; }
+    .catalog-access-controls { display:inline-flex; align-items:center; gap:.3rem; vertical-align:middle; }
+    .catalog-access-trigger,.catalog-access-exit { display:inline-grid; place-items:center; width:24px !important; min-width:24px !important; height:24px !important; min-height:24px !important; padding:0 !important; border:1px solid rgba(255,255,255,.55); border-radius:50%; color:#fff; cursor:pointer; box-shadow:0 2px 5px rgba(15,23,42,.2); transition:transform .18s,filter .18s; }
     .catalog-access-trigger:hover,.catalog-access-exit:hover { transform:translateY(-1px); filter:brightness(1.08); }
-    .catalog-access-trigger--internal { background:#dc2626; font-weight:900; }
-    .catalog-access-trigger--b2c { background:#f59e0b; }
-    .catalog-access-exit { width:25px; height:25px; border:0; background:#334155; font-size:.7rem; }
-    .catalog-access-state { display:inline-flex; align-items:center; gap:.3rem; color:#fff; font-size:.7rem; font-weight:700; }
+    .catalog-access-trigger--internal { background:#dc2626; font-size:.72rem; font-weight:900; }
+    .catalog-access-trigger--b2c { background:#f59e0b; font-size:.65rem; }
+    .catalog-access-exit { border:0; background:#334155; font-size:.6rem; }
+    .catalog-access-state { display:inline-flex; align-items:center; gap:.25rem; color:#fff; font-size:.65rem; font-weight:700; }
     .catalog-access-state form { display:inline-flex; margin:0; }
     .catalog-access-dialog { width:min(420px,calc(100% - 2rem)); max-width:420px; padding:0; border:1px solid #dbeafe; border-radius:16px; color:#0f172a; box-shadow:0 24px 70px rgba(15,23,42,.35); }
     .catalog-access-dialog::backdrop { background:rgba(15,23,42,.68); backdrop-filter:blur(3px); }
@@ -54,8 +54,8 @@
         @csrf
         <input type="hidden" name="redirect_to" value="{{ $accessReturnTo }}">
         <input type="hidden" name="access_type" value="b2c">
-        <h2 id="b2cAccessDialogTitle">Akses produk berlogo merah</h2>
-        <p>Kode B2C hanya membuka akses pembelian produk berlogo merah. Harga tetap menggunakan harga B2C.</p>
+        <h2 id="b2cAccessDialogTitle">WARNING B2C SALAH KLIK</h2>
+        <p>INI B2C ANDA SALAH KLIK</p>
         <label for="b2cAccessCode">Kode akses B2C</label>
         <input id="b2cAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" autocomplete="one-time-code" required>
         @if($errors->has('kode') && old('redirect_to') === $accessReturnTo && old('access_type') === 'b2c')
@@ -73,8 +73,8 @@
         @csrf
         <input type="hidden" name="redirect_to" value="{{ $accessReturnTo }}">
         <input type="hidden" name="access_type" value="internal">
-        <h2 id="internalAccessDialogTitle">Akses harga internal</h2>
-        <p>Kode Internal mengubah harga katalog ke harga internal dan sekaligus membuka produk berlogo merah.</p>
+        <h2 id="internalAccessDialogTitle">WARNING INTERNAL SALAH KLIK</h2>
+        <p>INI INTERNAL ANDA SALAH KLIK</p>
         <label for="internalAccessCode">Kode akses Internal</label>
         <input id="internalAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" autocomplete="one-time-code" required>
         @if($errors->has('kode') && old('redirect_to') === $accessReturnTo && old('access_type') === 'internal')

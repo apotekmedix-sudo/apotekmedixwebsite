@@ -670,12 +670,6 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.banners.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.banners')) active @endif">
-                        <span>🖼️</span>
-                        <span>Banner Promo</span>
-                    </a>
-                </li>
-                <li>
                     <a href="{{ route('admin.promotions.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.promotions') || str_contains(Route::current()->getName() ?? '', 'admin.discount-codes')) active @endif">
                         <i class="fa-solid fa-tags"></i>
                         <span>Promo & Diskon</span>

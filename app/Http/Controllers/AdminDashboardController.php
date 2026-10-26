@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Medicine;
-use App\Models\Banner;
 use App\Models\PurchaseHistory;
 use App\Models\PurchaseStockReservation;
 use App\Services\MedicineStockLedger;
@@ -30,9 +29,6 @@ class AdminDashboardController extends Controller
             $perKategori[$kat] = Medicine::where($categoryColumn, $kat)->count();
         }
 
-        $latestBanners = Schema::hasTable('banners') ? Banner::orderBy('urutan')->orderBy('id')->limit(5)->get() : collect();
-        $totalBanners  = Schema::hasTable('banners') ? Banner::count() : 0;
-        $activeBanners = Schema::hasTable('banners') ? Banner::where('aktif', true)->count() : 0;
         $totalOmzet    = Schema::hasTable('purchase_histories')
             ? $this->revenueOrders()->get()->sum(fn ($order) => $order->effective_total)
             : 0;
@@ -40,8 +36,7 @@ class AdminDashboardController extends Controller
 
         return view('admin.dashboard', compact(
             'totalProduk', 'totalStok', 'lowStok', 'latestProduk',
-            'perKategori', 'latestBanners', 'totalBanners', 'activeBanners',
-            'totalOmzet', 'recentOrders' 
+            'perKategori', 'totalOmzet', 'recentOrders'
         ));
     }
 
