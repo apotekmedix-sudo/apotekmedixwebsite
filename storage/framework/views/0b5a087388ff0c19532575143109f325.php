@@ -434,10 +434,14 @@
                                 <p title="<?php echo e($medicine->golongan ?: '—'); ?>"><strong>Golongan:</strong> <?php echo e(\Illuminate\Support\Str::limit($medicine->golongan ?: '—', 15, '...')); ?></p>
                             </div>
                             <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => $catalogPriceChannel, 'redLogoAccess' => $redLogoAccess], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-                            <?php $stock = (int) $medicine->available_stock_units; ?>
-                            <span class="product-stock <?php echo e($stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($medicine->id); ?>">
+                            <?php
+                                $stockUnits = (int) $medicine->available_stock_units;
+                                $stock = $stockUnits / max(1, $medicine->units_per_box);
+                                $stockDisplay = rtrim(rtrim(number_format($stock, 6, ',', '.'), '0'), ',');
+                            ?>
+                            <span class="product-stock <?php echo e($stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($medicine->id); ?>" data-stock-unit-factor="<?php echo e(max(1, $medicine->units_per_box)); ?>">
                                 <i class="fa-solid <?php echo e($stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
-                                <?php echo e($stock > 0 ? 'Stok: ' . $medicine->getConvertedStockSummaryForUnits($stock) : 'Stok habis'); ?>
+                                <?php echo e($stock > 0 ? 'Stok: ' . $stockDisplay : 'Stok habis'); ?>
 
                             </span>
                             <div class="medicine-meta medicine-meta-row">

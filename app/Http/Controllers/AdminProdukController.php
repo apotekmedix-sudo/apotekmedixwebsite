@@ -291,10 +291,8 @@ class AdminProdukController extends Controller
         StockAvailability::annotate($products);
         $columns = [
             'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
-            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK KEMASAN', 'STRIP PER KEMASAN', 'TABLET PER STRIP',
-            'STOK FISIK UNIT', 'STOK DIRESERVASI UNIT', 'STOK TERSEDIA UNIT',
-            'MODAL', 'HARGA INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
-            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO 1', 'LINK FOTO 2',
+            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'MODAL', 'HARGA INTERNAL',
+            'HARGA JUAL B2B', 'HARGA JUAL B2C', 'LINK FOTO 1', 'LINK FOTO 2',
         ];
         $rows = $products->map(fn ($product) => [
             $product->id,
@@ -308,24 +306,17 @@ class AdminProdukController extends Controller
             $product->kemasan ?: '',
             $product->sediaan ?: '',
             round($product->getPhysicalStockUnits() / max(1, $product->units_per_box), 6),
-            $product->usesTabletPackaging() ? $product->strips_per_box : 0,
-            $product->usesTabletPackaging() ? $product->tablets_per_strip : 0,
-            $product->getPhysicalStockUnits(),
-            (int) $product->reserved_stock_units,
-            (int) $product->available_stock_units,
             $product->harga_modal,
             $product->harga_internal ?: '',
             $product->getChannelBasePrice('b2b'),
             $product->getChannelBasePrice('b2c'),
-            $product->price_strip ?: 0,
-            $product->price_tablet ?: 0,
             $product->image_url ?: '',
             !empty($product->gambar_tambahan[0]) ? url('storage/' . $product->gambar_tambahan[0]) : '',
         ])->all();
         $widths = array_fill(0, count($columns), 20);
         $widths[2] = $widths[5] = $widths[6] = 30;
-        $widths[8] = $widths[22] = $widths[23] = 48;
-        $numericColumns = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+        $widths[8] = $widths[15] = $widths[16] = 48;
+        $numericColumns = [0, 10, 11, 12, 13, 14];
 
         return \App\Helpers\XlsxWriter::download('produk.xlsx', $columns, $rows, $widths, $numericColumns);
     }
@@ -356,8 +347,6 @@ class AdminProdukController extends Controller
             'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
             'tablets_per_strip' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'tablets_per_box'   => ['nullable', 'integer', 'min:0', 'max:10000000'],
-            'price_tablet'      => ['nullable', 'numeric', 'min:0'],
-            'price_strip'       => ['nullable', 'numeric', 'min:0'],
             'komposisi'         => ['nullable', 'string'],
             'indikasi'          => ['nullable', 'string'],
             'dosis'             => ['nullable', 'string'],
@@ -428,8 +417,6 @@ class AdminProdukController extends Controller
             'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
             'tablets_per_strip' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'tablets_per_box'   => ['nullable', 'integer', 'min:0', 'max:10000000'],
-            'price_tablet'      => ['nullable', 'numeric', 'min:0'],
-            'price_strip'       => ['nullable', 'numeric', 'min:0'],
             'komposisi'         => ['nullable', 'string'],
             'indikasi'          => ['nullable', 'string'],
             'dosis'             => ['nullable', 'string'],
@@ -573,9 +560,13 @@ class AdminProdukController extends Controller
             'harga_modal'       => ['required', 'numeric', 'min:0'],
             'harga_internal'    => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
+
             'harga_retail'      => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
-            'price_strip'       => ['nullable', 'numeric', 'min:0'],
-            'price_tablet'      => ['nullable', 'numeric', 'min:0'],
+
+
+
+
+
             'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
             'tablets_per_strip' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
@@ -599,15 +590,12 @@ class AdminProdukController extends Controller
                 $validated['strips_per_box'] = null;
                 $validated['tablets_per_strip'] = null;
                 $validated['price_box'] = null;
-                $validated['price_strip'] = null;
-                $validated['price_tablet'] = null;
             }
         } else {
             unset($validated['strips_per_box'], $validated['tablets_per_strip']);
             if ($produk->usesTabletPackaging()) {
                 $validated['price_box'] = $validated['harga_retail'];
             } else {
-                unset($validated['price_strip'], $validated['price_tablet']);
             }
         }
 
@@ -667,12 +655,16 @@ class AdminProdukController extends Controller
         if ($enabled) {
             $validated['tablets_per_strip'] = intdiv($tablets, $strips);
             $validated['price_box'] = $validated['harga_retail'] ?? null;
+            $validated['price_strip'] = null;
+            $validated['price_tablet'] = null;
             return;
         }
 
-        foreach (['tablets_per_strip', 'strips_per_box', 'price_tablet', 'price_strip', 'price_box'] as $field) {
+        foreach (['tablets_per_strip', 'strips_per_box', 'price_box'] as $field) {
             $validated[$field] = null;
         }
+        $validated['price_strip'] = null;
+        $validated['price_tablet'] = null;
     }
 
     private function validateTabletPackaging(Request $request, array $validated): void

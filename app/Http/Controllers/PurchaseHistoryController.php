@@ -47,7 +47,7 @@ class PurchaseHistoryController extends Controller
             'items.*.name'     => ['nullable', 'string', 'max:255'],
             'items.*.quantity'=> ['nullable', 'integer', 'min:1'],
             'items.*.qty'     => ['nullable', 'integer', 'min:1'],
-            'items.*.sale_unit' => ['nullable', 'string', 'in:tablet,strip,box'],
+            'items.*.sale_unit' => ['nullable', 'string', 'in:box'],
             'items.*.harga'   => ['nullable', 'integer', 'min:0'],
             'items.*.price'   => ['nullable', 'integer', 'min:0'],
             'items.*.catatan' => ['nullable', 'string'],
@@ -125,19 +125,16 @@ class PurchaseHistoryController extends Controller
         $items = is_array($data['items'] ?? null) ? $data['items'] : [];
         $originalTotal = 0;
         $discountedTotal = 0;
-        $hasB2cAccess = null;
-
+        $hasB2cAccess = ShoppingAccessCode::hasActiveB2cSession();
+        $hasInternalAccess = $channel === 'online'
+            && !$isPbfPurchaseOrder
+            && ShoppingAccessCode::hasActiveInternalSession();
         $hasB2bAccess = $request->hasSession()
             && ((int) $request->session()->get('pbf_access_expires_at', 0)) > now()->timestamp
             && ShoppingAccessCode::matchesSession(
                 ShoppingAccessCode::CHANNEL_B2B,
                 $request->session()->get('pbf_access_code_hash')
             );
-
-        $hasInternalAccess = $channel === 'online'
-            && !$isPbfPurchaseOrder
-            && ShoppingAccessCode::hasActiveInternalSession();
-
 
         foreach ($items as $index => $item) {
             $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
@@ -152,20 +149,11 @@ class PurchaseHistoryController extends Controller
                 ], 422);
             }
 
-            $promoChannel = (($product && $product->kelompok === 'PBF') || $data['buyer_type'] === 'pbf' || !empty($data['pbf_name'])
+            $promoChannel = (($product && $product->kelompok === 'PBF') || $data['buyer_type'] === 'pbf' || !empty($data['pbf_name']) || ($hasB2bAccess && !$hasB2cAccess && ($product?->getChannelBasePrice('b2b') ?? 0) > 0)
                     ? 'b2b'
                     : 'b2c');
 
             if ($product?->hasRedLogo() && $promoChannel === 'b2c' && !$hasB2bAccess && !in_array($data['buyer_type'], ['pbf', 'apotik', 'dokter'], true)) {
-                if ($hasB2cAccess === null) {
-                    $b2cAccessExpiresAt = (int) $request->session()->get('b2c_access_expires_at', 0);
-                    $hasB2cAccess = $b2cAccessExpiresAt > now()->timestamp
-                        && ShoppingAccessCode::matchesSession(
-                            ShoppingAccessCode::CHANNEL_B2C,
-                            $request->session()->get('b2c_access_code_hash')
-                        );
-                }
-
                 if (!$hasB2cAccess && !$hasInternalAccess) {
                     return response()->json([
                         'message' => 'Aktifkan kode akses B2C atau Internal untuk memesan produk berlogo merah.',

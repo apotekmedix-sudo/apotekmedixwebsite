@@ -555,7 +555,8 @@ const CART_DEFAULT_SETTINGS = {
   storageKey: 'apotekmedix_cart',
   receiptStoreName: 'APOTEK MEDIX',
   receiptStoreAddress: 'Jl. Raya Ciawi Prapatan No.256 C, RT.04/RW.04, Sindangsari, Kec. Bogor Timur, Kota Bogor, Jawa Barat 16146',
-  receiptFilePrefix: 'struk-apotekmedix'
+  receiptFilePrefix: 'struk-apotekmedix',
+  continueShoppingUrl: @json(route('home'))
 };
 const CART_CONFIG = Object.assign({}, CART_DEFAULT_SETTINGS, window.cartSettings || {});
 let cart = JSON.parse(localStorage.getItem(CART_CONFIG.storageKey) || '[]');
@@ -594,7 +595,7 @@ function save() {
     receiptStoreName: CART_CONFIG.receiptStoreName,
     receiptStoreAddress: CART_CONFIG.receiptStoreAddress,
     receiptFilePrefix: CART_CONFIG.receiptFilePrefix,
-    continueShoppingUrl: window.location.pathname
+    continueShoppingUrl: CART_CONFIG.continueShoppingUrl
   }));
   syncBadge();
 }
@@ -707,19 +708,22 @@ async function refreshAvailableProductStock() {
     }
     document.querySelectorAll(`[data-stock-product-id="${id}"]`).forEach(element => {
       if (element.matches('[data-stock-badge]')) {
-        const available = stock.units > 0;
+        const stockFactor = Math.max(1, Number(element.dataset.stockUnitFactor) || 1);
+        const availableQuantity = stock.units / stockFactor;
+        const available = availableQuantity > 0;
+        const stockDisplay = Number(availableQuantity.toFixed(6)).toLocaleString('id-ID', { maximumFractionDigits: 6 });
         if (element.classList.contains('stock-badge')) {
           element.classList.toggle('stock-out', !available);
-          element.classList.toggle('stock-low', available && stock.units <= 10);
-          element.classList.toggle('stock-available', stock.units > 10);
+          element.classList.toggle('stock-low', available && availableQuantity <= 10);
+          element.classList.toggle('stock-available', availableQuantity > 10);
         } else {
           element.classList.toggle('empty', !available);
-          element.classList.toggle('low', available && stock.units <= 10);
-          element.classList.toggle('available', stock.units > 10);
+          element.classList.toggle('low', available && availableQuantity <= 10);
+          element.classList.toggle('available', availableQuantity > 10);
         }
         const icon = element.querySelector('i');
         if (icon) icon.className = `fa-solid ${available ? 'fa-boxes-stacked' : 'fa-circle-xmark'}`;
-        element.lastChild.textContent = available ? ` Stok: ${stock.converted_summary || stock.breakdown}` : ' Stok habis';
+        element.lastChild.textContent = available ? ` Stok: ${stockDisplay}` : ' Stok habis';
       }
       if (element.matches('.product-unit-data')) {
         element.dataset.stockUnits = String(stock.units);

@@ -48,12 +48,13 @@
         .tagline { display: block; width: fit-content; margin: 3px auto 0; color: #163c9c; font-family: "Segoe Script", "Brush Script MT", cursive; font-size: 21px; font-style: italic; font-weight: 600; }
         .print-button { display: block; margin: 16px auto 0; padding: 9px 16px; border: 0; border-radius: 6px; color: #fff; background: #163c9c; cursor: pointer; }
         .back-button { display: block; width: fit-content; margin: 10px auto 0; color: #163c9c; font-weight: 700; text-decoration: none; }
+        .home-button { display: block; width: fit-content; margin: 10px auto 0; padding: 9px 14px; border-radius: 6px; color: #fff; background: #163c9c; font-weight: 700; text-decoration: none; }
         @media print {
             @page { size: 80mm auto; margin: 0; }
             body { width: 80mm; padding: 0; background: #fff; font-size: 10px; }
             .receipt { width: 80mm; max-width: none; padding: 4mm; box-shadow: none; }
             .brand img { width: 78px; height: 54px; }
-            .print-button, .back-button { display: none; }
+            .print-button, .back-button, .home-button { display: none; }
         }
     </style>
 </head>
@@ -128,6 +129,9 @@
         <p class="well-wishes">Semoga lekas sembuh</p>
         <span class="tagline">Sehat Bersama Medix</span>
         <button class="print-button" type="button" onclick="window.print()">Cetak Struk</button>
+        <?php if(!($adminReceipt ?? false)): ?>
+            <a class="home-button" href="<?php echo e(route('home')); ?>">Kembali ke Beranda</a>
+        <?php endif; ?>
         <?php if($adminReceipt ?? false): ?>
             <a class="back-button" href="<?php echo e(route('cashier.dashboard')); ?>">Kembali ke dashboard admin</a>
         <?php endif; ?>

@@ -1,3 +1,5 @@
+
+
 <?php $__env->startSection('title', 'Belanja B2B - Apotek Medix'); ?>
 
 <?php $__env->startSection('styles'); ?>
@@ -624,10 +626,14 @@
                                 'priceChannel' => 'b2b',
                                 'showUnitChoices' => false,
                             ], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-                            <?php $stock = (int) $medicine->available_stock_units; ?>
-                            <span class="stock-badge <?php echo e($stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($medicine->id); ?>">
+                            <?php
+                                $stockUnits = (int) $medicine->available_stock_units;
+                                $stock = $stockUnits / max(1, $medicine->units_per_box);
+                                $stockDisplay = rtrim(rtrim(number_format($stock, 6, ',', '.'), '0'), ',');
+                            ?>
+                            <span class="stock-badge <?php echo e($stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($medicine->id); ?>" data-stock-unit-factor="<?php echo e(max(1, $medicine->units_per_box)); ?>">
                                 <i class="fa-solid <?php echo e($stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
-                                <?php echo e($stock > 0 ? 'Stok: ' . $medicine->getConvertedStockSummaryForUnits($stock) : 'Stok habis'); ?>
+                                <?php echo e($stock > 0 ? 'Stok: ' . $stockDisplay : 'Stok habis'); ?>
 
                             </span>
                             <div class="medicine-meta medicine-meta-row">
@@ -718,7 +724,8 @@ window.cartSettings = {
     wholesaleOrder: true,
     receiptStoreName: 'Apotek Medix',
     receiptStoreAddress: 'Jl. Pendawa Jl. Sersan Muis No.99, 2 Ilir, Kec. Ilir Tim. II, Kota Palembang\nSumatera Selatan 30118',
-    receiptFilePrefix: 'struk-pt-surya-sharone-abadi'
+    receiptFilePrefix: 'struk-pt-surya-sharone-abadi',
+    continueShoppingUrl: <?php echo json_encode(route('products.pbf'), 15, 512) ?>
 };
 </script>
 <?php echo $__env->make('partials.shopping-access-lock', ['channel' => 'b2b'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>

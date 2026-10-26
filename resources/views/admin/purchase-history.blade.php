@@ -6,6 +6,7 @@
 @section('content')
 
 {{-- Total Omset --}}
+<div class="transaction-history-page">
 <div class="stats-grid" style="margin-bottom: 2rem;">
     <div class="stat-card" style="border-top-color:#8b5cf6;">
         <div class="stat-label">Total Omzet dari Semua Pembelian</div>
@@ -15,9 +16,9 @@
 
 {{-- Tabel Riwayat Pembelian --}}
 <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-size:1.3rem;font-weight:700;color:#1e293b;">Semua Transaksi</div>
-        <div style="display:flex;gap:0.5rem;align-items:center;">
+    <div class="transaction-toolbar">
+        <div class="transaction-heading">Semua Transaksi</div>
+        <div class="transaction-toolbar-actions">
             <a href="{{ route('admin.purchase-history.export') }}" class="btn btn-primary btn-sm" title="Download sebagai Excel/CSV">
                 <i class="fa-solid fa-download"></i> Download
             </a>
@@ -28,8 +29,8 @@
             </form>
         </div>
     </div>
-    <div class="table-container">
-        <table class="table">
+    <div class="table-container transaction-table-container">
+        <table class="table transaction-table">
             <thead>
                 <tr>
                     <th>Waktu</th>
@@ -171,9 +172,38 @@
     </div>
     
     {{-- Pagination --}}
-    <div class="pagination-container" style="margin-top: 1.5rem;">
-        {{ $orders->links() }}
-    </div>
+    @if($orders->total() > 0)
+        <div class="transaction-pagination">
+            <p class="transaction-pagination-summary">
+                Menampilkan {{ number_format($orders->firstItem(), 0, ',', '.') }}–{{ number_format($orders->lastItem(), 0, ',', '.') }} dari {{ number_format($orders->total(), 0, ',', '.') }} transaksi
+
+            </p>
+            @if($orders->hasPages())
+                <nav class="transaction-pagination-nav" aria-label="Navigasi halaman transaksi">
+                    @if($orders->onFirstPage())
+                        <span class="transaction-page-link is-disabled" aria-disabled="true">‹ Sebelumnya</span>
+                    @else
+                        <a class="transaction-page-link" href="{{ $orders->previousPageUrl() }}">‹ Sebelumnya</a>
+                    @endif
+
+                    @foreach(range(max(1, $orders->currentPage() - 2), min($orders->lastPage(), $orders->currentPage() + 2)) as $page)
+                        @if($page === $orders->currentPage())
+                            <span class="transaction-page-link is-current" aria-current="page">{{ $page }}</span>
+                        @else
+                            <a class="transaction-page-link" href="{{ $orders->url($page) }}">{{ $page }}</a>
+                        @endif
+                    @endforeach
+
+                    @if($orders->hasMorePages())
+                        <a class="transaction-page-link" href="{{ $orders->nextPageUrl() }}">Berikutnya ›</a>
+                    @else
+                        <span class="transaction-page-link is-disabled" aria-disabled="true">Berikutnya ›</span>
+                    @endif
+                </nav>
+            @endif
+        </div>
+    @endif
+</div>
 </div>
 
 {{-- Modal Detil --}}
@@ -195,6 +225,99 @@
 
 @section('styles')
 <style>
+.transaction-history-page {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+}
+.transaction-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.transaction-heading {
+    color: #1e293b;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+.transaction-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.transaction-table-container {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+}
+.transaction-table {
+    min-width: 1120px;
+}
+.transaction-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    margin-top: 1.25rem;
+}
+.transaction-pagination-summary {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+.transaction-pagination-nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+.transaction-page-link {
+    display: inline-flex;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid #dbe2ea;
+    border-radius: 0.5rem;
+    background: #fff;
+    color: #334155;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+.transaction-page-link:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+.transaction-page-link.is-current {
+    border-color: #0f172a;
+    background: #0f172a;
+    color: #fff;
+}
+.transaction-page-link.is-disabled {
+    color: #94a3b8;
+    background: #f8fafc;
+}
+@media (max-width: 768px) {
+    .transaction-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .transaction-toolbar-actions {
+        width: 100%;
+    }
+    .transaction-pagination {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .transaction-pagination-nav {
+        width: 100%;
+    }
+}
 .modal-backdrop {
     position: fixed;
     top: 0;

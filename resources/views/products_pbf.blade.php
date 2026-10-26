@@ -626,10 +626,14 @@
                                 'priceChannel' => 'b2b',
                                 'showUnitChoices' => false,
                             ])
-                            @php $stock = (int) $medicine->available_stock_units; @endphp
-                            <span class="stock-badge {{ $stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}">
+                            @php
+                                $stockUnits = (int) $medicine->available_stock_units;
+                                $stock = $stockUnits / max(1, $medicine->units_per_box);
+                                $stockDisplay = rtrim(rtrim(number_format($stock, 6, ',', '.'), '0'), ',');
+                            @endphp
+                            <span class="stock-badge {{ $stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}" data-stock-unit-factor="{{ max(1, $medicine->units_per_box) }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-                                {{ $stock > 0 ? 'Stok: ' . $medicine->getConvertedStockSummaryForUnits($stock) : 'Stok habis' }}
+                                {{ $stock > 0 ? 'Stok: ' . $stockDisplay : 'Stok habis' }}
                             </span>
                             <div class="medicine-meta medicine-meta-row">
                                 <span class="medicine-meta-sediaan">
@@ -718,7 +722,8 @@ window.cartSettings = {
     wholesaleOrder: true,
     receiptStoreName: 'Apotek Medix',
     receiptStoreAddress: 'Jl. Pendawa Jl. Sersan Muis No.99, 2 Ilir, Kec. Ilir Tim. II, Kota Palembang\nSumatera Selatan 30118',
-    receiptFilePrefix: 'struk-pt-surya-sharone-abadi'
+    receiptFilePrefix: 'struk-pt-surya-sharone-abadi',
+    continueShoppingUrl: @json(route('products.pbf'))
 };
 </script>
 @include('partials.shopping-access-lock', ['channel' => 'b2b'])

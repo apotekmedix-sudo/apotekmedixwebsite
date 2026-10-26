@@ -5,8 +5,6 @@
     $stripsPerBox = old('strips_per_box', $medicine?->usesTabletPackaging() ? $medicine->strips_per_box : null);
     $tabletsPerStrip = old('tablets_per_strip', $medicine?->usesTabletPackaging() ? $medicine->tablets_per_strip : null);
     $tabletsPerBox = old('tablets_per_box', $medicine?->usesTabletPackaging() ? $medicine->tablets_per_strip * $medicine->strips_per_box : null);
-    $priceStrip = old('price_strip', $medicine?->usesTabletPackaging() ? $medicine->price_strip : null);
-    $priceTablet = old('price_tablet', $medicine?->usesTabletPackaging() ? $medicine->price_tablet : null);
 @endphp
 <div id="packaging-unit-fields" style="grid-column:1 / -1;" @unless($canConfigureTabletPackaging) hidden @endunless>
 <div class="form-grid">
@@ -27,18 +25,6 @@
     <input type="number" id="packaging-tablets-per-box" name="tablets_per_box" class="form-input {{ $errors->has('tablets_per_box') ? 'is-invalid' : '' }}" min="0" step="1" placeholder="Otomatis: 100 (10 strip × 10 tablet)" value="{{ $tabletsPerBox }}">
     <small>Otomatis terhitung dari (jumlah strip × tablet per strip), misalnya 10 × 10 = 100 tablet per <span data-stock-unit-label>{{ strtolower($medicine?->package_unit_label ?? 'box') }}</span>.</small>
     @error('tablets_per_box')<div class="form-error">{{ $message }}</div>@enderror
-</div>
-<div class="form-group">
-    <label class="form-label">Harga Jual per Strip (Rp)</label>
-    <input type="number" name="price_strip" class="form-input {{ $errors->has('price_strip') ? 'is-invalid' : '' }}" min="0" step="1" placeholder="Contoh: 15000" value="{{ $priceStrip }}">
-    <small>Harga B2C untuk pembelian per 1 strip (opsional).</small>
-    @error('price_strip')<div class="form-error">{{ $message }}</div>@enderror
-</div>
-<div class="form-group">
-    <label class="form-label">Harga Jual per Tablet (Rp)</label>
-    <input type="number" name="price_tablet" class="form-input {{ $errors->has('price_tablet') ? 'is-invalid' : '' }}" min="0" step="1" placeholder="Contoh: 1500" value="{{ $priceTablet }}">
-    <small>Harga B2C untuk pembelian per 1 tablet (opsional).</small>
-    @error('price_tablet')<div class="form-error">{{ $message }}</div>@enderror
 </div>
 </div>
 </div>

@@ -16,6 +16,9 @@
     $customerAddress = collect([$order->address, $order->kecamatan, $order->kota])->filter()->join(', ') ?: '-';
     $outletName = $order->outlet_name ?: ($order->buyer_name ?: '-');
     $pharmacistOrDoctor = $order->requester_name ?: ($order->apj ?: ($order->buyer_name ?: '-'));
+    $isB2bOrder = in_array($order->buyer_type, ['pbf', 'apotik', 'dokter'], true) || filled($order->pbf_name);
+    $returnUrl = $isB2bOrder ? route('products.pbf') : route('home');
+    $returnLabel = $isB2bOrder ? 'Kembali ke Belanja B2B' : 'Kembali ke Beranda';
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -570,7 +573,7 @@
 </head>
 <body>
     <div class="toolbar">
-        <a href="{{ url('/') }}"><i class="fa-solid fa-arrow-left"></i> Kembali ke Website</a>
+        <a href="{{ $returnUrl }}"><i class="fa-solid fa-arrow-left"></i> {{ $returnLabel }}</a>
         <div class="toolbar-actions">
             <button type="button" onclick="window.print()">
                 <i class="fa-solid fa-print"></i> Cetak / Simpan PDF

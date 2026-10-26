@@ -1018,8 +1018,8 @@
           <button type="button" id="coWhatsappBtn" onclick="openWhatsAppCheckout()" class="co-action-btn" style="background:#10B981;color:#ffffff;">
             <i class="fa-brands fa-whatsapp" style="font-size:1.15rem;"></i> Konfirmasi Pembayaran via WhatsApp
           </button>
-          <a id="coBackToCatalogBtn" href="{{ route('products.index') }}" class="co-action-btn" style="background:#ffffff;color:#0F172A;border:1.5px solid #cbd5e1;margin-bottom:0;">
-            Kembali ke Katalog Produk
+          <a id="coBackToCatalogBtn" href="{{ route('home') }}" class="co-action-btn" style="background:#ffffff;color:#0F172A;border:1.5px solid #cbd5e1;margin-bottom:0;">
+            Kembali ke Beranda
           </a>
         </div>
 
@@ -1143,7 +1143,7 @@
     wholesaleOrder: false,
     adminPbfOrder: false,
     adminPurchaseOrderBase: null,
-    continueShoppingUrl: '{{ route("products.index") }}'
+    continueShoppingUrl: '{{ route("home") }}'
   };
 
   try {
@@ -1168,6 +1168,9 @@
   if (activeCtx.storageKey === 'apotekmedix_cart_pbf') {
     activeCtx.wholesaleOrder = true;
   }
+  activeCtx.continueShoppingUrl = activeCtx.adminPbfOrder
+    ? @json(route('admin.produk-pbf.index'))
+    : (activeCtx.wholesaleOrder ? @json(route('products.pbf')) : @json(route('home')));
 
   let deliveryMode = 'ship';
   let extraVoucherDiscount = 0;
@@ -1631,8 +1634,11 @@
         navBadge.style.display = 'none';
       }
       const backBtn = document.getElementById('coBackToCatalogBtn');
-      if (backBtn && activeCtx.continueShoppingUrl) {
+      if (backBtn) {
         backBtn.href = activeCtx.continueShoppingUrl;
+        backBtn.textContent = activeCtx.wholesaleOrder
+          ? 'Kembali ke Belanja B2B'
+          : (activeCtx.adminPbfOrder ? 'Kembali ke Pesan ke PBF' : 'Kembali ke Beranda');
       }
       document.getElementById('coSuccessPanel').style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });

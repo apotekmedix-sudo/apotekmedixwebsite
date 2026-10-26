@@ -2308,6 +2308,93 @@ body.public-theme main .btn-cart.is-red-logo-locked {
     box-shadow: none !important;
 }
 
+/* Product cards now show one package price without a selectable price tile. */
+body.public-theme main .product-unit-section--single {
+    margin: .25rem 0 !important;
+    text-align: left !important;
+}
+
+body.public-theme main .product-unit-grid--single {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+
+body.public-theme main .product-unit-card--single {
+    display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #172033 !important;
+}
+
+body.public-theme main .product-unit-card--single.is-selected {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+body.public-theme main .product-unit-card--single .product-unit-choice {
+    display: flex !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    gap: .4rem !important;
+    padding: 0 !important;
+    text-align: left !important;
+}
+
+body.public-theme main .product-unit-card--single .product-unit-name {
+    max-width: none !important;
+    color: #475569 !important;
+    font-size: .78rem !important;
+    font-weight: 700 !important;
+}
+
+body.public-theme main .product-unit-card--single .product-unit-price {
+    color: #0755c8 !important;
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+}
+
+body.public-theme main .product-unit-card--single .product-unit-old-price {
+    color: #94a3b8 !important;
+    font-size: .72rem !important;
+}
+
+body.public-theme main .product-unit-card--single .product-unit-stock {
+    display: block !important;
+    margin-top: .08rem !important;
+    color: #64748b !important;
+    font-size: .72rem !important;
+    text-align: left !important;
+}
+
+body.public-theme main .product-unit-card--single .product-unit-quantity {
+    width: min(100%, 10rem) !important;
+    min-height: 1.9rem !important;
+    margin: .35rem 0 0 !important;
+    padding: .1rem .25rem !important;
+    border: 1px solid #dbe4ee !important;
+    border-radius: 8px !important;
+}
+
+body.public-theme main .product-unit-card--single.is-red-logo-locked {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+body.public-theme main .product-unit-card--single.is-red-logo-locked .product-unit-quantity {
+    background: #cbd5e1 !important;
+    border-color: #94a3b8 !important;
+}
+
 body.public-theme main .btn-cart.is-red-logo-locked:hover {
     background: #64748b !important;
     border-color: #475569 !important;

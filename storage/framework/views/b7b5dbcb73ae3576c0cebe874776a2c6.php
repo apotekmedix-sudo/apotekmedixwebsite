@@ -39,6 +39,19 @@
         .tab{padding:8px 12px;border-radius:999px;background:#fff;color:#475569;border:1px solid #e2e8f0;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap}
         .tab.active{background:#0052cc;color:#fff;border-color:#0052cc}
         .table-wrap{overflow-x:auto}.orders{width:100%;border-collapse:collapse;min-width:1040px}
+        .cashier-pagination{padding:14px;border-top:1px solid #eef2f7;background:#fff}
+        .cashier-pagination nav{display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .cashier-pagination nav>div{display:flex;align-items:center;gap:4px}
+        .cashier-pagination nav a,.cashier-pagination nav span[aria-current],.cashier-pagination nav span[aria-disabled]{
+            display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;padding:0 10px;
+            border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#475569;font-size:12px;text-decoration:none
+        }
+        .cashier-pagination nav span[aria-current]{background:#0052cc;border-color:#0052cc;color:#fff;font-weight:800}
+        .cashier-pagination nav span[aria-disabled]{color:#94a3b8;background:#f8fafc}
+        .cashier-pagination nav svg{display:inline-block!important;width:16px!important;height:16px!important;max-width:16px!important;max-height:16px!important}
+        .cashier-pagination nav p{margin:0;color:#64748b;font-size:12px}
+        .cashier-pagination nav a:hover{border-color:#93c5fd;background:#eff6ff;color:#0052cc}
+        .cashier-pagination nav a:focus-visible{outline:3px solid #bfdbfe;outline-offset:2px}
         th,td{padding:14px 12px;border-bottom:1px solid #eef2f7;text-align:left;vertical-align:top}
         th{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#64748b;background:#f8fafc}
         td{font-size:12px;color:#334155}.order-id{font-weight:800;color:#0f172a}.muted{color:#64748b;font-size:11px;margin-top:4px}.buyer{font-weight:700;color:#1e293b}
@@ -163,6 +176,7 @@
                                 <?php elseif($order->receipt_status === 'verified'): ?>
                                     <a class="action-link" href="<?php echo e(route('cashier.orders.receipt', $order)); ?>" target="_blank" rel="noopener">Buka struk</a>
                                     <form action="<?php echo e(route('cashier.orders.printed', $order)); ?>" method="POST" onsubmit="return confirm('Pastikan invoice sudah berhasil dicetak.')"><?php echo csrf_field(); ?><button class="primary" type="submit">Tandai dicetak</button></form>
+                                    <form action="<?php echo e(route('cashier.orders.cancel', $order)); ?>" method="POST" onsubmit="return confirm('Batalkan pesanan #<?php echo e($order->id); ?>? Stok akan dikembalikan jika sebelumnya sudah dikurangi.')"><?php echo csrf_field(); ?><button class="danger" type="submit">Batalkan</button></form>
                                 <?php elseif($order->receipt_status === 'printed'): ?>
                                     <a class="action-link" href="<?php echo e($receiptUrl); ?>" target="_blank" rel="noopener">Cetak ulang</a>
                                     <form action="<?php echo e(route('cashier.orders.cancel', $order)); ?>" method="POST" onsubmit="return confirm('Batalkan struk transaksi #<?php echo e($order->id); ?>? Stok akan dikembalikan jika sebelumnya sudah dikurangi. Pengembalian dana tidak dilakukan otomatis.')"><?php echo csrf_field(); ?><button class="danger" type="submit">Batalkan struk</button></form>
@@ -175,7 +189,7 @@
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </tbody>
             </table>
-            <div style="padding:14px"><?php echo e($orders->links()); ?></div>
+            <div class="cashier-pagination"><?php echo e($orders->onEachSide(1)->links()); ?></div>
         <?php endif; ?>
         <p class="hint" style="padding:0 15px 12px">Antrean ini menampilkan pesanan tersimpan; unggahan bukti transfer belum tersedia. Perubahan antrean diperiksa setiap 20 detik. Struk dicetak melalui dialog browser. Tandai “Dicetak” hanya setelah printer menyelesaikan cetak; cetak thermal tanpa dialog membutuhkan konektor printer lokal.</p>
     </section>

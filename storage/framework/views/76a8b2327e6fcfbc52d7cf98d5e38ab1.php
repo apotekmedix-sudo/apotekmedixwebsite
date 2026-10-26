@@ -1593,7 +1593,6 @@
       <?php $__currentLoopData = $discountedProducts->take(20); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $promoMedicine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <?php
           $promoPriceChannel = $internalAccess ? 'internal' : 'b2c';
-          $promoBasePrice = $promoMedicine->getChannelBasePrice($promoPriceChannel);
           $promoPrice = $promoMedicine->getChannelPromoPrice($promoPriceChannel);
           $promoUnitId = 'home-promo-unit-' . $promoMedicine->id;
         ?>
@@ -1623,15 +1622,15 @@
               <p title="<?php echo e($promoMedicine->indikasi ?: '—'); ?>"><strong>Indikasi:</strong> <?php echo e(\Illuminate\Support\Str::limit($promoMedicine->indikasi ?: '—', 15, '...')); ?></p>
               <p title="<?php echo e($promoMedicine->golongan ?: '—'); ?>"><strong>Golongan:</strong> <?php echo e(\Illuminate\Support\Str::limit($promoMedicine->golongan ?: '—', 15, '...')); ?></p>
             </div>
-            <div class="discounted-product-prices">
-              <?php if(!$internalAccess): ?><span class="discounted-product-old-price">Rp <?php echo e(number_format($promoBasePrice, 0, ',', '.')); ?></span><?php endif; ?>
-              <strong class="discounted-product-current-price" id="home-price-b-<?php echo e($promoMedicine->id); ?>">Rp <?php echo e(number_format($promoPrice, 0, ',', '.')); ?></strong>
-            </div>
             <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $promoMedicine, 'unitSelectId' => $promoUnitId, 'priceTargetId' => 'home-price-b-' . $promoMedicine->id, 'priceChannel' => $promoPriceChannel, 'redLogoAccess' => $redLogoAccess], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-            <?php $promoStock = (int) $promoMedicine->available_stock_units; ?>
-            <span class="product-stock <?php echo e($promoStock <= 0 ? 'empty' : ($promoStock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($promoMedicine->id); ?>">
+            <?php
+              $promoStockUnits = (int) $promoMedicine->available_stock_units;
+              $promoStock = $promoStockUnits / max(1, $promoMedicine->units_per_box);
+              $promoStockDisplay = rtrim(rtrim(number_format($promoStock, 6, ',', '.'), '0'), ',');
+            ?>
+            <span class="product-stock <?php echo e($promoStock <= 0 ? 'empty' : ($promoStock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($promoMedicine->id); ?>" data-stock-unit-factor="<?php echo e(max(1, $promoMedicine->units_per_box)); ?>">
               <i class="fa-solid <?php echo e($promoStock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
-              <?php echo e($promoStock > 0 ? 'Stok: ' . $promoMedicine->getConvertedStockSummaryForUnits($promoStock) : 'Stok habis'); ?>
+              <?php echo e($promoStock > 0 ? 'Stok: ' . $promoStockDisplay : 'Stok habis'); ?>
 
             </span>
             <div class="medicine-meta medicine-meta-row">
@@ -1695,18 +1694,17 @@
           </div>
           <?php
             $homePriceChannel = $internalAccess ? 'internal' : 'b2c';
-            $homeBasePrice = $med->getChannelBasePrice($homePriceChannel);
             $homePromoPrice = $med->getChannelPromoPrice($homePriceChannel);
           ?>
-          <div class="prod-price" id="home-price-a-<?php echo e($med->id); ?>">
-            <?php if(!$internalAccess && $med->getPromoPercent('b2c') > 0): ?><small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp <?php echo e(number_format($homeBasePrice, 0, ',', '.')); ?></small><?php endif; ?>
-            <span id="home-price-current-a-<?php echo e($med->id); ?>">Rp <?php echo e(number_format($homePromoPrice, 0, ',', '.')); ?></span>
-          </div>
           <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-a-' . $med->id, 'priceTargetId' => 'home-price-current-a-' . $med->id, 'priceChannel' => $homePriceChannel, 'redLogoAccess' => $redLogoAccess], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-          <?php $stock = (int) $med->available_stock_units; ?>
-          <span class="product-stock <?php echo e($stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($med->id); ?>">
+          <?php
+            $stockUnits = (int) $med->available_stock_units;
+            $stock = $stockUnits / max(1, $med->units_per_box);
+            $stockDisplay = rtrim(rtrim(number_format($stock, 6, ',', '.'), '0'), ',');
+          ?>
+          <span class="product-stock <?php echo e($stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($med->id); ?>" data-stock-unit-factor="<?php echo e(max(1, $med->units_per_box)); ?>">
             <i class="fa-solid <?php echo e($stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
-            <?php echo e($stock > 0 ? 'Stok: ' . $med->getConvertedStockSummaryForUnits($stock) : 'Stok habis'); ?>
+            <?php echo e($stock > 0 ? 'Stok: ' . $stockDisplay : 'Stok habis'); ?>
 
           </span>
           <div class="medicine-meta medicine-meta-row">
@@ -1775,18 +1773,17 @@
           </div>
           <?php
             $allPriceChannel = $internalAccess ? 'internal' : 'b2c';
-            $allBasePrice = $med->getChannelBasePrice($allPriceChannel);
             $allPromoPrice = $med->getChannelPromoPrice($allPriceChannel);
           ?>
-          <div class="prod-price" id="home-price-all-<?php echo e($med->id); ?>">
-            <?php if(!$internalAccess && $med->getPromoPercent('b2c') > 0): ?><small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp <?php echo e(number_format($allBasePrice, 0, ',', '.')); ?></small><?php endif; ?>
-            <span id="home-price-current-all-<?php echo e($med->id); ?>">Rp <?php echo e(number_format($allPromoPrice, 0, ',', '.')); ?></span>
-          </div>
           <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-all-' . $med->id, 'priceTargetId' => 'home-price-current-all-' . $med->id, 'priceChannel' => $allPriceChannel, 'redLogoAccess' => $redLogoAccess], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-          <?php $allStock = (int) $med->available_stock_units; ?>
-          <span class="product-stock <?php echo e($allStock <= 0 ? 'empty' : ($allStock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($med->id); ?>">
+          <?php
+            $allStockUnits = (int) $med->available_stock_units;
+            $allStock = $allStockUnits / max(1, $med->units_per_box);
+            $allStockDisplay = rtrim(rtrim(number_format($allStock, 6, ',', '.'), '0'), ',');
+          ?>
+          <span class="product-stock <?php echo e($allStock <= 0 ? 'empty' : ($allStock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($med->id); ?>" data-stock-unit-factor="<?php echo e(max(1, $med->units_per_box)); ?>">
             <i class="fa-solid <?php echo e($allStock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
-            <?php echo e($allStock > 0 ? 'Stok: ' . $med->getConvertedStockSummaryForUnits($allStock) : 'Stok habis'); ?>
+            <?php echo e($allStock > 0 ? 'Stok: ' . $allStockDisplay : 'Stok habis'); ?>
 
           </span>
           <div class="medicine-meta medicine-meta-row">

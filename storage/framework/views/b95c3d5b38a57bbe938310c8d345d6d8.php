@@ -1018,8 +1018,8 @@
           <button type="button" id="coWhatsappBtn" onclick="openWhatsAppCheckout()" class="co-action-btn" style="background:#10B981;color:#ffffff;">
             <i class="fa-brands fa-whatsapp" style="font-size:1.15rem;"></i> Konfirmasi Pembayaran via WhatsApp
           </button>
-          <a id="coBackToCatalogBtn" href="<?php echo e(route('products.index')); ?>" class="co-action-btn" style="background:#ffffff;color:#0F172A;border:1.5px solid #cbd5e1;margin-bottom:0;">
-            Kembali ke Katalog Produk
+          <a id="coBackToCatalogBtn" href="<?php echo e(route('home')); ?>" class="co-action-btn" style="background:#ffffff;color:#0F172A;border:1.5px solid #cbd5e1;margin-bottom:0;">
+            Kembali ke Beranda
           </a>
         </div>
 
@@ -1143,7 +1143,7 @@
     wholesaleOrder: false,
     adminPbfOrder: false,
     adminPurchaseOrderBase: null,
-    continueShoppingUrl: '<?php echo e(route("products.index")); ?>'
+    continueShoppingUrl: '<?php echo e(route("home")); ?>'
   };
 
   try {
@@ -1168,6 +1168,9 @@
   if (activeCtx.storageKey === 'apotekmedix_cart_pbf') {
     activeCtx.wholesaleOrder = true;
   }
+  activeCtx.continueShoppingUrl = activeCtx.adminPbfOrder
+    ? <?php echo json_encode(route('admin.produk-pbf.index'), 15, 512) ?>
+    : (activeCtx.wholesaleOrder ? <?php echo json_encode(route('products.pbf'), 15, 512) ?> : <?php echo json_encode(route('home'), 15, 512) ?>);
 
   let deliveryMode = 'ship';
   let extraVoucherDiscount = 0;
@@ -1631,8 +1634,11 @@
         navBadge.style.display = 'none';
       }
       const backBtn = document.getElementById('coBackToCatalogBtn');
-      if (backBtn && activeCtx.continueShoppingUrl) {
+      if (backBtn) {
         backBtn.href = activeCtx.continueShoppingUrl;
+        backBtn.textContent = activeCtx.wholesaleOrder
+          ? 'Kembali ke Belanja B2B'
+          : (activeCtx.adminPbfOrder ? 'Kembali ke Pesan ke PBF' : 'Kembali ke Beranda');
       }
       document.getElementById('coSuccessPanel').style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });

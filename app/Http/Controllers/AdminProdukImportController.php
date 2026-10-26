@@ -40,17 +40,16 @@ class AdminProdukImportController extends Controller
     {
         $columns = [
             'NO CONTOH', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
-            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK KEMASAN', 'STRIP PER KEMASAN', 'TABLET PER STRIP',
-            'MODAL', 'HARGA INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
-            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO 1', 'LINK FOTO 2',
+            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'MODAL', 'HARGA INTERNAL',
+            'HARGA JUAL B2B', 'HARGA JUAL B2C', 'LINK FOTO 1', 'LINK FOTO 2',
         ];
-        $widths = [8, 25, 28, 12, 18, 28, 28, 12, 22, 12, 12, 12, 12, 15, 16, 18, 18, 20, 20, 48, 48];
+        $widths = [8, 25, 28, 12, 18, 28, 28, 12, 22, 12, 12, 15, 16, 18, 18, 48, 48];
 
         $rows = [
-            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '10', '10', '117771', '120000', '135437', '153102', '16841', '15463', '', ''],
-            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '1', '4', '200000', '210000', '205000', '220000', '55000', '0', '', ''],
-            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '0', '0', '12000', '13000', '12500', '14000', '0', '0', '', ''],
-            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '0', '0', '50000', '52000', '51000', '55000', '0', '0', '', ''],
+            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '117771', '120000', '135437', '153102', '', ''],
+            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '200000', '210000', '205000', '220000', '', ''],
+            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '12000', '13000', '12500', '14000', '', ''],
+            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '50000', '52000', '51000', '55000', '', ''],
         ];
 
         return \App\Helpers\XlsxWriter::download('template_produk.xlsx', $columns, $rows, $widths);
@@ -362,13 +361,16 @@ class AdminProdukImportController extends Controller
                 if ($packagingEnabled && ($stripsPerBox < 1 || $tabletsPerStrip < 1)) {
                     throw new \InvalidArgumentException('Kemasan strip/tablet harus diisi jika UNIT PACKAGING ENABLED aktif.');
                 }
+
                 if (!$packagingEnabled && (float) $stok !== floor((float) $stok)) {
                     throw new \InvalidArgumentException('Stok pecahan hanya dapat digunakan untuk kemasan tablet/kapsul dengan rasio strip dan tablet.');
                 }
+
+
                 $hasPackagingColumns = $newPackagingColumns
                     || array_key_exists('PER_STRIP', $data)
                     || array_key_exists('PER_TABLET', $data)
-                    || array_key_exists('KEMASAN', $data);
+                    || array_key_exists('UNIT_PACKAGING_ENABLED', $data);
 
                 // Kelompok: PBF atau APOTEK — harus diketahui sebelum menentukan $match
                 $kelompok = null;
@@ -452,6 +454,8 @@ class AdminProdukImportController extends Controller
                         'harga'            => $hargaStored,
                         'harga_modal'     => $hargaModal,
                         'harga_retail'    => $hargaBox,
+                        'price_strip'      => null,
+                        'price_tablet'     => null,
                         'stok'             => (int) floor($stok),
                         'terjual'          => $terjual,
                         'grade'            => $grade ?: null,
@@ -472,8 +476,6 @@ class AdminProdukImportController extends Controller
                         'strips_per_box' => $packagingEnabled ? $stripsPerBox : null,
                         'tablets_per_strip' => $packagingEnabled ? $tabletsPerStrip : null,
                         'price_box' => $packagingEnabled ? $hargaBox : null,
-                        'price_strip' => $packagingEnabled ? $this->parseHarga($data['HARGA_JUAL_PER_STRIP'] ?? '') : null,
-                        'price_tablet' => $packagingEnabled ? $this->parseHarga($data['HARGA_JUAL_PER_TABLET'] ?? '') : null,
                         'stock_base_units' => (int) round($stok * ($packagingEnabled ? $stripsPerBox * $tabletsPerStrip : 1)),
                     ];
                 }
@@ -542,6 +544,16 @@ class AdminProdukImportController extends Controller
 
                 $match = array_intersect_key($match, $medicineColumns);
                 $attributes = array_intersect_key($attributes, $medicineColumns);
+                if ($existingProduct && !$hasPackagingColumns && array_key_exists('stok', $attributes)) {
+                    $attributes['stock_base_units'] = (int) round(
+                        $stok * ($existingProduct->usesTabletPackaging() ? $existingProduct->units_per_box : 1)
+                    );
+                    if ($existingProduct->usesTabletPackaging() && $stok > floor($stok)) {
+                        $attributes['stok'] = (int) floor($stok);
+                    }
+                } elseif (!$existingProduct && !$hasPackagingColumns && $stok > floor($stok)) {
+                    throw new \InvalidArgumentException('Jumlah stok harus berupa bilangan bulat untuk produk tanpa konversi kemasan.');
+                }
                 if ($existingProduct && array_key_exists('stock_base_units', $attributes)
                     && \Illuminate\Support\Facades\Schema::hasTable('purchase_stock_reservations')) {
                     $reservedUnits = (int) \App\Models\PurchaseStockReservation::where('medicine_id', $existingProduct->id)
