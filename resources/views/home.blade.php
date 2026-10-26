@@ -1597,7 +1597,6 @@
       @foreach($discountedProducts->take(20) as $promoMedicine)
         @php
           $promoPriceChannel = $internalAccess ? 'internal' : 'b2c';
-          $promoBasePrice = $promoMedicine->getChannelBasePrice($promoPriceChannel);
           $promoPrice = $promoMedicine->getChannelPromoPrice($promoPriceChannel);
           $promoUnitId = 'home-promo-unit-' . $promoMedicine->id;
         @endphp
@@ -1627,15 +1626,15 @@
               <p title="{{ $promoMedicine->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->indikasi ?: '—', 15, '...') }}</p>
               <p title="{{ $promoMedicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->golongan ?: '—', 15, '...') }}</p>
             </div>
-            <div class="discounted-product-prices">
-              @if(!$internalAccess)<span class="discounted-product-old-price">Rp {{ number_format($promoBasePrice, 0, ',', '.') }}</span>@endif
-              <strong class="discounted-product-current-price" id="home-price-b-{{ $promoMedicine->id }}">Rp {{ number_format($promoPrice, 0, ',', '.') }}</strong>
-            </div>
             @include('partials.product-unit-selector', ['medicine' => $promoMedicine, 'unitSelectId' => $promoUnitId, 'priceTargetId' => 'home-price-b-' . $promoMedicine->id, 'priceChannel' => $promoPriceChannel, 'redLogoAccess' => $redLogoAccess])
-            @php $promoStock = (int) $promoMedicine->available_stock_units; @endphp
-            <span class="product-stock {{ $promoStock <= 0 ? 'empty' : ($promoStock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $promoMedicine->id }}">
+            @php
+              $promoStockUnits = (int) $promoMedicine->available_stock_units;
+              $promoStock = $promoStockUnits / max(1, $promoMedicine->units_per_box);
+              $promoStockDisplay = rtrim(rtrim(number_format($promoStock, 6, ',', '.'), '0'), ',');
+            @endphp
+            <span class="product-stock {{ $promoStock <= 0 ? 'empty' : ($promoStock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $promoMedicine->id }}" data-stock-unit-factor="{{ max(1, $promoMedicine->units_per_box) }}">
               <i class="fa-solid {{ $promoStock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-              {{ $promoStock > 0 ? 'Stok: ' . $promoMedicine->getConvertedStockSummaryForUnits($promoStock) : 'Stok habis' }}
+              {{ $promoStock > 0 ? 'Stok: ' . $promoStockDisplay : 'Stok habis' }}
             </span>
             <div class="medicine-meta medicine-meta-row">
               <span class="medicine-meta-sediaan">
@@ -1697,18 +1696,17 @@
           </div>
           @php
             $homePriceChannel = $internalAccess ? 'internal' : 'b2c';
-            $homeBasePrice = $med->getChannelBasePrice($homePriceChannel);
             $homePromoPrice = $med->getChannelPromoPrice($homePriceChannel);
           @endphp
-          <div class="prod-price" id="home-price-a-{{ $med->id }}">
-            @if(!$internalAccess && $med->getPromoPercent('b2c') > 0)<small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($homeBasePrice, 0, ',', '.') }}</small>@endif
-            <span id="home-price-current-a-{{ $med->id }}">Rp {{ number_format($homePromoPrice, 0, ',', '.') }}</span>
-          </div>
           @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-a-' . $med->id, 'priceTargetId' => 'home-price-current-a-' . $med->id, 'priceChannel' => $homePriceChannel, 'redLogoAccess' => $redLogoAccess])
-          @php $stock = (int) $med->available_stock_units; @endphp
-          <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $med->id }}">
+          @php
+            $stockUnits = (int) $med->available_stock_units;
+            $stock = $stockUnits / max(1, $med->units_per_box);
+            $stockDisplay = rtrim(rtrim(number_format($stock, 6, ',', '.'), '0'), ',');
+          @endphp
+          <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $med->id }}" data-stock-unit-factor="{{ max(1, $med->units_per_box) }}">
             <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-            {{ $stock > 0 ? 'Stok: ' . $med->getConvertedStockSummaryForUnits($stock) : 'Stok habis' }}
+            {{ $stock > 0 ? 'Stok: ' . $stockDisplay : 'Stok habis' }}
           </span>
           <div class="medicine-meta medicine-meta-row">
             <span class="medicine-meta-sediaan">
@@ -1775,18 +1773,17 @@
           </div>
           @php
             $allPriceChannel = $internalAccess ? 'internal' : 'b2c';
-            $allBasePrice = $med->getChannelBasePrice($allPriceChannel);
             $allPromoPrice = $med->getChannelPromoPrice($allPriceChannel);
           @endphp
-          <div class="prod-price" id="home-price-all-{{ $med->id }}">
-            @if(!$internalAccess && $med->getPromoPercent('b2c') > 0)<small style="display:block;color:#94a3b8;text-decoration:line-through;">Rp {{ number_format($allBasePrice, 0, ',', '.') }}</small>@endif
-            <span id="home-price-current-all-{{ $med->id }}">Rp {{ number_format($allPromoPrice, 0, ',', '.') }}</span>
-          </div>
           @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'home-unit-all-' . $med->id, 'priceTargetId' => 'home-price-current-all-' . $med->id, 'priceChannel' => $allPriceChannel, 'redLogoAccess' => $redLogoAccess])
-          @php $allStock = (int) $med->available_stock_units; @endphp
-          <span class="product-stock {{ $allStock <= 0 ? 'empty' : ($allStock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $med->id }}">
+          @php
+            $allStockUnits = (int) $med->available_stock_units;
+            $allStock = $allStockUnits / max(1, $med->units_per_box);
+            $allStockDisplay = rtrim(rtrim(number_format($allStock, 6, ',', '.'), '0'), ',');
+          @endphp
+          <span class="product-stock {{ $allStock <= 0 ? 'empty' : ($allStock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $med->id }}" data-stock-unit-factor="{{ max(1, $med->units_per_box) }}">
             <i class="fa-solid {{ $allStock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-            {{ $allStock > 0 ? 'Stok: ' . $med->getConvertedStockSummaryForUnits($allStock) : 'Stok habis' }}
+            {{ $allStock > 0 ? 'Stok: ' . $allStockDisplay : 'Stok habis' }}
           </span>
           <div class="medicine-meta medicine-meta-row">
             <span class="medicine-meta-sediaan">

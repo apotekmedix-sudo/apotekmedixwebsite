@@ -64,7 +64,7 @@
                     {{ $codeIsActive ? 'Kode aktif' : ($channelNeedsRegeneration ? 'Kode tidak dapat dibaca — buat ulang' : (isset($codes[$channel]) ? 'Kode lama / kedaluwarsa — perbarui' : 'Kode belum dibuat')) }}
                 </span>
                 @if($codeIsActive)
-                    <span class="activation-expiry">Berlaku sampai {{ $codes[$channel]->expires_at->format('d M Y, H:i') }}</span>
+                    <span class="activation-expiry">Berlaku sampai {{ $codes[$channel]->expires_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') }} WIB</span>
                 @endif
                 <form action="{{ route('admin.access-codes.generate', $channel) }}" method="POST" onsubmit="return confirm('{{ $codeIsActive ? 'Kode lama langsung tidak berlaku. Buat kode baru 5 digit dengan masa berlaku 30 hari?' : 'Buat kode aktivasi 5 digit yang berlaku 30 hari?' }}')">
                     @csrf
@@ -90,8 +90,8 @@
                         <td><strong>{{ ['b2b' => 'Belanja B2B', 'b2c' => 'Produk Khusus B2C', 'internal' => 'Harga Internal'][$code->channel] ?? 'Belanja' }}</strong></td>
                         <td><code class="code-value">{{ $readableCode ?: 'Tidak dapat ditampilkan — buat ulang' }}</code></td>
                         <td><span class="activation-status {{ $codeIsActive ? 'active' : '' }}">{{ $codeIsActive ? 'Aktif' : ($isUnreadableCode ? 'Tidak dapat dibaca — buat ulang' : 'Kedaluwarsa') }}</span></td>
-                        <td>{{ $code->expires_at?->format('d M Y, H:i') ?: '-' }}</td>
-                        <td>{{ $code->updated_at?->format('d M Y, H:i') ?: '-' }}</td>
+                        <td>{{ $code->expires_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') ? $code->expires_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') . ' WIB' : '-' }}</td>
+                        <td>{{ $code->updated_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') ? $code->updated_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') . ' WIB' : '-' }}</td>
                         <td>
                             <div class="code-actions">
                                 <form class="code-edit" action="{{ route('admin.access-codes.update', $code) }}" method="POST">

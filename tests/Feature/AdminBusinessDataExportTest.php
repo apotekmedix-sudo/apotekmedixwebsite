@@ -49,13 +49,7 @@ class AdminBusinessDataExportTest extends TestCase
         $content = $response->getContent();
         foreach ([
             'PRINCIPLE',
-            'STOK KEMASAN',
-            'STOK FISIK UNIT',
-            'STOK DIRESERVASI UNIT',
-            'STOK TERSEDIA UNIT',
-            'STRIP PER KEMASAN',
-            'TABLET PER STRIP',
-            'HARGA JUAL PER TABLET',
+            'STOK SATUAN',
             'LINK FOTO',
             'HARGA JUAL B2B',
             'HARGA JUAL B2C',
@@ -66,6 +60,9 @@ class AdminBusinessDataExportTest extends TestCase
             'http://localhost/storage/medicines/produk-export-2.jpg',
         ] as $expected) {
             $this->assertStringContainsString($expected, $content);
+        }
+        foreach (['STOK FISIK UNIT', 'STOK DIRESERVASI UNIT', 'STOK TERSEDIA UNIT', 'STRIP PER KEMASAN', 'TABLET PER STRIP', 'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET'] as $removed) {
+            $this->assertStringNotContainsString($removed, $content);
         }
         foreach (['LINK FOTO UTAMA', 'ID PRODUK', 'PROMO B2C PERCENT', 'GAMBAR TAMBAHAN', 'HARGA JUAL INTERNAL'] as $unexpected) {
             $this->assertStringNotContainsString($unexpected, $content);
@@ -117,14 +114,14 @@ class AdminBusinessDataExportTest extends TestCase
         $stream = fopen($path, 'wb');
         fputcsv($stream, [
             'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
-            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
+            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN',
             'MODAL', 'HARGA INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
-            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO 1', 'LINK FOTO 2',
+            'LINK FOTO 1', 'LINK FOTO 2',
         ]);
         fputcsv($stream, [
             $product->id, 'Principal Baru', 'Nama Baru', 'MERAH', 'Obat Bebas', 'Komposisi baru',
-            'Indikasi baru', 'BOX', '10 strip @ 10 tablet', 'TABLET', '2', '10', '100',
-            '6000', '7000', '13000', '14000', '1500', '150',
+            'Indikasi baru', 'BOX', '10 strip @ 10 tablet', 'TABLET', '2',
+            '6000', '7000', '13000', '14000',
             'http://localhost/storage/medicines/baru.jpg', '',
         ]);
         fclose($stream);
@@ -142,8 +139,8 @@ class AdminBusinessDataExportTest extends TestCase
         $this->assertSame(10000.0, (float) $product->harga);
         $this->assertSame(7000.0, (float) $product->harga_internal);
         $this->assertSame(13000.0, (float) $product->harga_grosir);
-        $this->assertSame(14000.0, (float) $product->price_box);
-        $this->assertSame(200, $product->stock_base_units);
+        $this->assertSame(0.0, (float) $product->price_box);
+        $this->assertSame(2, $product->stock_base_units);
         $this->assertSame('medicines/baru.jpg', $product->gambar);
         $this->assertSame(['medicines/lama-2.jpg'], $product->gambar_tambahan);
         $this->assertSame(1, Medicine::count());
@@ -167,17 +164,17 @@ class AdminBusinessDataExportTest extends TestCase
         $path = tempnam(sys_get_temp_dir(), 'complete-products');
         $headers = [
             'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
-            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
+            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN',
             'MODAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
         ];
         $existingRow = [
             'Principal Baru', 'Produk Sama', 'MERAH', 'Obat Bebas', 'Komposisi diisi',
-            'Indikasi diisi', 'BOX', '10 strip @ 10 tablet', 'TABLET', '2', '10', '100',
+            'Indikasi diisi', 'BOX', '10 strip @ 10 tablet', 'TABLET', '2',
             '6000', '13000', '14000',
         ];
         $newRow = [
             'Principal Baru', 'Produk Tambahan', 'BIRU', 'Obat Bebas', 'Komposisi baru',
-            'Indikasi baru', 'BOX', '', 'TABLET', '5', '0', '0',
+            'Indikasi baru', 'BOX', '', 'TABLET', '5',
             '5000', '8000', '9000',
         ];
         file_put_contents($path, implode("\n", [
@@ -200,7 +197,7 @@ class AdminBusinessDataExportTest extends TestCase
         $this->assertSame('Komposisi diisi', $existing->komposisi);
         $this->assertSame(10000.0, (float) $existing->harga);
         $this->assertSame(6000.0, (float) $existing->harga_modal);
-        $this->assertSame(200, $existing->stock_base_units);
+        $this->assertSame(2, $existing->stock_base_units);
         $this->assertSame(2, Medicine::count());
         $this->assertDatabaseHas('medicines', [
             'nama_obat' => 'Produk Tambahan',
@@ -263,6 +260,7 @@ class AdminBusinessDataExportTest extends TestCase
         ] as $expected) {
             $this->assertStringContainsString($expected, $content);
         }
+
         $this->assertStringNotContainsString('name="USERS"', strtoupper($content));
         $this->assertStringNotContainsString('name="SESSIONS"', strtoupper($content));
 
@@ -290,6 +288,28 @@ class AdminBusinessDataExportTest extends TestCase
             unset($archive);
             @unlink($zipPath);
         }
+    }
+
+    public function test_transaction_history_uses_compact_pagination_without_oversized_svg_icons(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        foreach (range(1, 21) as $number) {
+            PurchaseHistory::create([
+                'buyer_name' => 'Pelanggan ' . $number,
+                'buyer_type' => 'umum',
+                'items' => [],
+                'total' => 1000,
+            ]);
+        }
+
+        $this->actingAs($admin)
+            ->get(route('admin.purchase-history.index'))
+            ->assertOk()
+            ->assertSee('Menampilkan 1–20 dari 21 transaksi')
+            ->assertSee('Navigasi halaman transaksi')
+            ->assertSee('Berikutnya')
+            ->assertSee('page=2')
+            ->assertDontSee('<svg', false);
     }
 
     public function test_customer_export_separates_customers_by_offline_b2b_and_b2c_sheet(): void

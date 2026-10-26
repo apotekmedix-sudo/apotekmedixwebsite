@@ -219,7 +219,7 @@
             @endif
         </div>
         <div class="signature">
-            Bogor, {{ $order->created_at?->translatedFormat('d F Y') }}<br>
+            Bogor, {{ $order->created_at?->timezone('Asia/Jakarta')->translatedFormat('d F Y') }}<br>
             Pemesan,
             <div class="signature-space">
                 @if($identity['pharmacist_stamp'])

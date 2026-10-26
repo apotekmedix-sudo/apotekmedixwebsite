@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Dashboard - Admin Apotek Medix')
 @section('page-title', '📊 Dashboard')
@@ -87,7 +87,7 @@
                                 <span style="color:#ef4444;font-weight:700;">Habis</span>
                             @endif
                         </td>
-                        <td style="font-size:0.82rem;color:#9ca3af;">{{ $p->created_at->format('d M Y H:i') }}</td>
+                        <td style="font-size:0.82rem;color:#9ca3af;">{{ $p->created_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y H:i:s') }} WIB</td>
                         <td><a href="{{ route('admin.produk.edit', $p->id) }}" class="btn btn-secondary btn-sm">Edit</a></td>
                     </tr>
                 @empty
@@ -118,7 +118,7 @@
             <tbody>
                 @forelse($recentOrders as $order)
                     <tr>
-                        <td style="font-size:0.82rem;color:#6b7280;">{{ $order->created_at->format('d M Y H:i') }}</td>
+                        <td style="font-size:0.82rem;color:#6b7280;">{{ $order->created_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y H:i:s') }} WIB</td>
                         <td><strong>{{ $order->buyer_name }}</strong></td>
                         <td>{{ $order->buyer_type === 'apotik' ? 'Apotik' : 'Umum' }}</td>
                         <td>{{ 'Rp ' . number_format($order->total, 0, ',', '.') }}</td>

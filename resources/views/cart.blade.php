@@ -749,6 +749,9 @@ function normalizeCartPackageUnits(item) {
   return item;
 }
 
+if (activeCtx.storageKey === 'apotekmedix_cart_pbf') {
+  activeCtx.wholesaleOrder = true;
+}
 cartItems = cartItems.map(normalizeCartPackageUnits);
 
 function resolveProductImage(item) {

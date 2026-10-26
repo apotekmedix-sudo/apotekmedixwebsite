@@ -601,6 +601,12 @@ class CashierWorkflowTest extends TestCase
             ->assertRedirect(route('products.pbf'));
         $this->assertGreaterThan(now()->timestamp, session('pbf_access_expires_at'));
 
+        $this->get(route('products.pbf'))
+            ->assertOk()
+            ->assertSee('id="pbfWelcomeOverlay"', false)
+            ->assertSee('Akses berhasil. Selamat datang di katalog B2B.')
+            ->assertSee('Mulai Belanja Sekarang');
+
         $this->post(route('products.pbf.logout'))
             ->assertRedirect(route('products.pbf'))
             ->assertSessionMissing('pbf_access_expires_at');

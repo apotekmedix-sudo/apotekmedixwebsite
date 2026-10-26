@@ -203,19 +203,16 @@
 
     .price-section {
         margin: 1rem 0 1.25rem;
-        padding: 1.15rem 1.35rem;
-        background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%) !important;
-        border-radius: 12px;
-        border-left: 4px solid #1E88E5;
+        padding: 0;
+        background: transparent !important;
+        border: 0;
     }
 
     .price-label {
-        font-size: 0.76rem;
-        color: #1d4ed8 !important;
-        text-transform: uppercase;
-        font-weight: 800;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.2rem;
+        font-size: 0.88rem;
+        color: #475569 !important;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
     }
 
     .price {
@@ -285,11 +282,11 @@
 
     /* Purchase Box */
     .detail-purchase-box {
-        background: #f8fafc !important;
-        border-radius: 14px;
-        padding: 1.2rem;
+        background: transparent !important;
+        border-radius: 0;
+        padding: 0;
         margin: 1.25rem 0;
-        border: 1px solid #cbd5e1;
+        border: 0;
         color: #0f172a !important;
     }
 
@@ -411,10 +408,9 @@
 
     .detail-total-bar {
         margin-bottom: 1rem;
-        padding: 0.75rem 1rem;
-        background: #e0f2fe !important;
-        border: 1px solid #bae6fd;
-        border-radius: 10px;
+        padding: 0.25rem 0;
+        background: transparent !important;
+        border: 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -660,23 +656,9 @@
     $unitLabels = [
         'box' => $medicine->package_unit_label,
     ];
-    if (!$internalAccess && $medicine->usesTabletPackaging()) {
-        $tabletPrice = (int) round($medicine->getChannelPromoPrice($priceChannel, 'tablet'));
-        $stripPrice  = (int) round($medicine->getChannelPromoPrice($priceChannel, 'strip'));
-        $stripFactor = max(0, (int) $medicine->tablets_per_strip);
-        if ($tabletPrice > 0) {
-            $unitPriceValues['tablet'] = $tabletPrice;
-            $unitFactors['tablet'] = 1;
-            $unitLabels['tablet'] = 'Tablet';
-        }
-        if ($stripPrice > 0 && $stripFactor > 0) {
-            $unitPriceValues['strip'] = $stripPrice;
-            $unitFactors['strip'] = $stripFactor;
-            $unitLabels['strip'] = 'Strip';
-        }
-    }
     $stockUnits = max(0, (int) ($medicine->available_stock_units ?? $medicine->stock_base_units ?? $medicine->stok));
-    $detailConverted = $medicine->getConvertedUnitStocksForUnits($stockUnits);
+    $detailStockQuantity = $stockUnits / max(1, $medicine->units_per_box);
+    $detailStockDisplay = rtrim(rtrim(number_format($detailStockQuantity, 6, ',', '.'), '0'), ',');
     $defaultUnit = array_key_first($unitPriceValues) ?: 'box';
 @endphp
 
@@ -736,26 +718,15 @@
                 <h1>{{ $medicine->nama_obat }}</h1>
 
                 <div class="price-section">
-                    <div class="price-label" id="detailPriceLabel">Harga Satuan ({{ $unitLabels[$defaultUnit] ?? $medicine->package_unit_label }})</div>
                     <div class="price" id="detailUnitPriceDisplay">Rp {{ number_format($unitPriceValues[$defaultUnit] ?? $medicine->harga, 0, ',', '.') }}</div>
                 </div>
 
                 <div class="stock-info">
-                    <span hidden aria-hidden="true" data-stock-badge data-stock-product-id="{{ $medicine->id }}">Stok</span>
+                    <span hidden aria-hidden="true" data-stock-badge data-stock-product-id="{{ $medicine->id }}" data-stock-unit-factor="{{ max(1, $medicine->units_per_box) }}">Stok</span>
                     <div class="stock-item">
-                        <div class="stock-item-label">Stok {{ $medicine->package_unit_label }}</div>
-                        <div class="stock-item-value">{{ number_format($detailConverted['box'], 0, ',', '.') }} {{ $medicine->package_unit_label }}</div>
+                        <div class="stock-item-label">Stok</div>
+                        <div class="stock-item-value">{{ $detailStockDisplay }}</div>
                     </div>
-                    @if($medicine->usesTabletPackaging())
-                        <div class="stock-item">
-                            <div class="stock-item-label">Stok Strip</div>
-                            <div class="stock-item-value">{{ number_format($detailConverted['strip'], 0, ',', '.') }} Strip</div>
-                        </div>
-                        <div class="stock-item">
-                            <div class="stock-item-label">Stok Tablet</div>
-                            <div class="stock-item-value">{{ number_format($detailConverted['tablet'], 0, ',', '.') }} Tablet</div>
-                        </div>
-                    @endif
                 </div>
 
                 <div class="detail-meta-list">
@@ -865,7 +836,7 @@
                     </div>
                     <div class="related-body">
                         <div class="related-name">{{ $related->nama_obat }}</div>
-                        <div class="related-price">{{ $related->getFormattedPrice() }}</div>
+                        <div class="related-price">Rp {{ number_format($related->getChannelPromoPrice($priceChannel), 0, ',', '.') }}</div>
                     </div>
                 </a>
             @endforeach
@@ -931,13 +902,10 @@ function selectDetailUnit(btn) {
         pill.classList.toggle('active', pill === btn);
     });
 
-    const unitLabel = DETAIL_PRODUCT.unitLabels[unit] || unit;
     const unitPrice = Number(DETAIL_PRODUCT.unitPrices[unit] || 0);
     const availableQty = getSelectedUnitAvailableQty();
 
-    const priceLabelEl = document.getElementById('detailPriceLabel');
     const priceDisplayEl = document.getElementById('detailUnitPriceDisplay');
-    if (priceLabelEl) priceLabelEl.textContent = 'Harga Satuan (' + unitLabel + ')';
     if (priceDisplayEl) priceDisplayEl.textContent = formatRupiah(unitPrice);
 
     const qtyInput = document.getElementById('qtyInput');

@@ -63,7 +63,17 @@ class PurchaseHistory extends Model
         'cancelled_at' => 'datetime',
     ];
 
-    protected $appends = ['effective_total', 'approval_label'];
+    protected $appends = [
+        'effective_total',
+        'approval_label',
+        'due_date_formatted',
+        'tempo_due_status',
+        'tempo_due_label',
+        'created_at_wib',
+        'verified_at_wib',
+        'paid_at_wib',
+        'printed_at_wib',
+    ];
 
     public function cashier()
     {
@@ -100,5 +110,96 @@ class PurchaseHistory extends Model
             'rejected' => 'Tidak',
             default => 'Belum diproses',
         };
+    }
+
+    public function isTempoPayment(): bool
+    {
+        return strcasecmp(trim((string) ($this->attributes['payment_method'] ?? '')), 'Tempo') === 0;
+    }
+
+    public function getDueAtAttribute(): ?\Illuminate\Support\Carbon
+    {
+        if (!$this->isTempoPayment() || !$this->created_at) {
+            return null;
+        }
+        $days = max(1, (int) ($this->attributes['payment_term_days'] ?? 0) ?: 14);
+        return $this->created_at->copy()->timezone('Asia/Jakarta')->addDays($days)->endOfDay();
+    }
+
+    public function getDueDateFormattedAttribute(): ?string
+    {
+        return $this->due_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y');
+    }
+
+    public function getDaysUntilDueAttribute(): ?int
+    {
+        if (!$this->due_at) {
+            return null;
+        }
+        $today = now()->timezone('Asia/Jakarta')->startOfDay();
+        $dueDay = $this->due_at->copy()->timezone('Asia/Jakarta')->startOfDay();
+        return (int) $today->diffInDays($dueDay, false);
+    }
+
+    public function getTempoDueStatusAttribute(): ?string
+    {
+        if (!$this->isTempoPayment()) {
+            return null;
+        }
+        if (($this->attributes['payment_status'] ?? '') === 'paid') {
+            return 'paid';
+        }
+        if (($this->attributes['receipt_status'] ?? '') === 'cancelled' || ($this->attributes['approval_status'] ?? '') === 'rejected') {
+            return 'cancelled';
+        }
+        $days = $this->days_until_due;
+        if ($days === null) {
+            return null;
+        }
+        if ($days < 0) {
+            return 'overdue';
+        }
+        if ($days === 0) {
+            return 'due_today';
+        }
+        if ($days <= 3) {
+            return 'due_soon';
+        }
+        return 'upcoming';
+    }
+
+    public function getTempoDueLabelAttribute(): ?string
+    {
+        $status = $this->tempo_due_status;
+        $days = $this->days_until_due;
+        return match ($status) {
+            'paid' => 'Sudah Lunas',
+            'cancelled' => 'Dibatalkan',
+            'overdue' => 'Lewat ' . abs((int) $days) . ' hari',
+            'due_today' => 'Jatuh tempo hari ini!',
+            'due_soon' => 'Sisa ' . (int) $days . ' hari lagi',
+            'upcoming' => 'Sisa ' . (int) $days . ' hari',
+            default => null,
+        };
+    }
+
+    public function getCreatedAtWibAttribute(): ?string
+    {
+        return $this->created_at ? $this->created_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') . ' WIB' : null;
+    }
+
+    public function getVerifiedAtWibAttribute(): ?string
+    {
+        return $this->verified_at ? $this->verified_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') . ' WIB' : null;
+    }
+
+    public function getPaidAtWibAttribute(): ?string
+    {
+        return $this->paid_at ? $this->paid_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') . ' WIB' : null;
+    }
+
+    public function getPrintedAtWibAttribute(): ?string
+    {
+        return $this->printed_at ? $this->printed_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') . ' WIB' : null;
     }
 }

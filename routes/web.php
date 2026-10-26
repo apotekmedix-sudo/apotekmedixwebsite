@@ -54,11 +54,13 @@ Route::post('/shopping/access/lock/{channel}', [ShoppingAccessController::class,
     ->name('shopping.access.lock');
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/products-pbf', [ProductController::class, 'pbf'])->name('products.pbf');
-Route::post('/products-pbf/verify', [ProductController::class, 'pbfVerify'])->middleware('throttle:5,1')->name('products.pbf.verify');
+Route::get('/products-pbf/verify', fn () => redirect()->route('products.pbf'));
+Route::post('/products-pbf/verify', [ProductController::class, 'pbfVerify'])->middleware('throttle:60,1')->name('products.pbf.verify');
 Route::post('/products-pbf/logout', [ProductController::class, 'pbfLogout'])->name('products.pbf.logout');
 Route::get('/products-apotek', [ProductController::class, 'apotek'])->name('products.apotek');
+Route::get('/products-apotek/activate', fn () => redirect()->route('products.apotek'));
 Route::post('/products-apotek/activate', [ProductController::class, 'apotekActivate'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:60,1')
     ->name('products.apotek.activate');
 Route::post('/products-apotek/internal/activate', [ProductController::class, 'internalActivate'])
     ->middleware('throttle:5,1')
@@ -71,6 +73,7 @@ Route::get('/cart', [ProductController::class, 'cart'])->name('cart.page');
 Route::get('/checkout', [ProductController::class, 'checkout'])->name('checkout.index');
 Route::post('/checkout/validate-discount', [PurchaseHistoryController::class, 'validateDiscountCode'])->name('checkout.validate-discount');
 Route::post('/orders/history', [PurchaseHistoryController::class, 'store'])->name('orders.history.store');
+Route::post('/invoice/{order}/permit', [PurchaseHistoryController::class, 'updatePermit'])->name('orders.invoice.permit');
 Route::get('/invoice/{order}', [PurchaseHistoryController::class, 'invoice'])
     ->middleware('signed')
     ->name('orders.invoice');
@@ -110,7 +113,7 @@ Route::middleware(['auth', 'staff'])->prefix('cashier')->name('cashier.')->group
 Route::get('/gass/access', [GassRoomController::class, 'accessForm'])->name('gass.access.form');
 Route::get('/gass/room', [GassRoomController::class, 'index'])->name('gass.room');
 Route::post('/gass/access', [GassRoomController::class, 'access'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:60,1')
     ->name('gass.access');
 Route::post('/gass/room/files', [GassRoomController::class, 'upload'])->name('gass.files.upload');
 Route::post('/gass/room/files/{file}/share', [GassRoomController::class, 'toggleSharing'])->name('gass.files.share');
@@ -126,6 +129,8 @@ Route::post('/gass/leave', [GassRoomController::class, 'leave'])->name('gass.lea
 // Admin routes
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/notifications', [AdminDashboardController::class, 'notifications'])->name('notifications.index');
+    Route::post('/notifications/{order}/mark-paid', [AdminDashboardController::class, 'markTempoPaid'])->name('notifications.mark-paid');
     Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats'])->name('dashboard.stats');
     Route::get('/purchase-history', [AdminDashboardController::class, 'purchaseHistory'])->name('purchase-history.index');
     Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');

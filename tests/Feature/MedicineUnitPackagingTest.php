@@ -18,7 +18,7 @@ class MedicineUnitPackagingTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_can_configure_package_stock_sizes_and_each_unit_price(): void
+    public function test_admin_can_configure_package_stock_conversion_with_one_b2c_price(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
@@ -59,10 +59,17 @@ class MedicineUnitPackagingTest extends TestCase
 
         $this->get(route('products.index'))
             ->assertOk()
-            ->assertSee('Beli per satuan')
-            ->assertSee('Tablet · Rp 100', false)
+            ->assertSee('Rp 9.900')
+            ->assertDontSee('Harga Box')
+            ->assertDontSee('Box · Rp 9.900', false)
+            ->assertDontSee('Tablet · Rp 100', false)
+            ->assertSee('Stok: 2')
+            ->assertDontSee('Strip ·', false)
+            ->assertDontSee('Tablet ·', false)
             ->assertSee('data-stock-units="200"', false)
-            ->assertSee('class="product-unit-choice" aria-pressed="false"', false)
+            ->assertSee('class="product-unit-choice" aria-pressed="true"', false)
+            ->assertSee('class="product-unit-card product-unit-card--single is-selected', false)
+            ->assertDontSee('<span class="product-unit-heading">', false)
             ->assertSee('onclick="selectProductCardUnit(this)"', false)
             ->assertSee('product-logo-marker--green', false)
             ->assertSeeInOrder([
@@ -78,9 +85,10 @@ class MedicineUnitPackagingTest extends TestCase
 
         $this->get(route('products.apotek'))
             ->assertOk()
-            ->assertSee('Tablet · Rp 100', false)
-            ->assertSee('Strip · Rp 900', false)
-            ->assertSee('Box · Rp 9.900', false)
+            ->assertDontSee('Tablet · Rp 100', false)
+            ->assertDontSee('Strip · Rp 900', false)
+            ->assertSee('Rp 9.900')
+            ->assertDontSee('Box · Rp 9.900', false)
             ->assertSee('data-package-unit-label="Box"', false);
 
         foreach ($medicine->image_gallery as $image) {
@@ -88,7 +96,7 @@ class MedicineUnitPackagingTest extends TestCase
         }
     }
 
-    public function test_customer_can_choose_tablet_strip_or_package_and_stock_uses_package_conversion(): void
+    public function test_customer_can_purchase_package_with_one_price_and_stock_uses_package_conversion(): void
     {
         $medicine = Medicine::create([
             'nama_obat' => 'Obat Satuan',
@@ -113,18 +121,15 @@ class MedicineUnitPackagingTest extends TestCase
             'phone' => '081234567890',
             'address' => 'Alamat contoh',
             'items' => [
-                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 3, 'harga' => 1, 'sale_unit' => 'tablet'],
-                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 2, 'harga' => 1, 'sale_unit' => 'strip'],
                 ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 1, 'harga' => 1, 'sale_unit' => 'box'],
             ],
             'total' => 3,
         ])->assertOk()->assertJsonStructure(['success', 'id', 'invoice_url']);
 
         $order = PurchaseHistory::findOrFail($response->json('id'));
-        $this->assertSame(10100, $order->total);
-        $this->assertSame('Tablet', $order->items[0]['unit_label']);
-        $this->assertSame('Box', $order->items[2]['unit_label']);
-        $this->assertSame(100, $order->items[0]['harga']);
+        $this->assertSame(8000, $order->total);
+        $this->assertSame('Box', $order->items[0]['unit_label']);
+        $this->assertSame(8000, $order->items[0]['harga']);
         $this->assertSame('20 Box', $medicine->fresh()->stock_breakdown);
         $this->assertDatabaseHas('medicines', [
             'id' => $medicine->id,
@@ -134,14 +139,14 @@ class MedicineUnitPackagingTest extends TestCase
         $this->assertDatabaseHas('purchase_stock_reservations', [
             'purchase_history_id' => $order->id,
             'medicine_id' => $medicine->id,
-            'quantity_units' => 123,
-            'sale_quantity' => 6,
+            'quantity_units' => 100,
+            'sale_quantity' => 1,
         ]);
         $this->assertDatabaseHas('medicine_stock_movements', [
             'medicine_id' => $medicine->id,
             'movement_type' => 'reserve',
             'physical_delta' => 0,
-            'reserved_delta' => 123,
+            'reserved_delta' => 100,
             'reference_id' => $order->id,
         ]);
     }
@@ -178,16 +183,18 @@ class MedicineUnitPackagingTest extends TestCase
             'pbf_access_code_hash' => $b2bCode->code_hash,
         ])->get(route('products.pbf'))
             ->assertOk()
-            ->assertSee('Harga per kemasan')
-            ->assertSee('Box · Rp 1.400', false)
+            ->assertSee('Rp 1.400')
+            ->assertDontSee('Harga Box')
+            ->assertDontSee('Box · Rp 1.400', false)
             ->assertDontSee('Tablet · Rp 140', false)
             ->assertDontSee('Strip · Rp 140', false);
 
         $this->get(route('products.apotek'))
             ->assertOk()
-            ->assertSee('Box · Rp 1.600', false)
-            ->assertSee('Tablet · Rp 100', false)
-            ->assertSee('Strip · Rp 900', false);
+            ->assertSee('Rp 1.600')
+            ->assertDontSee('Box · Rp 1.600', false)
+            ->assertDontSee('Tablet · Rp 100', false)
+            ->assertDontSee('Strip · Rp 900', false);
 
         $internalCode = ShoppingAccessCode::create([
             'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
@@ -199,12 +206,15 @@ class MedicineUnitPackagingTest extends TestCase
             'internal_access_code_hash' => $internalCode->code_hash,
         ])->get(route('products.apotek'))
             ->assertOk()
-            ->assertSee('Box · Rp 1.200', false)
+            ->assertSee('Rp 1.200')
+            ->assertDontSee('Box · Rp 1.200', false)
             ->assertDontSee('Tablet · Rp 100', false)
             ->assertDontSee('Strip · Rp 900', false);
         $this->get(route('medicines.show', $medicine))
             ->assertOk()
             ->assertSee('Rp 1.200')
+            ->assertDontSee('detailPriceLabel', false)
+            ->assertDontSee('Harga Box')
             ->assertDontSee('detail-unit-pill-name">Tablet', false)
             ->assertDontSee('detail-unit-pill-name">Strip', false);
 
@@ -231,8 +241,7 @@ class MedicineUnitPackagingTest extends TestCase
                 ['id' => $medicine->id, 'quantity' => 1, 'sale_unit' => 'tablet'],
             ],
             'total' => 100,
-        ])->assertUnprocessable()
-            ->assertJsonPath('message', 'Akses Internal hanya mendukung pembelian per kemasan.');
+        ])->assertUnprocessable();
 
         $this->postJson(route('orders.history.store'), [
             'buyer_type' => 'pbf',
@@ -359,7 +368,7 @@ class MedicineUnitPackagingTest extends TestCase
         $this->assertSame(0, $medicine->getSaleUnitFactor('tablet'));
     }
 
-    public function test_admin_product_list_only_shows_strip_and_tablet_fields_for_box_products(): void
+    public function test_admin_product_list_uses_only_the_main_stock_unit(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $box = Medicine::create([
@@ -382,15 +391,14 @@ class MedicineUnitPackagingTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin)->get(route('admin.produk.index'))->assertOk();
-        $response->assertSeeInOrder([
-            'id="stok-box-' . $box->id . '"',
-            'id="strips-per-box-' . $box->id . '"',
-            'id="tablets-per-strip-' . $box->id . '"',
-        ], false)
-            ->assertSee('class="stock-quantity-input js-row-strip-quantity"', false)
-            ->assertSee('class="stock-quantity-input js-row-tablet-quantity"', false)
-            ->assertDontSee('label for="stok-box-' . $box->id . '"', false)
-            ->assertSee('id="price-strip-' . $box->id . '"', false)
+        $response->assertSee('id="stok-box-' . $box->id . '"', false)
+            ->assertSee('Fisik:</strong> 5 Box', false)
+            ->assertSee('Tersedia:</strong> 5 Box', false)
+            ->assertDontSee('id="strips-per-box-' . $box->id . '"', false)
+            ->assertDontSee('id="tablets-per-strip-' . $box->id . '"', false)
+            ->assertDontSee('class="stock-quantity-input js-row-strip-quantity"', false)
+            ->assertDontSee('class="stock-quantity-input js-row-tablet-quantity"', false)
+            ->assertDontSee('id="price-strip-' . $box->id . '"', false)
             ->assertDontSee('id="strips-per-box-' . $bottle->id . '"', false)
             ->assertDontSee('id="tablets-per-strip-' . $bottle->id . '"', false)
             ->assertDontSee('id="price-strip-' . $bottle->id . '"', false)
@@ -401,7 +409,42 @@ class MedicineUnitPackagingTest extends TestCase
         $this->assertFalse(Medicine::supportsTabletPackaging('Tube', 'Tablet'));
     }
 
-    public function test_customer_cannot_order_more_units_than_remain_in_stock(): void
+    public function test_inventory_report_shows_stock_and_movements_only_in_main_unit(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $medicine = Medicine::create([
+            'nama_obat' => 'Obat Laporan Box',
+            'satuan' => 'Box',
+            'sediaan' => 'Tablet',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 8000,
+            'stok' => 3,
+            'stock_base_units' => 300,
+            'unit_packaging_enabled' => true,
+            'tablets_per_strip' => 10,
+            'strips_per_box' => 10,
+            'deskripsi' => 'Produk untuk pengujian laporan stok.',
+        ]);
+        $medicine->stockMovements()->create([
+            'movement_type' => 'sale',
+            'physical_delta' => -100,
+            'physical_before' => 400,
+            'physical_after' => 300,
+            'note' => 'Penjualan satu box.',
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.inventory.index'))
+            ->assertOk()
+            ->assertSee('Semua jumlah ditampilkan dalam satuan utama produk.')
+            ->assertSee('3 Box')
+            ->assertSee('-1 Box')
+            ->assertSee('4 Box')
+            ->assertDontSee('strip')
+            ->assertDontSee('tablet')
+            ->assertDontSee('unit dasar');
+    }
+
+    public function test_customer_cannot_order_more_packages_than_remain_in_stock(): void
     {
         $medicine = Medicine::create([
             'nama_obat' => 'Stok Terbatas',
@@ -424,7 +467,7 @@ class MedicineUnitPackagingTest extends TestCase
             'phone' => '081234567890',
             'address' => 'Alamat contoh',
             'items' => [
-                ['id' => $medicine->id, 'quantity' => 11, 'harga' => 1, 'sale_unit' => 'strip'],
+                ['id' => $medicine->id, 'quantity' => 2, 'harga' => 1, 'sale_unit' => 'box'],
             ],
             'total' => 11,
         ])->assertUnprocessable();
@@ -432,7 +475,7 @@ class MedicineUnitPackagingTest extends TestCase
         $this->assertSame(100, $medicine->fresh()->stock_base_units);
     }
 
-    public function test_customer_cannot_buy_a_unit_without_a_configured_b2c_price(): void
+    public function test_customer_cannot_buy_a_strip_unit(): void
     {
         $medicine = Medicine::create([
             'nama_obat' => 'Harga Strip Belum Diatur',
@@ -619,11 +662,25 @@ class MedicineUnitPackagingTest extends TestCase
     public function test_admin_pbf_ordering_page_uses_dedicated_purchase_order_checkout(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
+        Medicine::create([
+            'nama_obat' => 'Obat PBF Logo Merah',
+            'satuan' => 'Box',
+            'kategori' => 'Pabrik Contoh',
+            'logo' => 'Merah',
+            'golongan' => 'Obat Keras',
+            'harga' => 8000,
+            'harga_modal' => 5000,
+            'stok' => 5,
+            'deskripsi' => 'Produk untuk pengujian kartu PBF.',
+        ]);
 
         $this->actingAs($admin)
             ->get(route('admin.produk-pbf.index'))
             ->assertOk()
             ->assertSee('Pesan ke PBF')
+            ->assertSee('Logo:</strong> Merah', false)
+            ->assertSee('Golongan:</strong> Obat Keras', false)
+            ->assertSee('product-logo-marker--red', false)
             ->assertSee('pengadaan Apotek Medix ke distributor')
             ->assertSee('Buat Surat Pesanan')
             ->assertSee('adminPbfOrder: true', false)
@@ -1089,7 +1146,7 @@ class MedicineUnitPackagingTest extends TestCase
         ImageHelper::deleteProductImage($medicine->gambar);
     }
 
-    public function test_three_unit_converted_stock_decreases_synchronously_when_customer_orders_box_strip_or_tablet(): void
+    public function test_stock_conversion_remains_available_but_customer_purchase_uses_package_unit(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
@@ -1143,37 +1200,13 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertJsonPath("stock.{$medicine->id}.unit_stocks.tablet", 900)
             ->assertJsonPath("stock.{$medicine->id}.converted_summary", '9 Box · 90 Strip · 900 Tablet');
 
-        // Customer buys 2 Strip (20 Tablet) -> remaining 880 Tablet (8 Box, 88 Strip, 880 Tablet)
-        $this->postJson(route('orders.history.store'), [
-            'buyer_type' => 'umum',
-            'buyer_name' => 'Pelanggan Strip',
-            'phone' => '081234567890',
-            'address' => 'Jl. Contoh',
-            'items' => [
-                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 2, 'harga' => 1600, 'sale_unit' => 'strip'],
-            ],
-            'total' => 3200,
-        ])->assertOk();
-
-        // Customer buys 5 Tablet -> remaining 875 Tablet (8 Box, 87 Strip, 875 Tablet)
-        $this->postJson(route('orders.history.store'), [
-            'buyer_type' => 'umum',
-            'buyer_name' => 'Pelanggan Tablet',
-            'phone' => '081234567890',
-            'address' => 'Jl. Contoh',
-            'items' => [
-                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 5, 'harga' => 200, 'sale_unit' => 'tablet'],
-            ],
-            'total' => 1000,
-        ])->assertOk();
-
         $this->getJson(route('products.stock-availability', ['ids' => [$medicine->id]]))
             ->assertOk()
-            ->assertJsonPath("stock.{$medicine->id}.units", 875)
-            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.box", 8)
-            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.strip", 87)
-            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.tablet", 875)
-            ->assertJsonPath("stock.{$medicine->id}.converted_summary", '8 Box · 87 Strip · 875 Tablet');
+            ->assertJsonPath("stock.{$medicine->id}.units", 900)
+            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.box", 9)
+            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.strip", 90)
+            ->assertJsonPath("stock.{$medicine->id}.unit_stocks.tablet", 900)
+            ->assertJsonPath("stock.{$medicine->id}.converted_summary", '9 Box · 90 Strip · 900 Tablet');
     }
 
     public function test_product_gallery_uses_primary_and_secondary_images_and_opens_detail(): void

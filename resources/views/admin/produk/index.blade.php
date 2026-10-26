@@ -75,15 +75,9 @@
     .inline-save { display:inline-flex; align-items:center; gap:0.3rem; margin-top:0.35rem; padding:0.3rem 0.55rem; border:0; border-radius:0.4rem; background:#e8f5e9; color:#2e7d32; font-size:0.72rem; font-weight:700; cursor:pointer; }
     .inline-save:hover { background:#2e7d32; color:#fff; }
 
-    .converted-stock-pills { display:grid; gap:0.22rem; margin-top:0.4rem; min-width:148px; }
-    .converted-stock-pill { display:flex; align-items:center; justify-content:space-between; gap:0.4rem; padding:0.2rem 0.45rem; border-radius:0.35rem; font-size:0.72rem; font-weight:700; background:#f8fafc; border:1px solid #e2e8f0; color:#334155; }
-    .converted-stock-pill--box { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
-    .converted-stock-pill--strip { background:#f0f9ff; border-color:#bae6fd; color:#0369a1; }
-    .converted-stock-pill--tablet { background:#ecfdf5; border-color:#a7f3d0; color:#047857; }
-    .converted-stock-pill--editable { flex-wrap:wrap; }
-    .stock-quantity-input { width:78px; padding:0.12rem 0.25rem; border:1px solid currentColor; border-radius:0.25rem; background:rgba(255,255,255,0.9); color:inherit; font-size:0.74rem; font-weight:700; text-align:right; }
-    .stock-conversion-edit { display:flex; align-items:center; gap:0.2rem; font-size:0.66rem; font-weight:600; white-space:nowrap; }
-    .stock-conversion-edit input { width:42px; padding:0.12rem 0.2rem; border:1px solid currentColor; border-radius:0.25rem; background:rgba(255,255,255,0.85); color:inherit; font:inherit; }
+    .stock-unit-summary { display:grid; gap:0.2rem; margin-bottom:.45rem; color:#475569; font-size:.72rem; line-height:1.5; }
+    .stock-unit-summary strong { color:#0f172a; }
+    .stock-quantity-input { width:90px; padding:0.3rem 0.4rem; border:1px solid #bfdbfe; border-radius:0.35rem; background:#eff6ff; color:#1d4ed8; font-size:0.78rem; font-weight:700; text-align:right; }
 
     .action-wrap { display:flex; gap:0.4rem; }
     .btn-edit, .btn-del { display:inline-flex; align-items:center; gap:0.3rem; padding:0.35rem 0.75rem; border-radius:0.4rem; font-size:0.78rem; font-weight:600; text-decoration:none; border:none; cursor:pointer; transition:all 0.2s; }
@@ -248,7 +242,6 @@
                     <th>Harga Internal</th>
                     <th>Harga B2B</th>
                     <th>Harga B2C</th>
-                    <th>Harga Strip / Tablet</th>
                     <th>Stok Kemasan / Konversi</th>
                     <th>Ditambahkan</th>
                     <th style="width:130px;">Aksi</th>
@@ -260,9 +253,9 @@
                     $physicalStockUnits = (int) $medicine->physical_stock_units;
                     $reservedStockUnits = (int) $medicine->reserved_stock_units;
                     $availableStockUnits = (int) $medicine->available_stock_units;
-                    $converted = $medicine->getConvertedUnitStocksForUnits($physicalStockUnits);
+                    $formatStockPackages = fn (int $units) => rtrim(rtrim(number_format($units / max(1, $medicine->units_per_box), 6, ',', '.'), '0'), ',');
                 @endphp
-                <tr data-product-row="{{ $medicine->id }}" data-unit-label="{{ $medicine->package_unit_label }}" data-tablet-packaging="{{ \App\Models\Medicine::supportsTabletPackaging((string) $medicine->satuan, (string) $medicine->sediaan) ? '1' : '0' }}">
+                <tr data-product-row="{{ $medicine->id }}" data-unit-label="{{ $medicine->package_unit_label }}">
                     <td style="text-align:center;">
                         <input type="checkbox" class="product-checkbox" name="produk_ids[]" value="{{ $medicine->id }}">
                     </td>
@@ -325,55 +318,18 @@
                         <input class="inline-number" type="number" name="harga_retail" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_box ?? ($medicine->harga_retail ?: $medicine->harga) }}" min="0" step="0.01" aria-label="Harga jual B2C {{ $medicine->nama_obat }}">
                     </td>
                     <td>
-                        @if(\App\Models\Medicine::supportsTabletPackaging((string) $medicine->satuan, (string) $medicine->sediaan))
-                            <div class="price-unit-fields">
-                                <div class="price-unit-field">
-                                    <label for="price-strip-{{ $medicine->id }}">Strip</label>
-                                    <input id="price-strip-{{ $medicine->id }}" class="inline-number price-unit-input" type="number" name="price_strip" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_strip ?? 0 }}" min="0" step="0.01" aria-label="Harga strip {{ $medicine->nama_obat }}">
-                                </div>
-                                <div class="price-unit-field">
-                                    <label for="price-tablet-{{ $medicine->id }}">Tablet</label>
-                                    <input id="price-tablet-{{ $medicine->id }}" class="inline-number price-unit-input" type="number" name="price_tablet" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->price_tablet ?? 0 }}" min="0" step="0.01" aria-label="Harga tablet {{ $medicine->nama_obat }}">
-                                </div>
-                            </div>
-                        @else
-                            <span class="med-meta">-</span>
-                        @endif
-                    </td>
-                    <td>
-                        <div class="converted-stock-pills" data-converted-stock-pills>
-                            <div class="inventory-stock-summary" style="margin-bottom:.45rem;font-size:.72rem;line-height:1.5;color:#475569;">
-                                <div><strong>Fisik:</strong> {{ $medicine->getConvertedStockSummaryForUnits($physicalStockUnits) }}</div>
-                                <div><strong>Direservasi:</strong> {{ $medicine->getConvertedStockSummaryForUnits($reservedStockUnits) }}</div>
-                                <div><strong>Tersedia:</strong> {{ $medicine->getConvertedStockSummaryForUnits($availableStockUnits) }}</div>
-                            </div>
-                            <div class="converted-stock-pill converted-stock-pill--box converted-stock-pill--editable">
-                                <span>{{ $medicine->package_unit_label }}:</span>
-                                <label class="stock-conversion-edit" for="stok-box-{{ $medicine->id }}">
-                                    <input id="stok-box-{{ $medicine->id }}" class="stock-quantity-input js-row-stock" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ rtrim(rtrim(number_format($physicalStockUnits / max(1, $medicine->units_per_box), 6, '.', ''), '0'), '.') }}" min="0" step="0.000001" aria-label="Stok {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
-                                    {{ $medicine->package_unit_label }}
-                                </label>
-                            </div>
-                            @if(\App\Models\Medicine::supportsTabletPackaging((string) $medicine->satuan, (string) $medicine->sediaan))
-                                <div class="converted-stock-pill converted-stock-pill--strip converted-stock-pill--editable" data-pill-strip-wrap>
-                                    <span>Strip:</span>
-                                    <input class="stock-quantity-input js-row-strip-quantity" type="number" value="{{ $converted['strip'] }}" min="0" step="1" aria-label="Jumlah stok strip {{ $medicine->nama_obat }}">
-                                    <label class="stock-conversion-edit" for="strips-per-box-{{ $medicine->id }}">
-                                        1 Box =
-                                        <input id="strips-per-box-{{ $medicine->id }}" class="js-row-strips" type="number" name="strips_per_box" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->unit_packaging_enabled ? ($medicine->strips_per_box ?? 0) : 0 }}" min="0" step="1" aria-label="Strip per Box {{ $medicine->nama_obat }}">
-                                    </label>
-                                </div>
-                                <div class="converted-stock-pill converted-stock-pill--tablet converted-stock-pill--editable" data-pill-tablet-wrap>
-                                    <span>Tablet:</span>
-                                    <input class="stock-quantity-input js-row-tablet-quantity" type="number" value="{{ $converted['tablet'] }}" min="0" step="1" aria-label="Jumlah stok tablet {{ $medicine->nama_obat }}">
-                                    <label class="stock-conversion-edit" for="tablets-per-strip-{{ $medicine->id }}">
-                                        1 Strip =
-                                        <input id="tablets-per-strip-{{ $medicine->id }}" class="js-row-tablets" type="number" name="tablets_per_strip" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->unit_packaging_enabled ? ($medicine->tablets_per_strip ?? 0) : 0 }}" min="0" step="1" aria-label="Tablet per strip {{ $medicine->nama_obat }}">
-                                    </label>
-                                </div>
-                            @endif
+                        <div class="stock-unit-summary">
+                            <div><strong>Fisik:</strong> {{ $formatStockPackages($physicalStockUnits) }} {{ $medicine->package_unit_label }}</div>
+                            <div><strong>Direservasi:</strong> {{ $formatStockPackages($reservedStockUnits) }} {{ $medicine->package_unit_label }}</div>
+                            <div><strong>Tersedia:</strong> {{ $formatStockPackages($availableStockUnits) }} {{ $medicine->package_unit_label }}</div>
                         </div>
-                        <small style="display:block;margin-top:.25rem;color:#64748b;" data-row-breakdown>Rincian fisik: {{ $medicine->getConvertedStockSummaryForUnits($physicalStockUnits) }}</small>
+                        <label for="stok-box-{{ $medicine->id }}" style="display:flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:600;">
+                            Stok fisik
+                            <span>
+                                <input id="stok-box-{{ $medicine->id }}" class="stock-quantity-input js-row-stock" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ rtrim(rtrim(number_format($physicalStockUnits / max(1, $medicine->units_per_box), 6, '.', ''), '0'), '.') }}" min="0" step="0.000001" aria-label="Stok {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
+                                {{ $medicine->package_unit_label }}
+                            </span>
+                        </label>
                     </td>
                     <td style="font-size:0.82rem;color:#9ca3af;">{{ $medicine->created_at->format('d M Y') }}</td>
                     <td>
@@ -578,57 +534,6 @@ if (bulkDeleteForm) {
 }
 
 syncSelectionsFromStorage();
-
-// Live kalkulasi konversi stok per baris saat admin mengubah stok / strip / tablet
-document.querySelectorAll('tr[data-product-row]').forEach(function (row) {
-    const stockInput = row.querySelector('.js-row-stock');
-    const stripsInput = row.querySelector('.js-row-strips');
-    const tabletsInput = row.querySelector('.js-row-tablets');
-    const stripQuantityInput = row.querySelector('.js-row-strip-quantity');
-    const tabletQuantityInput = row.querySelector('.js-row-tablet-quantity');
-    const stripWrap = row.querySelector('[data-pill-strip-wrap]');
-    const tabletWrap = row.querySelector('[data-pill-tablet-wrap]');
-    const roundStock = (value) => Number((Math.max(0, value) || 0).toFixed(6));
-
-    function getPackageFactors() {
-        return {
-            stripsPerBox: Math.max(0, parseInt(stripsInput?.value || '0', 10) || 0),
-            tabletsPerStrip: Math.max(0, parseInt(tabletsInput?.value || '0', 10) || 0)
-        };
-    }
-
-    function syncStockQuantities(source) {
-        const factors = getPackageFactors();
-        if (row.dataset.tabletPackaging !== '1' || factors.stripsPerBox < 1 || factors.tabletsPerStrip < 1) return;
-
-        const unitsPerBox = factors.stripsPerBox * factors.tabletsPerStrip;
-        let totalTablets;
-        if (source === 'strip') {
-            const strips = Math.max(0, parseInt(stripQuantityInput?.value || '0', 10) || 0);
-            totalTablets = strips * factors.tabletsPerStrip;
-            if (stockInput) stockInput.value = roundStock(totalTablets / unitsPerBox);
-            if (tabletQuantityInput) tabletQuantityInput.value = totalTablets;
-        } else if (source === 'tablet') {
-            totalTablets = Math.max(0, parseInt(tabletQuantityInput?.value || '0', 10) || 0);
-            if (stockInput) stockInput.value = roundStock(totalTablets / unitsPerBox);
-            if (stripQuantityInput) stripQuantityInput.value = Math.floor(totalTablets / factors.tabletsPerStrip);
-        } else {
-            const boxes = Math.max(0, parseFloat(stockInput?.value || '0') || 0);
-            totalTablets = Math.round(boxes * unitsPerBox);
-            if (stripQuantityInput) stripQuantityInput.value = Math.floor(totalTablets / factors.tabletsPerStrip);
-            if (tabletQuantityInput) tabletQuantityInput.value = totalTablets;
-        }
-
-        if (stripWrap) stripWrap.style.display = 'flex';
-        if (tabletWrap) tabletWrap.style.display = 'flex';
-    }
-
-    stockInput?.addEventListener('input', () => syncStockQuantities('box'));
-    stripQuantityInput?.addEventListener('input', () => syncStockQuantities('strip'));
-    tabletQuantityInput?.addEventListener('input', () => syncStockQuantities('tablet'));
-    stripsInput?.addEventListener('input', () => syncStockQuantities('box'));
-    tabletsInput?.addEventListener('input', () => syncStockQuantities('box'));
-});
 
 // Tutup modal jika klik overlay
 document.getElementById('deleteModal').addEventListener('click', function(e) {

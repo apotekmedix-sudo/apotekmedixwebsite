@@ -641,28 +641,13 @@ class Medicine extends Model
 
     public function getSaleUnitPrice(string $unit): ?float
     {
-        if (!$this->usesTabletPackaging()) {
-            if ($unit !== 'box') {
-                return null;
-            }
-
-            $retailPrice = (float) ($this->harga_retail ?: $this->price_box);
-
-            return $retailPrice > 0 ? $retailPrice : (float) $this->harga;
+        if ($unit !== 'box') {
+            return null;
         }
 
-        $price = match ($unit) {
-            'tablet' => $this->price_tablet,
-            'strip' => $this->price_strip,
-            'box' => $this->price_box,
-            default => null,
-        };
+        $packagePrice = (float) ($this->harga_retail ?: $this->price_box);
 
-        if ($unit === 'box' && (float) $price <= 0) {
-            $price = $this->harga_retail;
-        }
-
-        return $price === null ? null : (float) $price;
+        return $packagePrice > 0 ? $packagePrice : (float) $this->harga;
     }
 
     public function setStockInPackages(float $packages): void
@@ -739,27 +724,19 @@ class Medicine extends Model
 
     public function getChannelBasePrice(string $channel, string $unit = 'box'): float
     {
+        if ($unit !== 'box') {
+            return 0;
+        }
+
         if ($channel === 'internal') {
             $internalPrice = (float) $this->harga_internal;
-            if ($internalPrice <= 0 || !$this->usesTabletPackaging() || $unit === 'box') {
-                return $internalPrice;
-            }
-
-            $factor = $this->getSaleUnitFactor($unit);
-
-            return $factor > 0 ? $internalPrice * $factor / $this->units_per_box : 0;
+            return $internalPrice;
         }
 
         if ($channel === 'b2b') {
             $boxPrice = (float) $this->harga_grosir;
 
-            if (!$this->usesTabletPackaging() || $unit === 'box') {
-                return $boxPrice;
-            }
-
-            $factor = $this->getSaleUnitFactor($unit);
-
-            return $factor > 0 ? $boxPrice * $factor / $this->units_per_box : 0;
+            return $boxPrice;
         }
 
         if ($this->usesTabletPackaging() && $channel === 'b2c') {
@@ -770,12 +747,6 @@ class Medicine extends Model
         if ($legacyRetailPrice <= 0) {
             $legacyRetailPrice = (float) $this->harga;
         }
-        if ($this->usesTabletPackaging() && $unit !== 'box') {
-            $factor = $this->getSaleUnitFactor($unit);
-
-            return $factor > 0 ? $legacyRetailPrice * $factor / $this->units_per_box : 0;
-        }
-
         return $legacyRetailPrice;
     }
 

@@ -117,6 +117,7 @@ class PurchaseHistoryTest extends TestCase
             ->assertSee('Semoga lekas sembuh')
             ->assertSee('Sehat Bersama Medix')
             ->assertSee('Menunggu pembayaran')
+            ->assertSee('class="home-button" href="' . route('home') . '">Kembali ke Beranda', false)
             ->assertDontSee('Uang diterima')
             ->assertDontSee('Kembalian');
     }
@@ -245,6 +246,17 @@ class PurchaseHistoryTest extends TestCase
         ]);
 
         $response->assertOk();
+        $this->withMiddleware()->get($response->json('invoice_url'))
+            ->assertOk()
+            ->assertSee('FAKTUR PENJUALAN')
+            ->assertSee('APOTEKER PENANGGUNG JAWAB :')
+            ->assertSee('No. SIA')
+            ->assertSee('No. SIPA')
+            ->assertSee('SIA-PBF-001')
+            ->assertSee('SIPA-PBF-001')
+            ->assertSee('Sehat Bersama Medix')
+            ->assertSee('href="' . route('products.pbf') . '"><i class="fa-solid fa-arrow-left"></i> Kembali ke Belanja B2B', false)
+            ->assertSee('TOTAL PEMBAYARAN');
         $this->assertDatabaseHas('purchase_histories', [
             'buyer_name' => 'PT Contoh PBF',
             'buyer_type' => 'pbf',

@@ -66,12 +66,19 @@
     .ordering-search button { border:0; border-radius:.5rem; padding:.65rem 1rem; background:#1e88e5; color:white; font-weight:700; cursor:pointer; }
     .ordering-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:1rem; }
     .ordering-card { background:white; border:1px solid #e5e7eb; border-radius:.75rem; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.06); display:flex; flex-direction:column; }
-    .ordering-image { height:145px; background:linear-gradient(135deg,#e3f2fd,#f3f8fc); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .ordering-image { position:relative; height:145px; background:linear-gradient(135deg,#e3f2fd,#f3f8fc); display:flex; align-items:center; justify-content:center; overflow:hidden; }
     .ordering-image img { width:100%; height:100%; object-fit:cover; }
     .ordering-image i { font-size:2.8rem; color:#90caf9; }
+    .ordering-image .product-logo-marker { position:absolute; z-index:2; top:.55rem; right:.55rem; width:1.35rem; height:1.35rem; border:2px solid #0f172a; border-radius:50%; box-shadow:0 1px 3px rgba(15,23,42,.25); }
+    .ordering-image .product-logo-marker--green { background:#22a447; }
+    .ordering-image .product-logo-marker--red { display:inline-flex; align-items:center; justify-content:center; background:#dc2626; color:#0f172a; font-size:.72rem; font-weight:900; line-height:1; }
+    .ordering-image .product-logo-marker--blue { background:#2563eb; }
     .ordering-body { padding:.85rem; display:flex; flex:1; flex-direction:column; }
     .ordering-principle { color:#6b7280; font-size:.72rem; font-weight:700; text-transform:uppercase; }
     .ordering-name { margin:.25rem 0 .5rem; font-size:.92rem; color:#1f2937; line-height:1.3; }
+    .ordering-meta { display:grid; gap:.2rem; margin:0 0 .6rem; color:#64748b; font-size:.73rem; line-height:1.4; }
+    .ordering-meta p { margin:0; overflow-wrap:anywhere; }
+    .ordering-meta strong { color:#334155; }
     .ordering-price { color:#1e88e5; font-size:1.05rem; font-weight:800; margin-top:auto; }
     .ordering-button { border:0; border-radius:.5rem; padding:.6rem; background:#25d366; color:white; font-weight:700; cursor:pointer; width:100%; }
     .ordering-empty { padding:4rem 1rem; text-align:center; color:#6b7280; background:white; border-radius:.75rem; border:1px solid #e5e7eb; }
@@ -199,10 +206,17 @@
     <div class="ordering-grid">
         @foreach($medicines as $medicine)
             <article class="ordering-card">
-                <div class="ordering-image">@if($medicine->image_url)<img src="{{ $medicine->image_url }}" alt="{{ $medicine->nama_obat }}">@else<i class="fa-solid fa-pills"></i>@endif</div>
+                <div class="ordering-image">
+                    @if($medicine->image_url)<img src="{{ $medicine->image_url }}" alt="{{ $medicine->nama_obat }}">@else<i class="fa-solid fa-pills"></i>@endif
+                    @include('partials.product-logo-marker', ['medicine' => $medicine])
+                </div>
                 <div class="ordering-body">
                     <span class="ordering-principle">{{ $medicine->brand ?: $medicine->kategori ?: 'Produk' }}</span>
                     <h3 class="ordering-name">{{ $medicine->nama_obat }}</h3>
+                    <div class="ordering-meta">
+                        <p><strong>Logo:</strong> {{ $medicine->logo ?: '—' }}</p>
+                        <p title="{{ $medicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ $medicine->golongan ?: '—' }}</p>
+                    </div>
                     <div class="ordering-price">{{ $medicine->getFormattedCatalogPrice('harga_modal') }}</div>
                     <button class="ordering-button" data-package-unit-label="{{ $medicine->package_unit_label }}" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $medicine->harga_modal }}, '{{ $medicine->image_url ?: '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this)"><i class="fa-solid fa-cart-plus"></i> Tambah Pesanan</button>
                 </div>
@@ -227,7 +241,7 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'apotekmedix_cart_pbf_admin', receiptStoreName: 'APOTEK MEDIX', receiptStoreAddress: 'Jl. Raya Tajur No. 256 C, Bogor Timur, Kota Bogor, 16146', receiptFilePrefix: 'surat-pesanan-apotek-medix', adminPbfOrder: true, adminPurchaseOrderBase: '{{ str_replace('/0/', '/__ORDER__/', route('admin.purchase-history.purchase-order', ['order' => 0])) }}', suppliers: @json($suppliers) };
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_pbf_admin', receiptStoreName: 'APOTEK MEDIX', receiptStoreAddress: 'Jl. Raya Tajur No. 256 C, Bogor Timur, Kota Bogor, 16146', receiptFilePrefix: 'surat-pesanan-apotek-medix', adminPbfOrder: true, adminPurchaseOrderBase: '{{ str_replace('/0/', '/__ORDER__/', route('admin.purchase-history.purchase-order', ['order' => 0])) }}', continueShoppingUrl: @json(route('admin.produk-pbf.index')), suppliers: @json($suppliers) };
 function toggleSupplierForm() { document.getElementById('supplierFormPanel').classList.toggle('open'); }
 function openSupplierManager() { document.getElementById('supplierManagerBackdrop').classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeSupplierManager(event) { if (event && event.target !== event.currentTarget) return; document.getElementById('supplierManagerBackdrop').classList.remove('open'); document.body.style.overflow = ''; }

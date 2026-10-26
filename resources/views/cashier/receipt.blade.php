@@ -30,7 +30,8 @@
         </header>
         <div class="rule"></div>
         <div class="row"><span>No. Pesanan</span><strong>#{{ $order->id }}</strong></div>
-        <div class="row"><span>Tanggal</span><span>{{ $order->created_at?->format('d/m/Y H:i') }}</span></div>
+        <div class="row"><span>Tanggal</span><span id="cashierReceiptRealtimeClock">{{ now()->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') }} WIB</span></div>
+        <div class="row"><span>Waktu Pesan</span><span>{{ $order->created_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') }} WIB</span></div>
         <div class="row"><span>Kanal</span><span>{{ $order->transaction_channel === 'offline' ? 'Offline / Kios' : (in_array($order->buyer_type, ['apotik', 'dokter', 'pbf']) || filled($order->pbf_name) ? 'B2B' : 'B2C') }}</span></div>
         <div class="row"><span>Pelanggan</span><span>{{ $order->buyer_name ?: '-' }}</span></div>
         <div class="row"><span>Kasir</span><span>{{ auth()->user()->name }}</span></div>
@@ -56,10 +57,36 @@
         <div class="rule"></div>
         <div class="row total"><span>TOTAL</span><span>Rp {{ number_format($order->effective_total, 0, ',', '.') }}</span></div>
         <div class="row"><span>Metode bayar</span><span>{{ $order->payment_method ?: '-' }}</span></div>
+        @if($order->isTempoPayment())
+            <div class="row"><span>Jatuh tempo</span><span>{{ $order->due_date_formatted }}</span></div>
+        @endif
         <div class="row"><span>Status pembayaran</span><strong>{{ $order->payment_status === 'paid' ? 'LUNAS' : 'BELUM LUNAS' }}</strong></div>
         <div class="rule"></div>
         <div class="center thanks">Terima kasih telah berbelanja di Apotek Medix.<br>Semoga lekas sehat!</div>
     </main>
+    <script>
+        (() => {
+            const el = document.getElementById('cashierReceiptRealtimeClock');
+            const updateReceiptClock = () => {
+                if (!el) return;
+                const now = new Date();
+                const parts = new Intl.DateTimeFormat('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }).formatToParts(now).reduce((acc, p) => (acc[p.type] = p.value, acc), {});
+                el.textContent = `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}:${parts.second} WIB`;
+            };
+            updateReceiptClock();
+            window.setInterval(updateReceiptClock, 1000);
+            window.addEventListener('beforeprint', updateReceiptClock);
+        })();
+    </script>
     @if(request()->boolean('print'))
         <script>window.addEventListener('load', () => window.setTimeout(() => window.print(), 350));</script>
     @endif

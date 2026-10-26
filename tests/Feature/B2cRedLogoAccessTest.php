@@ -95,6 +95,24 @@ class B2cRedLogoAccessTest extends TestCase
             ->assertJsonPath('message', 'Aktifkan kode akses B2C atau Internal untuk memesan produk berlogo merah.');
         $this->assertSame(0, PurchaseHistory::count());
 
+        $b2bCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2B,
+            'code_hash' => Hash::make('54321'),
+            'code_value' => encrypt('54321'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $medicine->update(['harga_grosir' => 9000]);
+        $this->post(route('products.apotek.activate'), ['kode' => '54321'])
+            ->assertRedirect(route('products.pbf'))
+            ->assertSessionHas('pbf_success');
+        $this->withSession([
+            'pbf_access_expires_at' => now()->addDays(20)->timestamp,
+            'pbf_access_code_hash' => $b2bCode->code_hash,
+        ])->postJson(route('orders.history.store'), array_merge($payload, [
+            'buyer_type' => 'pbf',
+            'buyer_name' => 'Mitra PBF B2B',
+        ]))->assertOk();
+
         $accessCode = $this->createB2cAccessCode();
         $this->withSession([
             'b2c_access_expires_at' => now()->addDays(20)->timestamp,

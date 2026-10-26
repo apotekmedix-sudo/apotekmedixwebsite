@@ -23,10 +23,7 @@
     .inventory-section-title{margin:1.5rem 0 .75rem;color:#0f172a;font-size:1.05rem}
 </style>
 
-<p class="inventory-intro">Stok fisik memakai satuan dasar. Reservasi menunjukkan jumlah yang tertahan untuk pesanan belum selesai; stok tersedia adalah stok fisik dikurangi reservasi.</p>
-<div class="inventory-notice">
-    Contoh rasio: <strong>1 box = 10 strip</strong> dan <strong>1 strip = 10 tablet</strong>. Jika stok fisik 253 tablet, laporan menampilkan 2 box · 5 strip · 3 tablet. Rasio kemasan dipakai untuk konversi tampilan; angka stok fisik tetap menjadi sumber perhitungan.
-</div>
+<p class="inventory-intro">Semua jumlah ditampilkan dalam satuan utama produk. Stok fisik adalah jumlah stok saat ini, dipesan adalah stok yang ditahan untuk pesanan belum selesai, dan stok tersedia adalah stok fisik dikurangi stok yang dipesan.</p>
 <form class="inventory-search" method="GET" action="{{ route('admin.inventory.index') }}">
     <input name="search" value="{{ $search }}" placeholder="Cari nama produk">
     <button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
@@ -35,25 +32,26 @@
 <h2 class="inventory-section-title">Saldo stok saat ini</h2>
 <div class="inventory-table-wrap">
     <table class="inventory-table">
-        <thead><tr><th>Produk</th><th>Satuan &amp; rasio</th><th>Stok fisik</th><th>Direservasi</th><th>Tersedia</th></tr></thead>
+        <thead><tr><th>Produk</th><th>Satuan</th><th>Stok fisik</th><th>Dipesan</th><th>Stok tersedia</th></tr></thead>
         <tbody>
         @forelse($products as $product)
             @php
                 $physical = (int) $product->physical_stock_units;
                 $reserved = (int) $product->reserved_stock_units;
                 $available = (int) $product->available_stock_units;
+                $formatMainUnitQuantity = function (int $units) use ($product): string {
+                    $quantity = $units / max(1, $product->units_per_box);
+                    $formatted = rtrim(rtrim(number_format($quantity, 6, ',', '.'), '0'), ',');
+
+                    return $formatted . ' ' . $product->package_unit_label;
+                };
             @endphp
             <tr>
                 <td><strong>{{ $product->nama_obat }}</strong><span class="inventory-muted">ID {{ $product->id }}</span></td>
-                <td>
-                    {{ $product->package_unit_label }}
-                    @if($product->usesTabletPackaging())
-                        <span class="inventory-muted">1 {{ $product->package_unit_label }} = {{ $product->strips_per_box }} strip; 1 strip = {{ $product->tablets_per_strip }} tablet</span>
-                    @endif
-                </td>
-                <td><span class="inventory-quantity">{{ $product->getConvertedStockSummaryForUnits($physical) }}</span><span class="inventory-muted">{{ number_format($physical, 0, ',', '.') }} unit dasar</span></td>
-                <td><span class="inventory-quantity">{{ $product->getConvertedStockSummaryForUnits($reserved) }}</span><span class="inventory-muted">{{ number_format($reserved, 0, ',', '.') }} unit dasar</span></td>
-                <td><span class="inventory-quantity">{{ $product->getConvertedStockSummaryForUnits($available) }}</span><span class="inventory-muted">{{ number_format($available, 0, ',', '.') }} unit dasar</span></td>
+                <td>{{ $product->package_unit_label }}</td>
+                <td><span class="inventory-quantity">{{ $formatMainUnitQuantity($physical) }}</span></td>
+                <td><span class="inventory-quantity">{{ $formatMainUnitQuantity($reserved) }}</span></td>
+                <td><span class="inventory-quantity">{{ $formatMainUnitQuantity($available) }}</span></td>
             </tr>
         @empty
             <tr><td colspan="5">Tidak ada produk yang ditemukan.</td></tr>
@@ -66,7 +64,7 @@
 <h2 class="inventory-section-title">Riwayat mutasi stok</h2>
 <div class="inventory-table-wrap">
     <table class="inventory-table">
-        <thead><tr><th>Waktu</th><th>Produk</th><th>Jenis mutasi</th><th>Perubahan fisik</th><th>Perubahan reservasi</th><th>Sebelum → sesudah</th><th>Referensi / catatan</th><th>Oleh</th></tr></thead>
+        <thead><tr><th>Waktu</th><th>Produk</th><th>Jenis mutasi</th><th>Perubahan stok fisik</th><th>Perubahan stok dipesan</th><th>Stok fisik sebelum → sesudah</th><th>Referensi / catatan</th><th>Oleh</th></tr></thead>
         <tbody>
         @forelse($movements as $movement)
             @php
@@ -79,21 +77,28 @@
                     'sale' => 'Penjualan',
                     'return' => 'Pengembalian',
                 ];
-                $movementUnitSummary = fn ($units) => $unitProduct
-                    ? $unitProduct->getConvertedStockSummaryForUnits((int) $units)
-                    : number_format((int) $units, 0, ',', '.') . ' unit';
+                $formatMovementQuantity = function ($units) use ($unitProduct): string {
+                    if (!$unitProduct) {
+                        return number_format((int) $units, 0, ',', '.') . ' unit';
+                    }
+
+                    $quantity = (int) $units / max(1, $unitProduct->units_per_box);
+                    $formatted = rtrim(rtrim(number_format($quantity, 6, ',', '.'), '0'), ',');
+
+                    return $formatted . ' ' . $unitProduct->package_unit_label;
+                };
             @endphp
             <tr>
                 <td>{{ $movement->created_at?->format('d M Y H:i') }}</td>
                 <td><strong>{{ $unitProduct?->nama_obat ?? 'Produk dihapus' }}</strong></td>
                 <td>{{ $typeLabels[$movement->movement_type] ?? ucfirst($movement->movement_type) }}</td>
                 <td class="inventory-quantity {{ $movement->physical_delta < 0 ? 'inventory-negative' : ($movement->physical_delta > 0 ? 'inventory-positive' : '') }}">
-                    {{ $movement->physical_delta > 0 ? '+' : '' }}{{ number_format($movement->physical_delta, 0, ',', '.') }}
+                    {{ $movement->physical_delta > 0 ? '+' : '' }}{{ $formatMovementQuantity($movement->physical_delta) }}
                 </td>
                 <td class="inventory-quantity {{ $movement->reserved_delta < 0 ? 'inventory-positive' : ($movement->reserved_delta > 0 ? 'inventory-negative' : '') }}">
-                    {{ $movement->reserved_delta > 0 ? '+' : '' }}{{ number_format($movement->reserved_delta, 0, ',', '.') }}
+                    {{ $movement->reserved_delta > 0 ? '+' : '' }}{{ $formatMovementQuantity($movement->reserved_delta) }}
                 </td>
-                <td>{{ $movementUnitSummary($movement->physical_before) }}<span class="inventory-muted">→ {{ $movementUnitSummary($movement->physical_after) }}</span></td>
+                <td>{{ $formatMovementQuantity($movement->physical_before) }}<span class="inventory-muted">→ {{ $formatMovementQuantity($movement->physical_after) }}</span></td>
                 <td>{{ $movement->reference_id ? 'Pesanan #' . $movement->reference_id : '-' }}<span class="inventory-muted">{{ $movement->note }}</span></td>
                 <td>{{ $movement->user?->name ?? 'Sistem' }}</td>
             </tr>

@@ -48,12 +48,13 @@
         .tagline { display: block; width: fit-content; margin: 3px auto 0; color: #163c9c; font-family: "Segoe Script", "Brush Script MT", cursive; font-size: 21px; font-style: italic; font-weight: 600; }
         .print-button { display: block; margin: 16px auto 0; padding: 9px 16px; border: 0; border-radius: 6px; color: #fff; background: #163c9c; cursor: pointer; }
         .back-button { display: block; width: fit-content; margin: 10px auto 0; color: #163c9c; font-weight: 700; text-decoration: none; }
+        .home-button { display: block; width: fit-content; margin: 10px auto 0; padding: 9px 14px; border-radius: 6px; color: #fff; background: #163c9c; font-weight: 700; text-decoration: none; }
         @media print {
             @page { size: 80mm auto; margin: 0; }
             body { width: 80mm; padding: 0; background: #fff; font-size: 10px; }
             .receipt { width: 80mm; max-width: none; padding: 4mm; box-shadow: none; }
             .brand img { width: 78px; height: 54px; }
-            .print-button, .back-button { display: none; }
+            .print-button, .back-button, .home-button { display: none; }
         }
     </style>
 </head>
@@ -71,8 +72,9 @@
         <hr class="divider">
         <h2 class="receipt-title">STRUK PENJUALAN</h2>
         <section class="details" aria-label="Detail transaksi">
-            <span class="label">No. Transaksi</span><span>TRX/<?php echo e($order->created_at?->format('Ymd')); ?>/<?php echo e(str_pad($order->id, 5, '0', STR_PAD_LEFT)); ?></span>
-            <span class="label">Tanggal</span><span><?php echo e($order->created_at?->format('d/m/Y H:i') ?? '-'); ?></span>
+            <span class="label">No. Transaksi</span><span>TRX/<?php echo e($order->created_at?->timezone('Asia/Jakarta')->format('Ymd')); ?>/<?php echo e(str_pad($order->id, 5, '0', STR_PAD_LEFT)); ?></span>
+            <span class="label">Tanggal</span><span id="receiptRealtimeClock"><?php echo e(now()->timezone('Asia/Jakarta')->format('d/m/Y H:i:s')); ?> WIB</span>
+            <span class="label">Waktu Pesan</span><span><?php echo e($order->created_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') ?? '-'); ?> WIB</span>
             <span class="label">Kasir</span><span><?php echo e($cashierName ?? 'Online'); ?></span>
             <span class="label">Pelanggan</span><span><?php echo e($order->buyer_name ?: 'Umum'); ?></span>
             <?php if($order->phone): ?>
@@ -120,14 +122,43 @@
 
         <hr class="divider">
         <div class="payment"><strong>Pembayaran</strong><span><?php echo e($paymentMethod); ?></span></div>
+        <?php if($order->isTempoPayment()): ?>
+            <div class="payment"><strong>Jatuh Tempo</strong><span><?php echo e($order->due_date_formatted); ?></span></div>
+        <?php endif; ?>
         <div class="payment"><strong>Status</strong><span><?php echo e($paymentStatus); ?></span></div>
         <p class="well-wishes">Semoga lekas sembuh</p>
         <span class="tagline">Sehat Bersama Medix</span>
         <button class="print-button" type="button" onclick="window.print()">Cetak Struk</button>
+        <?php if(!($adminReceipt ?? false)): ?>
+            <a class="home-button" href="<?php echo e(route('home')); ?>">Kembali ke Beranda</a>
+        <?php endif; ?>
         <?php if($adminReceipt ?? false): ?>
             <a class="back-button" href="<?php echo e(route('cashier.dashboard')); ?>">Kembali ke dashboard admin</a>
         <?php endif; ?>
     </main>
+    <script>
+        (() => {
+            const el = document.getElementById('receiptRealtimeClock');
+            const updateReceiptClock = () => {
+                if (!el) return;
+                const now = new Date();
+                const parts = new Intl.DateTimeFormat('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }).formatToParts(now).reduce((acc, p) => (acc[p.type] = p.value, acc), {});
+                el.textContent = `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}:${parts.second} WIB`;
+            };
+            updateReceiptClock();
+            window.setInterval(updateReceiptClock, 1000);
+            window.addEventListener('beforeprint', updateReceiptClock);
+        })();
+    </script>
     <?php if(request()->boolean('print')): ?>
         <script>window.addEventListener('load', () => window.setTimeout(() => window.print(), 350));</script>
     <?php endif; ?>

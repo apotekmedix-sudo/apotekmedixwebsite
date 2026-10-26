@@ -434,10 +434,14 @@
                                 <p title="{{ $medicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($medicine->golongan ?: '—', 15, '...') }}</p>
                             </div>
                             @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => $catalogPriceChannel, 'redLogoAccess' => $redLogoAccess])
-                            @php $stock = (int) $medicine->available_stock_units; @endphp
-                            <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}">
+                            @php
+                                $stockUnits = (int) $medicine->available_stock_units;
+                                $stock = $stockUnits / max(1, $medicine->units_per_box);
+                                $stockDisplay = rtrim(rtrim(number_format($stock, 6, ',', '.'), '0'), ',');
+                            @endphp
+                            <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}" data-stock-unit-factor="{{ max(1, $medicine->units_per_box) }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
-                                {{ $stock > 0 ? 'Stok: ' . $medicine->getConvertedStockSummaryForUnits($stock) : 'Stok habis' }}
+                                {{ $stock > 0 ? 'Stok: ' . $stockDisplay : 'Stok habis' }}
                             </span>
                             <div class="medicine-meta medicine-meta-row">
                                 <span class="medicine-meta-sediaan">

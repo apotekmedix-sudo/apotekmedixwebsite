@@ -355,6 +355,20 @@ class ProductController extends Controller
         $accessCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2C)->first();
 
         if (!$accessCode || !$accessCode->verify($validated['kode'])) {
+            $b2bCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2B)->first();
+            if ($b2bCode && $b2bCode->verify($validated['kode'])) {
+                $request->session()->regenerate();
+                $sessionExpiresAt = now()->addDays((int) config('internal.code_validity_days', 30));
+                if ($b2bCode->expires_at->lt($sessionExpiresAt)) {
+                    $sessionExpiresAt = $b2bCode->expires_at;
+                }
+                $request->session()->put('pbf_access_expires_at', $sessionExpiresAt->timestamp);
+                $request->session()->put('pbf_access_code_hash', $b2bCode->code_hash);
+
+                return redirect()->route('products.pbf')
+                    ->with('pbf_success', 'Akses berhasil. Selamat datang di katalog B2B.');
+            }
+
             return redirect()
                 ->route($this->catalogReturnRoute($validated['redirect_to'] ?? null))
                 ->withErrors(['kode' => 'Kode akses tidak sesuai atau belum diaktifkan. Hubungi administrator.'])
