@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Helpers\XlsxWriter;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -92,13 +93,23 @@ class CustomerAccountTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.customers.index'))
             ->assertOk()
-            ->assertSee('Export Master CSV')
-            ->assertSee('Download Template CSV')
+            ->assertSee('Export Master Excel')
+            ->assertSee('Download Template Excel')
             ->assertSee('Import Customer');
 
         $export = $this->get(route('admin.customers.export.master'));
-        $export->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
-        $this->assertStringContainsString('BUYER_TYPE,NAME', $export->streamedContent());
+        $export->assertOk()->assertHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        $this->assertStringStartsWith('PK', $export->getContent());
+
+        $template = $this->get(route('admin.customers.import.template'));
+        $template->assertOk()->assertHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        $this->assertStringStartsWith('PK', $template->getContent());
 
         $csv = implode("\n", [
             'ID,BUYER_TYPE,NAME,REQUESTER_NAME,EMAIL,PHONE,OUTLET_NAME,PBF_NAME,ADDRESS,KECAMATAN,KOTA,SIA,SIPA,NO_IZIN_PBF,APJ,SIKA',
@@ -120,7 +131,54 @@ class CustomerAccountTest extends TestCase
             'name' => 'Customer Baru',
             'phone' => '081298765432',
         ]);
-        $this->assertDatabaseCount('customers', 2);
+        $nameOnlyFile = UploadedFile::fake()->createWithContent(
+            'customers-name-only.csv',
+            "NAME,PHONE,EMAIL,ADDRESS\nCustomer Tanpa Kolom Opsional,,,\n"
+        );
+        $this->post(route('admin.customers.import'), ['file' => $nameOnlyFile])
+            ->assertRedirect(route('admin.customers.index'))
+            ->assertSessionHas('success', '1 data customer berhasil diimpor atau diperbarui.');
+
+        $this->assertDatabaseHas('customers', [
+            'name' => 'Customer Tanpa Kolom Opsional',
+            'buyer_type' => 'umum',
+            'phone' => null,
+            'email' => null,
+        ]);
+        $this->assertDatabaseCount('customers', 3);
+    }
+
+    public function test_admin_can_import_customer_xlsx_with_blank_optional_columns(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $path = tempnam(sys_get_temp_dir(), 'customer-xlsx-');
+        file_put_contents($path, XlsxWriter::build(
+            ['NAME', 'PHONE', 'EMAIL', 'ADDRESS'],
+            [['Customer XLSX', '', '', '']]
+        ));
+        $file = new UploadedFile(
+            $path,
+            'customers.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+
+        try {
+            $this->actingAs($admin)
+                ->post(route('admin.customers.import'), ['file' => $file])
+                ->assertRedirect(route('admin.customers.index'))
+                ->assertSessionHas('success', '1 data customer berhasil diimpor atau diperbarui.');
+        } finally {
+            @unlink($path);
+        }
+
+        $this->assertDatabaseHas('customers', [
+            'name' => 'Customer XLSX',
+            'buyer_type' => 'umum',
+            'phone' => null,
+            'email' => null,
+        ]);
     }
 
     public function test_shopping_channels_open_their_respective_pages_without_internal_shopping(): void
@@ -140,9 +198,7 @@ class CustomerAccountTest extends TestCase
         $this->get('/belanja-internal/akses')->assertNotFound();
 
         $this->get(route('products.index'))
-            ->assertOk()
-            ->assertSee('Katalog Produk')
-            ->assertDontSee('Pesan di Toko');
+            ->assertRedirect(route('home') . '#homeSearchSection');
 
         $this->get(route('products.pbf'))->assertOk()->assertSee('Belanja B2B');
         $this->get(route('products.apotek'))->assertOk()->assertSee('Belanja B2C');

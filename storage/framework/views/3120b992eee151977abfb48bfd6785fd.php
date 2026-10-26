@@ -17,14 +17,6 @@
     .btn-icon-success { background:#e8f5e9; color:#2e7d32; border:1px solid #c8e6c9; }
     .btn-icon-success:hover { background:#2e7d32; color:white; }
 
-    /* Kategori tabs */
-    .kat-tabs { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1.25rem; }
-    .kat-tab { padding:0.45rem 1rem; border-radius:20px; font-size:0.82rem; font-weight:700; text-decoration:none; border:2px solid #e5e7eb; color:#6b7280; background:white; transition:all 0.2s; }
-    .kat-tab:hover { border-color:#1E88E5; color:#1E88E5; }
-    .kat-tab.active { background:#1E88E5; color:white; border-color:#1E88E5; }
-    .kat-count { background:rgba(255,255,255,0.25); border-radius:20px; padding:0.05rem 0.45rem; font-size:0.72rem; margin-left:0.3rem; }
-    .kat-tab:not(.active) .kat-count { background:#f3f4f6; color:#9ca3af; }
-
     .search-card { background:white; border-radius:0.75rem; padding:1rem 1.25rem; margin-bottom:1.25rem; box-shadow:0 1px 4px rgba(0,0,0,0.06); border:1px solid #f0f0f0; }
     .search-row { display:flex; gap:0.75rem; align-items:flex-end; flex-wrap:wrap; }
     .search-field { flex:1; min-width:180px; }
@@ -50,7 +42,6 @@
 
     .med-image-frame { width:100px; height:100px; padding:0.4rem; border:1px solid #e2e8f0; border-radius:0.65rem; background:#f8fafc; display:flex; align-items:center; justify-content:center; box-sizing:border-box; overflow:hidden; }
     .med-image-frame > img { display:block; width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; border-radius:0.4rem; }
-    .kat-tab i { margin-right:0.25rem; }
     .med-name { font-weight:600; color:#1f2937; }
     .med-desc { color:#374151; font-size:0.82rem; margin-top:0.45rem; max-width:240px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
     .med-meta { font-size:0.76rem; color:#6b7280; margin-top:0.25rem; max-width:240px; }
@@ -150,32 +141,6 @@
             <i class="fa-solid fa-plus"></i> Tambah Produk
         </a>
     </div>
-</div>
-
-
-<div class="kat-tabs">
-    <a href="<?php echo e(route('admin.produk.index', array_merge(request()->except('kategori_produk'), []))); ?>"
-       class="kat-tab <?php echo e(!$kategori_produk ? 'active' : ''); ?>">
-        <i class="fa-solid fa-layer-group" aria-hidden="true"></i> Semua
-        <span class="kat-count"><?php echo e($total); ?></span>
-    </a>
-    <?php $__currentLoopData = $kategoriOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $kat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-        <?php
-            $count = \App\Models\Medicine::where('kategori_produk', $kat)->count();
-            $icon  = match($kat) {
-                'OBAT'                => 'fa-pills',
-                'SKINCARE & KOSMETIK' => 'fa-sparkles',
-                'ALAT KESEHATAN'      => 'fa-kit-medical',
-                default               => 'fa-box',
-            };
-        ?>
-        <a href="<?php echo e(route('admin.produk.index', array_merge(request()->except('kategori_produk'), ['kategori_produk' => $kat]))); ?>"
-           class="kat-tab <?php echo e($kategori_produk === $kat ? 'active' : ''); ?>">
-            <i class="fa-solid <?php echo e($icon); ?>" aria-hidden="true"></i> <?php echo e($kat); ?>
-
-            <span class="kat-count"><?php echo e($count); ?></span>
-        </a>
-    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </div>
 
 

@@ -422,7 +422,7 @@
                         </div>
                         <div class="medicine-body">
                             <div class="medicine-card-principal">{{ $medicine->brand ?: $medicine->kategori }}</div>
-                            <h3 class="medicine-name"><a href="{{ route('medicines.show', $medicine->id) }}">{{ $medicine->nama_obat }}</a></h3>
+                            <h3 class="medicine-name"><a href="{{ route('medicines.show', ['id' => $medicine->id, 'from' => 'apotek']) }}">{{ $medicine->nama_obat }}</a></h3>
 
                             @php
                                 $catalogPriceChannel = $internalAccess ? 'internal' : 'b2c';

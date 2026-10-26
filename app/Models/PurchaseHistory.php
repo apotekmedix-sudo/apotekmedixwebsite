@@ -96,11 +96,15 @@ class PurchaseHistory extends Model
         $original = (int) ($this->attributes['original_total'] ?? 0);
         $storedTotal = (int) ($this->attributes['total'] ?? 0);
 
-        if (($this->approval_status ?? 'pending') === 'approved') {
+        if (
+            ($this->approval_status ?? 'pending') === 'approved'
+            || in_array($this->receipt_status ?? 'pending', ['verified', 'printed'], true)
+            || !empty($this->attributes['discount_code'])
+        ) {
             return $discounted > 0 ? $discounted : ($storedTotal > 0 ? $storedTotal : $original);
         }
 
-        return $original > 0 ? $original : $storedTotal;
+        return $discounted > 0 ? $discounted : ($original > 0 ? $original : $storedTotal);
     }
 
     public function getApprovalLabelAttribute(): string

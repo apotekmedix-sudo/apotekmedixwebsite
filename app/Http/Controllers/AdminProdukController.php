@@ -8,6 +8,7 @@ use App\Models\PurchaseStockReservation;
 use App\Constants\Companies;
 use App\Helpers\ImageHelper;
 use App\Support\StockAvailability;
+use App\Support\HomepageProductCategories;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -164,22 +165,22 @@ class AdminProdukController extends Controller
             fn (PbfSupplier $supplier) => [$supplier->id, $supplier->name, $supplier->address, $supplier->phone]
         );
 
-        return CsvSpreadsheet::download(
-            'data-supplier-pbf-'.now()->format('Ymd-His').'.csv',
+        return \App\Helpers\XlsxWriter::download(
+            'data-supplier-pbf-'.now()->format('Ymd-His').'.xlsx',
             ['ID', 'NAMA', 'ALAMAT', 'TELEPON'],
-            $rows
+            $rows->all()
         );
     }
 
     public function downloadPbfSupplierImportTemplate()
     {
-        return CsvSpreadsheet::download('template-import-supplier-pbf.csv', ['ID', 'NAMA', 'ALAMAT', 'TELEPON'], []);
+        return \App\Helpers\XlsxWriter::download('template-import-supplier-pbf.xlsx', ['ID', 'NAMA', 'ALAMAT', 'TELEPON'], []);
     }
 
     public function importPbfSuppliers(Request $request)
     {
         $fileValidator = Validator::make($request->all(), [
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:csv,txt,xlsx', 'max:10240'],
         ]);
         if ($fileValidator->fails()) {
             return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
@@ -187,15 +188,15 @@ class AdminProdukController extends Controller
         }
 
         try {
-            [$headers, $rows] = CsvSpreadsheet::read($request->file('file'));
+            [$headers, $rows] = \App\Support\SpreadsheetReader::read($request->file('file'));
         } catch (RuntimeException $exception) {
             return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
                 ->withErrors(['file' => $exception->getMessage()], 'supplierImport');
         }
 
-        if (array_diff(['nama', 'alamat'], $headers)) {
+        if (!in_array('nama', $headers, true)) {
             return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
-                ->withErrors(['file' => 'Format CSV supplier tidak sesuai. Kolom wajib: NAMA dan ALAMAT.'], 'supplierImport');
+                ->withErrors(['file' => 'Format file supplier tidak sesuai. Kolom wajib: NAMA.'], 'supplierImport');
         }
         if (count($rows) > 5000) {
             return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
@@ -208,13 +209,13 @@ class AdminProdukController extends Controller
         foreach ($rows as $index => $row) {
             $line = $index + 2;
             $data = [
-                'name' => $row['nama'] ?? null,
-                'address' => $row['alamat'] ?? null,
-                'phone' => $row['telepon'] ?? null,
+                'name' => trim((string) ($row['nama'] ?? '')),
+                'address' => trim((string) ($row['alamat'] ?? '')),
+                'phone' => trim((string) ($row['telepon'] ?? '')) ?: null,
             ];
             $validator = Validator::make($data, [
                 'name' => ['required', 'string', 'max:255'],
-                'address' => ['required', 'string', 'max:2000'],
+                'address' => ['nullable', 'string', 'max:2000'],
                 'phone' => ['nullable', 'string', 'max:50'],
             ]);
             if ($validator->fails()) {
@@ -258,6 +259,16 @@ class AdminProdukController extends Controller
             if (!array_key_exists('telepon', $row) && $supplier) {
                 $data['phone'] = $supplier->phone;
             }
+            if ($supplier) {
+                if (!array_key_exists('alamat', $row) || trim((string) $row['alamat']) === '') {
+                    $data['address'] = $supplier->address;
+                }
+                if (array_key_exists('telepon', $row) && trim((string) $row['telepon']) === '') {
+                    $data['phone'] = $supplier->phone;
+                }
+            } else {
+                $data['address'] = $data['address'] ?? '';
+            }
 
             $prepared[] = ['supplier' => $supplier, 'data' => $data];
         }
@@ -290,7 +301,7 @@ class AdminProdukController extends Controller
             ->orderBy('nama_obat')->get();
         StockAvailability::annotate($products);
         $columns = [
-            'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
+            'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KATEGORI', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'MODAL', 'HARGA INTERNAL',
             'HARGA JUAL B2B', 'HARGA JUAL B2C', 'LINK FOTO 1', 'LINK FOTO 2',
         ];
@@ -300,6 +311,7 @@ class AdminProdukController extends Controller
             $product->nama_obat,
             $product->logo ?: '',
             $product->golongan ?: '',
+            $product->kategori_produk ?: '',
             $product->komposisi ?: '',
             $product->indikasi ?: '',
             $product->satuan ?: '',
@@ -314,9 +326,9 @@ class AdminProdukController extends Controller
             !empty($product->gambar_tambahan[0]) ? url('storage/' . $product->gambar_tambahan[0]) : '',
         ])->all();
         $widths = array_fill(0, count($columns), 20);
-        $widths[2] = $widths[5] = $widths[6] = 30;
-        $widths[8] = $widths[15] = $widths[16] = 48;
-        $numericColumns = [0, 10, 11, 12, 13, 14];
+        $widths[2] = $widths[6] = $widths[7] = 30;
+        $widths[8] = $widths[16] = $widths[17] = 48;
+        $numericColumns = [0, 11, 12, 13, 14, 15];
 
         return \App\Helpers\XlsxWriter::download('produk.xlsx', $columns, $rows, $widths, $numericColumns);
     }
@@ -331,6 +343,7 @@ class AdminProdukController extends Controller
         $validated = $request->validate([
             'nama_obat'         => ['required', 'string', 'max:255'],
             'kategori'          => ['required', 'string', 'max:255'],
+            'kategori_produk'   => ['required', 'in:' . implode(',', array_merge(Companies::LIST, array_keys(HomepageProductCategories::options())))],
             'logo'              => ['nullable', 'string', 'max:255'],
             'golongan'          => ['nullable', 'string', 'max:255'],
             'satuan'            => ['nullable', 'string', 'max:100'],
@@ -341,18 +354,14 @@ class AdminProdukController extends Controller
             'harga_modal'       => ['nullable', 'numeric', 'min:0'],
             'harga_internal'    => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
-            'harga_retail'      => ['required', 'numeric', 'min:0'],
+            'harga_retail'      => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
             'sediaan'           => ['nullable', 'string', 'max:255'],
-            'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
-            'tablets_per_strip' => ['nullable', 'integer', 'min:0', 'max:100000'],
-            'tablets_per_box'   => ['nullable', 'integer', 'min:0', 'max:10000000'],
             'komposisi'         => ['nullable', 'string'],
             'indikasi'          => ['nullable', 'string'],
             'dosis'             => ['nullable', 'string'],
         ]);
 
-        $this->validateTabletPackaging($request, $validated);
         if (!empty(trim($validated['deskripsi'] ?? ''))) {
             $validated['deskripsi'] = trim($validated['deskripsi']);
         } else {
@@ -368,9 +377,11 @@ class AdminProdukController extends Controller
             unset($validated['dosis']);
         }
 
-        $validated['kategori_produk'] = 'OBAT';
+        $validated['harga_retail'] = $validated['harga_retail'] ?? ($validated['harga'] ?? 0);
         $validated['harga'] = $validated['harga_retail'];
-        $this->applyPackagingFields($request, $validated);
+        $validated['unit_packaging_enabled'] = false;
+        $validated['strips_per_box'] = null;
+        $validated['tablets_per_strip'] = null;
         $images = $request->file('gambar', []);
         $imagePaths = array_map(
             fn ($image) => ImageHelper::storeProductImage($image),
@@ -379,7 +390,7 @@ class AdminProdukController extends Controller
         $validated['gambar'] = array_shift($imagePaths) ?: null;
         $validated['gambar_tambahan'] = array_values($imagePaths);
         $medicine = new Medicine($validated);
-        $medicine->setStockInPackages((float) $validated['stok']);
+        $medicine->setStockInUnits((int) $validated['stok']);
         $medicine->save();
 
         return redirect()->route('admin.produk.index')
@@ -388,7 +399,7 @@ class AdminProdukController extends Controller
 
     public function edit(Medicine $produk)
     {
-        StockAvailability::annotate([$produk]);
+        StockAvailability::annotate($produk->newCollection([$produk]));
 
         return view('admin.produk.edit', ['medicine' => $produk]);
     }
@@ -398,6 +409,7 @@ class AdminProdukController extends Controller
         $validated = $request->validate([
             'nama_obat'         => ['required', 'string', 'max:255'],
             'kategori'          => ['required', 'string', 'max:255'],
+            'kategori_produk'   => ['required', 'in:' . implode(',', array_merge(Companies::LIST, array_keys(HomepageProductCategories::options())))],
             'logo'              => ['nullable', 'string', 'max:255'],
             'golongan'          => ['nullable', 'string', 'max:255'],
             'satuan'            => ['nullable', 'string', 'max:100'],
@@ -410,20 +422,16 @@ class AdminProdukController extends Controller
             'harga_modal'       => ['nullable', 'numeric', 'min:0'],
             'harga_internal'    => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
-            'harga_retail'      => ['required', 'numeric', 'min:0'],
+            'harga_retail'      => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
             'sediaan'           => ['nullable', 'string', 'max:255'],
-            'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
-            'tablets_per_strip' => ['nullable', 'integer', 'min:0', 'max:100000'],
-            'tablets_per_box'   => ['nullable', 'integer', 'min:0', 'max:10000000'],
-            'komposisi'         => ['nullable', 'string'],
+            'komposisi'          => ['nullable', 'string'],
             'indikasi'          => ['nullable', 'string'],
             'dosis'             => ['nullable', 'string'],
         ]);
 
-        $this->validateTabletPackaging($request, $validated);
+        $validated['harga_retail'] = $validated['harga_retail'] ?? ($validated['harga'] ?? 0);
         $validated['harga'] = $validated['harga_retail'];
-        $this->applyPackagingFields($request, $validated);
         $images = $request->file('gambar', []);
         unset($validated['gambar']);
         $currentGallery = $produk->image_gallery;
@@ -468,10 +476,13 @@ class AdminProdukController extends Controller
             unset($validated['dosis']);
         }
 
-        $stockPackages = (float) $validated['stok'];
+        $stockUnits = (int) $validated['stok'];
         unset($validated['stok']);
+        $validated['unit_packaging_enabled'] = false;
+        $validated['strips_per_box'] = null;
+        $validated['tablets_per_strip'] = null;
         $produk->fill($validated);
-        $produk->setStockInPackages($stockPackages);
+        $produk->setStockInUnits($stockUnits);
         $this->assertStockCoversReservations($produk);
         $produk->save();
 
@@ -558,7 +569,9 @@ class AdminProdukController extends Controller
             'harga_modal'       => ['required', 'numeric', 'min:0'],
             'harga_internal'    => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
-            'harga_retail'      => ['required', 'numeric', 'min:0'],
+            'harga_retail'      => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
+            'price_strip'       => ['nullable', 'numeric', 'min:0'],
+            'price_tablet'      => ['nullable', 'numeric', 'min:0'],
             'strips_per_box'    => ['nullable', 'integer', 'min:0', 'max:100000'],
             'tablets_per_strip' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
@@ -610,72 +623,6 @@ class AdminProdukController extends Controller
         if ($product->getPhysicalStockUnits() < $reservedUnits) {
             throw ValidationException::withMessages([
                 'stok' => "Stok fisik tidak dapat kurang dari {$reservedUnits} unit yang sedang direservasi.",
-            ]);
-        }
-    }
-
-    private function resolveTabletsPerBox(Request $request, array $validated): int
-    {
-        $strips = (int) ($validated['strips_per_box'] ?? 0);
-        $tabletsPerBox = (int) ($request->input('tablets_per_box') ?? 0);
-        $tabletsPerStrip = (int) ($validated['tablets_per_strip'] ?? $request->input('tablets_per_strip') ?? 0);
-
-        if ($tabletsPerBox > 0) {
-            return $tabletsPerBox;
-        }
-
-        if ($strips > 0 && $tabletsPerStrip > 0) {
-            return $strips * $tabletsPerStrip;
-        }
-
-        return 0;
-    }
-
-    private function applyPackagingFields(Request $request, array &$validated): void
-    {
-        $strips = (int) ($validated['strips_per_box'] ?? 0);
-        $tablets = $this->resolveTabletsPerBox($request, $validated);
-        $enabled = $strips > 0
-            && $tablets > 0
-            && Medicine::supportsTabletPackaging(
-                isset($validated['satuan']) ? (string) $validated['satuan'] : null,
-                isset($validated['sediaan']) ? (string) $validated['sediaan'] : null
-            );
-        $validated['unit_packaging_enabled'] = $enabled;
-        unset($validated['tablets_per_box']);
-
-        if ($enabled) {
-            $validated['tablets_per_strip'] = intdiv($tablets, $strips);
-            $validated['price_box'] = $validated['harga_retail'] ?? null;
-            $validated['price_strip'] = null;
-            $validated['price_tablet'] = null;
-            return;
-        }
-
-        foreach (['tablets_per_strip', 'strips_per_box', 'price_box'] as $field) {
-            $validated[$field] = null;
-        }
-        $validated['price_strip'] = null;
-        $validated['price_tablet'] = null;
-    }
-
-    private function validateTabletPackaging(Request $request, array $validated): void
-    {
-        $strips = (int) ($validated['strips_per_box'] ?? 0);
-        $tablets = $this->resolveTabletsPerBox($request, $validated);
-        if ($strips === 0 && $tablets === 0) {
-            return;
-        }
-
-        if ($strips < 1 || $tablets < 1) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'tablets_per_box' => 'Isi jumlah strip dan tablet per kemasan dengan benar, atau kosongkan keduanya.',
-            ]);
-        }
-
-        if ($strips < 1 || $tablets % $strips !== 0) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'tablets_per_box' => 'Jumlah tablet per kemasan harus habis dibagi jumlah strip.',
             ]);
         }
     }

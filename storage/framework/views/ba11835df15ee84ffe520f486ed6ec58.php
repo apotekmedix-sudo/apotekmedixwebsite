@@ -176,6 +176,7 @@
                                 <?php elseif($order->receipt_status === 'verified'): ?>
                                     <a class="action-link" href="<?php echo e(route('cashier.orders.receipt', $order)); ?>" target="_blank" rel="noopener">Buka struk</a>
                                     <form action="<?php echo e(route('cashier.orders.printed', $order)); ?>" method="POST" onsubmit="return confirm('Pastikan invoice sudah berhasil dicetak.')"><?php echo csrf_field(); ?><button class="primary" type="submit">Tandai dicetak</button></form>
+                                    <form action="<?php echo e(route('cashier.orders.cancel', $order)); ?>" method="POST" onsubmit="return confirm('Batalkan pesanan #<?php echo e($order->id); ?>? Stok akan dikembalikan jika sebelumnya sudah dikurangi.')"><?php echo csrf_field(); ?><button class="danger" type="submit">Batalkan</button></form>
                                 <?php elseif($order->receipt_status === 'printed'): ?>
                                     <a class="action-link" href="<?php echo e($receiptUrl); ?>" target="_blank" rel="noopener">Cetak ulang</a>
                                     <form action="<?php echo e(route('cashier.orders.cancel', $order)); ?>" method="POST" onsubmit="return confirm('Batalkan struk transaksi #<?php echo e($order->id); ?>? Stok akan dikembalikan jika sebelumnya sudah dikurangi. Pengembalian dana tidak dilakukan otomatis.')"><?php echo csrf_field(); ?><button class="danger" type="submit">Batalkan struk</button></form>

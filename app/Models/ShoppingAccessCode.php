@@ -90,6 +90,18 @@ class ShoppingAccessCode extends Model
         return self::matchesSession(self::CHANNEL_B2C, $codeHash);
     }
 
+    public static function hasActiveB2bSession(): bool
+    {
+        $expiresAt = (int) session('pbf_access_expires_at', 0);
+        $codeHash = session('pbf_access_code_hash');
+
+        if ($expiresAt <= now()->timestamp || !$codeHash) {
+            return false;
+        }
+
+        return self::matchesSession(self::CHANNEL_B2B, $codeHash);
+    }
+
     public static function hasActiveInternalSession(): bool
     {
         $expiresAt = (int) session('internal_access_expires_at', 0);

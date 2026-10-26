@@ -49,6 +49,8 @@ class AdminBusinessDataExportTest extends TestCase
         $content = $response->getContent();
         foreach ([
             'PRINCIPLE',
+            'KATEGORI',
+            'OBAT',
             'STOK SATUAN',
             'LINK FOTO',
             'HARGA JUAL B2B',
@@ -67,6 +69,8 @@ class AdminBusinessDataExportTest extends TestCase
         foreach (['LINK FOTO UTAMA', 'ID PRODUK', 'PROMO B2C PERCENT', 'GAMBAR TAMBAHAN', 'HARGA JUAL INTERNAL'] as $unexpected) {
             $this->assertStringNotContainsString($unexpected, $content);
         }
+        $this->assertLessThan(strpos($content, 'KATEGORI'), strpos($content, 'GOLONGAN'));
+        $this->assertLessThan(strpos($content, 'KOMPOSISI'), strpos($content, 'KATEGORI'));
 
         $path = tempnam(sys_get_temp_dir(), 'product-export');
         file_put_contents($path, $content);
@@ -89,6 +93,7 @@ class AdminBusinessDataExportTest extends TestCase
         $this->assertSame(15, $product->promo_b2c_percent);
         $this->assertTrue($product->is_resep);
         $this->assertTrue($product->is_grosir);
+        $this->assertSame('OBAT', $product->kategori_produk);
         $this->assertSame(15500.0, (float) $product->harga);
         $this->assertSame('medicines/produk-export.jpg', $product->gambar);
         $this->assertSame(['medicines/produk-export-2.jpg'], $product->gambar_tambahan);
@@ -113,13 +118,13 @@ class AdminBusinessDataExportTest extends TestCase
         $path = tempnam(sys_get_temp_dir(), 'edited-products');
         $stream = fopen($path, 'wb');
         fputcsv($stream, [
-            'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
+            'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KATEGORI', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN',
             'MODAL', 'HARGA INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
             'LINK FOTO 1', 'LINK FOTO 2',
         ]);
         fputcsv($stream, [
-            $product->id, 'Principal Baru', 'Nama Baru', 'MERAH', 'Obat Bebas', 'Komposisi baru',
+            $product->id, 'Principal Baru', 'Nama Baru', 'MERAH', 'Obat Bebas', 'ALAT KESEHATAN', 'Komposisi baru',
             'Indikasi baru', 'BOX', '10 strip @ 10 tablet', 'TABLET', '2',
             '6000', '7000', '13000', '14000',
             'http://localhost/storage/medicines/baru.jpg', '',
@@ -136,6 +141,7 @@ class AdminBusinessDataExportTest extends TestCase
         $this->assertSame('SKU-OLD', $product->sku);
         $this->assertSame('Nama Baru', $product->nama_obat);
         $this->assertSame('Principal Baru', $product->kategori);
+        $this->assertSame('ALAT KESEHATAN', $product->kategori_produk);
         $this->assertSame(10000.0, (float) $product->harga);
         $this->assertSame(7000.0, (float) $product->harga_internal);
         $this->assertSame(13000.0, (float) $product->harga_grosir);

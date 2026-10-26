@@ -78,6 +78,98 @@
     gap: 0.75rem;
     max-width: 340px;
 }
+.home-product-search {
+    display: grid;
+    grid-template-columns: minmax(250px, 2fr) repeat(3, minmax(160px, 1fr)) auto;
+    gap: 1rem;
+    align-items: end;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid #00c8e5;
+    border-radius: 24px;
+    background: linear-gradient(112deg, #0754bd 0%, #0875c9 100%);
+}
+.home-search-section {
+    position: relative;
+    z-index: 2;
+    padding: 1rem 0;
+    background: #0754bd;
+    scroll-margin-top: 96px;
+}
+.home-search-label {
+    display: block;
+    margin-bottom: .5rem;
+    color: #fff;
+    font-size: .95rem;
+    font-weight: 800;
+}
+.home-search-field {
+    min-width: 0;
+}
+.home-product-search input,
+.home-product-search select {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    height: 52px;
+    padding: .75rem 1rem;
+    border: 2px solid #cbd5e1;
+    border-radius: 14px;
+    background: #fff;
+    color: #1e293b;
+    font: inherit;
+}
+.home-product-search input:focus,
+.home-product-search select:focus { outline: 3px solid rgba(0, 220, 238, .55); outline-offset: 1px; border-color: #00c8e5; }
+.home-product-search button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-width: 144px;
+    height: 52px;
+    padding: .7rem 1.25rem;
+    border: 0;
+    border-radius: 14px;
+    background: #07805f;
+    color: #fff;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+.home-product-search button:hover { background: #056b50; }
+.home-search-clear {
+    display: inline-block;
+    grid-column: 1 / -1;
+    margin: -.5rem 0 0 .25rem;
+    color: #fff;
+    font-size: .85rem;
+    font-weight: 700;
+}
+@media (max-width: 1050px) {
+    .home-product-search {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .home-search-field:first-child {
+        grid-column: 1 / -1;
+    }
+}
+@media (max-width: 600px) {
+    .home-product-search {
+        grid-template-columns: minmax(0, 1fr);
+        gap: .75rem;
+        padding: 1rem;
+        border-radius: 16px;
+    }
+    .home-search-field:first-child {
+        grid-column: auto;
+    }
+    .home-product-search button {
+        width: 100%;
+        min-width: 0;
+    }
+}
 .home-brand-hero-actions a {
     display: flex;
     align-items: center;
@@ -1450,15 +1542,16 @@
 <div class="quick-section">
   <div class="container">
     <div class="quick-row">
-      <a href="<?php echo e(route('products.index')); ?>" class="quick-btn active"><i class="fa-solid fa-th-large"></i><span>Semua</span></a>
-      <a href="<?php echo e(route('products.index')); ?>?kategori_produk=OBAT" class="quick-btn"><i class="fa-solid fa-pills" style="color:#1E88E5;"></i><span>Obat</span></a>
-      <a href="<?php echo e(route('products.index', ['search' => 'vitamin'])); ?>" class="quick-btn"><i class="fa-solid fa-capsules" style="color:#00a98f;"></i><span>Vitamin & Suplemen</span></a>
-      <a href="<?php echo e(route('products.index')); ?>?kategori_produk=SKINCARE+%26+KOSMETIK" class="quick-btn"><i class="fa-solid fa-spa" style="color:#1E88E5;"></i><span>Skincare & Kosmetik</span></a>
-      <a href="<?php echo e(route('products.index')); ?>?kategori_produk=ALAT+KESEHATAN" class="quick-btn"><i class="fa-solid fa-stethoscope" style="color:#1E88E5;"></i><span>Alat Kesehatan</span></a>
+      <a href="<?php echo e(route('home')); ?>#homeSearchSection" class="quick-btn active"><i class="fa-solid fa-th-large"></i><span>Semua</span></a>
+      <a href="<?php echo e(route('home', ['kategori_pilihan' => 'otc'])); ?>#homeSearchSection" class="quick-btn"><i class="fa-solid fa-pills" style="color:#1E88E5;"></i><span>OTC</span></a>
+      <a href="<?php echo e(route('home', ['kategori_pilihan' => 'vitamin-suplemen'])); ?>#homeSearchSection" class="quick-btn"><i class="fa-solid fa-capsules" style="color:#00a98f;"></i><span>Vitamin & Suplemen</span></a>
+      <a href="<?php echo e(route('home', ['kategori_pilihan' => 'pil-kb-hormonal'])); ?>#homeSearchSection" class="quick-btn"><i class="fa-solid fa-spa" style="color:#1E88E5;"></i><span>Pil KB & Hormonal</span></a>
+      <a href="<?php echo e(route('home', ['kategori_pilihan' => 'alat-kesehatan'])); ?>#homeSearchSection" class="quick-btn"><i class="fa-solid fa-stethoscope" style="color:#1E88E5;"></i><span>Alat Kesehatan</span></a>
     </div>
   </div>
 </div>
 
+<?php if(!$homeHasFilters): ?>
 <section class="home-category-section" aria-labelledby="homeCategoryTitle">
     <div class="container">
         <div class="home-category-heading">
@@ -1467,7 +1560,7 @@
                 <h2 id="homeCategoryTitle">Kategori Produk</h2>
             </div>
             <div class="home-category-controls">
-                <a href="<?php echo e(route('products.index')); ?>">Semua produk <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                <a href="<?php echo e(route('home')); ?>#homeSearchSection">Semua produk <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                 <button type="button" class="home-category-scroll" data-direction="-1" aria-label="Kategori sebelumnya">
                     <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
                 </button>
@@ -1477,40 +1570,83 @@
             </div>
         </div>
         <div class="home-category-grid" id="homeCategoryGrid">
-            <a href="<?php echo e(route('products.index', ['kategori_pilihan' => 'obat-resep'])); ?>" class="home-category-card">
+            <a href="<?php echo e(route('home', ['kategori_pilihan' => 'obat-resep'])); ?>#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-prescription-bottle-medical" aria-hidden="true"></i></span><strong>Obat Resep</strong>
             </a>
-            <a href="<?php echo e(route('products.index', ['kategori_pilihan' => 'otc'])); ?>" class="home-category-card">
+            <a href="<?php echo e(route('home', ['kategori_pilihan' => 'otc'])); ?>#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-pills" aria-hidden="true"></i></span><strong>OTC</strong>
             </a>
-            <a href="<?php echo e(route('products.index', ['kategori_pilihan' => 'pil-kb-hormonal'])); ?>" class="home-category-card">
+            <a href="<?php echo e(route('home', ['kategori_pilihan' => 'pil-kb-hormonal'])); ?>#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-tablets" aria-hidden="true"></i></span><strong>Pil KB &amp; Hormonal</strong>
             </a>
-            <a href="<?php echo e(route('products.index', ['kategori_pilihan' => 'alat-kesehatan'])); ?>" class="home-category-card">
+            <a href="<?php echo e(route('home', ['kategori_pilihan' => 'alat-kesehatan'])); ?>#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-stethoscope" aria-hidden="true"></i></span><strong>Alat Kesehatan</strong>
             </a>
-            <a href="<?php echo e(route('products.index', ['kategori_pilihan' => 'vitamin-suplemen'])); ?>" class="home-category-card">
+            <a href="<?php echo e(route('home', ['kategori_pilihan' => 'vitamin-suplemen'])); ?>#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-capsules" aria-hidden="true"></i></span><strong>Vitamin &amp; Suplement</strong>
             </a>
-            <a href="<?php echo e(route('products.index', ['kategori_pilihan' => 'flu-batuk'])); ?>" class="home-category-card">
+            <a href="<?php echo e(route('home', ['kategori_pilihan' => 'flu-batuk'])); ?>#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-head-side-cough" aria-hidden="true"></i></span><strong>Flu &amp; Batuk</strong>
             </a>
-            <a href="<?php echo e(route('products.index', ['kategori_pilihan' => 'ibu-anak'])); ?>" class="home-category-card">
+            <a href="<?php echo e(route('home', ['kategori_pilihan' => 'ibu-anak'])); ?>#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-baby" aria-hidden="true"></i></span><strong>Ibu &amp; Anak</strong>
             </a>
-            <a href="<?php echo e(route('products.index', ['kategori_pilihan' => 'obat-herbal'])); ?>" class="home-category-card">
+            <a href="<?php echo e(route('home', ['kategori_pilihan' => 'obat-herbal'])); ?>#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-leaf" aria-hidden="true"></i></span><strong>Obat Herbal</strong>
             </a>
-            <a href="<?php echo e(route('products.index', ['kategori_pilihan' => 'obat-diabetes'])); ?>" class="home-category-card">
+            <a href="<?php echo e(route('home', ['kategori_pilihan' => 'obat-diabetes'])); ?>#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-droplet" aria-hidden="true"></i></span><strong>Obat Diabetes</strong>
             </a>
-            <a href="<?php echo e(route('products.index', ['kategori_pilihan' => 'obat-hipertensi'])); ?>" class="home-category-card">
+            <a href="<?php echo e(route('home', ['kategori_pilihan' => 'obat-hipertensi'])); ?>#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i></span><strong>Obat Hipertensi</strong>
             </a>
-            <a href="<?php echo e(route('products.index', ['kategori_pilihan' => 'obat-kolesterol'])); ?>" class="home-category-card">
+            <a href="<?php echo e(route('home', ['kategori_pilihan' => 'obat-kolesterol'])); ?>#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-heart-circle-check" aria-hidden="true"></i></span><strong>Obat Kolesterol</strong>
             </a>
         </div>
+    </div>
+</section>
+<?php endif; ?>
+
+<section class="home-search-section" id="homeSearchSection" aria-label="Cari produk">
+    <div class="container">
+        <form class="home-product-search" method="GET" action="<?php echo e(route('home')); ?>" role="search">
+            <div class="home-search-field">
+                <label class="home-search-label" for="homeProductSearchInput"><i class="fa-solid fa-magnifying-glass"></i> Cari Produk</label>
+                <input id="homeProductSearchInput" type="search" name="search" value="<?php echo e($search); ?>" placeholder="Cari nama obat, komposisi, indikasi, atau golongan..." aria-label="Kata kunci produk">
+            </div>
+            <div class="home-search-field">
+                <label class="home-search-label" for="homeCategoryFilter"><i class="fa-solid fa-tag"></i> Kategori</label>
+                <select id="homeCategoryFilter" name="kategori_pilihan">
+                    <option value="">Semua Kategori</option>
+                    <?php $__currentLoopData = $kategoriPilihanOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $value => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($value); ?>" <?php if($kategoriPilihan === $value): echo 'selected'; endif; ?>><?php echo e($label); ?></option>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </select>
+            </div>
+            <div class="home-search-field">
+                <label class="home-search-label" for="homeCompanyFilter"><i class="fa-solid fa-building"></i> Perusahaan</label>
+                <select id="homeCompanyFilter" name="perusahaan">
+                    <option value="">Semua Perusahaan</option>
+                    <?php $__currentLoopData = $companyOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $company): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($company); ?>" <?php if($perusahaan === $company): echo 'selected'; endif; ?>><?php echo e($company); ?></option>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </select>
+            </div>
+            <div class="home-search-field">
+                <label class="home-search-label" for="homeSortFilter"><i class="fa-solid fa-arrow-up-wide-short"></i> Urutkan</label>
+                <select id="homeSortFilter" name="sort">
+                    <option value="terbaru" <?php if($sort === 'terbaru'): echo 'selected'; endif; ?>>Terbaru</option>
+                    <option value="harga_asc" <?php if($sort === 'harga_asc'): echo 'selected'; endif; ?>>Harga Terendah</option>
+                    <option value="harga_desc" <?php if($sort === 'harga_desc'): echo 'selected'; endif; ?>>Harga Tertinggi</option>
+                    <option value="nama" <?php if($sort === 'nama'): echo 'selected'; endif; ?>>Nama A–Z</option>
+                </select>
+            </div>
+            <button type="submit"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span>Cari</span></button>
+            <?php if($homeHasFilters): ?>
+                <a class="home-search-clear" href="<?php echo e(route('home')); ?>">Hapus pencarian</a>
+            <?php endif; ?>
+        </form>
     </div>
 </section>
 
@@ -1575,9 +1711,11 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: .75rem;
     }
+    .home-product-search input { height: 46px; padding: .65rem .75rem; font-size: .88rem; }
 }
 </style>
 
+<?php if(!$homeHasFilters): ?>
 
 <section class="discounted-products-section home-b2c-section home-b2c-section--alt">
   <div class="container">
@@ -1599,7 +1737,7 @@
         <article class="discounted-product-card">
           <?php if(!$internalAccess): ?><span class="discounted-product-badge">Diskon <?php echo e($promoMedicine->getPromoPercent('b2c')); ?>%</span><?php endif; ?>
           <div class="medicine-card-brand">Apotek Medix</div>
-          <a class="discounted-product-image" href="<?php echo e(route('medicines.show', $promoMedicine->id)); ?>" aria-label="Lihat <?php echo e($promoMedicine->nama_obat); ?>">
+          <a class="discounted-product-image" href="<?php echo e(route('medicines.show', ['id' => $promoMedicine->id, 'from' => 'home'])); ?>" aria-label="Lihat <?php echo e($promoMedicine->nama_obat); ?>">
             <?php echo $__env->make('partials.product-logo-marker', ['medicine' => $promoMedicine], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             <?php if($promoMedicine->gambar): ?>
               <img src="<?php echo e($promoMedicine->image_url); ?>" alt="<?php echo e($promoMedicine->nama_obat); ?>" loading="lazy">
@@ -1616,7 +1754,7 @@
             <?php else: ?>
               <div class="medicine-card-principal" aria-hidden="true"></div>
             <?php endif; ?>
-            <h3 class="discounted-product-name"><a href="<?php echo e(route('medicines.show', $promoMedicine->id)); ?>" style="color:inherit;text-decoration:none;"><?php echo e($promoMedicine->nama_obat); ?></a></h3>
+            <h3 class="discounted-product-name"><a href="<?php echo e(route('medicines.show', ['id' => $promoMedicine->id, 'from' => 'home'])); ?>" style="color:inherit;text-decoration:none;"><?php echo e($promoMedicine->nama_obat); ?></a></h3>
             <div class="medicine-card-details">
               <p title="<?php echo e($promoMedicine->komposisi ?: $promoMedicine->nama_obat); ?>"><strong>Komposisi:</strong> <?php echo e(\Illuminate\Support\Str::limit($promoMedicine->komposisi ?: $promoMedicine->nama_obat, 15, '...')); ?></p>
               <p title="<?php echo e($promoMedicine->indikasi ?: '—'); ?>"><strong>Indikasi:</strong> <?php echo e(\Illuminate\Support\Str::limit($promoMedicine->indikasi ?: '—', 15, '...')); ?></p>
@@ -1657,7 +1795,9 @@
     <?php endif; ?>
   </div>
 </section>
+<?php endif; ?>
 
+<?php if(!$homeHasFilters): ?>
 
 <section class="featured-section home-b2c-section">
   <div class="container">
@@ -1686,7 +1826,7 @@
         </div>
         <div class="prod-body">
           <div class="medicine-card-principal"><?php echo e($med->brand ?: $med->kategori); ?></div>
-          <h3 class="prod-name"><a href="<?php echo e(route('medicines.show', $med->id)); ?>"><?php echo e($med->nama_obat); ?></a></h3>
+          <h3 class="prod-name"><a href="<?php echo e(route('medicines.show', ['id' => $med->id, 'from' => 'home'])); ?>"><?php echo e($med->nama_obat); ?></a></h3>
           <div class="medicine-card-details">
             <p title="<?php echo e($med->komposisi ?: $med->nama_obat); ?>"><strong>Komposisi:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->komposisi ?: $med->nama_obat, 15, '...')); ?></p>
             <p title="<?php echo e($med->indikasi ?: '—'); ?>"><strong>Indikasi:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->indikasi ?: '—', 15, '...')); ?></p>
@@ -1733,25 +1873,35 @@
     <?php endif; ?>
   </div>
 </section>
+<?php endif; ?>
 
 
-<section class="all-b2c-products-section home-b2c-section home-b2c-section--alt">
+<section class="all-b2c-products-section home-b2c-section home-b2c-section--alt" id="homeProductSearchResults">
   <div class="container">
     <div class="featured-header">
       <div class="sec-head-left">
         <div class="home-b2c-catalog-heading">
-          <span class="sec-tag">🛍️ Katalog B2C</span>
+          <span class="sec-tag">🛍️ Belanja Produk</span>
           <?php echo $__env->make('partials.catalog-access-controls', ['accessReturnTo' => 'home'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         </div>
-        <h2 class="sec-title" style="margin:0;">Semua Produk</h2>
-        <p class="home-product-section-description">Semua produk retail B2C yang tersedia di Apotek Medix.</p>
+        <h2 class="sec-title" style="margin:0;"><?php echo e($homeHasFilters ? 'Hasil Pencarian' : 'Semua Produk'); ?></h2>
+        <p class="home-product-section-description">
+          <?php if($homeHasFilters): ?>
+            <?php echo e($allB2cProducts->count()); ?> produk ditemukan
+            <?php if($search !== ''): ?> untuk "<?php echo e($search); ?>" <?php endif; ?>
+            <?php if($kategoriPilihan): ?> pada kategori <?php echo e($kategoriPilihanOptions[$kategoriPilihan]); ?> <?php endif; ?>
+            <?php if($perusahaan): ?> dari <?php echo e($perusahaan); ?> <?php endif; ?>.
+          <?php else: ?>
+            Semua produk retail B2C yang tersedia di Apotek Medix.
+          <?php endif; ?>
+        </p>
       </div>
     </div>
 
     <?php if(isset($allB2cProducts) && $allB2cProducts->count() > 0): ?>
     <div class="home-b2c-grid-4x5" id="homeAllB2cProductsGrid">
       <?php $__currentLoopData = $allB2cProducts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $productIndex => $med): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-      <div class="prod-card" <?php if($productIndex >= 20): ?> hidden data-additional-home-product <?php endif; ?>>
+      <div class="prod-card" <?php if(!$homeHasFilters && $productIndex >= 20): ?> hidden data-additional-home-product <?php endif; ?>>
         <div class="medicine-card-brand">Apotek Medix</div>
         <div class="prod-img">
           <?php echo $__env->make('partials.product-gallery-image', ['medicine' => $med], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
@@ -1765,7 +1915,7 @@
         </div>
         <div class="prod-body">
           <div class="medicine-card-principal"><?php echo e($med->brand ?: $med->kategori); ?></div>
-          <h3 class="prod-name"><a href="<?php echo e(route('medicines.show', $med->id)); ?>"><?php echo e($med->nama_obat); ?></a></h3>
+          <h3 class="prod-name"><a href="<?php echo e(route('medicines.show', ['id' => $med->id, 'from' => 'home', 'search' => $search ?: null])); ?>"><?php echo e($med->nama_obat); ?></a></h3>
           <div class="medicine-card-details">
             <p title="<?php echo e($med->komposisi ?: $med->nama_obat); ?>"><strong>Komposisi:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->komposisi ?: $med->nama_obat, 15, '...')); ?></p>
             <p title="<?php echo e($med->indikasi ?: '—'); ?>"><strong>Indikasi:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->indikasi ?: '—', 15, '...')); ?></p>
@@ -1807,11 +1957,11 @@
     <?php else: ?>
     <div style="text-align:center;padding:3rem;background:#fff;border-radius:16px;border:1px solid #e5e7eb;">
       <i class="fa-solid fa-box-open" style="font-size:3rem;color:#d1d5db;display:block;margin-bottom:1rem;"></i>
-      <p style="color:#6b7280;margin:0;">Belum ada produk B2C tersedia saat ini.</p>
+      <p style="color:#6b7280;margin:0;"><?php echo e($homeHasFilters ? 'Produk tidak ditemukan. Coba ubah kata kunci atau filter pencarian.' : 'Belum ada produk B2C tersedia saat ini.'); ?></p>
     </div>
     <?php endif; ?>
 
-    <?php if($allB2cProducts->count() > 20): ?>
+    <?php if(!$homeHasFilters && $allB2cProducts->count() > 20): ?>
     <div class="featured-cta">
       <button type="button" class="home-show-more-products" id="homeShowMoreProducts"
               aria-expanded="false" aria-controls="homeAllB2cProductsGrid">
@@ -1822,6 +1972,7 @@
     <?php endif; ?>
   </div>
 </section>
+<?php if(!$homeHasFilters): ?>
 
 <?php echo $__env->make('components.category-selection', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
@@ -2046,6 +2197,7 @@
   </div>
 </section>
 <?php endif; ?>
+<?php endif; ?>
 
 
 
@@ -2235,6 +2387,7 @@
 }
 </style>
 
+<?php if(!$homeHasFilters): ?>
 <section class="why-cards-section">
   <div class="container">
 
@@ -2282,6 +2435,7 @@
     </div>
   </div>
 </section>
+<?php endif; ?>
 
 <style>
 .promo-products-section { background:#f8fafc;color:#1e293b; }
@@ -2347,6 +2501,12 @@
 <?php echo $__env->make('partials.cart', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 <script>
 (() => {
+    <?php if($homeHasFilters): ?>
+    if (window.location.hash !== '#homeSearchSection') {
+        document.getElementById('homeProductSearchResults')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    <?php endif; ?>
+
     const showMoreProductsButton = document.getElementById('homeShowMoreProducts');
     if (showMoreProductsButton) {
         const productsGrid = document.getElementById(showMoreProductsButton.getAttribute('aria-controls'));

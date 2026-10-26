@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ShoppingAccessCode;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,7 +26,11 @@ class LockShoppingAccessOnLeave
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->routeIs(...self::SHOPPING_FLOW_ROUTES)) {
+        $isB2bProductDetail = $request->routeIs('medicines.show')
+            && $request->query('from') === 'b2b'
+            && ShoppingAccessCode::hasActiveB2bSession();
+
+        if (!$request->routeIs(...self::SHOPPING_FLOW_ROUTES) && !$isB2bProductDetail) {
             $request->session()->forget(self::B2B_KEYS);
         }
 

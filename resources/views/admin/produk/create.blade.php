@@ -89,6 +89,17 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Kategori Produk <span class="req">*</span></label>
+                    <select name="kategori_produk" class="form-input {{ $errors->has('kategori_produk') ? 'is-invalid' : '' }}" required>
+                        <option value="" disabled @selected(old('kategori_produk') === null)>Pilih kategori produk</option>
+                        @foreach (\App\Support\HomepageProductCategories::options() as $value => $label)
+                            <option value="{{ $value }}" @selected(old('kategori_produk') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('kategori_produk')<div class="form-error">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Nama Produk <span class="req">*</span></label>
                     <input type="text" name="nama_obat" class="form-input {{ $errors->has('nama_obat') ? 'is-invalid' : '' }}"
                            placeholder="Contoh: Paracetamol 500mg" value="{{ old('nama_obat') }}" required>
@@ -158,15 +169,14 @@
                         @error('harga_retail')<div class="form-error">{{ $message }}</div>@enderror
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Stok (<span data-stock-unit-label>{{ old('satuan') ?: 'kemasan' }}</span>) <span class="req">*</span></label>
+                        <label class="form-label">Stok Satuan <span class="req">*</span></label>
                         <input type="number" name="stok" class="form-input {{ $errors->has('stok') ? 'is-invalid' : '' }}"
                                placeholder="100" min="0" step="1" value="{{ old('stok') }}" required>
-                        <small>Jumlah mengikuti satuan kemasan di atas, misalnya box, botol, atau tube.</small>
+                        <small>Masukkan jumlah stok dalam satuan terkecil produk.</small>
                         @error('stok')
                             <div class="form-error"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div>
                         @enderror
                     </div>
-                    @include('admin.partials.packaging-fields', ['medicine' => null])
                 </div>
 
                 <div class="form-group">
@@ -195,15 +205,4 @@
     </div>
 </form>
 
-@endsection
-
-@section('scripts')
-<script>
-    document.getElementById('product-package-unit')?.addEventListener('input', function () {
-        const label = this.value.trim() || 'kemasan';
-        document.querySelectorAll('[data-stock-unit-label]').forEach((element) => {
-            element.textContent = label;
-        });
-    });
-</script>
 @endsection

@@ -51,17 +51,17 @@
             <p style="color:#64748b;margin-top:-.75rem;">Data customer otomatis dihimpun dari pesanan offline, B2B, dan B2C. Pesanan berulang dengan identitas yang cocok akan masuk ke satu profil.</p>
         </div>
         <div class="customer-tools">
-            <a class="customer-add customer-export" href="{{ route('admin.customers.export.master') }}">Export Master CSV</a>
+            <a class="customer-add customer-export" href="{{ route('admin.customers.export.master') }}">Export Master Excel</a>
             <a class="customer-add customer-export" href="{{ route('admin.customers.export') }}">Export Customer per Kanal</a>
             <a class="customer-add" href="{{ route('admin.customers.create') }}">+ Tambah Customer</a>
         </div>
     </div>
     <form class="customer-import" method="POST" action="{{ route('admin.customers.import') }}" enctype="multipart/form-data">
         @csrf
-        <a class="customer-add" href="{{ route('admin.customers.import.template') }}">Download Template CSV</a>
-        <input type="file" name="file" accept=".csv,.txt,text/csv" aria-label="Pilih file CSV customer" required>
+        <a class="customer-add" href="{{ route('admin.customers.import.template') }}">Download Template Excel</a>
+        <input type="file" name="file" accept=".csv,.txt,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Pilih file Excel atau CSV customer" required>
         <button type="submit">Import Customer</button>
-        <span class="customer-import-hint">Gunakan format template CSV. ID yang ada akan diperbarui; ID kosong akan menambah customer baru.</span>
+        <span class="customer-import-hint">Gunakan template Excel. File .xlsx dan CSV dapat diimpor. NAME wajib diisi; kolom lain boleh kosong. ID yang ada akan diperbarui; ID kosong akan menambah customer baru.</span>
     </form>
 
     <form class="customer-filters" method="GET" action="{{ route('admin.customers.index') }}">

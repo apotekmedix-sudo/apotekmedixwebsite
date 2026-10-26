@@ -63,7 +63,7 @@ Route::post('/products-apotek/activate', [ProductController::class, 'apotekActiv
     ->middleware('throttle:60,1')
     ->name('products.apotek.activate');
 Route::post('/products-apotek/internal/activate', [ProductController::class, 'internalActivate'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:60,1')
     ->name('products.apotek.internal.activate');
 Route::post('/products-apotek/access/logout/{channel}', [ProductController::class, 'apotekAccessLogout'])
     ->where('channel', 'b2c|internal')

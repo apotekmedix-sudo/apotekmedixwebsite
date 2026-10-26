@@ -227,7 +227,8 @@ class GassRoomTest extends TestCase
 
     public function test_file_sharing_uses_a_file_only_public_link_without_exposing_the_access_code(): void
     {
-        config(['gass.access_code' => 'share-code-42']);
+        date_default_timezone_set('UTC');
+        config(['app.timezone' => 'UTC', 'gass.access_code' => 'share-code-42']);
         $file = GassRoomFile::query()->create([
             'original_name' => 'Panduan GASS.pdf',
             'path' => 'gass-room/share-guide',

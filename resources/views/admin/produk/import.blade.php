@@ -52,6 +52,7 @@
         <li>Isi jumlah stok sesuai satuan pada kolom <strong>SATUAN</strong> di <strong>STOK SATUAN</strong>, misalnya stok 5 botol diisi <strong>5</strong>.</li>
         <li>Isi satu harga B2C untuk satuan kemasan produk pada kolom <strong>HARGA JUAL B2C</strong>. Template ini tidak lagi meminta harga atau rasio per strip/tablet.</li>
         <li>Isi <strong>LINK FOTO 1</strong> dan <strong>LINK FOTO 2</strong> dengan URL HTTPS langsung ke file gambar publik. Foto akan diunduh dan disimpan di website saat import; ukuran maksimal 5 MB per foto.</li>
+        <li>Kolom opsional boleh dikosongkan; baris tanpa nama produk akan dilewati.</li>
         <li>Upload file <strong>.csv</strong>, <strong>.xls</strong>, atau <strong>.xlsx</strong></li>
         <li>Mode tambah/lengkapi mencocokkan nama produk: data yang kosong dilengkapi tanpa menimpa data yang sudah terisi; nama yang belum ada menjadi produk baru</li>
         <li>Mode edit massal hanya memperbarui produk berdasarkan ID pada kolom NO; data tidak akan membuat produk baru</li>

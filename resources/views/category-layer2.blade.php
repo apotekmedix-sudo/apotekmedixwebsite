@@ -703,7 +703,7 @@
                                 @if($med->kategori)
                                     <span class="product-brand">{{ $med->kategori }}</span>
                                 @endif
-                                <h3 class="product-name"><a href="{{ route('medicines.show', $med->id) }}">{{ $med->nama_obat }}</a></h3>
+                                <h3 class="product-name"><a href="{{ route('medicines.show', ['id' => $med->id, 'from' => 'products']) }}">{{ $med->nama_obat }}</a></h3>
                                 
                                 @php $stock = $med->available_stock_units; @endphp
                                 <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $med->id }}">
@@ -716,7 +716,7 @@
                                     </div>
                                 @endif
                                 <div class="product-actions">
-                                    <a href="{{ route('medicines.show', $med->id) }}" class="btn-detail">Lihat Detail</a>
+                                    <a href="{{ route('medicines.show', ['id' => $med->id, 'from' => 'products']) }}" class="btn-detail">Lihat Detail</a>
                                     @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'category-unit-' . $med->id, 'priceTargetId' => 'category-price-' . $med->id])
                                     <button class="btn-add-cart" data-stock-cart @disabled($stock <= 0) data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }}, '{{ addslashes($med->nama_obat) }}', {{ $med->harga_retail ?: $med->harga }}, '{{ $med->image_url ?: '' }}', '{{ addslashes($med->brand ?: $med->kategori) }}', this, 'category-unit-{{ $med->id }}')">
                                         <i class="fa-solid fa-cart-plus"></i> Keranjang

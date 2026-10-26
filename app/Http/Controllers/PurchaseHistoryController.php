@@ -125,16 +125,29 @@ class PurchaseHistoryController extends Controller
         $items = is_array($data['items'] ?? null) ? $data['items'] : [];
         $originalTotal = 0;
         $discountedTotal = 0;
+<<<<<<< HEAD
         $hasB2cAccess = ShoppingAccessCode::hasActiveB2cSession();
         $hasInternalAccess = $channel === 'online'
             && !$isPbfPurchaseOrder
             && ShoppingAccessCode::hasActiveInternalSession();
+=======
+        $hasB2cAccess = null;
+
+>>>>>>> 233f3a70a2ea0b035bc1dee111c2b66a8eb78e3d
         $hasB2bAccess = $request->hasSession()
             && ((int) $request->session()->get('pbf_access_expires_at', 0)) > now()->timestamp
             && ShoppingAccessCode::matchesSession(
                 ShoppingAccessCode::CHANNEL_B2B,
                 $request->session()->get('pbf_access_code_hash')
             );
+<<<<<<< HEAD
+=======
+
+        $hasInternalAccess = $channel === 'online'
+            && !$isPbfPurchaseOrder
+            && ShoppingAccessCode::hasActiveInternalSession();
+
+>>>>>>> 233f3a70a2ea0b035bc1dee111c2b66a8eb78e3d
 
         foreach ($items as $index => $item) {
             $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
@@ -149,7 +162,11 @@ class PurchaseHistoryController extends Controller
                 ], 422);
             }
 
+<<<<<<< HEAD
             $promoChannel = (($product && $product->kelompok === 'PBF') || $data['buyer_type'] === 'pbf' || !empty($data['pbf_name']) || ($hasB2bAccess && !$hasB2cAccess && ($product?->getChannelBasePrice('b2b') ?? 0) > 0)
+=======
+            $promoChannel = (($product && $product->kelompok === 'PBF') || $data['buyer_type'] === 'pbf' || !empty($data['pbf_name'])
+>>>>>>> 233f3a70a2ea0b035bc1dee111c2b66a8eb78e3d
                     ? 'b2b'
                     : 'b2c');
 
