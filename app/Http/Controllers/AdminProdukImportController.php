@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ImageHelper;
 use App\Models\Medicine;
 use App\Constants\Companies;
+use App\Services\ProductImageDownloader;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -37,18 +39,18 @@ class AdminProdukImportController extends Controller
     public function downloadTemplate()
     {
         $columns = [
-            'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
-            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
-            'MODAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
-            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET',
+            'NO CONTOH', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
+            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK KEMASAN', 'STRIP PER KEMASAN', 'TABLET PER STRIP',
+            'MODAL', 'HARGA INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
+            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO 1', 'LINK FOTO 2',
         ];
-        $widths = [8, 25, 28, 12, 18, 28, 28, 12, 22, 12, 12, 12, 12, 15, 18, 18, 20, 20];
+        $widths = [8, 25, 28, 12, 18, 28, 28, 12, 22, 12, 12, 12, 12, 15, 16, 18, 18, 20, 20, 48, 48];
 
         $rows = [
-            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '10', '100', '117771', '135437', '153102', '16841', '15463'],
-            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '1', '4', '200000', '205000', '220000', '55000', '0'],
-            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '0', '0', '12000', '12500', '14000', '0', '0'],
-            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '0', '0', '50000', '51000', '55000', '0', '0'],
+            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '10', '10', '117771', '120000', '135437', '153102', '16841', '15463', '', ''],
+            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '1', '4', '200000', '210000', '205000', '220000', '55000', '0', '', ''],
+            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '0', '0', '12000', '13000', '12500', '14000', '0', '0', '', ''],
+            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '0', '0', '50000', '52000', '51000', '55000', '0', '0', '', ''],
         ];
 
         return \App\Helpers\XlsxWriter::download('template_produk.xlsx', $columns, $rows, $widths);
@@ -266,8 +268,14 @@ class AdminProdukImportController extends Controller
 
         $imported      = 0;
         $skipped       = 0;
+        $downloadedImages = [];
         $validKategori = Companies::LIST;
         $medicineColumns = array_flip(Schema::getColumnListing('medicines'));
+        if (isset($headerKeySet['HARGA_INTERNAL']) && !isset($medicineColumns['harga_internal'])) {
+            return back()->withErrors([
+                'file' => 'Kolom harga internal belum tersedia di database. Jalankan migration terbaru sebelum mengimpor file.',
+            ]);
+        }
 
         DB::beginTransaction();
         try {
@@ -298,7 +306,8 @@ class AdminProdukImportController extends Controller
                 $hargaStored = $hasExplicitLegacyPrice
                     ? $this->parseHarga($data['HARGA'])
                     : ($legacyRetail ?: $this->parseHarga($hargaRaw));
-                $stok = max(0, $this->parseHarga($data['STOK_SATUAN'] ?? $data['STOK'] ?? '0'));
+                $stockQuantity = $data['STOK_KEMASAN'] ?? $data['STOK_SATUAN'] ?? $data['STOK'] ?? '0';
+                $stok = max(0, $this->parseStockQuantity($stockQuantity));
 
                 $katRaw    = strtoupper(trim((string) ($data['KATEGORI'] ?? '')));
                 $katProduk = in_array($katRaw, $validKategori) ? $katRaw : 'OBAT';
@@ -325,15 +334,22 @@ class AdminProdukImportController extends Controller
                 $logo = trim((string) ($data['LOGO'] ?? ''));
                 $golongan = trim((string) ($data['GOLONGAN'] ?? ''));
 
-                $stripsPerBox = max(0, (int) preg_replace('/[^0-9]/', '', (string) ($data['PER_STRIP'] ?? '0')));
-                $tabletsPerBox = max(0, (int) preg_replace('/[^0-9]/', '', (string) ($data['PER_TABLET'] ?? '0')));
+                $stripsPerBox = max(0, (int) preg_replace('/[^0-9]/', '', (string) ($data['STRIP_PER_KEMASAN'] ?? $data['PER_STRIP'] ?? '0')));
+                $newPackagingColumns = array_key_exists('STRIP_PER_KEMASAN', $data)
+                    || array_key_exists('TABLET_PER_STRIP', $data);
+                $tabletsPerBox = $newPackagingColumns
+                    ? 0
+                    : max(0, (int) preg_replace('/[^0-9]/', '', (string) ($data['PER_TABLET'] ?? '0')));
+                $explicitTabletsPerStrip = max(0, (int) preg_replace('/[^0-9]/', '', (string) ($data['TABLET_PER_STRIP'] ?? '0')));
                 $parsedPackaging = $this->parsePackaging((string) ($data['KEMASAN'] ?? ''));
                 if ($stripsPerBox === 0) {
                     $stripsPerBox = $parsedPackaging['strips'];
                 }
-                $tabletsPerStrip = $stripsPerBox > 0 && $tabletsPerBox > 0 && $tabletsPerBox % $stripsPerBox === 0
-                    ? intdiv($tabletsPerBox, $stripsPerBox)
-                    : $parsedPackaging['tablets_per_strip'];
+                $tabletsPerStrip = $explicitTabletsPerStrip > 0
+                    ? $explicitTabletsPerStrip
+                    : ($stripsPerBox > 0 && $tabletsPerBox > 0 && $tabletsPerBox % $stripsPerBox === 0
+                        ? intdiv($tabletsPerBox, $stripsPerBox)
+                        : $parsedPackaging['tablets_per_strip']);
                 if ($tabletsPerBox === 0 && $stripsPerBox > 0 && $tabletsPerStrip > 0) {
                     $tabletsPerBox = $stripsPerBox * $tabletsPerStrip;
                 }
@@ -346,7 +362,11 @@ class AdminProdukImportController extends Controller
                 if ($packagingEnabled && ($stripsPerBox < 1 || $tabletsPerStrip < 1)) {
                     throw new \InvalidArgumentException('Kemasan strip/tablet harus diisi jika UNIT PACKAGING ENABLED aktif.');
                 }
-                $hasPackagingColumns = array_key_exists('PER_STRIP', $data)
+                if (!$packagingEnabled && $stok !== floor($stok)) {
+                    throw new \InvalidArgumentException('Stok pecahan hanya dapat digunakan untuk kemasan tablet/kapsul dengan rasio strip dan tablet.');
+                }
+                $hasPackagingColumns = $newPackagingColumns
+                    || array_key_exists('PER_STRIP', $data)
                     || array_key_exists('PER_TABLET', $data)
                     || array_key_exists('KEMASAN', $data);
 
@@ -443,6 +463,9 @@ class AdminProdukImportController extends Controller
                 if (array_key_exists('HARGA_JUAL_B2B', $data) && $data['HARGA_JUAL_B2B'] !== '') {
                     $attributes['harga_grosir'] = $hargaB2b;
                 }
+                if (isset($data['HARGA_INTERNAL']) && $data['HARGA_INTERNAL'] !== '') {
+                    $attributes['harga_internal'] = $this->parseHarga($data['HARGA_INTERNAL']);
+                }
                 if ($hasPackagingColumns) {
                     $attributes += [
                         'unit_packaging_enabled' => $packagingEnabled,
@@ -461,7 +484,14 @@ class AdminProdukImportController extends Controller
                     $attributes['gambar_tambahan'] = $this->parseImageGallery($data['GAMBAR_TAMBAHAN']);
                 }
                 if ($exportRow) {
-                    $attributes['gambar'] = $this->parseProductImageLink($data['LINK_FOTO']);
+                    if (trim((string) ($data['LINK_FOTO'] ?? '')) !== '') {
+                        $attributes['gambar'] = $this->parseProductImageLink($data['LINK_FOTO'], $downloadedImages);
+                    }
+                }
+                if (trim((string) ($data['LINK_FOTO_2'] ?? '')) !== '') {
+                    $attributes['gambar_tambahan'] = [
+                        $this->parseProductImageLink($data['LINK_FOTO_2'], $downloadedImages),
+                    ];
                 }
                 foreach ([
                     'PROMO_B2B_PERCENT' => 'promo_b2b_percent',
@@ -512,16 +542,25 @@ class AdminProdukImportController extends Controller
 
                 $match = array_intersect_key($match, $medicineColumns);
                 $attributes = array_intersect_key($attributes, $medicineColumns);
-                $stockBaseUnits = $attributes['stock_base_units'] ?? null;
-                $medicine = Medicine::updateOrCreate($match, $attributes);
-                if ($stockBaseUnits !== null && isset($medicineColumns['stock_base_units'])) {
-                    $medicine->forceFill(['stock_base_units' => $stockBaseUnits])->saveQuietly();
+                if ($existingProduct && array_key_exists('stock_base_units', $attributes)
+                    && \Illuminate\Support\Facades\Schema::hasTable('purchase_stock_reservations')) {
+                    $reservedUnits = (int) \App\Models\PurchaseStockReservation::where('medicine_id', $existingProduct->id)
+                        ->sum('quantity_units');
+                    if ((int) $attributes['stock_base_units'] < $reservedUnits) {
+                        throw new \InvalidArgumentException(
+                            "Stok produk '{$namaProduk}' tidak dapat kurang dari {$reservedUnits} unit yang sedang direservasi."
+                        );
+                    }
                 }
+                $medicine = Medicine::updateOrCreate($match, $attributes);
                 $imported++;
             }
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+            foreach ($downloadedImages as $imagePath) {
+                ImageHelper::deleteProductImage($imagePath);
+            }
             return back()->withErrors(['file' => 'Error saat menyimpan data: ' . $e->getMessage()]);
         }
 
@@ -549,13 +588,15 @@ class AdminProdukImportController extends Controller
             'kategori_produk' => ['KATEGORI'],
             'harga' => ['HARGA', 'HARGA RETAIL', 'HARGA_JUAL_B2C'],
             'harga_modal' => ['MODAL'],
+            'harga_internal' => ['HARGA_INTERNAL', 'HARGA JUAL INTERNAL'],
+            'gambar_tambahan' => ['LINK_FOTO_2', 'GAMBAR_TAMBAHAN'],
             'harga_grosir' => ['HARGA_JUAL_B2B'],
             'harga_retail' => ['HARGA_JUAL_B2C', 'HARGA RETAIL', 'HARGA'],
-            'stok' => ['STOK_SATUAN', 'STOK'],
-            'stock_base_units' => ['STOK_SATUAN', 'STOK'],
-            'strips_per_box' => ['PER_STRIP', 'KEMASAN'],
-            'tablets_per_strip' => ['PER_TABLET', 'KEMASAN'],
-            'unit_packaging_enabled' => ['UNIT_PACKAGING_ENABLED', 'PER_STRIP', 'PER_TABLET', 'KEMASAN'],
+            'stok' => ['STOK_KEMASAN', 'STOK_SATUAN', 'STOK'],
+            'stock_base_units' => ['STOK_KEMASAN', 'STOK_SATUAN', 'STOK'],
+            'strips_per_box' => ['STRIP_PER_KEMASAN', 'PER_STRIP', 'KEMASAN'],
+            'tablets_per_strip' => ['TABLET_PER_STRIP', 'PER_TABLET', 'KEMASAN'],
+            'unit_packaging_enabled' => ['UNIT_PACKAGING_ENABLED', 'STRIP_PER_KEMASAN', 'TABLET_PER_STRIP', 'PER_STRIP', 'PER_TABLET', 'KEMASAN'],
             'price_box' => ['HARGA_JUAL_B2C', 'HARGA RETAIL', 'HARGA'],
             'price_strip' => ['HARGA_JUAL_PER_STRIP'],
             'price_tablet' => ['HARGA_JUAL_PER_TABLET'],
@@ -585,6 +626,7 @@ class AdminProdukImportController extends Controller
             $currentValue = $product->getAttribute($attribute);
             $isMissing = $currentValue === null
                 || (is_string($currentValue) && trim($currentValue) === '')
+                || (is_array($currentValue) && $currentValue === [])
                 || (is_bool($currentValue) && !$currentValue)
                 || (is_numeric($currentValue) && (float) $currentValue === 0.0);
 
@@ -608,12 +650,16 @@ class AdminProdukImportController extends Controller
             'BRAND' => ['BRAND', 'MERK', 'MEREK'],
             'HARGA' => ['HARGA', 'RETAIL', 'PRICE'],
             'MODAL' => ['MODAL', 'HARGAMODAL', 'COST'],
+            'HARGA_INTERNAL' => ['HARGAINTERNAL', 'HARGAJUALINTERNAL', 'INTERNALPRICE'],
             'HARGA RETAIL' => ['HARGARETAIL', 'RETAILPRICE'],
             'LOGO' => ['LOGO'],
             'GOLONGAN' => ['GOLONGAN', 'CLASSIFICATION'],
             'SATUAN' => ['SATUAN', 'UNIT'],
             'KEMASAN' => ['KEMASAN', 'PACKAGING'],
+            'STOK_KEMASAN' => ['STOKKEMASAN', 'STOCKPACKAGE', 'STOCKPACKAGES'],
             'STOK_SATUAN' => ['STOKSATUAN', 'STOCKUNIT'],
+            'STRIP_PER_KEMASAN' => ['STRIPPERKEMASAN', 'STRIPPERBOX'],
+            'TABLET_PER_STRIP' => ['TABLETPERSTRIP', 'TABLETSPERSTRIP'],
             'PER_STRIP' => ['PERSTRIP', 'STRIPPERBOX', 'STRIPS'],
             'PER_TABLET' => ['PERTABLET', 'TABLETPERBOX', 'TABLETS'],
             'HARGA_JUAL_B2B' => ['HARGAJUALB2B', 'HARGAB2B'],
@@ -639,7 +685,8 @@ class AdminProdukImportController extends Controller
             'GAMBAR_TAMBAHAN' => ['GAMBARTAMBAHAN', 'ADDITIONALIMAGES'],
             'PRODUCT_ID' => ['IDPRODUK', 'PRODUCTID'],
             'ROW_NO' => ['NO'],
-            'LINK_FOTO' => ['LINKFOTO'],
+            'LINK_FOTO' => ['LINKFOTO', 'LINKFOTO1', 'LINKFOTOUTAMA'],
+            'LINK_FOTO_2' => ['LINKFOTO2', 'LINKFOTOKEDUA'],
         ];
 
         foreach ($aliases as $key => $values) {
@@ -696,6 +743,33 @@ class AdminProdukImportController extends Controller
         return $parsed;
     }
 
+    private function parseStockQuantity($value): float
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return 0;
+        }
+
+        $value = str_replace([" ", "\u{00A0}"], '', $value);
+        if (str_contains($value, ',')) {
+            $value = str_replace('.', '', $value);
+            $value = str_replace(',', '.', $value);
+        } elseif (preg_match('/^\d{1,3}(?:\.\d{3})+$/', $value)) {
+            $value = str_replace('.', '', $value);
+        }
+
+        if (!is_numeric($value)) {
+            throw new \InvalidArgumentException("Jumlah stok '{$value}' tidak valid.");
+        }
+
+        $quantity = (float) $value;
+        if ($quantity < 0 || $quantity > 10000000) {
+            throw new \InvalidArgumentException('Jumlah stok harus berada dalam rentang 0 hingga 10.000.000.');
+        }
+
+        return $quantity;
+    }
+
     private function parseBoolean($value, string $field): bool
     {
         $normalized = strtolower(trim((string) $value));
@@ -739,11 +813,36 @@ class AdminProdukImportController extends Controller
         return array_values(array_filter(array_map('trim', $images)));
     }
 
-    private function parseProductImageLink($value): ?string
+    private function parseProductImageLink($value, array &$downloadedImages): ?string
     {
         $value = trim((string) $value);
         if ($value === '') {
             return null;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            $scheme = strtolower((string) parse_url($value, PHP_URL_SCHEME));
+            $host = strtolower(rtrim((string) parse_url($value, PHP_URL_HOST), '.'));
+            $path = parse_url($value, PHP_URL_PATH);
+            $relativePath = is_string($path) ? ltrim(rawurldecode($path), '/') : '';
+            if (str_starts_with($relativePath, 'storage/')) {
+                $relativePath = substr($relativePath, strlen('storage/'));
+            }
+            $localHosts = array_filter([
+                parse_url((string) config('app.url'), PHP_URL_HOST),
+                parse_url(url('/'), PHP_URL_HOST),
+            ]);
+            if (str_starts_with($relativePath, 'medicines/') && in_array($host, $localHosts, true)) {
+                return $relativePath;
+            }
+            if ($scheme !== 'https') {
+                throw new \InvalidArgumentException('LINK FOTO eksternal harus menggunakan HTTPS.');
+            }
+
+            $imagePath = app(ProductImageDownloader::class)->download($value);
+            $downloadedImages[] = $imagePath;
+
+            return $imagePath;
         }
 
         $path = parse_url($value, PHP_URL_PATH);

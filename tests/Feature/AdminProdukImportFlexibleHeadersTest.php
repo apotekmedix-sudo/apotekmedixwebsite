@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminProdukController;
 use App\Http\Controllers\HomeController;
 use App\Models\Medicine;
 use App\Models\User;
+use App\Services\ProductImageDownloader;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -46,6 +47,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             $table->string('kategori_produk')->nullable();
             $table->decimal('harga', 12, 2)->default(0);
             $table->decimal('harga_modal', 12, 2)->default(0);
+            $table->decimal('harga_internal', 12, 2)->nullable();
             $table->decimal('harga_grosir', 12, 2)->default(0);
             $table->decimal('harga_retail', 12, 2)->default(0);
             $table->unsignedInteger('promo_b2c_percent')->default(0);
@@ -108,13 +110,100 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         @unlink($path);
     }
 
-    public function test_homepage_featured_products_only_include_grade_a_records(): void
+    public function test_import_downloads_external_product_photo_links_to_local_storage(): void
+    {
+        $imageUrl = 'https://images.example.net/products/medicine.jpg';
+        $downloader = \Mockery::mock(ProductImageDownloader::class);
+        $downloader->shouldReceive('download')->once()->with($imageUrl)->andReturn('medicines/downloaded-product.jpg');
+        $this->app->instance(ProductImageDownloader::class, $downloader);
+
+        $path = tempnam(sys_get_temp_dir(), 'import');
+        file_put_contents($path, "NAMA PRODUK,LINK FOTO\nObat Foto Link,{$imageUrl}\n");
+        $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        try {
+            $response = (new AdminProdukImportController())->import($request);
+            $errors = $response->getSession()->get('errors');
+
+            $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
+            $this->assertDatabaseHas('medicines', [
+                'nama_obat' => 'Obat Foto Link',
+                'gambar' => 'medicines/downloaded-product.jpg',
+            ]);
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    public function test_import_downloads_second_product_photo_into_gallery(): void
+    {
+        $imageUrl = 'https://images.example.net/products/medicine-secondary.jpg';
+        $downloader = \Mockery::mock(ProductImageDownloader::class);
+        $downloader->shouldReceive('download')->once()->with($imageUrl)->andReturn('medicines/downloaded-secondary.jpg');
+        $this->app->instance(ProductImageDownloader::class, $downloader);
+
+        $path = tempnam(sys_get_temp_dir(), 'import');
+        file_put_contents($path, "NAMA PRODUK,LINK FOTO 2\nObat Foto Kedua,{$imageUrl}\n");
+        $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        try {
+            $response = (new AdminProdukImportController())->import($request);
+            $errors = $response->getSession()->get('errors');
+
+            $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
+            $product = Medicine::where('nama_obat', 'Obat Foto Kedua')->firstOrFail();
+            $this->assertSame(['medicines/downloaded-secondary.jpg'], $product->gambar_tambahan);
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    public function test_product_image_downloader_rejects_non_https_links(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('HTTPS');
+
+        (new ProductImageDownloader())->download('http://images.example.net/product.jpg');
+    }
+
+    public function test_product_image_downloader_rejects_private_network_hosts(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('host internet publik');
+
+        (new ProductImageDownloader())->download('https://127.0.0.1/product.jpg');
+    }
+
+    public function test_homepage_featured_products_only_include_products_with_at_least_ten_sales(): void
     {
         Medicine::create([
             'nama_obat' => 'Obat Grade A',
             'harga' => 12000,
             'stok' => 10,
             'grade' => 'A',
+            'terjual' => 10,
+        ]);
+
+        Medicine::create([
+            'nama_obat' => 'Obat Grade A Terjual 9',
+            'harga' => 12000,
+            'stok' => 10,
+            'grade' => 'A',
+            'terjual' => 9,
+        ]);
+
+        Medicine::create([
+            'nama_obat' => 'Obat Grade A Belum Terjual',
+            'harga' => 12000,
+            'stok' => 10,
+            'grade' => 'A',
+            'terjual' => 0,
         ]);
 
         Medicine::create([
@@ -153,6 +242,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
 
         $this->assertCount(1, $featuredProducts);
         $this->assertSame('Obat Grade A', $featuredProducts->first()->nama_obat);
+        $this->assertSame(10, $featuredProducts->first()->terjual);
         $this->assertCount(1, $discountedProducts);
         $this->assertSame('Obat Promo B2C', $discountedProducts->first()->nama_obat);
 
@@ -160,18 +250,39 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             ->assertOk()
             ->assertSee('Terlaris B2C')
             ->assertSee('Promo B2C')
-            ->assertSee(route('products.apotek'), false)
+            ->assertDontSee(route('products.apotek'), false)
             ->assertSee('class="discounted-product-card"', false)
             ->assertSee('data-price-target="home-price-current-a-', false)
             ->assertSee('data-price-target="home-price-b-', false);
+    }
+
+    public function test_homepage_expands_additional_products_below_the_first_twenty(): void
+    {
+        foreach (range(1, 22) as $number) {
+            Medicine::create([
+                'nama_obat' => 'Produk Beranda ' . $number,
+                'harga_retail' => 12000,
+                'stok' => 10,
+            ]);
+        }
+
+        $response = $this->get(route('home'))->assertOk();
+
+        $this->assertCount(22, $response->viewData('allB2cProducts'));
+        $response->assertSee('id="homeAllB2cProductsGrid"', false)
+            ->assertSee('id="homeShowMoreProducts"', false)
+            ->assertSee('aria-expanded="false"', false)
+            ->assertSee('data-additional-home-product', false)
+            ->assertSee('fa-chevron-down', false)
+            ->assertDontSee(route('products.apotek'), false);
     }
 
     public function test_import_maps_channel_prices_and_package_units_from_new_template(): void
     {
         $path = tempnam(sys_get_temp_dir(), 'import');
         file_put_contents($path, implode("\n", [
-            'NO,PRINCIPLE,NAMA PRODUK,LOGO,GOLONGAN,KOMPOSISI,INDIKASI,SATUAN,KEMASAN,SEDIAAN,STOK SATUAN,PER STRIP,PER TABLET,MODAL,HARGA JUAL B2B,HARGA JUAL B2C,HARGA JUAL PER STRIP,HARGA JUAL PER TABLET',
-            '1,PT KALBE FARMA,Promag Tablet,HIJAU,Obat Bebas,"Antasida, Simetikon","Meredakan sakit maag, dan perih",BOX,10 blister @ 6 tablet,TABLET,2,10,60,100000,130000,140000,16000,1600',
+            'NO,PRINCIPLE,NAMA PRODUK,LOGO,GOLONGAN,KOMPOSISI,INDIKASI,SATUAN,KEMASAN,SEDIAAN,STOK KEMASAN,STRIP PER KEMASAN,TABLET PER STRIP,MODAL,HARGA INTERNAL,HARGA JUAL B2B,HARGA JUAL B2C,HARGA JUAL PER STRIP,HARGA JUAL PER TABLET',
+            '1,PT KALBE FARMA,Promag Tablet,HIJAU,Obat Bebas,"Antasida, Simetikon","Meredakan sakit maag, dan perih",BOX,10 blister @ 6 tablet,TABLET,2,10,6,100000,110000,130000,140000,16000,1600',
         ]) . "\n");
 
         $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
@@ -189,10 +300,37 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame('HIJAU', $product->logo);
         $this->assertSame('Obat Bebas', $product->golongan);
         $this->assertSame('Antasida, Simetikon', $product->komposisi);
+        $this->assertSame(110000.0, (float) $product->harga_internal);
         $this->assertSame(130000.0, $product->getChannelBasePrice('b2b'));
         $this->assertSame(140000.0, $product->getChannelBasePrice('b2c'));
         $this->assertSame(16000.0, $product->getChannelBasePrice('b2c', 'strip'));
         $this->assertSame(120, (int) $product->stock_base_units);
+
+        @unlink($path);
+    }
+
+    public function test_import_accepts_fractional_package_stock_and_converts_to_base_units(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'fractional-stock');
+        file_put_contents($path, implode("\n", [
+            'NAMA PRODUK,SATUAN,SEDIAAN,STOK KEMASAN,STRIP PER KEMASAN,TABLET PER STRIP',
+            'Obat Stok Parsial,BOX,TABLET,2.53,10,10',
+        ]) . "\n");
+
+        $file = new UploadedFile($path, 'stock.csv', 'text/csv', null, true);
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        $response = (new AdminProdukImportController())->import($request);
+        $this->assertTrue($response->isRedirect());
+        $errors = $response->getSession()->get('errors');
+        $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
+
+        $product = Medicine::where('nama_obat', 'Obat Stok Parsial')->firstOrFail();
+        $this->assertSame(253, (int) $product->stock_base_units);
+        $this->assertSame(2, (int) $product->stok);
+        $this->assertSame(2.53, $product->stock_packages);
 
         @unlink($path);
     }
@@ -222,6 +360,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
         $this->assertDatabaseHas('medicines', [
             'nama_obat' => 'Promag Tablet',
+            'harga_internal' => 120000,
             'harga_grosir' => 135437,
             'harga_retail' => 153102,
             'price_box' => 153102,
@@ -294,6 +433,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'komposisi' => 'Komposisi contoh',
             'indikasi' => 'Indikasi contoh',
             'harga_modal' => 117771,
+            'harga_internal' => 125000,
             'harga_grosir' => 135437,
             'harga_retail' => 153102,
             'stok' => 10,
@@ -317,6 +457,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame('OBAT', $product->kategori_produk);
         $this->assertSame('HIJAU', $product->logo);
         $this->assertSame('Obat Bebas', $product->golongan);
+        $this->assertSame(125000.0, (float) $product->harga_internal);
         $this->assertSame('10 strip @ 10 tablet', $product->kemasan);
         $this->assertSame(10, (int) $product->strips_per_box);
         $this->assertSame(10, (int) $product->tablets_per_strip);

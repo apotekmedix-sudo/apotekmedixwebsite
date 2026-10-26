@@ -19,6 +19,7 @@ use App\Http\Controllers\AdminPrescriptionImportController;
 use App\Http\Controllers\AdminPrescriptionProductController;
 use App\Http\Controllers\AdminPrescriptionProductImportController;
 use App\Http\Controllers\AdminProdukController;
+use App\Http\Controllers\AdminInventoryController;
 use App\Http\Controllers\AdminProdukImportController;
 use App\Http\Controllers\AdminBusinessDataExportController;
 use App\Http\Controllers\AdminBannerController;
@@ -61,6 +62,12 @@ Route::get('/products-apotek/activate', fn () => redirect()->route('products.apo
 Route::post('/products-apotek/activate', [ProductController::class, 'apotekActivate'])
     ->middleware('throttle:60,1')
     ->name('products.apotek.activate');
+Route::post('/products-apotek/internal/activate', [ProductController::class, 'internalActivate'])
+    ->middleware('throttle:5,1')
+    ->name('products.apotek.internal.activate');
+Route::post('/products-apotek/access/logout/{channel}', [ProductController::class, 'apotekAccessLogout'])
+    ->where('channel', 'b2c|internal')
+    ->name('products.apotek.access.logout');
 Route::get('/keranjang', [ProductController::class, 'cart'])->name('cart.index');
 Route::get('/cart', [ProductController::class, 'cart'])->name('cart.page');
 Route::get('/checkout', [ProductController::class, 'checkout'])->name('checkout.index');
@@ -126,6 +133,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/notifications/{order}/mark-paid', [AdminDashboardController::class, 'markTempoPaid'])->name('notifications.mark-paid');
     Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats'])->name('dashboard.stats');
     Route::get('/purchase-history', [AdminDashboardController::class, 'purchaseHistory'])->name('purchase-history.index');
+    Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');
     Route::get('/purchase-history/{order}/purchase-order', [PurchaseHistoryController::class, 'purchaseOrder'])->name('purchase-history.purchase-order');
     Route::get('/purchase-history/export', [AdminDashboardController::class, 'exportPurchaseHistory'])->name('purchase-history.export');
     Route::post('/purchase-history/{order}/approval', [AdminDashboardController::class, 'updateApprovalStatus'])->name('purchase-history.approval');

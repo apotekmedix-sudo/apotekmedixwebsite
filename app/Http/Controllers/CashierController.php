@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PurchaseHistory;
 use App\Models\PurchaseStockReservation;
+use App\Services\MedicineStockLedger;
 use App\Models\Medicine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -145,11 +146,17 @@ class CashierController extends Controller
                         ]);
                     }
                     $remainingUnits = (int) $product->available_stock_units - $reservation->quantity_units;
-                    $product->update([
-                        'stock_base_units' => $remainingUnits,
-                        'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
-                        'terjual' => (int) $product->terjual + $reservation->sale_quantity,
-                    ]);
+                    MedicineStockLedger::withContext(
+                        'sale',
+                        $lockedOrder->id,
+                        fn () => $product->update([
+                            'stock_base_units' => $remainingUnits,
+                            'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
+                            'terjual' => (int) $product->terjual + $reservation->sale_quantity,
+                        ]),
+                        -(int) $reservation->quantity_units,
+                        'Penjualan dari pesanan yang diverifikasi.'
+                    );
                 }
 
                 PurchaseStockReservation::where('purchase_history_id', $lockedOrder->id)->delete();
@@ -222,6 +229,16 @@ class CashierController extends Controller
             }
 
             if (!$lockedOrder->stock_committed) {
+                $reservations = PurchaseStockReservation::where('purchase_history_id', $lockedOrder->id)->get();
+                foreach ($reservations as $reservation) {
+                    MedicineStockLedger::recordReservedChange(
+                        (int) $reservation->medicine_id,
+                        -(int) $reservation->quantity_units,
+                        $lockedOrder->id,
+                        'release',
+                        'Reservasi dilepas karena pesanan dibatalkan.'
+                    );
+                }
                 PurchaseStockReservation::where('purchase_history_id', $lockedOrder->id)->delete();
             } elseif (!$lockedOrder->is_pbf_purchase_order) {
                 $items = is_array($lockedOrder->items) ? $lockedOrder->items : [];
@@ -263,11 +280,17 @@ class CashierController extends Controller
                 foreach ($quantities as $productId => $quantity) {
                     $product = $products->get($productId);
                     $remainingUnits = (int) $product->available_stock_units + $quantity;
-                    $product->update([
-                        'stock_base_units' => $remainingUnits,
-                        'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
-                        'terjual' => max(0, (int) $product->terjual - ($saleQuantities[$productId] ?? 0)),
-                    ]);
+                    MedicineStockLedger::withContext(
+                        'return',
+                        $lockedOrder->id,
+                        fn () => $product->update([
+                            'stock_base_units' => $remainingUnits,
+                            'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
+                            'terjual' => max(0, (int) $product->terjual - ($saleQuantities[$productId] ?? 0)),
+                        ]),
+                        0,
+                        'Stok dikembalikan karena pesanan dibatalkan.'
+                    );
                 }
             }
 

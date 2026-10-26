@@ -16,11 +16,14 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         $b2cAccess = ShoppingAccessCode::hasActiveB2cSession();
+        $internalAccess = ShoppingAccessCode::hasActiveInternalSession();
+        $redLogoAccess = $b2cAccess || $internalAccess;
         $b2cCatalogQuery = fn () => Medicine::nonPbf()
             ->availableForB2c();
 
         $featuredProducts = $b2cCatalogQuery()
             ->where('grade', 'A')
+            ->where('terjual', '>=', 10)
             ->orderByDesc('terjual')
             ->orderBy('nama_obat')
             ->limit(20)
@@ -28,6 +31,7 @@ class HomeController extends Controller
 
         if ($featuredProducts->isEmpty()) {
             $featuredProducts = $b2cCatalogQuery()
+                ->where('terjual', '>=', 10)
                 ->orderByDesc('terjual')
                 ->orderBy('nama_obat')
                 ->limit(20)
@@ -58,7 +62,6 @@ class HomeController extends Controller
 
         $allB2cProducts = $b2cCatalogQuery()
             ->latest()
-            ->limit(20)
             ->get();
 
         StockAvailability::annotate(
@@ -76,7 +79,9 @@ class HomeController extends Controller
             'discountedProducts',
             'allB2cProducts',
             'banners',
-            'b2cAccess'
+            'b2cAccess',
+            'internalAccess',
+            'redLogoAccess'
         ));
     }
 
@@ -96,6 +101,9 @@ class HomeController extends Controller
     public function show(Request $request, $id)
     {
         $medicine = Medicine::findOrFail($id);
+        $b2cAccess = ShoppingAccessCode::hasActiveB2cSession();
+        $internalAccess = ShoppingAccessCode::hasActiveInternalSession();
+        $redLogoAccess = $b2cAccess || $internalAccess;
 
         StockAvailability::annotate($medicine->newCollection([$medicine]));
 
@@ -112,6 +120,9 @@ class HomeController extends Controller
         return view('medicines.detail', [
             'medicine' => $medicine,
             'relatedMedicines' => $relatedMedicines,
+            'b2cAccess' => $redLogoAccess,
+            'internalAccess' => $internalAccess,
+            'redLogoAccess' => $redLogoAccess,
         ]);
     }
 

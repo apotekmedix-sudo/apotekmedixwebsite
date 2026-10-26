@@ -49,14 +49,16 @@
     <ol>
         <li>Pilih mode import sesuai tujuan: tambah/lengkapi produk atau edit massal dari hasil export</li>
         <li>Untuk edit massal, download file Export Produk di bawah, edit kolomnya, lalu pilih mode Edit massal</li>
-        <li>Isi stok pada kolom <strong>STOK SATUAN</strong> dan harga pada kolom <strong>MODAL</strong>, B2B, dan B2C</li>
-        <li>Isi <strong>PER STRIP</strong> dan <strong>PER TABLET</strong> hanya untuk kemasan <strong>BOX</strong> tablet/kapsul. Untuk Botol, Tube, dan satuan selain BOX, biarkan kedua kolom bernilai 0. Harga strip/tablet dapat diisi 0 jika tidak dijual satuan.</li>
+        <li>Isi jumlah stok dalam satuan kemasan yang tertulis pada kolom <strong>SATUAN</strong> di <strong>STOK KEMASAN</strong>. Contoh: isi <strong>1</strong> jika stok ada 1 box.</li>
+        <li>Untuk box tablet/kapsul, isi <strong>STRIP PER KEMASAN</strong> dan <strong>TABLET PER STRIP</strong>. Contoh: 1 box berisi 10 strip, tiap strip berisi 10 tablet, maka isi stok box <strong>1</strong>, strip per kemasan <strong>10</strong>, tablet per strip <strong>10</strong>. Sistem menghitung stok dasar menjadi 100 tablet.</li>
+        <li>Untuk Botol, Tube, dan satuan selain box tablet/kapsul, biarkan kedua kolom konversi bernilai 0. Kolom stok tetap dihitung sebagai jumlah satuan kemasan tersebut.</li>
+        <li>Isi <strong>LINK FOTO 1</strong> dan <strong>LINK FOTO 2</strong> dengan URL HTTPS langsung ke file gambar publik. Foto akan diunduh dan disimpan di website saat import; ukuran maksimal 5 MB per foto.</li>
         <li>Upload file <strong>.csv</strong>, <strong>.xls</strong>, atau <strong>.xlsx</strong></li>
         <li>Mode tambah/lengkapi mencocokkan nama produk: data yang kosong dilengkapi tanpa menimpa data yang sudah terisi; nama yang belum ada menjadi produk baru</li>
         <li>Mode edit massal hanya memperbarui produk berdasarkan ID pada kolom NO; data tidak akan membuat produk baru</li>
     </ol>
     <p style="color:#059669;margin:0.75rem 0 0;font-size:0.875rem;font-weight:600;">
-        ✅ Format baru terdiri dari 18 kolom, termasuk golongan, kemasan, harga B2B/B2C, dan harga per unit
+        ✅ Template berisi 21 kolom, termasuk rasio stok yang jelas, harga internal, dan dua kolom LINK FOTO
     </p>
 </div>
 
@@ -79,7 +81,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>NO</th>
+                        <th>NO CONTOH</th>
                         <th>PRINCIPLE</th>
                         <th>NAMA PRODUK</th>
                         <th>LOGO</th>
@@ -89,14 +91,17 @@
                         <th>SATUAN</th>
                         <th>KEMASAN</th>
                         <th>SEDIAAN</th>
-                        <th>STOK SATUAN</th>
-                        <th>PER STRIP</th>
-                        <th>PER TABLET</th>
+                        <th>STOK KEMASAN</th>
+                        <th>STRIP PER KEMASAN</th>
+                        <th>TABLET PER STRIP</th>
                         <th>MODAL</th>
+                        <th>HARGA INTERNAL</th>
                         <th>HARGA JUAL B2B</th>
                         <th>HARGA JUAL B2C</th>
                         <th>HARGA JUAL PER STRIP</th>
                         <th>HARGA JUAL PER TABLET</th>
+                        <th>LINK FOTO 1</th>
+                        <th>LINK FOTO 2</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -111,8 +116,8 @@
                         <td>BOX</td>
                         <td>10 blister @ 10 tablet</td>
                         <td>TABLET</td>
-                        <td>10</td><td>10</td><td>100</td><td>117771</td>
-                        <td>135437</td><td>153102</td><td>16841</td><td>15463</td>
+                        <td>10</td><td>10</td><td>10</td><td>117771</td><td>120000</td>
+                        <td>135437</td><td>153102</td><td>16841</td><td>15463</td><td>https://contoh.com/foto-produk-1.jpg</td><td>https://contoh.com/foto-produk-2.jpg</td>
                     </tr>
                     <tr>
                         <td>2</td>
@@ -125,8 +130,8 @@
                         <td>BOX</td>
                         <td>1 blister @ 4 tablet</td>
                         <td>TABLET</td>
-                        <td>1</td><td>1</td><td>4</td><td>200000</td>
-                        <td>205000</td><td>220000</td><td>55000</td><td>0</td>
+                        <td>1</td><td>1</td><td>4</td><td>200000</td><td>210000</td>
+                        <td>205000</td><td>220000</td><td>55000</td><td>0</td><td></td><td></td>
                     </tr>
                     <tr>
                         <td>3</td>
@@ -139,8 +144,8 @@
                         <td>BOTOL</td>
                         <td></td>
                         <td>SIRUP</td>
-                        <td>1</td><td>0</td><td>0</td><td>12000</td>
-                        <td>12500</td><td>14000</td><td>0</td><td>0</td>
+                        <td>1</td><td>0</td><td>0</td><td>12000</td><td>13000</td>
+                        <td>12500</td><td>14000</td><td>0</td><td>0</td><td></td><td></td>
                     </tr>
                     <tr>
                         <td>4</td>
@@ -153,8 +158,8 @@
                         <td>TUBE</td>
                         <td></td>
                         <td>KRIM</td>
-                        <td>5</td><td>0</td><td>0</td><td>50000</td>
-                        <td>51000</td><td>55000</td><td>0</td><td>0</td>
+                        <td>5</td><td>0</td><td>0</td><td>50000</td><td>52000</td>
+                        <td>51000</td><td>55000</td><td>0</td><td>0</td><td></td>
                     </tr>
                 </tbody>
             </table>

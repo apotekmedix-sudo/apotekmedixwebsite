@@ -48,13 +48,13 @@
     .data-table tbody tr:last-child td { border-bottom:none; }
     .data-table tbody tr:hover { background:#fafbff; }
 
-    .med-img { width:88px; height:88px; border-radius:0.5rem; object-fit:cover; border:1px solid #e5e7eb; display:block; }
-    .med-img-placeholder { width:88px; height:88px; padding:0.5rem; border-radius:0.5rem; background:linear-gradient(135deg,#f8fafc,#e0f2fe); display:flex; align-items:center; justify-content:center; border:1px solid #e5e7eb; }
-    .med-img-placeholder img { width:100%; height:100%; object-fit:contain; }
+    .med-image-frame { width:100px; height:100px; padding:0.4rem; border:1px solid #e2e8f0; border-radius:0.65rem; background:#f8fafc; display:flex; align-items:center; justify-content:center; box-sizing:border-box; overflow:hidden; }
+    .med-image-frame > img { display:block; width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; border-radius:0.4rem; }
     .kat-tab i { margin-right:0.25rem; }
     .med-name { font-weight:600; color:#1f2937; }
     .med-desc { color:#374151; font-size:0.82rem; margin-top:0.45rem; max-width:240px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
     .med-meta { font-size:0.76rem; color:#6b7280; margin-top:0.25rem; max-width:240px; }
+    .med-attribute-ellipsis { display:block; width:240px; max-width:240px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 
     .kat-badge { display:inline-block; padding:0.2rem 0.6rem; border-radius:20px; font-size:0.72rem; font-weight:700; }
     .kat-lengkap   { background:#e3f2fd; color:#1565C0; }
@@ -245,6 +245,7 @@
                     <th>Sediaan</th>
                     <th>Kategori</th>
                     <th>Modal</th>
+                    <th>Harga Internal</th>
                     <th>Harga B2B</th>
                     <th>Harga B2C</th>
                     <th>Harga Strip / Tablet</th>
@@ -256,17 +257,22 @@
             <tbody>
                 @foreach($medicines as $medicine)
                 @php
-                    $converted = $medicine->getConvertedUnitStocksForUnits($medicine->available_stock_units);
+                    $physicalStockUnits = (int) $medicine->physical_stock_units;
+                    $reservedStockUnits = (int) $medicine->reserved_stock_units;
+                    $availableStockUnits = (int) $medicine->available_stock_units;
+                    $converted = $medicine->getConvertedUnitStocksForUnits($physicalStockUnits);
                 @endphp
                 <tr data-product-row="{{ $medicine->id }}" data-unit-label="{{ $medicine->package_unit_label }}" data-tablet-packaging="{{ \App\Models\Medicine::supportsTabletPackaging((string) $medicine->satuan, (string) $medicine->sediaan) ? '1' : '0' }}">
                     <td style="text-align:center;">
                         <input type="checkbox" class="product-checkbox" name="produk_ids[]" value="{{ $medicine->id }}">
                     </td>
-                    <td style="vertical-align:top;">
+                    <td>
                         @if($medicine->gambar)
-                            <img src="{{ url('storage/' . $medicine->gambar) }}" alt="{{ $medicine->nama_obat }}" class="med-img">
+                            <div class="med-image-frame">
+                                <img src="{{ url('storage/' . $medicine->gambar) }}" alt="{{ $medicine->nama_obat }}" class="med-img">
+                            </div>
                         @else
-                            <div class="med-img-placeholder">
+                            <div class="med-image-frame">
                                 <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Apotek Medix">
                             </div>
                         @endif
@@ -280,8 +286,8 @@
                         <div class="med-meta">Logo: {{ $medicine->logo ?: '-' }} | Golongan: {{ $medicine->golongan ?: '-' }}</div>
                     </td>
                     <td>
-                        <div class="med-desc">{{ $medicine->komposisi ?: '-' }}</div>
-                        <div class="med-meta">{{ $medicine->indikasi ?: '-' }}</div>
+                        <div class="med-desc med-attribute-ellipsis" title="{{ $medicine->komposisi ?: '-' }}">{{ $medicine->komposisi ?: '-' }}</div>
+                        <div class="med-meta med-attribute-ellipsis" title="{{ $medicine->indikasi ?: '-' }}">{{ $medicine->indikasi ?: '-' }}</div>
                         @if($medicine->dosis)<div class="med-meta" style="color:#0369a1;font-weight:600;">Dosis: {{ $medicine->dosis }}</div>@endif
                     </td>
                     <td>
@@ -310,6 +316,9 @@
                         <input class="inline-number" type="number" name="harga_modal" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->harga_modal ?: $medicine->harga }}" min="0" step="0.01" aria-label="Harga modal {{ $medicine->nama_obat }}">
                     </td>
                     <td>
+                        <input class="inline-number" type="number" name="harga_internal" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->harga_internal }}" min="0" step="0.01" aria-label="Harga internal {{ $medicine->nama_obat }}">
+                    </td>
+                    <td>
                         <input class="inline-number" type="number" name="harga_grosir" form="inline-update-{{ $medicine->id }}" value="{{ $medicine->harga_grosir ?: $medicine->harga_modal ?: $medicine->harga }}" min="0" step="0.01" aria-label="Harga jual B2B {{ $medicine->nama_obat }}">
                     </td>
                     <td>
@@ -333,10 +342,15 @@
                     </td>
                     <td>
                         <div class="converted-stock-pills" data-converted-stock-pills>
+                            <div class="inventory-stock-summary" style="margin-bottom:.45rem;font-size:.72rem;line-height:1.5;color:#475569;">
+                                <div><strong>Fisik:</strong> {{ $medicine->getConvertedStockSummaryForUnits($physicalStockUnits) }}</div>
+                                <div><strong>Direservasi:</strong> {{ $medicine->getConvertedStockSummaryForUnits($reservedStockUnits) }}</div>
+                                <div><strong>Tersedia:</strong> {{ $medicine->getConvertedStockSummaryForUnits($availableStockUnits) }}</div>
+                            </div>
                             <div class="converted-stock-pill converted-stock-pill--box converted-stock-pill--editable">
                                 <span>{{ $medicine->package_unit_label }}:</span>
                                 <label class="stock-conversion-edit" for="stok-box-{{ $medicine->id }}">
-                                    <input id="stok-box-{{ $medicine->id }}" class="stock-quantity-input js-row-stock" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ rtrim(rtrim(number_format($medicine->stock_packages, 6, '.', ''), '0'), '.') }}" min="0" step="0.000001" aria-label="Stok {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
+                                    <input id="stok-box-{{ $medicine->id }}" class="stock-quantity-input js-row-stock" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ rtrim(rtrim(number_format($physicalStockUnits / max(1, $medicine->units_per_box), 6, '.', ''), '0'), '.') }}" min="0" step="0.000001" aria-label="Stok {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
                                     {{ $medicine->package_unit_label }}
                                 </label>
                             </div>
@@ -359,7 +373,7 @@
                                 </div>
                             @endif
                         </div>
-                        <small style="display:block;margin-top:.25rem;color:#64748b;" data-row-breakdown>Sisa: {{ $medicine->stock_breakdown }}</small>
+                        <small style="display:block;margin-top:.25rem;color:#64748b;" data-row-breakdown>Rincian fisik: {{ $medicine->getConvertedStockSummaryForUnits($physicalStockUnits) }}</small>
                     </td>
                     <td style="font-size:0.82rem;color:#9ca3af;">{{ $medicine->created_at->format('d M Y') }}</td>
                     <td>

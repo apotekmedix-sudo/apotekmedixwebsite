@@ -634,6 +634,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('admin.inventory.index') }}" class="@if(str_starts_with(Route::current()->getName() ?? '', 'admin.inventory')) active @endif">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <span>Laporan Stok</span>
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.produk-pbf.index') }}" class="@if(Route::current()->getName() === 'admin.produk-pbf.index') active @endif">
                         <span>📦</span>
                         <span>Pesan ke PBF</span>

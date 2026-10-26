@@ -280,6 +280,8 @@ class ProductController extends Controller
     public function apotek(Request $request)
     {
         $b2cAccess = $this->hasB2cAccess($request);
+        $internalAccess = $this->hasInternalAccess($request);
+        $redLogoAccess = $b2cAccess || $internalAccess;
         $search          = $request->get('search', '');
         $kategori_produk = $request->get('kategori_produk', '');
         $perusahaan      = $request->get('perusahaan', '');
@@ -339,7 +341,8 @@ class ProductController extends Controller
             'medicines', 'search', 'kategori_produk', 'perusahaan',
             'indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan',
             'sediaanList', 'golonganList',
-            'sort', 'total', 'kategoriOptions', 'perusahaanList', 'b2cAccess'
+            'sort', 'total', 'kategoriOptions', 'perusahaanList',
+            'b2cAccess', 'internalAccess', 'redLogoAccess'
         ));
     }
 
@@ -347,6 +350,7 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'kode' => ['required', 'string', 'regex:/^[0-9]{5}$/'],
+            'redirect_to' => ['nullable', 'in:home,products.apotek'],
         ]);
         $accessCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2C)->first();
 
@@ -366,8 +370,9 @@ class ProductController extends Controller
             }
 
             return redirect()
-                ->route('products.apotek')
+                ->route($this->catalogReturnRoute($validated['redirect_to'] ?? null))
                 ->withErrors(['kode' => 'Kode akses tidak sesuai atau belum diaktifkan. Hubungi administrator.'])
+                ->with('access_dialog', 'b2c')
                 ->withInput();
         }
 
@@ -379,8 +384,50 @@ class ProductController extends Controller
         $request->session()->put('b2c_access_expires_at', $sessionExpiresAt->timestamp);
         $request->session()->put('b2c_access_code_hash', $accessCode->code_hash);
 
-        return redirect()->route('products.apotek')
+        return redirect()->route($this->catalogReturnRoute($validated['redirect_to'] ?? null))
             ->with('success', 'Kode berhasil. Produk berlogo merah sekarang dapat dilihat.');
+    }
+
+    public function internalActivate(Request $request)
+    {
+        $validated = $request->validate([
+            'kode' => ['required', 'string', 'regex:/^[0-9]{5}$/'],
+            'redirect_to' => ['nullable', 'in:home,products.apotek'],
+        ]);
+        $accessCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_INTERNAL)->first();
+
+        if (!$accessCode || !$accessCode->verify($validated['kode'])) {
+            return redirect()
+                ->route($this->catalogReturnRoute($validated['redirect_to'] ?? null))
+                ->withErrors(['kode' => 'Kode akses Internal tidak sesuai atau belum diaktifkan. Hubungi administrator.'])
+                ->with('access_dialog', 'internal')
+                ->withInput();
+        }
+
+        $request->session()->regenerate();
+        $sessionExpiresAt = now()->addDays((int) config('internal.code_validity_days', 30));
+        if ($accessCode->expires_at->lt($sessionExpiresAt)) {
+            $sessionExpiresAt = $accessCode->expires_at;
+        }
+        $request->session()->put('internal_access_expires_at', $sessionExpiresAt->timestamp);
+        $request->session()->put('internal_access_code_hash', $accessCode->code_hash);
+
+        return redirect()->route($this->catalogReturnRoute($validated['redirect_to'] ?? null))
+            ->with('success', 'Harga internal dan akses produk berlogo merah berhasil dibuka.');
+    }
+
+    public function apotekAccessLogout(Request $request, string $channel)
+    {
+        abort_unless(in_array($channel, ['b2c', 'internal'], true), 404);
+        $sessionKeys = $channel === 'b2c'
+            ? ['b2c_access_expires_at', 'b2c_access_code_hash']
+            : ['internal_access_expires_at', 'internal_access_code_hash'];
+        $request->session()->forget($sessionKeys);
+
+        return redirect()->route($this->catalogReturnRoute($request->input('redirect_to')))
+            ->with('success', $channel === 'internal'
+                ? 'Akses harga internal telah ditutup.'
+                : 'Akses produk khusus B2C telah ditutup.');
     }
 
     private function hasB2cAccess(Request $request): bool
@@ -391,6 +438,21 @@ class ProductController extends Controller
             'b2c_access_expires_at',
             'b2c_access_code_hash'
         );
+    }
+
+    private function hasInternalAccess(Request $request): bool
+    {
+        return $this->hasShoppingAccess(
+            $request,
+            ShoppingAccessCode::CHANNEL_INTERNAL,
+            'internal_access_expires_at',
+            'internal_access_code_hash'
+        );
+    }
+
+    private function catalogReturnRoute(?string $route): string
+    {
+        return $route === 'home' ? 'home' : 'products.apotek';
     }
 
     private function hasShoppingAccess(

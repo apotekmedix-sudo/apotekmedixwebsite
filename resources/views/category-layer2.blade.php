@@ -707,7 +707,7 @@
                                 
                                 <div class="product-price">{{ $med->getFormattedPrice() }}</div>
                                 @php $stock = $med->available_stock_units; @endphp
-                                <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}">
+                                <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $med->id }}">
                                     <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
                                     {{ $stock > 0 ? 'Stok: ' . $med->stock_breakdown : 'Stok habis' }}
                                 </span>
@@ -720,7 +720,7 @@
                                     <a href="{{ route('medicines.show', $med->id) }}" class="btn-detail">Lihat Detail</a>
                                     <div id="category-price-{{ $med->id }}">{{ $med->getFormattedCatalogPrice('harga_retail') }}</div>
                                     @include('partials.product-unit-selector', ['medicine' => $med, 'unitSelectId' => 'category-unit-' . $med->id, 'priceTargetId' => 'category-price-' . $med->id])
-                                    <button class="btn-add-cart" data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }}, '{{ addslashes($med->nama_obat) }}', {{ $med->harga_retail ?: $med->harga }}, '{{ $med->image_url ?: '' }}', '{{ addslashes($med->brand ?: $med->kategori) }}', this, 'category-unit-{{ $med->id }}')">
+                                    <button class="btn-add-cart" data-stock-cart @disabled($stock <= 0) data-package-unit-label="{{ $med->package_unit_label }}" onclick="addToCart({{ $med->id }}, '{{ addslashes($med->nama_obat) }}', {{ $med->harga_retail ?: $med->harga }}, '{{ $med->image_url ?: '' }}', '{{ addslashes($med->brand ?: $med->kategori) }}', this, 'category-unit-{{ $med->id }}')">
                                         <i class="fa-solid fa-cart-plus"></i> Keranjang
                                     </button>
                                 </div>

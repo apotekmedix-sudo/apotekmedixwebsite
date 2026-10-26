@@ -634,6 +634,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="<?php echo e(route('admin.inventory.index')); ?>" class="<?php if(str_starts_with(Route::current()->getName() ?? '', 'admin.inventory')): ?> active <?php endif; ?>">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <span>Laporan Stok</span>
+                    </a>
+                </li>
+                <li>
                     <a href="<?php echo e(route('admin.produk-pbf.index')); ?>" class="<?php if(Route::current()->getName() === 'admin.produk-pbf.index'): ?> active <?php endif; ?>">
                         <span>📦</span>
                         <span>Pesan ke PBF</span>

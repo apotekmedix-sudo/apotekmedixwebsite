@@ -33,11 +33,11 @@ class CustomerAccountTest extends TestCase
             ->assertDontSee('> Daftar</a>', false);
     }
 
-    public function test_user_navbar_links_to_b2c_catalog_instead_of_general_products(): void
+    public function test_user_navbar_does_not_link_to_a_separate_b2c_catalog(): void
     {
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('<a href="' . route('products.apotek') . '"><i class="fa-solid fa-store"></i> Belanja B2C</a>', false)
+            ->assertDontSee('<a href="' . route('products.apotek') . '"><i class="fa-solid fa-store"></i> Belanja B2C</a>', false)
             ->assertDontSee('<a href="' . route('products.index') . '"><i class="fa-solid fa-pills"></i> Produk Kami</a>', false);
     }
 
@@ -130,8 +130,8 @@ class CustomerAccountTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('Belanja B2B')
-            ->assertSee('Belanja B2C')
-            ->assertSee('<a href="' . route('products.apotek') . '"><i class="fa-solid fa-store"></i> Belanja B2C</a>', false)
+            ->assertDontSee('Belanja B2C')
+            ->assertDontSee('<a href="' . route('products.apotek') . '"><i class="fa-solid fa-store"></i> Belanja B2C</a>', false)
             ->assertDontSee('<a href="' . route('products.index') . '"><i class="fa-solid fa-pills"></i> Produk Kami</a>', false)
             ->assertDontSee('Pesan di Toko')
             ->assertDontSee('Buka Kios Toko');

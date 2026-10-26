@@ -21,6 +21,7 @@ class AdminShoppingAccessCodeController extends Controller
         abort_unless(in_array($channel, [
             ShoppingAccessCode::CHANNEL_B2B,
             ShoppingAccessCode::CHANNEL_B2C,
+            ShoppingAccessCode::CHANNEL_INTERNAL,
         ], true), 404);
 
         $code = ShoppingAccessCode::generate($channel);
@@ -59,6 +60,7 @@ class AdminShoppingAccessCodeController extends Controller
         abort_unless(in_array($accessCode->channel, [
             ShoppingAccessCode::CHANNEL_B2B,
             ShoppingAccessCode::CHANNEL_B2C,
+            ShoppingAccessCode::CHANNEL_INTERNAL,
         ], true), 404);
         $channel = strtoupper($accessCode->channel);
         $accessCode->delete();

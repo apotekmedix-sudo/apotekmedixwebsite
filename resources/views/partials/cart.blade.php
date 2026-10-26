@@ -33,6 +33,7 @@
 .cart-item-info { flex: 1; min-width: 0; }
 .cart-item-name { font-size: 0.84rem; font-weight: 700; color: #1f2937; margin-bottom: 0.2rem; line-height: 1.3; }
 .cart-item-price { font-size: 0.8rem; color: #1E88E5; font-weight: 700; }
+.cart-item-price-unavailable { color:#b91c1c; font-size:.78rem; font-weight:700; }
 .cart-qty-row { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.4rem; }
 .qty-btn { width: 26px; height: 26px; border-radius: 6px; border: 1.5px solid #e5e7eb; background: #fff; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #374151; transition: all 0.2s; }
 .qty-btn:hover { border-color: #1E88E5; color: #1E88E5; }
@@ -598,6 +599,23 @@ function save() {
   syncBadge();
 }
 
+if (CART_CONFIG.syncProductPrices) {
+  document.querySelectorAll('.product-unit-data[data-sales-channel="b2c"]').forEach(select => {
+    const item = cart.find(cartItem => String(cartItem.id) === String(select.dataset.stockProductId));
+    if (!item) return;
+
+    const unitPrices = JSON.parse(select.dataset.unitPrices || '{}');
+    item.internalPriceUnavailable = CART_CONFIG.priceMode === 'internal' && Number(unitPrices.box || 0) <= 0;
+    item.unitPrices = unitPrices;
+    item.unitFactors = JSON.parse(select.dataset.unitFactors || '{}');
+    item.unitLabels = JSON.parse(select.dataset.unitLabels || '{}');
+    item.packageUnitLabel = item.unitLabels.box || item.packageUnitLabel;
+    item.price = Number(unitPrices[item.saleUnit || 'box'] || unitPrices.box || 0);
+    item.discount = 0;
+  });
+  save();
+}
+
 function syncBadge() {
   const tot = cart.reduce((s, i) => s + i.qty, 0);
   syncProductButtons();
@@ -727,6 +745,29 @@ async function refreshAvailableProductStock() {
         });
       }
     });
+    if (window.DETAIL_PRODUCT && Number(window.DETAIL_PRODUCT.id) === Number(id)) {
+      window.DETAIL_PRODUCT.stockUnits = Number(stock.units || 0);
+      const outOfStock = window.DETAIL_PRODUCT.stockUnits < 1;
+      document.querySelectorAll('#btnDetailBuy, #btnDetailCart').forEach(button => {
+        button.disabled = outOfStock;
+      });
+      const quantityInput = document.getElementById('qtyInput');
+      if (quantityInput) {
+        const factor = Number(window.DETAIL_PRODUCT.unitFactors[window.DETAIL_PRODUCT.selectedUnit] || 1);
+        const availableQuantity = Math.floor(window.DETAIL_PRODUCT.stockUnits / factor);
+        quantityInput.max = String(Math.max(1, availableQuantity));
+        if (availableQuantity > 0 && Number(quantityInput.value) > availableQuantity) {
+          quantityInput.value = String(availableQuantity);
+        }
+      }
+      document.querySelectorAll('.detail-unit-pill[data-unit]').forEach(button => {
+        const factor = Number(window.DETAIL_PRODUCT.unitFactors[button.dataset.unit] || 1);
+        const availableQuantity = Math.floor(window.DETAIL_PRODUCT.stockUnits / factor);
+        button.dataset.stock = String(availableQuantity);
+        const stockLabel = button.querySelector('.detail-unit-pill-stock');
+        if (stockLabel) stockLabel.textContent = `Stok: ${availableQuantity.toLocaleString('id-ID')}`;
+      });
+    }
   });
 }
 
@@ -773,11 +814,17 @@ function closeRedLogoModal() {
 
 function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
   var unitSelect = unitSelectId ? document.getElementById(unitSelectId) : null;
+  if (btn?.disabled) return;
+  if (unitSelect && Number(unitSelect.dataset.stockUnits || 0) < 1) {
+    alert('Stok produk sedang habis dan tidak dapat dimasukkan ke keranjang.');
+    return;
+  }
   const productCard = btn?.closest('.medicine-card, .prod-card, .discounted-product-card, .product-card');
   const isB2CChannel = !CART_CONFIG.kioskOrder
     && !CART_CONFIG.wholesaleOrder
     && !CART_CONFIG.adminPbfOrder
-    && (!unitSelect?.dataset.priceChannel || unitSelect.dataset.priceChannel === 'b2c');
+    && (unitSelect?.dataset.salesChannel === 'b2c'
+      || (!unitSelect?.dataset.salesChannel && (!unitSelect?.dataset.priceChannel || unitSelect.dataset.priceChannel === 'b2c')));
   const isRedLogoLocked = unitSelect?.dataset.redLogoLocked !== undefined
     ? unitSelect.dataset.redLogoLocked === '1'
     : (btn?.classList.contains('is-red-logo-locked') || unitSelect?.dataset.redLogo === '1' || btn?.dataset.redLogo === '1');
@@ -874,13 +921,15 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
   if (ex) {
     ex.qty++;
     ex.brand = brand;
+    ex.internalPriceUnavailable = CART_CONFIG.priceMode === 'internal' && unitPrice <= 0;
     ex.unitLabels = unitLabels;
     ex.unitLabel = unitLabel;
     ex.packageUnitLabel = packageUnitLabel;
   } else cart.push({
     id, name, price: unitPrice, img, brand: brand || '', qty: 1, note: '', discount: 0,
     saleUnit, unitLabel, unitLabels, unitPrices, unitFactors, availableQty, packageUnitLabel,
-    stockUnits: unitSelect ? Number(unitSelect.dataset.stockUnits || 0) : null
+    stockUnits: unitSelect ? Number(unitSelect.dataset.stockUnits || 0) : null,
+    internalPriceUnavailable: CART_CONFIG.priceMode === 'internal' && unitPrice <= 0
   });
   console.log('Cart item:', cart.find(i => i.id === id && (i.saleUnit || 'box') === saleUnit));
   save(); render();
@@ -991,7 +1040,9 @@ function render() {
       <div class="cart-item-thumb">${imgHtml}</div>
       <div class="cart-item-info">
         <div class="cart-item-name">${it.name}</div>
-          <div class="cart-item-price">${rp(it.price)} / ${unitLabel}</div>
+          ${it.internalPriceUnavailable
+            ? '<div class="cart-item-price-unavailable" role="alert">Harga internal produk ini belum diatur.</div>'
+            : `<div class="cart-item-price">${rp(it.price)} / ${unitLabel}</div>`}
           ${it.unitPrices ? `<select onchange="changeCartUnit(${it.id}, '${unit}', this.value)" style="width:100%;margin-top:.4rem;padding:.4rem;border:1px solid #cbd5e1;border-radius:8px;">
             ${unitOptions.map(([value, unitPrice]) => `<option value="${value}" ${value === unit ? 'selected' : ''}>${value === 'box' ? packageUnitLabel : (it.unitLabels?.[value] || value.charAt(0).toUpperCase() + value.slice(1))} · ${rp(unitPrice)}</option>`).join('')}
           </select>` : ''}
@@ -1003,7 +1054,7 @@ function render() {
           </div>
           <textarea class="cart-note" placeholder="Catatan produk..." onchange="setNote(${it.id}, this.value,'${unit}')"
           style="width:100%;margin-top:0.75rem;padding:0.65rem 0.85rem;border:1px solid #e5e7eb;border-radius:12px;font-size:0.9rem;min-height:72px;resize:vertical;">${it.note || ''}</textarea>
-        <div style="margin-top:.6rem;">
+        <div style="${CART_CONFIG.priceMode === 'internal' ? 'display:none;' : 'margin-top:.6rem;'}">
           <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem;">
             <i class="fa-solid fa-tag" style="color:#ef4444;margin-right:.25rem;"></i>Ajuan Potongan Harga
           </label>

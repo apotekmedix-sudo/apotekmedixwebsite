@@ -189,9 +189,16 @@ class CashierWorkflowTest extends TestCase
         $this->assertDatabaseMissing('purchase_stock_reservations', [
             'purchase_history_id' => $order->id,
         ]);
+        $this->assertDatabaseHas('medicine_stock_movements', [
+            'medicine_id' => $medicine->id,
+            'movement_type' => 'sale',
+            'physical_delta' => -2,
+            'reserved_delta' => -2,
+            'reference_id' => $order->id,
+        ]);
         $this->get(route('home'))
             ->assertOk()
-            ->assertViewHas('featuredProducts', fn ($products) => $products->first()->is($medicine->fresh()));
+            ->assertViewHas('featuredProducts', fn ($products) => !$products->contains('id', $medicine->id));
 
         $this->post(route('cashier.orders.printed', $order))
             ->assertRedirect();

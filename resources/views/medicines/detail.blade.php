@@ -646,9 +646,11 @@
 
 @section('content')
 @php
-    $priceChannel = 'b2c';
+    $internalAccess = $internalAccess ?? \App\Models\ShoppingAccessCode::hasActiveInternalSession();
+    $priceChannel = $internalAccess ? 'internal' : 'b2c';
     $b2cAccess = $b2cAccess ?? \App\Models\ShoppingAccessCode::hasActiveB2cSession();
-    $isRedLogoLocked = $medicine->isRedLogo() && !$b2cAccess;
+    $redLogoAccess = $redLogoAccess ?? ($b2cAccess || $internalAccess);
+    $isRedLogoLocked = $medicine->isRedLogo() && !$redLogoAccess;
     $unitPriceValues = [
         'box' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'box')),
     ];
@@ -658,7 +660,7 @@
     $unitLabels = [
         'box' => $medicine->package_unit_label,
     ];
-    if ($medicine->usesTabletPackaging()) {
+    if (!$internalAccess && $medicine->usesTabletPackaging()) {
         $tabletPrice = (int) round($medicine->getChannelPromoPrice($priceChannel, 'tablet'));
         $stripPrice  = (int) round($medicine->getChannelPromoPrice($priceChannel, 'strip'));
         $stripFactor = max(0, (int) $medicine->tablets_per_strip);
@@ -739,6 +741,7 @@
                 </div>
 
                 <div class="stock-info">
+                    <span hidden aria-hidden="true" data-stock-badge data-stock-product-id="{{ $medicine->id }}">Stok</span>
                     <div class="stock-item">
                         <div class="stock-item-label">Stok {{ $medicine->package_unit_label }}</div>
                         <div class="stock-item-value">{{ number_format($detailConverted['box'], 0, ',', '.') }} {{ $medicine->package_unit_label }}</div>
