@@ -551,11 +551,10 @@
             </div>
             <div class="filter-group">
                 <label class="filter-label"><i class="fa-solid fa-tag"></i> Kategori</label>
-                <select name="kategori_produk" class="filter-select">
+                <select name="kategori_pilihan" class="filter-select">
                     <option value="">Semua Kategori</option>
-                    @foreach($kategoriOptions as $k)
-                        @php $icon = match($k) { 'OBAT' => '💊', 'SKINCARE & KOSMETIK' => '✨', 'ALAT KESEHATAN' => '🩺', default => '📦' }; @endphp
-                        <option value="{{ $k }}" @selected(($kategori_produk ?? '') === $k)>{{ $icon }} {{ $k }}</option>
+                    @foreach($kategoriPilihanOptions as $value => $label)
+                        <option value="{{ $value }}" @selected($kategoriPilihan === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
@@ -581,7 +580,7 @@
                 <button type="submit" class="btn-filter">
                     <i class="fa-solid fa-magnifying-glass"></i> Cari
                 </button>
-                @if($search || ($kategori_produk ?? '') || $perusahaan || ($indikasi ?? '') || ($komposisi ?? '') || ($sediaan ?? '') || ($dosis ?? '') || ($golongan ?? '') || $sort !== 'terbaru')
+                @if($search || $kategoriPilihan || $perusahaan || ($indikasi ?? '') || ($komposisi ?? '') || ($sediaan ?? '') || ($dosis ?? '') || ($golongan ?? '') || $sort !== 'terbaru')
                     <a href="{{ route('products.pbf') }}" class="btn-reset">✕ Reset</a>
                 @endif
             </div>
@@ -593,7 +592,7 @@
                 Menampilkan <strong>{{ $medicines->firstItem() ?? 0 }}–{{ $medicines->lastItem() ?? 0 }}</strong>
                 dari <strong>{{ $medicines->total() }}</strong> produk
                 @if($search) · "<strong>{{ $search }}</strong>" @endif
-                @if($kategori_produk ?? '') · <strong>{{ $kategori_produk }}</strong> @endif
+                @if($kategoriPilihan) · <strong>{{ $kategoriPilihanOptions[$kategoriPilihan] ?? $kategoriPilihan }}</strong> @endif
                 @if($perusahaan) · <strong>{{ $perusahaan }}</strong> @endif
             </p>
         </div>
@@ -609,7 +608,7 @@
                         </div>
                         <div class="medicine-body">
                             <div class="medicine-card-principal">{{ $medicine->brand ?: $medicine->kategori }}</div>
-                            <h3 class="medicine-name"><a href="{{ route('medicines.show', $medicine->id) }}">{{ $medicine->nama_obat }}</a></h3>
+                            <h3 class="medicine-name"><a href="{{ route('medicines.show', ['id' => $medicine->id, 'from' => 'b2b']) }}">{{ $medicine->nama_obat }}</a></h3>
 
                             @php
                                 $basePrice = $medicine->getChannelBasePrice('b2b');
@@ -698,13 +697,13 @@
                 <i class="fa-solid fa-box-open" style="font-size:3.5rem;color:#d1d5db;"></i>
                 <h3>Produk tidak ditemukan</h3>
                 <p>
-                    @if($search || ($kategori_produk ?? ''))
+                    @if($search || $kategoriPilihan)
                         Coba ubah kata kunci atau filter pencarian.
                     @else
                         Belum ada produk tersedia.
                     @endif
                 </p>
-                @if($search || ($kategori_produk ?? '') || $perusahaan)
+                @if($search || $kategoriPilihan || $perusahaan)
                     <a href="{{ route('products.pbf') }}" class="btn-reset" style="display:inline-block;margin-top:1rem;">✕ Hapus Filter</a>
                 @endif
             </div>

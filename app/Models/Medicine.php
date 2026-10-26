@@ -193,6 +193,7 @@ class Medicine extends Model
             'sediaan',
             'dosis',
             'golongan',
+            'kategori_produk',
             'satuan',
             'kemasan',
             'kategori',
@@ -660,6 +661,12 @@ class Medicine extends Model
     {
         $this->stock_base_units = (int) round($packages * $this->units_per_box);
         $this->stok = intdiv((int) $this->stock_base_units, $this->units_per_box);
+    }
+
+    public function setStockInUnits(int $units): void
+    {
+        $this->stock_base_units = max(0, $units);
+        $this->stok = max(0, $units);
     }
 
     public function setStockInBoxes(float $boxes): void

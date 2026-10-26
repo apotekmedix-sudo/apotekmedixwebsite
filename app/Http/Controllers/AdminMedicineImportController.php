@@ -40,13 +40,13 @@ class AdminMedicineImportController extends Controller
 
     public function downloadTemplate()
     {
-        $columns = ['KELOMPOK', 'PABRIK', 'NAMA PRODUK', 'SEDIAAN', 'RETAIL', 'STOK', 'KOMPOSISI', 'INDIKASI', 'GOLONGAN'];
-        $widths  = [12, 18, 30, 10, 12, 8, 25, 30, 12];
+        $columns = ['KELOMPOK', 'PABRIK', 'NAMA PRODUK', 'SEDIAAN', 'RETAIL', 'STOK', 'KOMPOSISI', 'INDIKASI', 'GOLONGAN', 'KATEGORI'];
+        $widths  = [12, 18, 30, 10, 12, 8, 25, 30, 18, 22];
 
         $rows = [
-            ['PBF',    'KIMIA FARMA', 'Paracetamol 500mg',   'fls', '5000',   '100', 'Paracetamol 500 mg', 'Demam & nyeri',          'BEBAS'],
-            ['APOTEK', 'BERNOFARM',   'Aspirin 80mg',        'box', '12000',  '80',  'Aspirin 80 mg',      'Nyeri & demam',          'KERAS'],
-            ['PBF',    'OMRON',       'Tensimeter Digital',  '',    '350000', '20',  '-',                  'Mengukur tekanan darah', 'BEBAS'],
+            ['PBF',    'KIMIA FARMA', 'Paracetamol 500mg',   'fls', '5000',   '100', 'Paracetamol 500 mg', 'Demam & nyeri',          'BEBAS', 'OBAT'],
+            ['APOTEK', 'BERNOFARM',   'Aspirin 80mg',        'box', '12000',  '80',  'Aspirin 80 mg',      'Nyeri & demam',          'KERAS', 'OBAT'],
+            ['PBF',    'OMRON',       'Tensimeter Digital',  '',    '350000', '20',  '-',                  'Mengukur tekanan darah', 'BEBAS', 'ALAT KESEHATAN'],
         ];
 
         return \App\Helpers\XlsxWriter::download('template_medicines.xlsx', $columns, $rows, $widths);

@@ -4,6 +4,25 @@
 
 @section('styles')
 @include('partials.product-card-styles')
+@php
+    $detailOrigin = $detailOrigin ?? 'products';
+    $detailReturnUrl = match ($detailOrigin) {
+        'home' => route('home', filled(request()->query('search'))
+            ? ['search' => request()->query('search')]
+            : []),
+        'b2b' => route('products.pbf'),
+        'products' => route('products.index'),
+        'apotek' => route('products.apotek'),
+        default => route('products.index'),
+    };
+    $detailReturnLabel = match ($detailOrigin) {
+        'home' => 'Kembali ke Beranda',
+        'b2b' => 'Kembali ke Belanja B2B',
+        'products' => 'Kembali ke Katalog',
+        'apotek' => 'Kembali ke Produk Apotek',
+        default => 'Kembali ke Katalog',
+    };
+@endphp
 <style>
     /* ===== DETAIL PAGE HEADER ===== */
     .detail-page-header {
@@ -77,6 +96,7 @@
     }
 
     .detail-image-col {
+        min-width: 0;
         padding: 2rem;
         background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
         display: flex;
@@ -146,6 +166,8 @@
         margin-top: 1rem;
         max-width: 340px;
         width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         background: #ffffff !important;
         border: 1px solid #cfe2ff;
         padding: 1rem 1.1rem;
@@ -172,9 +194,16 @@
         color: #334155 !important;
         margin: 0;
         white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .detail-meta-row {
+        overflow-wrap: anywhere;
     }
 
     .detail-info {
+        min-width: 0;
         padding: 2rem;
         background: #ffffff !important;
         color: #0f172a !important;
@@ -643,7 +672,8 @@
 @section('content')
 @php
     $internalAccess = $internalAccess ?? \App\Models\ShoppingAccessCode::hasActiveInternalSession();
-    $priceChannel = $internalAccess ? 'internal' : 'b2c';
+    $b2bAccess = $b2bAccess ?? false;
+    $priceChannel = $b2bAccess ? 'b2b' : ($internalAccess ? 'internal' : 'b2c');
     $b2cAccess = $b2cAccess ?? \App\Models\ShoppingAccessCode::hasActiveB2cSession();
     $redLogoAccess = $redLogoAccess ?? ($b2cAccess || $internalAccess);
     $isRedLogoLocked = $medicine->isRedLogo() && !$redLogoAccess;
@@ -667,7 +697,7 @@
         <div class="breadcrumb-custom">
             <a href="{{ route('home') }}"><i class="fa-solid fa-house"></i> Home</a>
             <span>/</span>
-            <a href="{{ route('products.index') }}">Produk</a>
+            <a href="{{ $detailReturnUrl }}">{{ $detailOrigin === 'b2b' ? 'Belanja B2B' : 'Produk' }}</a>
             <span>/</span>
             <span class="current">{{ Str::limit($medicine->nama_obat, 30) }}</span>
         </div>
@@ -814,8 +844,8 @@
                     </div>
                 </div>
 
-                <a href="{{ route('products.index') }}" class="btn-back-catalog">
-                    <i class="fa-solid fa-arrow-left"></i> Kembali ke Katalog
+                <a href="{{ $detailReturnUrl }}" class="btn-back-catalog">
+                    <i class="fa-solid fa-arrow-left"></i> {{ $detailReturnLabel }}
                 </a>
             </div>
         </div>
@@ -826,7 +856,7 @@
         <h2><i class="fa-solid fa-pills"></i> Produk Serupa &mdash; {{ $medicine->kategori }}</h2>
         <div class="related-grid">
             @foreach($relatedMedicines as $related)
-                <a href="{{ route('medicines.show', $related->id) }}" class="related-card">
+                <a href="{{ route('medicines.show', ['id' => $related->id, 'from' => $detailOrigin, 'search' => $detailOrigin === 'home' ? request()->query('search') : null]) }}" class="related-card">
                     <div class="related-image">
                         @if($related->gambar)
                             <img src="{{ url('storage/' . $related->gambar) }}" alt="{{ $related->nama_obat }}">

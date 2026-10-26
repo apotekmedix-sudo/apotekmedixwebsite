@@ -6,6 +6,7 @@ use App\Helpers\XlsxWriter;
 use App\Models\Customer;
 use App\Support\CustomerIdentity;
 use App\Support\CsvSpreadsheet;
+use App\Support\SpreadsheetReader;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -89,10 +90,10 @@ class AdminCustomerController extends Controller
             fn (Customer $customer) => array_map(fn ($column) => $customer->getAttribute($column), $columns)
         );
 
-        return CsvSpreadsheet::download(
-            'data-master-customer-'.now()->format('Ymd-His').'.csv',
+        return XlsxWriter::download(
+            'data-master-customer-'.now()->format('Ymd-His').'.xlsx',
             array_map('strtoupper', $columns),
-            $rows
+            $rows->all()
         );
     }
 
@@ -100,8 +101,8 @@ class AdminCustomerController extends Controller
     {
         $columns = $this->importableCustomerColumns();
 
-        return CsvSpreadsheet::download(
-            'template-import-customer.csv',
+        return XlsxWriter::download(
+            'template-import-customer.xlsx',
             array_map('strtoupper', $columns),
             []
         );
@@ -110,23 +111,23 @@ class AdminCustomerController extends Controller
     public function import(Request $request): RedirectResponse
     {
         $fileValidator = Validator::make($request->all(), [
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:csv,txt,xlsx', 'max:10240'],
         ]);
         if ($fileValidator->fails()) {
             return redirect()->route('admin.customers.index')->withErrors($fileValidator);
         }
 
         try {
-            [$headers, $rows] = CsvSpreadsheet::read($request->file('file'));
+            [$headers, $rows] = SpreadsheetReader::read($request->file('file'));
         } catch (RuntimeException $exception) {
             return redirect()->route('admin.customers.index')->withErrors(['file' => $exception->getMessage()]);
         }
 
-        $requiredHeaders = ['buyer_type', 'name'];
+        $requiredHeaders = ['name'];
         $missingHeaders = array_diff($requiredHeaders, $headers);
         if ($missingHeaders) {
             return redirect()->route('admin.customers.index')->withErrors([
-                'file' => 'Format CSV customer tidak sesuai. Kolom wajib: BUYER_TYPE dan NAME. Unduh template customer untuk format yang benar.',
+                'file' => 'Format file customer tidak sesuai. Kolom wajib: NAME. Unduh template customer untuk format yang benar.',
             ]);
         }
 
@@ -143,6 +144,9 @@ class AdminCustomerController extends Controller
             $data = array_intersect_key($row, array_flip($columns));
             foreach ($data as $key => $value) {
                 $data[$key] = $value === '' ? null : $value;
+            }
+            if (!filled($data['buyer_type'] ?? null)) {
+                $data['buyer_type'] = 'umum';
             }
 
             $validator = Validator::make($data, [
@@ -181,6 +185,16 @@ class AdminCustomerController extends Controller
                 $errors[] = "Baris {$line}: customer dengan ID {$id} tidak ditemukan.";
                 continue;
             }
+            if ($customer) {
+                foreach (array_diff($columns, ['name', 'buyer_type']) as $column) {
+                    if (!array_key_exists($column, $row) || !filled($row[$column])) {
+                        unset($data[$column]);
+                    }
+                }
+                if (!filled($row['buyer_type'] ?? null)) {
+                    $data['buyer_type'] = $customer->buyer_type;
+                }
+            }
 
             $hasIdentityFields = filled($data['phone'] ?? null)
                 || filled($data['email'] ?? null)
@@ -210,7 +224,7 @@ class AdminCustomerController extends Controller
             return redirect()->route('admin.customers.index')->withErrors(['file' => $errors]);
         }
         if (! $prepared) {
-            return redirect()->route('admin.customers.index')->withErrors(['file' => 'File CSV tidak berisi data customer untuk diimpor.']);
+            return redirect()->route('admin.customers.index')->withErrors(['file' => 'File tidak berisi data customer untuk diimpor.']);
         }
 
         try {

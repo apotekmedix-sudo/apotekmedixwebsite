@@ -276,15 +276,45 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             ->assertSee('aria-expanded="false"', false)
             ->assertSee('data-additional-home-product', false)
             ->assertSee('fa-chevron-down', false)
+            ->assertSeeInOrder(['id="homeCategoryGrid"', 'class="home-search-section"'], false)
             ->assertDontSee('href="' . route('products.apotek') . '"', false);
+    }
+
+    public function test_homepage_search_filters_b2c_products_across_product_details(): void
+    {
+        Medicine::create([
+            'nama_obat' => 'Paracetamol Medix',
+            'harga_retail' => 12000,
+            'stok' => 10,
+            'komposisi' => 'Paracetamol 500 mg',
+            'indikasi' => 'Meredakan demam',
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Vitamin C Medix',
+            'harga_retail' => 15000,
+            'stok' => 10,
+            'komposisi' => 'Asam askorbat',
+        ]);
+
+        $this->get(route('home', ['search' => 'demam']))
+            ->assertOk()
+            ->assertSee('name="search" value="demam"', false)
+            ->assertSee('name="kategori_pilihan"', false)
+            ->assertSee('name="perusahaan"', false)
+            ->assertSee('name="sort"', false)
+            ->assertSee('Hasil Pencarian')
+            ->assertSee('Paracetamol Medix')
+            ->assertDontSee('Vitamin C Medix')
+            ->assertDontSee('Produk Terlaris')
+            ->assertSee('id="homeProductSearchResults"', false);
     }
 
     public function test_import_maps_template_fields_without_tablet_or_strip_prices_and_conversions(): void
     {
         $path = tempnam(sys_get_temp_dir(), 'import');
         file_put_contents($path, implode("\n", [
-            'NO CONTOH,PRINCIPLE,NAMA PRODUK,LOGO,GOLONGAN,KOMPOSISI,INDIKASI,SATUAN,KEMASAN,SEDIAAN,STOK SATUAN,MODAL,HARGA INTERNAL,HARGA JUAL B2B,HARGA JUAL B2C,LINK FOTO 1,LINK FOTO 2',
-            '1,PT KALBE FARMA,Promag Tablet,HIJAU,Obat Bebas,"Antasida, Simetikon","Meredakan sakit maag, dan perih",BOX,10 blister @ 6 tablet,TABLET,2,100000,110000,130000,140000,,',
+            'NO CONTOH,PRINCIPLE,NAMA PRODUK,LOGO,GOLONGAN,KATEGORI,KOMPOSISI,INDIKASI,SATUAN,KEMASAN,SEDIAAN,STOK SATUAN,MODAL,HARGA INTERNAL,HARGA JUAL B2B,HARGA JUAL B2C,LINK FOTO 1,LINK FOTO 2',
+            '1,PT KALBE FARMA,Promag Tablet,HIJAU,Obat Bebas,vitamin-suplemen,"Antasida, Simetikon","Meredakan sakit maag, dan perih",BOX,10 blister @ 6 tablet,TABLET,2,100000,110000,130000,140000,,',
         ]) . "\n");
 
         $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
@@ -301,12 +331,37 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $product = Medicine::where('nama_obat', 'Promag Tablet')->firstOrFail();
         $this->assertSame('HIJAU', $product->logo);
         $this->assertSame('Obat Bebas', $product->golongan);
+        $this->assertSame('vitamin-suplemen', $product->kategori_produk);
         $this->assertSame('Antasida, Simetikon', $product->komposisi);
         $this->assertSame(110000.0, (float) $product->harga_internal);
         $this->assertSame(130000.0, $product->getChannelBasePrice('b2b'));
         $this->assertSame(140000.0, $product->getChannelBasePrice('b2c'));
         $this->assertSame(0.0, $product->getChannelBasePrice('b2c', 'strip'));
         $this->assertSame(2, (int) $product->stock_base_units);
+
+        @unlink($path);
+    }
+
+    public function test_import_accepts_blank_optional_product_columns_and_incomplete_packaging_columns(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'blank-product-import');
+        file_put_contents($path, implode("\n", [
+            'NAMA PRODUK,KATEGORI,STOK SATUAN,UNIT PACKAGING ENABLED,STRIP PER KEMASAN,TABLET PER STRIP,MODAL,HARGA JUAL B2B,HARGA JUAL B2C,LINK FOTO 1,LINK FOTO 2',
+            'Produk Kolom Kosong,,5,YA,,,,,,,',
+        ]) . "\n");
+        $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        $response = (new AdminProdukImportController())->import($request);
+        $errors = $response->getSession()->get('errors');
+        $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
+
+        $product = Medicine::where('nama_obat', 'Produk Kolom Kosong')->firstOrFail();
+        $this->assertSame('OBAT', $product->kategori_produk);
+        $this->assertSame(5, (int) $product->stock_base_units);
+        $this->assertFalse($product->usesTabletPackaging());
 
         @unlink($path);
     }
@@ -366,6 +421,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'harga_grosir' => 135437,
             'harga_retail' => 153102,
             'golongan' => 'Obat Bebas',
+            'kategori_produk' => 'OBAT',
         ]);
         $this->assertDatabaseHas('medicines', [
             'nama_obat' => 'Anakod Sirup',
@@ -423,6 +479,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'kategori' => 'PT Kalbe Farma',
             'logo' => 'HIJAU',
             'golongan' => 'Obat Bebas',
+            'kategori_produk' => 'SKINCARE & KOSMETIK',
             'satuan' => 'BOX',
             'kemasan' => '10 strip @ 10 tablet',
             'sediaan' => 'TABLET',
@@ -433,8 +490,6 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'harga_grosir' => 135437,
             'harga_retail' => 153102,
             'stok' => 10,
-            'strips_per_box' => 10,
-            'tablets_per_box' => 100,
         ];
         $controller = new AdminProdukController();
         $payload['gambar'] = [
@@ -448,14 +503,15 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertTrue($response->isRedirect());
         $product = Medicine::where('nama_obat', 'Produk CRUD')->firstOrFail();
         $this->assertCount(2, $product->image_gallery);
-        $this->assertSame('OBAT', $product->kategori_produk);
+        $this->assertSame('SKINCARE & KOSMETIK', $product->kategori_produk);
         $this->assertSame('HIJAU', $product->logo);
         $this->assertSame('Obat Bebas', $product->golongan);
         $this->assertSame(125000.0, (float) $product->harga_internal);
         $this->assertSame('10 strip @ 10 tablet', $product->kemasan);
-        $this->assertSame(10, (int) $product->strips_per_box);
-        $this->assertSame(10, (int) $product->tablets_per_strip);
-        $this->assertSame(1000, (int) $product->stock_base_units);
+        $this->assertFalse($product->unit_packaging_enabled);
+        $this->assertNull($product->strips_per_box);
+        $this->assertNull($product->tablets_per_strip);
+        $this->assertSame(10, (int) $product->stock_base_units);
         $this->assertSame(135437.0, $product->getChannelBasePrice('b2b'));
         $this->assertSame(153102.0, $product->getChannelBasePrice('b2c'));
         $this->assertNull($product->price_strip);
@@ -474,6 +530,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $controller->update(Request::create('/', 'PUT', $payload), $product);
         $product->refresh();
         $this->assertSame('Produk CRUD Diperbarui', $product->nama_obat);
+        $this->assertSame(10, (int) $product->stock_base_units);
         $this->assertSame('MERAH', $product->logo);
         $this->assertSame('PBF', $product->kelompok);
         $this->assertSame('CRUD-001', $product->sku);
@@ -501,6 +558,34 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame(154000.0, $product->getChannelBasePrice('b2c'));
     }
 
+    public function test_product_crud_stores_stock_as_base_units_without_packaging_conversion(): void
+    {
+        $controller = new AdminProdukController();
+        $payload = [
+            'nama_obat' => 'Produk Stok Satuan',
+            'kategori' => 'Pabrik Contoh',
+            'kategori_produk' => 'otc',
+            'satuan' => 'BOX',
+            'sediaan' => 'TABLET',
+            'harga_retail' => 10000,
+            'stok' => 15,
+        ];
+
+        $controller->store(Request::create('/', 'POST', $payload));
+        $product = Medicine::where('nama_obat', 'Produk Stok Satuan')->firstOrFail();
+
+        $this->assertSame(15, (int) $product->stock_base_units);
+        $this->assertFalse($product->usesTabletPackaging());
+
+        $payload['stok'] = 7;
+        $controller->update(Request::create('/', 'PUT', $payload), $product);
+        $product->refresh();
+
+        $this->assertSame(7, (int) $product->stock_base_units);
+        $this->assertSame(7, $product->getPhysicalStockUnits());
+        $this->assertFalse($product->usesTabletPackaging());
+    }
+
     public function test_admin_product_index_loads_without_missing_company_class(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -524,6 +609,8 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             ->get(route('admin.produk.index'))
             ->assertOk()
             ->assertSee('Produk Kami')
+            ->assertDontSee('class="kat-tabs"', false)
+            ->assertDontSee('class="kat-tab', false)
             ->assertDontSee('Harga Strip / Tablet')
             ->assertDontSee('name="price_strip"', false)
             ->assertDontSee('name="price_tablet"', false);

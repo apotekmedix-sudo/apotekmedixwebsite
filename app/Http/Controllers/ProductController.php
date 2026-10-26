@@ -5,126 +5,32 @@ namespace App\Http\Controllers;
 use App\Models\Medicine;
 use App\Models\ShoppingAccessCode;
 use App\Constants\Companies;
+use App\Support\HomepageProductCategories;
 use App\Support\StockAvailability;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
     /**
-     * Halaman katalog produk.
+     * Redirect legacy B2C catalog links to the homepage search and shopping flow.
      */
     public function index(Request $request)
     {
-        $search          = $request->get('search', '');
-        $kategori_produk = $request->get('kategori_produk', '');
-        $kategoriPilihan = $request->get('kategori_pilihan', '');
-        $perusahaan      = $request->get('perusahaan', '');
-        $indikasi        = $request->get('indikasi', '');
-        $komposisi       = $request->get('komposisi', '');
-        $sediaan         = $request->get('sediaan', '');
-        $dosis           = $request->get('dosis', '');
-        $golongan        = $request->get('golongan', '');
-        $sort            = $request->get('sort', 'terbaru');
-        $catalogQuery = Medicine::nonPbf();
-        $query = clone $catalogQuery;
-
-        $categoryFilters = [
-            'obat-resep' => ['type' => 'prescription'],
-            'otc' => ['type' => 'otc'],
-            'pil-kb-hormonal' => ['terms' => ['pil kb', 'kontrasepsi', 'hormonal']],
-            'alat-kesehatan' => ['type' => 'medical-equipment'],
-            'vitamin-suplemen' => ['terms' => ['vitamin', 'suplemen']],
-            'flu-batuk' => ['terms' => ['flu', 'batuk', 'pilek']],
-            'ibu-anak' => ['terms' => ['ibu', 'anak', 'bayi']],
-            'obat-herbal' => ['terms' => ['herbal', 'jamu']],
-            'obat-diabetes' => ['terms' => ['diabetes', 'gula darah']],
-            'obat-hipertensi' => ['terms' => ['hipertensi', 'darah tinggi']],
-            'obat-kolesterol' => ['terms' => ['kolesterol']],
-        ];
-
-        if (isset($categoryFilters[$kategoriPilihan])) {
-            $filter = $categoryFilters[$kategoriPilihan];
-
-            if (($filter['type'] ?? null) === 'prescription') {
-                $query->where('is_resep', true);
-            } elseif (($filter['type'] ?? null) === 'otc') {
-                $query->where('is_resep', false);
-            } elseif (($filter['type'] ?? null) === 'medical-equipment') {
-                $query->where('kategori_produk', 'ALAT KESEHATAN');
-            } else {
-                $query->where(function ($categoryQuery) use ($filter) {
-                    foreach ($filter['terms'] as $term) {
-                        $categoryQuery->orWhere(function ($termQuery) use ($term) {
-                            foreach (['nama_obat', 'kategori', 'deskripsi', 'indikasi', 'komposisi'] as $column) {
-                                $termQuery->orWhere($column, 'like', '%' . $term . '%');
-                            }
-                        });
-                    }
-                });
-            }
+        $filters = $request->only(['search', 'kategori_pilihan', 'perusahaan', 'sort']);
+        if (empty($filters['kategori_pilihan'])) {
+            $legacyCategory = strtoupper(trim((string) $request->query('kategori_produk', '')));
+            $filters['kategori_pilihan'] = match ($legacyCategory) {
+                'VITAMIN & SUPLEMEN' => 'vitamin-suplemen',
+                'ALAT KESEHATAN' => 'alat-kesehatan',
+                'OBAT' => 'otc',
+                default => null,
+            };
         }
 
-        if ($search !== '') {
-            $query->search($search);
-        }
+        $filters = array_filter($filters, static fn ($value) => $value !== null && $value !== '');
+        $url = route('home', $filters) . '#homeSearchSection';
 
-        $query->filterByAttributes([
-            'indikasi'  => $indikasi,
-            'komposisi' => $komposisi,
-            'sediaan'   => $sediaan,
-            'dosis'     => $dosis,
-            'golongan'  => $golongan,
-        ]);
-
-        if ($kategori_produk) {
-            $query->where('kategori_produk', $kategori_produk);
-        }
-
-        if ($perusahaan) {
-            $query->where('kategori', $perusahaan);
-        }
-
-        match ($sort) {
-            'harga_asc'  => $query->orderBy('harga', 'asc'),
-            'harga_desc' => $query->orderBy('harga', 'desc'),
-            'nama'       => $query->orderBy('nama_obat', 'asc'),
-            default      => $query->latest(),
-        };
-
-        $medicines       = $query->paginate(12)->withQueryString();
-        StockAvailability::annotate($medicines->getCollection());
-        $total           = (clone $catalogQuery)->count();
-        $kategoriOptions = Companies::LIST;
-        $perusahaanList  = (clone $catalogQuery)
-                            ->select('kategori')
-                            ->whereNotNull('kategori')
-                            ->where('kategori', '!=', '')
-                            ->distinct()
-                            ->orderBy('kategori')
-                            ->pluck('kategori');
-        $attrOptions     = Medicine::getAttributeFilterOptions();
-
-        return view('products', [
-            'medicines'       => $medicines,
-            'search'          => $search,
-            'kategori_produk' => $kategori_produk,
-            'kategoriPilihan' => $kategoriPilihan,
-            'perusahaan'      => $perusahaan,
-            'indikasi'        => $indikasi,
-            'komposisi'       => $komposisi,
-            'sediaan'         => $sediaan,
-            'dosis'           => $dosis,
-            'golongan'        => $golongan,
-            'sediaanList'     => $attrOptions['sediaanList'],
-            'golonganList'    => $attrOptions['golonganList'],
-            'sort'            => $sort,
-            'total'           => $total,
-            'kategoriOptions' => $kategoriOptions,
-            'perusahaanList'  => $perusahaanList,
-            'b2cAccess'       => $b2cAccess = $this->hasB2cAccess($request),
-            'internalAccess'  => $internalAccess = $this->hasInternalAccess($request),
-            'redLogoAccess'   => $b2cAccess || $internalAccess,
-        ]);
+        return redirect()->to($url);
     }
 
     public function update(Request $request, $id)
@@ -173,7 +79,7 @@ class ProductController extends Controller
         }
 
         $search          = $request->get('search', '');
-        $kategori_produk = $request->get('kategori_produk', '');
+        $kategoriPilihan = (string) $request->get('kategori_pilihan', '');
         $perusahaan      = $request->get('perusahaan', '');
         $indikasi        = $request->get('indikasi', '');
         $komposisi       = $request->get('komposisi', '');
@@ -188,6 +94,8 @@ class ProductController extends Controller
             $query->search($search);
         }
 
+        HomepageProductCategories::apply($query, $kategoriPilihan);
+
         $query->filterByAttributes([
             'indikasi'  => $indikasi,
             'komposisi' => $komposisi,
@@ -195,10 +103,6 @@ class ProductController extends Controller
             'dosis'     => $dosis,
             'golongan'  => $golongan,
         ]);
-
-        if ($kategori_produk) {
-            $query->where('kategori_produk', $kategori_produk);
-        }
 
         if ($perusahaan) {
             $query->where('kategori', $perusahaan);
@@ -214,7 +118,7 @@ class ProductController extends Controller
         $medicines       = $query->paginate(12)->withQueryString();
         StockAvailability::annotate($medicines->getCollection());
         $total           = Medicine::where('harga_grosir', '>', 0)->count();
-        $kategoriOptions = Companies::LIST;
+        $kategoriPilihanOptions = HomepageProductCategories::options();
         $perusahaanList  = Medicine::where('harga_grosir', '>', 0)
                             ->select('kategori')
                             ->whereNotNull('kategori')
@@ -227,10 +131,10 @@ class ProductController extends Controller
         $golonganList    = $attrOptions['golonganList'];
 
         return view('products_pbf', compact(
-            'medicines', 'search', 'kategori_produk', 'perusahaan',
+            'medicines', 'search', 'kategoriPilihan', 'kategoriPilihanOptions', 'perusahaan',
             'indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan',
             'sediaanList', 'golonganList',
-            'sort', 'total', 'kategoriOptions', 'perusahaanList'
+            'sort', 'total', 'perusahaanList'
         ))->with('catalogPrice', 'harga_modal');
     }
 

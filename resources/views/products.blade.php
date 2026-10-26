@@ -328,9 +328,6 @@
     <div class="container">
 
         <form method="GET" action="{{ route('products.index') }}" class="filter-bar">
-            @if($kategoriPilihan ?? false)
-                <input type="hidden" name="kategori_pilihan" value="{{ $kategoriPilihan }}">
-            @endif
             <div class="filter-group" style="flex: 2; min-width: 200px;">
                 <label class="filter-label"><i class="fa-solid fa-magnifying-glass"></i> Cari Produk</label>
                 <input type="text" name="search" class="filter-input"
@@ -339,11 +336,10 @@
             </div>
             <div class="filter-group">
                 <label class="filter-label"><i class="fa-solid fa-tag"></i> Kategori</label>
-                <select name="kategori_produk" class="filter-select">
+                <select name="kategori_pilihan" class="filter-select">
                     <option value="">Semua Kategori</option>
-                    @foreach($kategoriOptions as $k)
-                        @php $icon = match($k) { 'OBAT' => '💊', 'SKINCARE & KOSMETIK' => '✨', 'ALAT KESEHATAN' => '🩺', default => '📦' }; @endphp
-                        <option value="{{ $k }}" @selected(($kategori_produk ?? '') === $k)>{{ $icon }} {{ $k }}</option>
+                    @foreach($kategoriPilihanOptions as $value => $label)
+                        <option value="{{ $value }}" @selected($kategoriPilihan === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
@@ -369,7 +365,7 @@
                 <button type="submit" class="btn-filter">
                     <i class="fa-solid fa-magnifying-glass"></i> Cari
                 </button>
-                @if($search || ($kategori_produk ?? '') || $perusahaan || ($indikasi ?? '') || ($komposisi ?? '') || ($sediaan ?? '') || ($dosis ?? '') || ($golongan ?? '') || $sort !== 'terbaru')
+                @if($search || $kategoriPilihan || ($kategori_produk ?? '') || $perusahaan || ($indikasi ?? '') || ($komposisi ?? '') || ($sediaan ?? '') || ($dosis ?? '') || ($golongan ?? '') || $sort !== 'terbaru')
                     <a href="{{ route('products.index') }}" class="btn-reset">✕ Reset</a>
                 @endif
             </div>
@@ -381,6 +377,7 @@
                 Menampilkan <strong>{{ $medicines->firstItem() ?? 0 }}–{{ $medicines->lastItem() ?? 0 }}</strong>
                 dari <strong>{{ $medicines->total() }}</strong> produk
                 @if($search) · "<strong>{{ $search }}</strong>" @endif
+                @if($kategoriPilihan) · <strong>{{ $kategoriPilihanOptions[$kategoriPilihan] ?? $kategoriPilihan }}</strong> @endif
                 @if($kategori_produk ?? '') · <strong>{{ $kategori_produk }}</strong> @endif
                 @if($perusahaan) · <strong>{{ $perusahaan }}</strong> @endif
             </p>
@@ -397,7 +394,7 @@
                         </div>
                         <div class="medicine-body">
                             <div class="medicine-card-principal">{{ $medicine->brand ?: $medicine->kategori }}</div>
-                            <h3 class="medicine-name"><a href="{{ route('medicines.show', $medicine->id) }}">{{ $medicine->nama_obat }}</a></h3>
+                            <h3 class="medicine-name"><a href="{{ route('medicines.show', ['id' => $medicine->id, 'from' => 'products']) }}">{{ $medicine->nama_obat }}</a></h3>
 
                             @php
                                 $priceChannel = 'b2c';

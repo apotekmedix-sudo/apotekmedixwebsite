@@ -6,6 +6,7 @@ use App\Helpers\ImageHelper;
 use App\Models\Medicine;
 use App\Constants\Companies;
 use App\Services\ProductImageDownloader;
+use App\Support\HomepageProductCategories;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -39,17 +40,17 @@ class AdminProdukImportController extends Controller
     public function downloadTemplate()
     {
         $columns = [
-            'NO CONTOH', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
+            'NO CONTOH', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KATEGORI', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'MODAL', 'HARGA INTERNAL',
             'HARGA JUAL B2B', 'HARGA JUAL B2C', 'LINK FOTO 1', 'LINK FOTO 2',
         ];
-        $widths = [8, 25, 28, 12, 18, 28, 28, 12, 22, 12, 12, 15, 16, 18, 18, 48, 48];
+        $widths = [8, 25, 28, 12, 18, 22, 28, 28, 12, 22, 12, 12, 15, 16, 18, 18, 48, 48];
 
         $rows = [
-            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '117771', '120000', '135437', '153102', '', ''],
-            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '200000', '210000', '205000', '220000', '', ''],
-            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '12000', '13000', '12500', '14000', '', ''],
-            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '50000', '52000', '51000', '55000', '', ''],
+            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'OBAT', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '117771', '120000', '135437', '153102', '', ''],
+            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'OBAT', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '200000', '210000', '205000', '220000', '', ''],
+            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'OBAT', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '12000', '13000', '12500', '14000', '', ''],
+            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'OBAT', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '50000', '52000', '51000', '55000', '', ''],
         ];
 
         return \App\Helpers\XlsxWriter::download('template_produk.xlsx', $columns, $rows, $widths);
@@ -268,7 +269,7 @@ class AdminProdukImportController extends Controller
         $imported      = 0;
         $skipped       = 0;
         $downloadedImages = [];
-        $validKategori = Companies::LIST;
+        $validKategori = array_keys(HomepageProductCategories::options());
         $medicineColumns = array_flip(Schema::getColumnListing('medicines'));
         if (isset($headerKeySet['HARGA_INTERNAL']) && !isset($medicineColumns['harga_internal'])) {
             return back()->withErrors([
@@ -308,8 +309,12 @@ class AdminProdukImportController extends Controller
                 $stockQuantity = $data['STOK_KEMASAN'] ?? $data['STOK_SATUAN'] ?? $data['STOK'] ?? '0';
                 $stok = max(0.0, $this->parseStockQuantity($stockQuantity));
 
-                $katRaw    = strtoupper(trim((string) ($data['KATEGORI'] ?? '')));
-                $katProduk = in_array($katRaw, $validKategori) ? $katRaw : 'OBAT';
+                $katRaw = trim((string) ($data['KATEGORI'] ?? ''));
+                $legacyCategory = strtoupper($katRaw);
+                $categoryKey = strtolower($katRaw);
+                $katProduk = in_array($categoryKey, $validKategori, true)
+                    ? $categoryKey
+                    : (in_array($legacyCategory, Companies::LIST, true) ? $legacyCategory : 'OBAT');
 
                 $sku      = trim((string) ($data['SKU'] ?? ''));
                 $distributor = trim((string) ($data['DISTRIBUTOR'] ?? ''));
@@ -358,6 +363,7 @@ class AdminProdukImportController extends Controller
                 }
                 $packagingEnabled = $packagingEnabled
                     && Medicine::supportsTabletPackaging($satuan !== '' ? $satuan : null, $sediaan);
+
                 if ($packagingEnabled && ($stripsPerBox < 1 || $tabletsPerStrip < 1)) {
                     throw new \InvalidArgumentException('Kemasan strip/tablet harus diisi jika UNIT PACKAGING ENABLED aktif.');
                 }
@@ -366,6 +372,12 @@ class AdminProdukImportController extends Controller
                     throw new \InvalidArgumentException('Stok pecahan hanya dapat digunakan untuk kemasan tablet/kapsul dengan rasio strip dan tablet.');
                 }
 
+
+
+
+                if (!$packagingEnabled && (float) $stok !== floor((float) $stok)) {
+                    throw new \InvalidArgumentException('Stok pecahan hanya dapat digunakan untuk kemasan tablet/kapsul dengan rasio strip dan tablet.');
+                }
 
                 $hasPackagingColumns = $newPackagingColumns
                     || array_key_exists('PER_STRIP', $data)

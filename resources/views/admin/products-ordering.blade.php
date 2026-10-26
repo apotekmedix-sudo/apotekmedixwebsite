@@ -151,10 +151,10 @@
             </label>
             <div class="supplier-data-tools">
                 <a href="{{ route('admin.produk-pbf.suppliers.export') }}"><i class="fa-solid fa-file-export"></i> Export Supplier</a>
-                <a href="{{ route('admin.produk-pbf.suppliers.import.template') }}"><i class="fa-solid fa-download"></i> Template CSV</a>
+                <a href="{{ route('admin.produk-pbf.suppliers.import.template') }}"><i class="fa-solid fa-download"></i> Template Excel</a>
                 <form method="POST" action="{{ route('admin.produk-pbf.suppliers.import') }}" enctype="multipart/form-data" style="display:contents;">
                     @csrf
-                    <input type="file" name="file" accept=".csv,.txt,text/csv" aria-label="Pilih file CSV supplier" required>
+                    <input type="file" name="file" accept=".csv,.txt,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Pilih file Excel atau CSV supplier" required>
                     <button type="submit"><i class="fa-solid fa-file-import"></i> Import Supplier</button>
                 </form>
                 @if($errors->supplierImport->any())
@@ -163,6 +163,7 @@
                     </ul>
                 @endif
             </div>
+            <p class="supplier-import-hint">Gunakan template Excel. File .xlsx dan CSV dapat diimpor. NAMA wajib diisi; alamat dan telepon boleh kosong.</p>
             @if($suppliers->isEmpty())
                 <div class="supplier-list-empty"><i class="fa-solid fa-address-book"></i><p>Belum ada supplier. Tambahkan supplier untuk mulai mengelola daftar.</p></div>
             @else

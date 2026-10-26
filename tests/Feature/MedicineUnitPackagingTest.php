@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Constants\Companies;
 use App\Helpers\ImageHelper;
+use App\Helpers\XlsxWriter;
 use App\Models\Medicine;
 use App\Models\PurchaseHistory;
 use App\Models\ShoppingAccessCode;
@@ -57,7 +58,7 @@ class MedicineUnitPackagingTest extends TestCase
         $this->assertSame(9900.0, $medicine->getChannelBasePrice('b2c'));
         $this->assertSame(7000.0, $medicine->getChannelBasePrice('b2b'));
 
-        $this->get(route('products.index'))
+        $this->get(route('home'))
             ->assertOk()
             ->assertSee('Rp 9.900')
             ->assertDontSee('Harga Box')
@@ -74,7 +75,7 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertSee('product-logo-marker--green', false)
             ->assertSeeInOrder([
                 '<div class="medicine-card-principal">Pabrik Contoh</div>',
-                '<h3 class="medicine-name"><a href="' . route('medicines.show', $medicine->id) . '">Obat Kemasan</a></h3>',
+                '<h3 class="prod-name"><a href="' . route('medicines.show', ['id' => $medicine->id, 'from' => 'home']) . '">Obat Kemasan</a></h3>',
             ], false)
             ->assertSee('data-product-id="' . $medicine->id . '"', false)
             ->assertSee('function syncProductButtons()', false)
@@ -832,18 +833,28 @@ class MedicineUnitPackagingTest extends TestCase
             ->get(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
             ->assertOk()
             ->assertSee('Export Supplier')
-            ->assertSee('Template CSV')
+            ->assertSee('Template Excel')
             ->assertSee('Import Supplier');
 
         $export = $this->get(route('admin.produk-pbf.suppliers.export'));
-        $export->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
-        $this->assertStringContainsString('ID,NAMA,ALAMAT,TELEPON', $export->streamedContent());
+        $export->assertOk()->assertHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        $this->assertStringStartsWith('PK', $export->getContent());
 
-        $csv = "ID,NAMA,ALAMAT,TELEPON\n{$supplier->id},Supplier Baru,\"Alamat Baru, Bogor\",021-12345678\n,PT Supplier Baru,Jakarta,021-87654321\n";
+        $template = $this->get(route('admin.produk-pbf.suppliers.import.template'));
+        $template->assertOk()->assertHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        $this->assertStringStartsWith('PK', $template->getContent());
+
+        $csv = "ID,NAMA,ALAMAT,TELEPON\n{$supplier->id},Supplier Baru,\"Alamat Baru, Bogor\",021-12345678\n,PT Supplier Baru,Jakarta,021-87654321\n,PT Supplier Tanpa Alamat,,\n";
         $file = UploadedFile::fake()->createWithContent('suppliers.csv', $csv);
         $this->post(route('admin.produk-pbf.suppliers.import'), ['file' => $file])
             ->assertRedirect(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
-            ->assertSessionHas('status', '2 data supplier berhasil diimpor atau diperbarui.');
+            ->assertSessionHas('status', '3 data supplier berhasil diimpor atau diperbarui.');
 
         $this->assertDatabaseHas('pbf_suppliers', [
             'id' => $supplier->id,
@@ -856,7 +867,12 @@ class MedicineUnitPackagingTest extends TestCase
             'address' => 'Jakarta',
             'phone' => '021-87654321',
         ]);
-        $this->assertDatabaseCount('pbf_suppliers', 2);
+        $this->assertDatabaseHas('pbf_suppliers', [
+            'name' => 'PT Supplier Tanpa Alamat',
+            'address' => '',
+            'phone' => null,
+        ]);
+        $this->assertDatabaseCount('pbf_suppliers', 3);
 
         $legacyCsv = "ID,NAMA,ALAMAT\n{$supplier->id},Supplier Impor Lama,Alamat Impor Lama\n";
         $legacyFile = UploadedFile::fake()->createWithContent('legacy-suppliers.csv', $legacyCsv);
@@ -866,6 +882,38 @@ class MedicineUnitPackagingTest extends TestCase
             'id' => $supplier->id,
             'name' => 'Supplier Impor Lama',
             'phone' => '021-12345678',
+        ]);
+    }
+
+    public function test_admin_can_import_pbf_supplier_xlsx_with_blank_optional_columns(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $path = tempnam(sys_get_temp_dir(), 'supplier-xlsx-');
+        file_put_contents($path, XlsxWriter::build(
+            ['ID', 'NAMA', 'ALAMAT', 'TELEPON'],
+            [['', 'Supplier XLSX', '', '']]
+        ));
+        $file = new UploadedFile(
+            $path,
+            'suppliers.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+
+        try {
+            $this->actingAs($admin)
+                ->post(route('admin.produk-pbf.suppliers.import'), ['file' => $file])
+                ->assertRedirect(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
+                ->assertSessionHas('status', '1 data supplier berhasil diimpor atau diperbarui.');
+        } finally {
+            @unlink($path);
+        }
+
+        $this->assertDatabaseHas('pbf_suppliers', [
+            'name' => 'Supplier XLSX',
+            'address' => '',
+            'phone' => null,
         ]);
     }
 
