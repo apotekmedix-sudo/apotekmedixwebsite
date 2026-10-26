@@ -24,6 +24,7 @@ class AdminBusinessDataExportTest extends TestCase
             'kategori_produk' => 'OBAT',
             'harga' => 15500,
             'harga_modal' => 10000,
+            'harga_internal' => 12000,
             'harga_grosir' => 14000,
             'harga_retail' => 16000,
             'stok' => 8,
@@ -52,6 +53,8 @@ class AdminBusinessDataExportTest extends TestCase
             'LINK FOTO',
             'HARGA JUAL B2B',
             'HARGA JUAL B2C',
+            'HARGA INTERNAL',
+            '12000',
             'http://localhost/storage/medicines/produk-export.jpg',
         ] as $expected) {
             $this->assertStringContainsString($expected, $content);
@@ -107,13 +110,13 @@ class AdminBusinessDataExportTest extends TestCase
         fputcsv($stream, [
             'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
-            'MODAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
+            'MODAL', 'HARGA INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
             'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO',
         ]);
         fputcsv($stream, [
             $product->id, 'Principal Baru', 'Nama Baru', 'MERAH', 'Obat Bebas', 'Komposisi baru',
             'Indikasi baru', 'BOX', '10 strip @ 10 tablet', 'TABLET', '2', '10', '100',
-            '6000', '13000', '14000', '1500', '150',
+            '6000', '7000', '13000', '14000', '1500', '150',
             'http://localhost/storage/medicines/baru.jpg',
         ]);
         fclose($stream);
@@ -129,6 +132,7 @@ class AdminBusinessDataExportTest extends TestCase
         $this->assertSame('Nama Baru', $product->nama_obat);
         $this->assertSame('Principal Baru', $product->kategori);
         $this->assertSame(10000.0, (float) $product->harga);
+        $this->assertSame(7000.0, (float) $product->harga_internal);
         $this->assertSame(13000.0, (float) $product->harga_grosir);
         $this->assertSame(14000.0, (float) $product->price_box);
         $this->assertSame(200, $product->stock_base_units);

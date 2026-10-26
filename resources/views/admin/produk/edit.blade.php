@@ -149,6 +149,11 @@
                         <input type="number" name="harga_modal" class="form-input" step="1" min="0" value="{{ old('harga_modal', $medicine->harga_modal) }}">
                     </div>
                     <div class="form-group">
+                        <label class="form-label">Harga Internal (Rp)</label>
+                        <input type="number" name="harga_internal" class="form-input" step="1" min="0" value="{{ old('harga_internal', $medicine->harga_internal) }}">
+                        @error('harga_internal')<div class="form-error">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">Harga Jual B2B (Rp)</label>
                         <input type="number" name="harga_grosir" class="form-input" step="1" min="0" value="{{ old('harga_grosir', $medicine->harga_grosir) }}">
                         @error('harga_grosir')<div class="form-error">{{ $message }}</div>@enderror

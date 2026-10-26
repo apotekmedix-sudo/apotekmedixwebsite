@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminProdukController;
 use App\Http\Controllers\HomeController;
 use App\Models\Medicine;
 use App\Models\User;
+use App\Services\ProductImageDownloader;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -46,6 +47,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             $table->string('kategori_produk')->nullable();
             $table->decimal('harga', 12, 2)->default(0);
             $table->decimal('harga_modal', 12, 2)->default(0);
+            $table->decimal('harga_internal', 12, 2)->nullable();
             $table->decimal('harga_grosir', 12, 2)->default(0);
             $table->decimal('harga_retail', 12, 2)->default(0);
             $table->unsignedInteger('promo_b2c_percent')->default(0);
@@ -106,6 +108,50 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         ]);
 
         @unlink($path);
+    }
+
+    public function test_import_downloads_external_product_photo_links_to_local_storage(): void
+    {
+        $imageUrl = 'https://images.example.net/products/medicine.jpg';
+        $downloader = \Mockery::mock(ProductImageDownloader::class);
+        $downloader->shouldReceive('download')->once()->with($imageUrl)->andReturn('medicines/downloaded-product.jpg');
+        $this->app->instance(ProductImageDownloader::class, $downloader);
+
+        $path = tempnam(sys_get_temp_dir(), 'import');
+        file_put_contents($path, "NAMA PRODUK,LINK FOTO\nObat Foto Link,{$imageUrl}\n");
+        $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        try {
+            $response = (new AdminProdukImportController())->import($request);
+            $errors = $response->getSession()->get('errors');
+
+            $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
+            $this->assertDatabaseHas('medicines', [
+                'nama_obat' => 'Obat Foto Link',
+                'gambar' => 'medicines/downloaded-product.jpg',
+            ]);
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    public function test_product_image_downloader_rejects_non_https_links(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('HTTPS');
+
+        (new ProductImageDownloader())->download('http://images.example.net/product.jpg');
+    }
+
+    public function test_product_image_downloader_rejects_private_network_hosts(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('host internet publik');
+
+        (new ProductImageDownloader())->download('https://127.0.0.1/product.jpg');
     }
 
     public function test_homepage_featured_products_only_include_grade_a_records(): void
@@ -170,8 +216,8 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
     {
         $path = tempnam(sys_get_temp_dir(), 'import');
         file_put_contents($path, implode("\n", [
-            'NO,PRINCIPLE,NAMA PRODUK,LOGO,GOLONGAN,KOMPOSISI,INDIKASI,SATUAN,KEMASAN,SEDIAAN,STOK SATUAN,PER STRIP,PER TABLET,MODAL,HARGA JUAL B2B,HARGA JUAL B2C,HARGA JUAL PER STRIP,HARGA JUAL PER TABLET',
-            '1,PT KALBE FARMA,Promag Tablet,HIJAU,Obat Bebas,"Antasida, Simetikon","Meredakan sakit maag, dan perih",BOX,10 blister @ 6 tablet,TABLET,2,10,60,100000,130000,140000,16000,1600',
+            'NO,PRINCIPLE,NAMA PRODUK,LOGO,GOLONGAN,KOMPOSISI,INDIKASI,SATUAN,KEMASAN,SEDIAAN,STOK SATUAN,PER STRIP,PER TABLET,MODAL,HARGA INTERNAL,HARGA JUAL B2B,HARGA JUAL B2C,HARGA JUAL PER STRIP,HARGA JUAL PER TABLET',
+            '1,PT KALBE FARMA,Promag Tablet,HIJAU,Obat Bebas,"Antasida, Simetikon","Meredakan sakit maag, dan perih",BOX,10 blister @ 6 tablet,TABLET,2,10,60,100000,110000,130000,140000,16000,1600',
         ]) . "\n");
 
         $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
@@ -189,6 +235,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame('HIJAU', $product->logo);
         $this->assertSame('Obat Bebas', $product->golongan);
         $this->assertSame('Antasida, Simetikon', $product->komposisi);
+        $this->assertSame(110000.0, (float) $product->harga_internal);
         $this->assertSame(130000.0, $product->getChannelBasePrice('b2b'));
         $this->assertSame(140000.0, $product->getChannelBasePrice('b2c'));
         $this->assertSame(16000.0, $product->getChannelBasePrice('b2c', 'strip'));
@@ -222,6 +269,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
         $this->assertDatabaseHas('medicines', [
             'nama_obat' => 'Promag Tablet',
+            'harga_internal' => 120000,
             'harga_grosir' => 135437,
             'harga_retail' => 153102,
             'price_box' => 153102,
@@ -294,6 +342,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'komposisi' => 'Komposisi contoh',
             'indikasi' => 'Indikasi contoh',
             'harga_modal' => 117771,
+            'harga_internal' => 125000,
             'harga_grosir' => 135437,
             'harga_retail' => 153102,
             'stok' => 10,
@@ -317,6 +366,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         $this->assertSame('OBAT', $product->kategori_produk);
         $this->assertSame('HIJAU', $product->logo);
         $this->assertSame('Obat Bebas', $product->golongan);
+        $this->assertSame(125000.0, (float) $product->harga_internal);
         $this->assertSame('10 strip @ 10 tablet', $product->kemasan);
         $this->assertSame(10, (int) $product->strips_per_box);
         $this->assertSame(10, (int) $product->tablets_per_strip);

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ImageHelper;
 use App\Models\Medicine;
 use App\Constants\Companies;
+use App\Services\ProductImageDownloader;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -37,18 +39,18 @@ class AdminProdukImportController extends Controller
     public function downloadTemplate()
     {
         $columns = [
-            'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
+            'NO CONTOH', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
-            'MODAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
-            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET',
+            'MODAL', 'HARGA INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
+            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO',
         ];
-        $widths = [8, 25, 28, 12, 18, 28, 28, 12, 22, 12, 12, 12, 12, 15, 18, 18, 20, 20];
+        $widths = [8, 25, 28, 12, 18, 28, 28, 12, 22, 12, 12, 12, 12, 15, 16, 18, 18, 20, 20, 48];
 
         $rows = [
-            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '10', '100', '117771', '135437', '153102', '16841', '15463'],
-            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '1', '4', '200000', '205000', '220000', '55000', '0'],
-            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '0', '0', '12000', '12500', '14000', '0', '0'],
-            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '0', '0', '50000', '51000', '55000', '0', '0'],
+            ['1', 'PT KALBE FARMA', 'Promag Tablet', 'HIJAU', 'Obat Bebas', 'Antasida & Simetikon', 'Membantu meredakan sakit maag', 'BOX', '10 blister @ 10 tablet', 'TABLET', '10', '10', '100', '117771', '120000', '135437', '153102', '16841', '15463', ''],
+            ['2', 'PT PFIZER', 'Viagra 100mg', 'MERAH', 'Obat Keras', 'Sildenafil', 'Disfungsi ereksi', 'BOX', '1 blister @ 4 tablet', 'TABLET', '1', '1', '4', '200000', '210000', '205000', '220000', '55000', '0', ''],
+            ['3', 'KONIMEX', 'Anakod Sirup', 'BIRU', 'Bebas Terbatas', 'Paracetamol', 'Membantu meredakan batuk dan flu', 'BOTOL', '', 'SIRUP', '1', '0', '0', '12000', '13000', '12500', '14000', '0', '0', ''],
+            ['4', 'GSK', 'Voltaren Gel', 'MERAH', 'Obat Keras', 'Diclofenac', 'Membantu meredakan nyeri otot', 'TUBE', '', 'KRIM', '5', '0', '0', '50000', '52000', '51000', '55000', '0', '0', ''],
         ];
 
         return \App\Helpers\XlsxWriter::download('template_produk.xlsx', $columns, $rows, $widths);
@@ -266,6 +268,7 @@ class AdminProdukImportController extends Controller
 
         $imported      = 0;
         $skipped       = 0;
+        $downloadedImages = [];
         $validKategori = Companies::LIST;
         $medicineColumns = array_flip(Schema::getColumnListing('medicines'));
 
@@ -443,6 +446,9 @@ class AdminProdukImportController extends Controller
                 if (array_key_exists('HARGA_JUAL_B2B', $data) && $data['HARGA_JUAL_B2B'] !== '') {
                     $attributes['harga_grosir'] = $hargaB2b;
                 }
+                if (isset($data['HARGA_INTERNAL']) && $data['HARGA_INTERNAL'] !== '') {
+                    $attributes['harga_internal'] = $this->parseHarga($data['HARGA_INTERNAL']);
+                }
                 if ($hasPackagingColumns) {
                     $attributes += [
                         'unit_packaging_enabled' => $packagingEnabled,
@@ -461,7 +467,7 @@ class AdminProdukImportController extends Controller
                     $attributes['gambar_tambahan'] = $this->parseImageGallery($data['GAMBAR_TAMBAHAN']);
                 }
                 if ($exportRow) {
-                    $attributes['gambar'] = $this->parseProductImageLink($data['LINK_FOTO']);
+                    $attributes['gambar'] = $this->parseProductImageLink($data['LINK_FOTO'], $downloadedImages);
                 }
                 foreach ([
                     'PROMO_B2B_PERCENT' => 'promo_b2b_percent',
@@ -522,6 +528,9 @@ class AdminProdukImportController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+            foreach ($downloadedImages as $imagePath) {
+                ImageHelper::deleteProductImage($imagePath);
+            }
             return back()->withErrors(['file' => 'Error saat menyimpan data: ' . $e->getMessage()]);
         }
 
@@ -549,6 +558,7 @@ class AdminProdukImportController extends Controller
             'kategori_produk' => ['KATEGORI'],
             'harga' => ['HARGA', 'HARGA RETAIL', 'HARGA_JUAL_B2C'],
             'harga_modal' => ['MODAL'],
+            'harga_internal' => ['HARGA_INTERNAL', 'HARGA JUAL INTERNAL'],
             'harga_grosir' => ['HARGA_JUAL_B2B'],
             'harga_retail' => ['HARGA_JUAL_B2C', 'HARGA RETAIL', 'HARGA'],
             'stok' => ['STOK_SATUAN', 'STOK'],
@@ -608,6 +618,7 @@ class AdminProdukImportController extends Controller
             'BRAND' => ['BRAND', 'MERK', 'MEREK'],
             'HARGA' => ['HARGA', 'RETAIL', 'PRICE'],
             'MODAL' => ['MODAL', 'HARGAMODAL', 'COST'],
+            'HARGA_INTERNAL' => ['HARGAINTERNAL', 'HARGAJUALINTERNAL', 'INTERNALPRICE'],
             'HARGA RETAIL' => ['HARGARETAIL', 'RETAILPRICE'],
             'LOGO' => ['LOGO'],
             'GOLONGAN' => ['GOLONGAN', 'CLASSIFICATION'],
@@ -739,11 +750,36 @@ class AdminProdukImportController extends Controller
         return array_values(array_filter(array_map('trim', $images)));
     }
 
-    private function parseProductImageLink($value): ?string
+    private function parseProductImageLink($value, array &$downloadedImages): ?string
     {
         $value = trim((string) $value);
         if ($value === '') {
             return null;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            $scheme = strtolower((string) parse_url($value, PHP_URL_SCHEME));
+            $host = strtolower(rtrim((string) parse_url($value, PHP_URL_HOST), '.'));
+            $path = parse_url($value, PHP_URL_PATH);
+            $relativePath = is_string($path) ? ltrim(rawurldecode($path), '/') : '';
+            if (str_starts_with($relativePath, 'storage/')) {
+                $relativePath = substr($relativePath, strlen('storage/'));
+            }
+            $localHosts = array_filter([
+                parse_url((string) config('app.url'), PHP_URL_HOST),
+                parse_url(url('/'), PHP_URL_HOST),
+            ]);
+            if (str_starts_with($relativePath, 'medicines/') && in_array($host, $localHosts, true)) {
+                return $relativePath;
+            }
+            if ($scheme !== 'https') {
+                throw new \InvalidArgumentException('LINK FOTO eksternal harus menggunakan HTTPS.');
+            }
+
+            $imagePath = app(ProductImageDownloader::class)->download($value);
+            $downloadedImages[] = $imagePath;
+
+            return $imagePath;
         }
 
         $path = parse_url($value, PHP_URL_PATH);

@@ -291,7 +291,7 @@ class AdminProdukController extends Controller
         $columns = [
             'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
-            'MODAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
+            'MODAL', 'HARGA INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
             'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO',
         ];
         $rows = $products->map(fn ($product) => [
@@ -309,6 +309,7 @@ class AdminProdukController extends Controller
             $product->usesTabletPackaging() ? $product->strips_per_box : 0,
             $product->usesTabletPackaging() ? $product->units_per_box : 0,
             $product->harga_modal,
+            $product->harga_internal ?: '',
             $product->getChannelBasePrice('b2b'),
             $product->getChannelBasePrice('b2c'),
             $product->price_strip ?: 0,
@@ -317,8 +318,8 @@ class AdminProdukController extends Controller
         ])->all();
         $widths = array_fill(0, count($columns), 20);
         $widths[2] = $widths[5] = $widths[6] = 30;
-        $widths[8] = $widths[18] = 48;
-        $numericColumns = [0, 10, 11, 12, 13, 14, 15, 16, 17];
+        $widths[8] = $widths[19] = 48;
+        $numericColumns = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 
         return \App\Helpers\XlsxWriter::download('produk.xlsx', $columns, $rows, $widths, $numericColumns);
     }
@@ -341,6 +342,7 @@ class AdminProdukController extends Controller
             'gambar.*'          => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'harga'             => ['nullable', 'numeric', 'min:0'],
             'harga_modal'       => ['nullable', 'numeric', 'min:0'],
+            'harga_internal'    => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
             'harga_retail'      => ['required', 'numeric', 'min:0'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
@@ -411,6 +413,7 @@ class AdminProdukController extends Controller
             'hapus_gambar.*'    => ['required', 'string', 'max:255'],
             'harga'             => ['nullable', 'numeric', 'min:0'],
             'harga_modal'       => ['nullable', 'numeric', 'min:0'],
+            'harga_internal'    => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
             'harga_retail'      => ['required', 'numeric', 'min:0'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
@@ -565,6 +568,7 @@ class AdminProdukController extends Controller
     {
         $validated = $request->validate([
             'harga_modal'       => ['required', 'numeric', 'min:0'],
+            'harga_internal'    => ['nullable', 'numeric', 'min:0'],
             'harga_grosir'      => ['nullable', 'numeric', 'min:0'],
             'harga_retail'      => ['required', 'numeric', 'min:0'],
             'price_strip'       => ['nullable', 'numeric', 'min:0'],
