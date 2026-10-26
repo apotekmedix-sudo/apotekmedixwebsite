@@ -82,6 +82,62 @@ class AdminDashboardController extends Controller
         return view('admin.purchase-history', compact('orders', 'total_omzet'));
     }
 
+    public function notifications(Request $request)
+    {
+        $filter = (string) $request->query('filter', 'unpaid');
+        $allTempoOrders = Schema::hasTable('purchase_histories')
+            ? PurchaseHistory::with('cashier')
+                ->whereRaw('LOWER(TRIM(COALESCE(payment_method, ""))) = ?', ['tempo'])
+                ->where(fn ($q) => $q->whereNull('receipt_status')->orWhere('receipt_status', '!=', 'cancelled'))
+                ->where(fn ($q) => $q->whereNull('approval_status')->orWhere('approval_status', '!=', 'rejected'))
+                ->orderBy('created_at', 'asc')
+                ->get()
+            : collect();
+
+        $overdueOrders = $allTempoOrders->filter(fn (PurchaseHistory $o) => in_array($o->tempo_due_status, ['overdue', 'due_today'], true));
+        $dueSoonOrders = $allTempoOrders->filter(fn (PurchaseHistory $o) => $o->tempo_due_status === 'due_soon');
+        $unpaidOrders  = $allTempoOrders->filter(fn (PurchaseHistory $o) => $o->payment_status !== 'paid');
+        $paidOrders    = $allTempoOrders->filter(fn (PurchaseHistory $o) => $o->payment_status === 'paid');
+
+        $filteredOrders = match ($filter) {
+            'overdue'  => $overdueOrders->values(),
+            'due_soon' => $dueSoonOrders->values(),
+            'paid'     => $paidOrders->sortByDesc('paid_at')->values(),
+            'all'      => $allTempoOrders->sortBy(fn (PurchaseHistory $o) => $o->payment_status === 'paid' ? 999999 : ($o->days_until_due ?? 0))->values(),
+            default    => $unpaidOrders->sortBy(fn (PurchaseHistory $o) => $o->days_until_due ?? 0)->values(),
+        };
+
+        $metrics = [
+            'overdue_count'  => $overdueOrders->count(),
+            'due_soon_count' => $dueSoonOrders->count(),
+            'unpaid_count'   => $unpaidOrders->count(),
+            'paid_count'     => $paidOrders->count(),
+            'unpaid_total'   => $unpaidOrders->sum(fn (PurchaseHistory $o) => $o->effective_total),
+            'overdue_total'  => $overdueOrders->sum(fn (PurchaseHistory $o) => $o->effective_total),
+        ];
+
+        return view('admin.notifications.index', compact('filteredOrders', 'metrics', 'filter'));
+    }
+
+    public function markTempoPaid(PurchaseHistory $order)
+    {
+        if (!$order->isTempoPayment()) {
+            return back()->with('error', 'Pesanan ini bukan menggunakan metode pembayaran Tempo.');
+        }
+
+        $order->update([
+            'payment_status' => 'paid',
+            'paid_at'        => now(),
+            'cashier_id'     => $order->cashier_id ?: auth()->id(),
+        ]);
+
+        return back()->with('success', "Tagihan Tempo Pesanan #{$order->id} ({$order->buyer_name}) berhasil ditandai LUNAS.");
+    }
+
+    private function _unusedPurchaseHistoryEnd()
+    {
+    }
+
     public function updateApprovalStatus(Request $request, PurchaseHistory $order)
     {
         if (!\Schema::hasTable('purchase_histories')) {

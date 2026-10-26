@@ -300,4 +300,4 @@ unset($__errorArgs, $__bag); ?>
     </script>
 </body>
 </html>
-<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/admin/login.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/admin/login.blade.php ENDPATH**/ ?>

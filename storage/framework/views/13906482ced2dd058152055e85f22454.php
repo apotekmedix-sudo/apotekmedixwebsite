@@ -1762,4 +1762,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.head.appendChild(s);
 });
 </script>
-<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/partials/cart.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/partials/cart.blade.php ENDPATH**/ ?>

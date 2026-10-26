@@ -14,7 +14,7 @@
 <style>
   /* ===== BANNER HEADER APOTEK MEDIX ===== */
   .products-header.checkout-banner {
-    background: linear-gradient(135deg, #0F172A 0%, #1E293B 72%, #12394A 100%) !important;
+    background: linear-gradient(125deg, #0643a8 0%, #0757c9 58%, #0875d9 100%) !important;
     padding: 2.15rem 0 1.9rem !important;
     position: relative;
     overflow: hidden;
@@ -929,7 +929,9 @@
             </div>
 
             <div class="co-field">
+              <input type="text" id="co_b2b_outlet" class="co-input" placeholder="Nama outlet *" style="display:none;margin-bottom:0.75rem;">
               <input type="text" id="co_full_name" class="co-input" placeholder="Nama lengkap" value="<?php echo e($fullName); ?>">
+              <input type="tel" id="co_phone" class="co-input" placeholder="No. Telp / WhatsApp" value="<?php echo e($defaultShippingAddress?->phone); ?>" style="margin-top:0.75rem;">
             </div>
 
             <div id="coShippingAddressFields">
@@ -946,12 +948,23 @@
               <span style="font-weight:800;color:#0E7490;">Gratis</span>
             </div>
 
-            <div class="co-field" style="margin-bottom:0;">
-              <input type="tel" id="co_phone" class="co-input" placeholder="Nomor HP / WhatsApp" value="<?php echo e($defaultShippingAddress?->phone); ?>" style="padding-right:2.5rem;">
+            <div class="co-field" style="display:none;margin-bottom:0;">
+              <input type="tel" id="co_phone_unused" style="display:none;">
               <span class="co-help-wrap" tabindex="0" aria-label="Info nomor telepon">
                 <i class="fa-regular fa-circle-question"></i>
                 <span class="co-help-tooltip">Jika kami ingin menghubungi Anda terkait pesanan</span>
               </span>
+            </div>
+
+            <div id="coB2bPermitFields" style="display:none;margin-top:0.75rem;">
+              <div class="co-row-2">
+                <div class="co-field" style="margin-bottom:0;">
+                  <input type="text" id="co_b2b_sia" class="co-input" placeholder="SIA *">
+                </div>
+                <div class="co-field" style="margin-bottom:0;">
+                  <input type="text" id="co_b2b_sipa" class="co-input" placeholder="SIPA *">
+                </div>
+              </div>
             </div>
 
             <h3 class="co-sub-title">Alamat penagihan</h3>
@@ -1005,14 +1018,14 @@
           <button type="button" id="coWhatsappBtn" onclick="openWhatsAppCheckout()" class="co-action-btn" style="background:#10B981;color:#ffffff;">
             <i class="fa-brands fa-whatsapp" style="font-size:1.15rem;"></i> Konfirmasi Pembayaran via WhatsApp
           </button>
-          <a href="<?php echo e(route('products.index')); ?>" class="co-action-btn" style="background:#ffffff;color:#0F172A;border:1.5px solid #cbd5e1;margin-bottom:0;">
+          <a id="coBackToCatalogBtn" href="<?php echo e(route('products.index')); ?>" class="co-action-btn" style="background:#ffffff;color:#0F172A;border:1.5px solid #cbd5e1;margin-bottom:0;">
             Kembali ke Katalog Produk
           </a>
         </div>
 
         <div class="co-footer-links">
           <a href="<?php echo e(route('about')); ?>">Ketentuan dan kebijakan Apotek Medix</a>
-          <a href="<?php echo e(route('cart.index')); ?>">Ubah isi keranjang</a>
+          <a id="coEditCartFooterLink" href="<?php echo e(route('cart.index')); ?>">Ubah isi keranjang</a>
         </div>
 
       </div>
@@ -1023,12 +1036,12 @@
       <div class="co-right-inner">
         <div class="co-summary-head">
           <h3><i class="fa-solid fa-receipt"></i> Ringkasan Pesanan</h3>
-          <a href="<?php echo e(route('cart.index')); ?>" style="font-size:0.8rem;font-weight:600;color:#0E7490;text-decoration:underline;">Ubah</a>
+          <a id="coEditSummaryLink" href="<?php echo e(route('cart.index')); ?>" style="font-size:0.8rem;font-weight:600;color:#0E7490;text-decoration:underline;">Ubah</a>
         </div>
 
         <div id="coSummaryItems"></div>
 
-        <div class="co-disc-row" style="margin-bottom:0.5rem;">
+        <div id="coDiscountInputRow" class="co-disc-row" style="margin-bottom:0.5rem;">
           <input type="text" id="coDiscountCodeInput" class="co-disc-inp" placeholder="Masukkan kode diskon" style="text-transform:uppercase;">
           <button type="button" id="coDiscountApplyBtn" class="co-disc-btn" onclick="applyCheckoutDiscount()">Pakai</button>
         </div>
@@ -1150,6 +1163,10 @@
         break;
       }
     }
+  }
+
+  if (activeCtx.storageKey === 'apotekmedix_cart_pbf') {
+    activeCtx.wholesaleOrder = true;
   }
 
   let deliveryMode = 'ship';
@@ -1442,9 +1459,12 @@
       return;
     }
 
-    const jenis = activeCtx.adminPbfOrder || activeCtx.wholesaleOrder
+    const jenis = activeCtx.adminPbfOrder
       ? 'apotik'
-      : 'umum';
+      : (activeCtx.wholesaleOrder || activeCtx.storageKey === 'apotekmedix_cart_pbf' ? 'pbf' : 'umum');
+    void ((activeCtx.adminPbfOrder || activeCtx.wholesaleOrder
+      ? 'apotik'
+      : 'umum'));
 
     const fullName = document.getElementById('co_full_name').value.trim();
     const phoneVal = document.getElementById('co_phone').value.trim();
@@ -1528,9 +1548,18 @@
         return;
       }
 
-      if (jenis === 'apotik' || jenis === 'dokter' || activeCtx.wholesaleOrder) {
+      if (jenis === 'pbf' || jenis === 'apotik' || jenis === 'dokter' || activeCtx.wholesaleOrder) {
         payload.requester_name = fullName;
-        payload.outlet_name = fullName;
+        const outletVal = document.getElementById('co_b2b_outlet')?.value.trim() || '';
+        payload.outlet_name = outletVal;
+        payload.buyer_name = outletVal;
+        payload.sia = document.getElementById('co_b2b_sia')?.value.trim() || '';
+        payload.sipa = document.getElementById('co_b2b_sipa')?.value.trim() || '';
+        if (!outletVal || !fullName || !phoneVal || !payload.sia || !payload.sipa) {
+          errBox.textContent = 'Nama outlet, Nama Apoteker/Dokter, No. Telp, SIA, dan SIPA wajib diisi.';
+          errBox.style.display = 'block';
+          return;
+        }
       }
 
       if (!payload.buyer_name || !payload.phone) {
@@ -1588,6 +1617,23 @@
       document.getElementById('coFormWrapper').style.display = 'none';
       const payRight = document.getElementById('coPaymentRightWrapper');
       if (payRight) payRight.style.display = 'none';
+      const editSumLink = document.getElementById('coEditSummaryLink');
+      if (editSumLink) editSumLink.style.display = 'none';
+      const editCartFooterLink = document.getElementById('coEditCartFooterLink');
+      if (editCartFooterLink) editCartFooterLink.style.display = 'none';
+      const discInputRow = document.getElementById('coDiscountInputRow');
+      if (discInputRow) discInputRow.style.display = 'none';
+      const discMsgBox = document.getElementById('coDiscountMsgBox');
+      if (discMsgBox) discMsgBox.style.display = 'none';
+      const navBadge = document.getElementById('cartBadgeNav');
+      if (navBadge) {
+        navBadge.textContent = '0';
+        navBadge.style.display = 'none';
+      }
+      const backBtn = document.getElementById('coBackToCatalogBtn');
+      if (backBtn && activeCtx.continueShoppingUrl) {
+        backBtn.href = activeCtx.continueShoppingUrl;
+      }
       document.getElementById('coSuccessPanel').style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
@@ -1617,7 +1663,9 @@
       msg += `${idx + 1}. *${it.name}*\n   Qty: ${it.qty} ${unitLabel} x ${formatRpPlain(it.price)} = ${formatRpPlain(sub)}\n`;
     });
     msg += `---\n*Total: ${formatRpPlain(ord.total)}*\n\n*Data Pemesan:*\n`;
-    msg += `- Nama: ${ord.buyer_name}\n- Telepon: ${ord.phone}\n- Pengantaran: ${ord.address || 'Ambil di Apotek'}\n- Pembayaran: ${ord.payment_method}\n\nTerima kasih!`;
+    const nowWib = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date()).replace(/\./g, ':') + ' WIB';
+    const tempoInfo = ord.payment_method === 'Tempo' && ord.payment_term_days ? ` (${ord.payment_term_days} hari)` : '';
+    msg += `- Nama: ${ord.buyer_name}\n- Telepon: ${ord.phone}\n- Pengantaran: ${ord.address || 'Ambil di Apotek'}\n- Pembayaran: ${ord.payment_method}${tempoInfo}\n- Waktu Pesan: ${nowWib}\n\nTerima kasih!`;
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
@@ -1625,6 +1673,20 @@
     configureTempoOption();
     if (activeCtx.adminPbfOrder) {
       document.getElementById('coAdminPbfFields').style.display = 'block';
+    } else if (activeCtx.wholesaleOrder || activeCtx.storageKey === 'apotekmedix_cart_pbf') {
+      const b2bPermit = document.getElementById('coB2bPermitFields');
+      if (b2bPermit) b2bPermit.style.display = 'block';
+      const b2bOutlet = document.getElementById('co_b2b_outlet');
+      if (b2bOutlet) b2bOutlet.style.display = 'block';
+      const fullNameInp = document.getElementById('co_full_name');
+      if (fullNameInp) {
+        fullNameInp.placeholder = 'Nama Apoteker / Dokter *';
+        if (fullNameInp.value === 'Admin Apotek Medix') fullNameInp.value = '';
+      }
+      const phoneInp = document.getElementById('co_phone');
+      if (phoneInp) phoneInp.placeholder = 'No. Telp *';
+      const addrInp = document.getElementById('co_address');
+      if (addrInp) addrInp.placeholder = 'Alamat *';
     }
     updateShippingMethodStatus();
     onBuyerTypeChange();
@@ -1633,4 +1695,4 @@
 </script>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.frontend', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/checkout.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.frontend', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/checkout.blade.php ENDPATH**/ ?>

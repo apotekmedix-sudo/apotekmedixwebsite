@@ -125,6 +125,12 @@ class PurchaseHistoryController extends Controller
         $originalTotal = 0;
         $discountedTotal = 0;
         $hasB2cAccess = null;
+        $hasB2bAccess = $request->hasSession()
+            && ((int) $request->session()->get('pbf_access_expires_at', 0)) > now()->timestamp
+            && ShoppingAccessCode::matchesSession(
+                ShoppingAccessCode::CHANNEL_B2B,
+                $request->session()->get('pbf_access_code_hash')
+            );
 
         foreach ($items as $index => $item) {
             $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
@@ -139,11 +145,11 @@ class PurchaseHistoryController extends Controller
                 ], 422);
             }
 
-            $promoChannel = (($product && $product->kelompok === 'PBF') || $data['buyer_type'] === 'pbf' || !empty($data['pbf_name'])
+            $promoChannel = (($product && $product->kelompok === 'PBF') || $data['buyer_type'] === 'pbf' || !empty($data['pbf_name']) || ($hasB2bAccess && ($product?->getChannelBasePrice('b2b') ?? 0) > 0)
                     ? 'b2b'
                     : 'b2c');
 
-            if ($product?->hasRedLogo() && $promoChannel === 'b2c') {
+            if ($product?->hasRedLogo() && $promoChannel === 'b2c' && !$hasB2bAccess && !in_array($data['buyer_type'], ['pbf', 'apotik', 'dokter'], true)) {
                 if ($hasB2cAccess === null) {
                     $b2cAccessExpiresAt = (int) $request->session()->get('b2c_access_expires_at', 0);
                     $hasB2cAccess = $b2cAccessExpiresAt > now()->timestamp
@@ -382,6 +388,9 @@ class PurchaseHistoryController extends Controller
             $product = $products->get((int) ($item['id'] ?? 0));
             if ($product) {
                 $item['nama_obat'] = $item['nama_obat'] ?? $item['name'] ?? $product->nama_obat;
+                $item['sediaan'] = $item['sediaan'] ?? $product->sediaan ?? $product->sediaan_label;
+                $item['dosis'] = $item['dosis'] ?? $product->dosis;
+                $item['kemasan'] = $item['kemasan'] ?? $product->kemasan ?? $item['unit_label'] ?? $product->package_unit_label;
                 if (!isset($item['harga']) && !isset($item['price'])) {
                     $item['harga'] = (int) ($product->harga_modal ?: $product->harga);
                 }
@@ -394,6 +403,35 @@ class PurchaseHistoryController extends Controller
         }
 
         return view('orders.invoice', compact('order', 'items'));
+    }
+
+    public function updatePermit(Request $request, PurchaseHistory $order)
+    {
+        $validated = $request->validate([
+            'sia' => ['required', 'string', 'max:255'],
+            'sipa' => ['required', 'string', 'max:255'],
+            'requester_name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $order->update([
+            'sia' => trim($validated['sia']),
+            'sipa' => trim($validated['sipa']),
+            'requester_name' => !empty($validated['requester_name']) ? trim($validated['requester_name']) : $order->requester_name,
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'sia' => $order->sia,
+                'sipa' => $order->sipa,
+                'requester_name' => $order->requester_name,
+            ]);
+        }
+
+        return back()->with('success', 'Data SIA dan SIPA berhasil disimpan.');
+    }
+
+    private function _unusedPlaceholder(): void {
     }
 
     public function purchaseOrder(PurchaseHistory $order)

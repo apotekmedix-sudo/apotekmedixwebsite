@@ -657,4 +657,4 @@ window.addEventListener('scroll', function() {
 });
 </script>
 <?php endif; ?>
-<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/components/category-selection.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/components/category-selection.blade.php ENDPATH**/ ?>

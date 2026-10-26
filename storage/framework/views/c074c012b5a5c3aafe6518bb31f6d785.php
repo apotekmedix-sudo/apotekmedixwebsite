@@ -1383,4 +1383,4 @@
     <script src="<?php echo e(asset('js/fix-cursor.js')); ?>"></script>
 </body>
 </html>
-<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/layouts/frontend.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/layouts/frontend.blade.php ENDPATH**/ ?>

@@ -11,4 +11,4 @@
         <img class="product-placeholder-logo" src="<?php echo e(asset('LOGO APOTEK MEDIX.PNG')); ?>" alt="Logo Apotek Medix" loading="lazy">
     <?php endif; ?>
 </a>
-<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/partials/product-gallery-image.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/partials/product-gallery-image.blade.php ENDPATH**/ ?>

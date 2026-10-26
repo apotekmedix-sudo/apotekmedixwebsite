@@ -749,6 +749,9 @@ function normalizeCartPackageUnits(item) {
   return item;
 }
 
+if (activeCtx.storageKey === 'apotekmedix_cart_pbf') {
+  activeCtx.wholesaleOrder = true;
+}
 cartItems = cartItems.map(normalizeCartPackageUnits);
 
 function resolveProductImage(item) {
@@ -1167,4 +1170,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.frontend', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/cart.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.frontend', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/cart.blade.php ENDPATH**/ ?>

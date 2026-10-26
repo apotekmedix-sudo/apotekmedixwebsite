@@ -217,7 +217,7 @@
                         <article class="order-card">
                             <div>
                                 <strong>Pesanan #{{ $order->id }}</strong>
-                                <div class="order-meta">{{ $order->created_at?->format('d M Y, H:i') }} · {{ $order->transaction_channel === 'offline' ? 'Pesanan toko' : 'Online' }}</div>
+                                <div class="order-meta">{{ $order->created_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') }} WIB · {{ $order->transaction_channel === 'offline' ? 'Pesanan toko' : 'Online' }}</div>
                                 <div class="order-total">Rp {{ number_format($order->effective_total, 0, ',', '.') }}</div>
                                 <span class="order-status">{{ $order->transaction_channel === 'offline' ? ($order->payment_status === 'paid' ? 'Lunas' : 'Menunggu pembayaran kasir') : 'Pesanan online' }}</span>
                             </div>

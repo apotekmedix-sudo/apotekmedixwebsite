@@ -1,4 +1,4 @@
-﻿
+
 
 <?php $__env->startSection('title', 'Dashboard - Admin Apotek Medix'); ?>
 <?php $__env->startSection('page-title', '📊 Dashboard'); ?>
@@ -87,7 +87,7 @@
                                 <span style="color:#ef4444;font-weight:700;">Habis</span>
                             <?php endif; ?>
                         </td>
-                        <td style="font-size:0.82rem;color:#9ca3af;"><?php echo e($p->created_at->format('d M Y H:i')); ?></td>
+                        <td style="font-size:0.82rem;color:#9ca3af;"><?php echo e($p->created_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y H:i:s')); ?> WIB</td>
                         <td><a href="<?php echo e(route('admin.produk.edit', $p->id)); ?>" class="btn btn-secondary btn-sm">Edit</a></td>
                     </tr>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
@@ -118,7 +118,7 @@
             <tbody>
                 <?php $__empty_1 = true; $__currentLoopData = $recentOrders; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $order): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <tr>
-                        <td style="font-size:0.82rem;color:#6b7280;"><?php echo e($order->created_at->format('d M Y H:i')); ?></td>
+                        <td style="font-size:0.82rem;color:#6b7280;"><?php echo e($order->created_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y H:i:s')); ?> WIB</td>
                         <td><strong><?php echo e($order->buyer_name); ?></strong></td>
                         <td><?php echo e($order->buyer_type === 'apotik' ? 'Apotik' : 'Umum'); ?></td>
                         <td><?php echo e('Rp ' . number_format($order->total, 0, ',', '.')); ?></td>
@@ -172,4 +172,4 @@ setInterval(fetchStats, 15000);
 </script>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/admin/dashboard.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/admin/dashboard.blade.php ENDPATH**/ ?>

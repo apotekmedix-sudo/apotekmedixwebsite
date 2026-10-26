@@ -67,7 +67,7 @@
                     $unitBasePrice = $unitBasePriceValues[$unit];
                 ?>
                 <div class="product-unit-card <?php echo e($isRedLogoLocked ? 'is-red-logo-locked' : ''); ?>" data-cart-unit="<?php echo e($unit); ?>">
-                    <button type="button" class="product-unit-choice <?php echo e($isRedLogoLocked ? 'is-red-logo-locked' : ''); ?>" aria-pressed="false"
+                    <button type="button" class="product-unit-choice<?php echo e($isRedLogoLocked ? ' is-red-logo-locked' : ''); ?>" aria-pressed="false"
                             data-unit-price="<?php echo e($unitPriceValues[$unit]); ?>"
                             data-price-target="<?php echo e($priceTargetId ?? ''); ?>"
                             data-red-logo-locked="<?php echo e($isRedLogoLocked ? '1' : '0'); ?>"
@@ -97,4 +97,4 @@
 <?php else: ?>
     <small class="product-unit-unavailable">Harga satuan produk belum tersedia.</small>
 <?php endif; ?>
-<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/partials/product-unit-selector.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/partials/product-unit-selector.blade.php ENDPATH**/ ?>

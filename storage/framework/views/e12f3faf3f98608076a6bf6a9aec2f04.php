@@ -599,6 +599,17 @@
     <?php echo $__env->yieldContent('styles'); ?>
 </head>
 <body>
+    <?php
+        $tempoUnpaidOrders = \Illuminate\Support\Facades\Schema::hasTable('purchase_histories')
+            ? \App\Models\PurchaseHistory::whereRaw('LOWER(TRIM(COALESCE(payment_method, ""))) = ?', ['tempo'])
+                ->where(fn ($q) => $q->whereNull('payment_status')->orWhere('payment_status', '!=', 'paid'))
+                ->where(fn ($q) => $q->whereNull('receipt_status')->orWhere('receipt_status', '!=', 'cancelled'))
+                ->where(fn ($q) => $q->whereNull('approval_status')->orWhere('approval_status', '!=', 'rejected'))
+                ->get()
+            : collect();
+        $tempoAlertCount = $tempoUnpaidOrders->count();
+        $tempoUrgentCount = $tempoUnpaidOrders->filter(fn ($o) => in_array($o->tempo_due_status, ['overdue', 'due_today', 'due_soon'], true))->count();
+    ?>
     <div class="admin-container">
         <!-- Sidebar Overlay (mobile) -->
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -680,8 +691,21 @@
                 <div style="display:flex; align-items:center; gap:0.75rem;">
                     <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
                     <h1 class="topbar-title"><?php echo $__env->yieldContent('page-title', 'Dashboard'); ?></h1>
+                    <div style="display:inline-flex;align-items:center;gap:0.55rem;padding:0.42rem 0.85rem;border-radius:999px;background:#f8fafc;border:1px solid #dbe4f0;font-size:0.8rem;font-weight:700;color:#0f172a;white-space:nowrap;margin-left:0.5rem;" title="Waktu Realtime WIB">
+                        <span style="width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.2);"></span>
+                        <span id="adminRealtimeDate" style="color:#475569;font-weight:600;"><?php echo e(now()->timezone('Asia/Jakarta')->translatedFormat('l, d M Y')); ?></span>
+                        <span style="color:#cbd5e1;">•</span>
+                        <span id="adminRealtimeTime" style="color:#0052cc;font-weight:800;font-variant-numeric:tabular-nums;"><?php echo e(now()->timezone('Asia/Jakarta')->format('H:i:s')); ?> WIB</span>
+                    </div>
                 </div>
                 <div class="topbar-right">
+                    <a href="<?php echo e(route('admin.notifications.index')); ?>" style="position:relative;display:inline-flex;align-items:center;gap:0.45rem;padding:0.48rem 0.85rem;border-radius:999px;background:<?php echo e(($tempoUrgentCount ?? 0) > 0 ? '#fef2f2' : '#eff6ff'); ?>;border:1px solid <?php echo e(($tempoUrgentCount ?? 0) > 0 ? '#fecaca' : '#bfdbfe'); ?>;color:<?php echo e(($tempoUrgentCount ?? 0) > 0 ? '#dc2626' : '#0052cc'); ?>;font-size:0.8rem;font-weight:800;text-decoration:none;white-space:nowrap;" title="Lihat Notifikasi Jatuh Tempo">
+                        <i class="fa-solid fa-bell"></i>
+                        <span>Notifikasi Tempo</span>
+                        <?php if(($tempoAlertCount ?? 0) > 0): ?>
+                            <span style="background:<?php echo e(($tempoUrgentCount ?? 0) > 0 ? '#dc2626' : '#0052cc'); ?>;color:#ffffff;font-size:0.7rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:999px;"><?php echo e($tempoAlertCount); ?></span>
+                        <?php endif; ?>
+                    </a>
                     <div class="user-info">
                         <div class="user-avatar"><?php echo e(strtoupper(substr(auth()->user()->name, 0, 1))); ?></div>
                         <div>
@@ -739,6 +763,18 @@
             document.getElementById('sidebar').classList.remove('open');
             document.getElementById('sidebarOverlay').classList.remove('open');
         }
+
+        (function() {
+            const dEl = document.getElementById('adminRealtimeDate');
+            const tEl = document.getElementById('adminRealtimeTime');
+            const tick = () => {
+                const now = new Date();
+                if (dEl) dEl.textContent = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' }).format(now);
+                if (tEl) tEl.textContent = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now).replace(/\./g, ':') + ' WIB';
+            };
+            tick();
+            setInterval(tick, 1000);
+        })();
     </script>
 
     <!-- Bottom Navigation (mobile only) -->
@@ -760,4 +796,4 @@
     </nav>
 </body>
 </html>
-<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/layouts/admin.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/layouts/admin.blade.php ENDPATH**/ ?>

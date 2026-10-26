@@ -245,6 +245,16 @@ class PurchaseHistoryTest extends TestCase
         ]);
 
         $response->assertOk();
+        $this->withMiddleware()->get($response->json('invoice_url'))
+            ->assertOk()
+            ->assertSee('FAKTUR PENJUALAN')
+            ->assertSee('APOTEKER PENANGGUNG JAWAB :')
+            ->assertSee('No. SIA')
+            ->assertSee('No. SIPA')
+            ->assertSee('SIA-PBF-001')
+            ->assertSee('SIPA-PBF-001')
+            ->assertSee('Sehat Bersama Medix')
+            ->assertSee('TOTAL PEMBAYARAN');
         $this->assertDatabaseHas('purchase_histories', [
             'buyer_name' => 'PT Contoh PBF',
             'buyer_type' => 'pbf',

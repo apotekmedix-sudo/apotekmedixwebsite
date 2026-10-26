@@ -64,7 +64,7 @@
 
                 </span>
                 <?php if($codeIsActive): ?>
-                    <span class="activation-expiry">Berlaku sampai <?php echo e($codes[$channel]->expires_at->format('d M Y, H:i')); ?></span>
+                    <span class="activation-expiry">Berlaku sampai <?php echo e($codes[$channel]->expires_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s')); ?> WIB</span>
                 <?php endif; ?>
                 <form action="<?php echo e(route('admin.access-codes.generate', $channel)); ?>" method="POST" onsubmit="return confirm('<?php echo e($codeIsActive ? 'Kode lama langsung tidak berlaku. Buat kode baru 5 digit dengan masa berlaku 30 hari?' : 'Buat kode aktivasi 5 digit yang berlaku 30 hari?'); ?>')">
                     <?php echo csrf_field(); ?>
@@ -90,8 +90,8 @@
                         <td><strong><?php echo e(['b2b' => 'Belanja B2B', 'b2c' => 'Produk Khusus B2C'][$code->channel] ?? 'Belanja'); ?></strong></td>
                         <td><code class="code-value"><?php echo e($readableCode ?: 'Tidak dapat ditampilkan — buat ulang'); ?></code></td>
                         <td><span class="activation-status <?php echo e($codeIsActive ? 'active' : ''); ?>"><?php echo e($codeIsActive ? 'Aktif' : ($isUnreadableCode ? 'Tidak dapat dibaca — buat ulang' : 'Kedaluwarsa')); ?></span></td>
-                        <td><?php echo e($code->expires_at?->format('d M Y, H:i') ?: '-'); ?></td>
-                        <td><?php echo e($code->updated_at?->format('d M Y, H:i') ?: '-'); ?></td>
+                        <td><?php echo e($code->expires_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') ? $code->expires_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') . ' WIB' : '-'); ?></td>
+                        <td><?php echo e($code->updated_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') ? $code->updated_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') . ' WIB' : '-'); ?></td>
                         <td>
                             <div class="code-actions">
                                 <form class="code-edit" action="<?php echo e(route('admin.access-codes.update', $code)); ?>" method="POST">
@@ -122,4 +122,4 @@
 </div>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/admin/access-codes/index.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/admin/access-codes/index.blade.php ENDPATH**/ ?>

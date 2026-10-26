@@ -449,4 +449,4 @@
         }
     }
 </style>
-<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/partials/product-card-styles.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/partials/product-card-styles.blade.php ENDPATH**/ ?>

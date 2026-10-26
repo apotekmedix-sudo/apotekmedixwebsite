@@ -49,4 +49,4 @@
 </script>
 </body>
 </html>
-<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/cashier/login.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/cashier/login.blade.php ENDPATH**/ ?>

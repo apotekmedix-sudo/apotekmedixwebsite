@@ -67,7 +67,7 @@
                     $unitBasePrice = $unitBasePriceValues[$unit];
                 @endphp
                 <div class="product-unit-card {{ $isRedLogoLocked ? 'is-red-logo-locked' : '' }}" data-cart-unit="{{ $unit }}">
-                    <button type="button" class="product-unit-choice {{ $isRedLogoLocked ? 'is-red-logo-locked' : '' }}" aria-pressed="false"
+                    <button type="button" class="product-unit-choice{{ $isRedLogoLocked ? ' is-red-logo-locked' : '' }}" aria-pressed="false"
                             data-unit-price="{{ $unitPriceValues[$unit] }}"
                             data-price-target="{{ $priceTargetId ?? '' }}"
                             data-red-logo-locked="{{ $isRedLogoLocked ? '1' : '0' }}"

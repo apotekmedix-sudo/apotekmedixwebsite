@@ -13,6 +13,12 @@
         .top-actions{display:flex;align-items:center;gap:12px}.user{font-size:13px;color:#475569}.logout{border:1px solid #cbd5e1;background:#fff;color:#334155;padding:9px 12px;border-radius:9px;font-weight:700;cursor:pointer}
         .admin-dashboard-link{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid #bfdbfe;border-radius:9px;background:#eff6ff;color:#0052cc;text-decoration:none;font-size:13px;font-weight:800;white-space:nowrap}
         .admin-dashboard-link:hover{background:#dbeafe}
+        .realtime-clock-badge{display:inline-flex;align-items:center;gap:10px;padding:8px 14px;border-radius:999px;background:#f8fafc;border:1px solid #dbe4f0;color:#0f172a;font-size:13px;font-weight:700;box-shadow:inset 0 1px 2px #0f172a08;white-space:nowrap}
+        .realtime-clock-dot{width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px #10b98128;animation:clockPulse 2s infinite}
+        .realtime-clock-date{color:#475569;font-weight:600}
+        .realtime-clock-sep{color:#cbd5e1}
+        .realtime-clock-time{color:#0052cc;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+        @keyframes clockPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(1.2)}}
         main{max-width:1440px;margin:0 auto;padding:24px}.welcome{display:flex;justify-content:space-between;align-items:end;margin-bottom:20px;gap:12px}
         .welcome h2{margin:0 0 5px;font-size:25px;letter-spacing:-.04em}.welcome p{margin:0;color:#64748b;font-size:14px}
         .refresh{border:0;border-radius:9px;background:#0052cc;color:#fff;padding:10px 14px;font-weight:700;text-decoration:none}
@@ -50,9 +56,25 @@
 <header>
     <div class="topbar">
         <div class="brand"><img class="logo" src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix"><div><h1>Apotek Medix</h1><p class="subtitle">Dashboard Admin Kasir</p></div></div>
+        <div class="realtime-clock-badge" id="cashierRealtimeClockBadge" aria-live="polite" title="Waktu Realtime WIB">
+            <span class="realtime-clock-dot" aria-hidden="true"></span>
+            <span class="realtime-clock-date" id="cashierRealtimeDate">{{ now()->timezone('Asia/Jakarta')->translatedFormat('l, d M Y') }}</span>
+            <span class="realtime-clock-sep" aria-hidden="true">•</span>
+            <span class="realtime-clock-time" id="cashierRealtimeTime">{{ now()->timezone('Asia/Jakarta')->format('H:i:s') }} WIB</span>
+        </div>
         <div class="top-actions">
             <span class="user">{{ auth()->user()->name }} · {{ auth()->user()->isAdmin() ? 'Admin' : 'Kasir' }}</span>
             @if(auth()->user()->isAdmin())
+                @php
+                    $cashierTempoCount = \Illuminate\Support\Facades\Schema::hasTable('purchase_histories')
+                        ? \App\Models\PurchaseHistory::whereRaw('LOWER(TRIM(COALESCE(payment_method, ""))) = ?', ['tempo'])
+                            ->where(fn ($q) => $q->whereNull('payment_status')->orWhere('payment_status', '!=', 'paid'))
+                            ->where(fn ($q) => $q->whereNull('receipt_status')->orWhere('receipt_status', '!=', 'cancelled'))
+                            ->where(fn ($q) => $q->whereNull('approval_status')->orWhere('approval_status', '!=', 'rejected'))
+                            ->count()
+                        : 0;
+                @endphp
+                <a class="admin-dashboard-link" href="{{ route('admin.notifications.index') }}" style="background:#fff7ed;border-color:#fed7aa;color:#c2410c;">🔔 Notifikasi Tempo @if($cashierTempoCount > 0)<span style="background:#dc2626;color:#fff;padding:2px 7px;border-radius:999px;font-size:11px;">{{ $cashierTempoCount }}</span>@endif</a>
                 <a class="admin-dashboard-link" href="{{ route('admin.dashboard') }}"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i> Dashboard Admin</a>
                 <form action="{{ route('logout') }}" method="POST">@csrf<button class="logout" type="submit">Keluar</button></form>
             @else
@@ -119,7 +141,7 @@
                         $receiptUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute('orders.invoice', now()->addMinutes(30), ['order' => $order->id]);
                     @endphp
                     <tr>
-                        <td><div class="order-id">#{{ $order->id }}</div><div class="muted">{{ $order->created_at?->format('d M Y, H:i') }}</div></td>
+                        <td><div class="order-id">#{{ $order->id }}</div><div class="muted">{{ $order->created_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') }} WIB</div></td>
                         <td><span class="channel {{ $channel[0] }}">{{ $channel[1] }}</span></td>
                         <td><div class="buyer">{{ $order->buyer_name ?: '-' }}</div><div class="muted">{{ $order->phone ?: '-' }}</div></td>
                         <td>
@@ -127,10 +149,10 @@
                             <ul class="items">@foreach(array_slice($items, 0, 3) as $item)<li>{{ $item['nama_obat'] ?? $item['name'] ?? 'Produk' }} × {{ $item['quantity'] ?? $item['qty'] ?? 0 }}</li>@endforeach</ul>
                             @if(count($items) > 3)<div class="muted">+{{ count($items) - 3 }} produk lainnya</div>@endif
                         </td>
-                        <td>{{ $order->payment_method ?: '-' }}<div class="muted">{{ $order->payment_status === 'paid' ? 'Lunas' : ucfirst($order->payment_status ?? 'pending') }}</div></td>
+                        <td>{{ $order->payment_method ?: '-' }}<div class="muted">{{ $order->payment_status === 'paid' ? 'Lunas' : ucfirst($order->payment_status ?? 'pending') }}@if($order->paid_at) · {{ $order->paid_at->timezone('Asia/Jakarta')->format('H:i:s') }} WIB @endif</div>@if($order->isTempoPayment())<div class="muted" style="color:{{ in_array($order->tempo_due_status, ['overdue', 'due_today']) ? '#dc2626' : ($order->tempo_due_status === 'due_soon' ? '#d97706' : '#0369a1') }};font-weight:700;">Jatuh tempo: {{ $order->due_date_formatted }} ({{ $order->tempo_due_label }})</div>@endif</td>
                         <td class="amount">Rp {{ number_format($order->effective_total, 0, ',', '.') }}</td>
                         <td><span class="status {{ $order->receipt_status ?? 'pending' }}">{{ match($order->receipt_status ?? 'pending') {'verified' => 'Terverifikasi', 'printed' => 'Dicetak', 'cancelled' => 'Dibatalkan', default => 'Pending'} }}</span>
-                            @if($order->receipt_status === 'printed')<div class="muted">{{ $order->printed_at?->format('d M, H:i') }}</div>@endif
+                            @if($order->receipt_status === 'printed')<div class="muted">{{ $order->printed_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') }} WIB</div>@elseif($order->receipt_status === 'verified' && $order->verified_at)<div class="muted">{{ $order->verified_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') }} WIB</div>@endif
                         </td>
                         <td>
                             <div class="actions">
@@ -160,6 +182,32 @@
 </main>
 <script>
     (() => {
+        const dateEl = document.getElementById('cashierRealtimeDate');
+        const timeEl = document.getElementById('cashierRealtimeTime');
+        const updateClock = () => {
+            const now = new Date();
+            if (dateEl) {
+                dateEl.textContent = new Intl.DateTimeFormat('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                }).format(now);
+            }
+            if (timeEl) {
+                timeEl.textContent = new Intl.DateTimeFormat('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }).format(now).replace(/\./g, ':') + ' WIB';
+            }
+        };
+        updateClock();
+        window.setInterval(updateClock, 1000);
+
         let previous = {
             pending: @json($metrics['pending']),
             latest: @json($metrics['latest_pending_id']),

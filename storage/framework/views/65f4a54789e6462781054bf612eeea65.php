@@ -71,8 +71,9 @@
         <hr class="divider">
         <h2 class="receipt-title">STRUK PENJUALAN</h2>
         <section class="details" aria-label="Detail transaksi">
-            <span class="label">No. Transaksi</span><span>TRX/<?php echo e($order->created_at?->format('Ymd')); ?>/<?php echo e(str_pad($order->id, 5, '0', STR_PAD_LEFT)); ?></span>
-            <span class="label">Tanggal</span><span><?php echo e($order->created_at?->format('d/m/Y H:i') ?? '-'); ?></span>
+            <span class="label">No. Transaksi</span><span>TRX/<?php echo e($order->created_at?->timezone('Asia/Jakarta')->format('Ymd')); ?>/<?php echo e(str_pad($order->id, 5, '0', STR_PAD_LEFT)); ?></span>
+            <span class="label">Tanggal</span><span id="receiptRealtimeClock"><?php echo e(now()->timezone('Asia/Jakarta')->format('d/m/Y H:i:s')); ?> WIB</span>
+            <span class="label">Waktu Pesan</span><span><?php echo e($order->created_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i:s') ?? '-'); ?> WIB</span>
             <span class="label">Kasir</span><span><?php echo e($cashierName ?? 'Online'); ?></span>
             <span class="label">Pelanggan</span><span><?php echo e($order->buyer_name ?: 'Umum'); ?></span>
             <?php if($order->phone): ?>
@@ -120,6 +121,9 @@
 
         <hr class="divider">
         <div class="payment"><strong>Pembayaran</strong><span><?php echo e($paymentMethod); ?></span></div>
+        <?php if($order->isTempoPayment()): ?>
+            <div class="payment"><strong>Jatuh Tempo</strong><span><?php echo e($order->due_date_formatted); ?></span></div>
+        <?php endif; ?>
         <div class="payment"><strong>Status</strong><span><?php echo e($paymentStatus); ?></span></div>
         <p class="well-wishes">Semoga lekas sembuh</p>
         <span class="tagline">Sehat Bersama Medix</span>
@@ -128,9 +132,32 @@
             <a class="back-button" href="<?php echo e(route('cashier.dashboard')); ?>">Kembali ke dashboard admin</a>
         <?php endif; ?>
     </main>
+    <script>
+        (() => {
+            const el = document.getElementById('receiptRealtimeClock');
+            const updateReceiptClock = () => {
+                if (!el) return;
+                const now = new Date();
+                const parts = new Intl.DateTimeFormat('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }).formatToParts(now).reduce((acc, p) => (acc[p.type] = p.value, acc), {});
+                el.textContent = `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}:${parts.second} WIB`;
+            };
+            updateReceiptClock();
+            window.setInterval(updateReceiptClock, 1000);
+            window.addEventListener('beforeprint', updateReceiptClock);
+        })();
+    </script>
     <?php if(request()->boolean('print')): ?>
         <script>window.addEventListener('load', () => window.setTimeout(() => window.print(), 350));</script>
     <?php endif; ?>
 </body>
 </html>
-<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/orders/b2c-receipt.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\project-library\ai-video\ApotekMedix\apotekmedixwebsite\resources\views/orders/b2c-receipt.blade.php ENDPATH**/ ?>
