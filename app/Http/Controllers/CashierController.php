@@ -252,12 +252,21 @@ class CashierController extends Controller
                     $quantities[$productId] = ($quantities[$productId] ?? 0) + ($quantity * $factor);
                 }
 
+                $saleQuantities = [];
+                foreach ($items as $item) {
+                    if (!empty($item['id'])) {
+                        $pid = (int) $item['id'];
+                        $saleQuantities[$pid] = ($saleQuantities[$pid] ?? 0) + (int) ($item['quantity'] ?? $item['qty'] ?? 0);
+                    }
+                }
+
                 foreach ($quantities as $productId => $quantity) {
                     $product = $products->get($productId);
                     $remainingUnits = (int) $product->available_stock_units + $quantity;
                     $product->update([
                         'stock_base_units' => $remainingUnits,
                         'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
+                        'terjual' => max(0, (int) $product->terjual - ($saleQuantities[$productId] ?? 0)),
                     ]);
                 }
             }
@@ -265,6 +274,8 @@ class CashierController extends Controller
             $lockedOrder->update([
                 'receipt_status' => 'cancelled',
                 'payment_status' => 'cancelled',
+                'approval_status' => 'rejected',
+                'stock_committed' => false,
                 'cancelled_at' => now(),
             ]);
 

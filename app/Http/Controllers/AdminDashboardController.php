@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Medicine;
 use App\Models\Banner;
 use App\Models\PurchaseHistory;
+use App\Models\PurchaseStockReservation;
+use Illuminate\Support\Facades\DB;
 use App\Constants\Companies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -109,7 +111,28 @@ class AdminDashboardController extends Controller
             $order->discounted_total = $order->discounted_total ?: $discountedTotal;
         }
 
-        $order->update($data);
+        DB::transaction(function () use ($order, $data) {
+            $lockedOrder = PurchaseHistory::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($data['approval_status'] === 'rejected') {
+                $this->releaseOrRestoreOrderStock($lockedOrder);
+                $data['receipt_status'] = 'cancelled';
+                $data['payment_status'] = 'cancelled';
+                $data['stock_committed'] = false;
+                $data['cancelled_at'] = now();
+            } elseif ($data['approval_status'] === 'approved' && !$lockedOrder->stock_committed && !$lockedOrder->is_pbf_purchase_order) {
+                $this->commitOrderStock($lockedOrder);
+                $data['stock_committed'] = true;
+                if ($lockedOrder->receipt_status === 'cancelled') {
+                    $data['receipt_status'] = 'verified';
+                    $data['cancelled_at'] = null;
+                }
+            }
+
+            $lockedOrder->original_total = $order->original_total;
+            $lockedOrder->discounted_total = $order->discounted_total;
+            $lockedOrder->update($data);
+        });
 
         return redirect()->route('admin.purchase-history.index')->with('success', 'Status persetujuan berhasil diperbarui.');
     }
@@ -123,8 +146,14 @@ class AdminDashboardController extends Controller
             return redirect()->route('admin.purchase-history.index')->with('error', 'Tabel purchase_histories tidak tersedia.');
         }
 
-        $order->delete();
-        return redirect()->route('admin.purchase-history.index')->with('success', 'Riwayat pembelian berhasil dihapus.');
+        DB::transaction(function () use ($order) {
+            $lockedOrder = PurchaseHistory::whereKey($order->id)->lockForUpdate()->first();
+            if ($lockedOrder) {
+                $this->releaseOrRestoreOrderStock($lockedOrder);
+                $lockedOrder->delete();
+            }
+        });
+        return redirect()->route('admin.purchase-history.index')->with('success', 'Riwayat pembelian berhasil dihapus dan stok dikembalikan.');
     }
 
     /**
@@ -136,8 +165,93 @@ class AdminDashboardController extends Controller
             return redirect()->route('admin.purchase-history.index')->with('error', 'Tabel purchase_histories tidak tersedia.');
         }
 
-        \App\Models\PurchaseHistory::query()->delete();
-        return redirect()->route('admin.purchase-history.index')->with('success', 'Semua riwayat pembelian berhasil dihapus.');
+        DB::transaction(function () {
+            foreach (PurchaseHistory::query()->lockForUpdate()->get() as $order) {
+                $this->releaseOrRestoreOrderStock($order);
+                $order->delete();
+            }
+        });
+        return redirect()->route('admin.purchase-history.index')->with('success', 'Semua riwayat pembelian berhasil dihapus dan stok dikembalikan.');
+    }
+
+    private function releaseOrRestoreOrderStock(PurchaseHistory $order): void
+    {
+        if (Schema::hasTable('purchase_stock_reservations')) {
+            PurchaseStockReservation::where('purchase_history_id', $order->id)->delete();
+        }
+
+        if (!$order->stock_committed || $order->is_pbf_purchase_order || $order->receipt_status === 'cancelled') {
+            return;
+        }
+
+        $items = is_string($order->items) ? json_decode($order->items, true) : ($order->items ?? []);
+        $items = is_array($items) ? $items : [];
+        foreach ($items as $item) {
+            $productId = (int) ($item['id'] ?? 0);
+            $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
+            if ($productId < 1 || $qty < 1) {
+                continue;
+            }
+            $product = Medicine::whereKey($productId)->lockForUpdate()->first();
+            if (!$product) {
+                continue;
+            }
+            $factor = max(1, $product->getSaleUnitFactor($item['sale_unit'] ?? 'box'));
+            $restoredUnits = $product->getPhysicalStockUnits() + ($qty * $factor);
+            $product->update([
+                'stock_base_units' => $restoredUnits,
+                'stok' => intdiv($restoredUnits, max(1, $product->units_per_box)),
+                'terjual' => max(0, (int) $product->terjual - $qty),
+            ]);
+        }
+    }
+
+    private function commitOrderStock(PurchaseHistory $order): void
+    {
+        if (Schema::hasTable('purchase_stock_reservations')) {
+            $reservations = PurchaseStockReservation::where('purchase_history_id', $order->id)
+                ->orderBy('medicine_id')
+                ->lockForUpdate()
+                ->get();
+
+            if ($reservations->isNotEmpty()) {
+                foreach ($reservations as $reservation) {
+                    $product = Medicine::whereKey($reservation->medicine_id)->lockForUpdate()->first();
+                    if (!$product) {
+                        continue;
+                    }
+                    $remainingUnits = max(0, $product->getPhysicalStockUnits() - (int) $reservation->quantity_units);
+                    $product->update([
+                        'stock_base_units' => $remainingUnits,
+                        'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
+                        'terjual' => (int) $product->terjual + (int) $reservation->sale_quantity,
+                    ]);
+                }
+                PurchaseStockReservation::where('purchase_history_id', $order->id)->delete();
+                return;
+            }
+        }
+
+        $items = is_string($order->items) ? json_decode($order->items, true) : ($order->items ?? []);
+        $items = is_array($items) ? $items : [];
+        foreach ($items as $item) {
+            $productId = (int) ($item['id'] ?? 0);
+            $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
+            if ($productId < 1 || $qty < 1) {
+                continue;
+            }
+            $product = Medicine::whereKey($productId)->lockForUpdate()->first();
+            if (!$product) {
+                continue;
+            }
+            $factor = max(1, $product->getSaleUnitFactor($item['sale_unit'] ?? 'box'));
+            $remainingUnits = max(0, $product->getPhysicalStockUnits() - ($qty * $factor));
+            $product->update([
+                'stock_base_units' => $remainingUnits,
+                'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
+                'terjual' => (int) $product->terjual + $qty,
+            ]);
+        }
     }
 
     /**
