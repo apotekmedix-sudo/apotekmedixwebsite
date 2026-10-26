@@ -150,9 +150,6 @@
                             <button class="btn btn-secondary btn-sm" data-order-id="{{ $order->id }}" onclick="fetchAndShowDetailModal({{ $order->id }})">
                                 <i class="fa-solid fa-eye"></i> Lihat
                             </button>
-                            <a class="btn btn-primary btn-sm" href="{{ route('admin.purchase-history.purchase-order', $order->id) }}" target="_blank" rel="noopener">
-                                <i class="fa-solid fa-file-signature"></i> Surat Pesanan
-                            </a>
                             <form method="POST" action="{{ route('admin.purchase-history.destroy', $order->id) }}" onsubmit="return confirmDeleteOne(event, '{{ addslashes($order->buyer_name) }}')">
                                 @csrf
                                 @method('DELETE')

@@ -21,6 +21,14 @@
     .inventory-negative{color:#b91c1c!important}
     .inventory-positive{color:#047857!important}
     .inventory-section-title{margin:1.5rem 0 .75rem;color:#0f172a;font-size:1.05rem}
+    .inventory-pagination{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem 1rem;margin:0 0 1.25rem}
+    .inventory-pagination-summary{margin:0;color:#64748b;font-size:.8rem}
+    .inventory-pagination-nav{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem}
+    .inventory-page-link{display:inline-flex;min-width:2rem;min-height:2rem;align-items:center;justify-content:center;padding:.25rem .55rem;border:1px solid #dbe2ea;border-radius:.4rem;background:#fff;color:#334155;font-size:.8rem;font-weight:600;line-height:1.25;text-decoration:none}
+    .inventory-page-link:hover{border-color:#94a3b8;background:#f8fafc}
+    .inventory-page-link.is-current{border-color:#0f172a;background:#0f172a;color:#fff}
+    .inventory-page-link.is-disabled{color:#94a3b8;background:#f8fafc}
+    @media(max-width:600px){.inventory-pagination{align-items:flex-start;flex-direction:column}.inventory-pagination-nav{width:100%}}
 </style>
 
 <p class="inventory-intro">Semua jumlah ditampilkan dalam satuan utama produk. Stok fisik adalah jumlah stok saat ini, dipesan adalah stok yang ditahan untuk pesanan belum selesai, dan stok tersedia adalah stok fisik dikurangi stok yang dipesan.</p>
@@ -59,7 +67,7 @@
         </tbody>
     </table>
 </div>
-{{ $products->links() }}
+    @include('admin.inventory.pagination', ['paginator' => $products, 'label' => 'produk'])
 
 <h2 class="inventory-section-title">Riwayat mutasi stok</h2>
 <div class="inventory-table-wrap">
@@ -108,5 +116,5 @@
         </tbody>
     </table>
 </div>
-{{ $movements->links() }}
+    @include('admin.inventory.pagination', ['paginator' => $movements, 'label' => 'mutasi'])
 @endsection
