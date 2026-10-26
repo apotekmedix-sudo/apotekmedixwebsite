@@ -1756,7 +1756,7 @@
             <?php endif; ?>
             <h3 class="discounted-product-name"><a href="<?php echo e(route('medicines.show', ['id' => $promoMedicine->id, 'from' => 'home'])); ?>" style="color:inherit;text-decoration:none;"><?php echo e($promoMedicine->nama_obat); ?></a></h3>
             <div class="medicine-card-details">
-              <p title="<?php echo e($promoMedicine->komposisi ?: $promoMedicine->nama_obat); ?>"><strong>Komposisi:</strong> <?php echo e(\Illuminate\Support\Str::limit($promoMedicine->komposisi ?: $promoMedicine->nama_obat, 15, '...')); ?></p>
+              <p title="<?php echo e($promoMedicine->komposisi ?: '—'); ?>"><strong>Komposisi:</strong> <?php echo e(\Illuminate\Support\Str::limit($promoMedicine->komposisi ?: '—', 15, '...')); ?></p>
               <p title="<?php echo e($promoMedicine->indikasi ?: '—'); ?>"><strong>Indikasi:</strong> <?php echo e(\Illuminate\Support\Str::limit($promoMedicine->indikasi ?: '—', 15, '...')); ?></p>
               <p title="<?php echo e($promoMedicine->golongan ?: '—'); ?>"><strong>Golongan:</strong> <?php echo e(\Illuminate\Support\Str::limit($promoMedicine->golongan ?: '—', 15, '...')); ?></p>
             </div>
@@ -1828,7 +1828,7 @@
           <div class="medicine-card-principal"><?php echo e($med->brand ?: $med->kategori); ?></div>
           <h3 class="prod-name"><a href="<?php echo e(route('medicines.show', ['id' => $med->id, 'from' => 'home'])); ?>"><?php echo e($med->nama_obat); ?></a></h3>
           <div class="medicine-card-details">
-            <p title="<?php echo e($med->komposisi ?: $med->nama_obat); ?>"><strong>Komposisi:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->komposisi ?: $med->nama_obat, 15, '...')); ?></p>
+            <p title="<?php echo e($med->komposisi ?: '—'); ?>"><strong>Komposisi:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->komposisi ?: '—', 15, '...')); ?></p>
             <p title="<?php echo e($med->indikasi ?: '—'); ?>"><strong>Indikasi:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->indikasi ?: '—', 15, '...')); ?></p>
             <p title="<?php echo e($med->golongan ?: '—'); ?>"><strong>Golongan:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->golongan ?: '—', 15, '...')); ?></p>
           </div>
@@ -1917,7 +1917,7 @@
           <div class="medicine-card-principal"><?php echo e($med->brand ?: $med->kategori); ?></div>
           <h3 class="prod-name"><a href="<?php echo e(route('medicines.show', ['id' => $med->id, 'from' => 'home', 'search' => $search ?: null])); ?>"><?php echo e($med->nama_obat); ?></a></h3>
           <div class="medicine-card-details">
-            <p title="<?php echo e($med->komposisi ?: $med->nama_obat); ?>"><strong>Komposisi:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->komposisi ?: $med->nama_obat, 15, '...')); ?></p>
+            <p title="<?php echo e($med->komposisi ?: '—'); ?>"><strong>Komposisi:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->komposisi ?: '—', 15, '...')); ?></p>
             <p title="<?php echo e($med->indikasi ?: '—'); ?>"><strong>Indikasi:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->indikasi ?: '—', 15, '...')); ?></p>
             <p title="<?php echo e($med->golongan ?: '—'); ?>"><strong>Golongan:</strong> <?php echo e(\Illuminate\Support\Str::limit($med->golongan ?: '—', 15, '...')); ?></p>
           </div>

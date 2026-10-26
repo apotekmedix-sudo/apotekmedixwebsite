@@ -35,7 +35,7 @@ class Medicine extends Model
                 $medicine->kategori = '';
             }
             if ($medicine->deskripsi === null) {
-                $medicine->deskripsi = (string) ($medicine->nama_obat ?? '');
+                $medicine->deskripsi = '';
             }
             if (Schema::hasColumn('medicines', 'stock_base_units') && $medicine->stock_base_units === null) {
                 $medicine->stock_base_units = (int) $medicine->stok * $medicine->units_per_box;

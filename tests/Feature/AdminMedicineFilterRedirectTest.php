@@ -114,53 +114,61 @@ class AdminMedicineFilterRedirectTest extends TestCase
             ->assertDontSee('Amoxicillin Kaplet');
     }
 
-    public function test_admin_can_create_banners_with_optional_title_and_url_and_homepage_renders_slideshow(): void
+    public function test_product_cards_do_not_use_product_name_as_missing_composition(): void
+    {
+        Medicine::create([
+            'nama_obat' => 'Produk Tanpa Komposisi',
+            'kategori' => 'Pabrik Contoh',
+            'kategori_produk' => 'otc',
+            'kelompok' => 'APOTEK',
+            'harga' => 10000,
+            'harga_retail' => 10000,
+            'stok' => 5,
+            'stock_base_units' => 5,
+            'deskripsi' => '',
+            'komposisi' => null,
+        ]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Komposisi:</strong> —', false)
+            ->assertDontSee('Komposisi:</strong> Produk Tanpa Komposisi', false);
+
+        $this->get(route('products.apotek'))
+            ->assertOk()
+            ->assertSee('Komposisi:</strong> —', false)
+            ->assertDontSee('Komposisi:</strong> Produk Tanpa Komposisi', false);
+    }
+
+    public function test_banner_management_page_and_admin_navigation_are_removed_while_homepage_slideshow_remains(): void
     {
         $admin = \App\Models\User::factory()->create(['role' => 'admin']);
 
-        // 1. Create banner without judul and without url_tujuan
-        $file1 = \Illuminate\Http\UploadedFile::fake()->image('banner1.jpg', 1600, 600);
         $this->actingAs($admin)
-            ->post(route('admin.banners.store'), [
-                'judul' => '',
-                'url_tujuan' => '',
-                'gambar' => $file1,
-                'aktif' => '1',
-            ])
-            ->assertRedirect(route('admin.banners.index'));
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertDontSee('Banner Promo');
+        $this->get('/admin/banners')->assertNotFound();
 
-        // 2. Create second banner with judul and url_tujuan
-        $file2 = \Illuminate\Http\UploadedFile::fake()->image('banner2.jpg', 1600, 600);
-        $this->actingAs($admin)
-            ->post(route('admin.banners.store'), [
-                'judul' => 'Promo Vitamin Akhir Pekan',
-                'url_tujuan' => '/products-apotek',
-                'gambar' => $file2,
-                'aktif' => '1',
-            ])
-            ->assertRedirect(route('admin.banners.index'));
+        \App\Models\Banner::create([
+            'judul' => null,
+            'gambar' => 'banners/banner1.jpg',
+            'aktif' => true,
+            'urutan' => 1,
+        ]);
+        \App\Models\Banner::create([
+            'judul' => 'Promo Vitamin Akhir Pekan',
+            'gambar' => 'banners/banner2.jpg',
+            'url_tujuan' => '/products-apotek',
+            'aktif' => true,
+            'urutan' => 2,
+        ]);
 
         $this->assertDatabaseCount('banners', 2);
-        $this->assertDatabaseHas('banners', [
-            'judul' => null,
-            'url_tujuan' => null,
-            'aktif' => 1,
-        ]);
-        $this->assertDatabaseHas('banners', [
-            'judul' => 'Promo Vitamin Akhir Pekan',
-            'url_tujuan' => '/products-apotek',
-            'aktif' => 1,
-        ]);
-
-        // 3. Homepage renders both banners & slideshow navigation dots
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('id="homeBannerSlider"', false)
             ->assertSee('Promo Vitamin Akhir Pekan')
             ->assertSee('id="homeBannerDots"', false);
-
-        foreach (\App\Models\Banner::all() as $banner) {
-            \App\Helpers\ImageHelper::deleteBannerImage($banner->gambar);
-        }
     }
 }

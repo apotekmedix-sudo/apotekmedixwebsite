@@ -22,7 +22,6 @@ use App\Http\Controllers\AdminProdukController;
 use App\Http\Controllers\AdminInventoryController;
 use App\Http\Controllers\AdminProdukImportController;
 use App\Http\Controllers\AdminBusinessDataExportController;
-use App\Http\Controllers\AdminBannerController;
 use App\Http\Controllers\AdminMedicinePromotionController;
 use App\Http\Controllers\AdminDiscountCodeController;
 use App\Http\Controllers\PurchaseHistoryController;
@@ -191,10 +190,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('produk-import', [AdminProdukImportController::class, 'showImportForm'])->name('produk.import');
     Route::post('produk-import', [AdminProdukImportController::class, 'import'])->name('produk.import.process');
     Route::get('produk-import/template', [AdminProdukImportController::class, 'downloadTemplate'])->name('produk.import.template');
-
-    // Banner / Promo Slideshow management
-    Route::resource('banners', AdminBannerController::class);
-    Route::post('banners/{banner}/toggle', [AdminBannerController::class, 'toggleAktif'])->name('banners.toggle');
 
     // Channel-specific medicine discounts
     Route::get('promotions', [AdminMedicinePromotionController::class, 'index'])->name('promotions.index');

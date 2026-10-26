@@ -301,7 +301,7 @@ class AdminProdukController extends Controller
             ->orderBy('nama_obat')->get();
         StockAvailability::annotate($products);
         $columns = [
-            'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KATEGORI', 'KOMPOSISI', 'INDIKASI',
+            'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KATEGORI', 'KOMPOSISI', 'INDIKASI', 'DESKRIPSI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'MODAL', 'HARGA INTERNAL',
             'HARGA JUAL B2B', 'HARGA JUAL B2C', 'LINK FOTO 1', 'LINK FOTO 2',
         ];
@@ -314,6 +314,7 @@ class AdminProdukController extends Controller
             $product->kategori_produk ?: '',
             $product->komposisi ?: '',
             $product->indikasi ?: '',
+            $product->deskripsi ?: '',
             $product->satuan ?: '',
             $product->kemasan ?: '',
             $product->sediaan ?: '',
@@ -326,9 +327,9 @@ class AdminProdukController extends Controller
             !empty($product->gambar_tambahan[0]) ? url('storage/' . $product->gambar_tambahan[0]) : '',
         ])->all();
         $widths = array_fill(0, count($columns), 20);
-        $widths[2] = $widths[6] = $widths[7] = 30;
-        $widths[8] = $widths[16] = $widths[17] = 48;
-        $numericColumns = [0, 11, 12, 13, 14, 15];
+        $widths[2] = $widths[6] = $widths[7] = $widths[8] = 30;
+        $widths[9] = $widths[17] = $widths[18] = 48;
+        $numericColumns = [0, 12, 13, 14, 15, 16];
 
         return \App\Helpers\XlsxWriter::download('produk.xlsx', $columns, $rows, $widths, $numericColumns);
     }
@@ -357,21 +358,13 @@ class AdminProdukController extends Controller
             'harga_retail'      => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
             'sediaan'           => ['nullable', 'string', 'max:255'],
+            'deskripsi'         => ['nullable', 'string'],
             'komposisi'         => ['nullable', 'string'],
             'indikasi'          => ['nullable', 'string'],
             'dosis'             => ['nullable', 'string'],
         ]);
 
-        if (!empty(trim($validated['deskripsi'] ?? ''))) {
-            $validated['deskripsi'] = trim($validated['deskripsi']);
-        } else {
-            $parts = array_filter([
-                trim((string) ($validated['komposisi'] ?? '')),
-                trim((string) ($validated['indikasi'] ?? '')),
-                trim((string) ($validated['dosis'] ?? '')),
-            ]);
-            $validated['deskripsi'] = implode(' | ', $parts);
-        }
+        $validated['deskripsi'] = trim((string) ($validated['deskripsi'] ?? ''));
 
         if (!Schema::hasColumn('medicines', 'dosis')) {
             unset($validated['dosis']);
@@ -425,6 +418,7 @@ class AdminProdukController extends Controller
             'harga_retail'      => ['required_without:harga', 'nullable', 'numeric', 'min:0'],
             'stok'              => ['required', 'numeric', 'min:0', 'max:10000000'],
             'sediaan'           => ['nullable', 'string', 'max:255'],
+            'deskripsi'         => ['nullable', 'string'],
             'komposisi'          => ['nullable', 'string'],
             'indikasi'          => ['nullable', 'string'],
             'dosis'             => ['nullable', 'string'],
@@ -461,16 +455,7 @@ class AdminProdukController extends Controller
             $validated['gambar_tambahan'] = $updatedGallery;
         }
 
-        if (!empty(trim($validated['deskripsi'] ?? ''))) {
-            $validated['deskripsi'] = trim($validated['deskripsi']);
-        } else {
-            $parts = array_filter([
-                trim((string) ($validated['komposisi'] ?? '')),
-                trim((string) ($validated['indikasi'] ?? '')),
-                trim((string) ($validated['dosis'] ?? '')),
-            ]);
-            $validated['deskripsi'] = implode(' | ', $parts);
-        }
+        $validated['deskripsi'] = trim((string) ($validated['deskripsi'] ?? ''));
 
         if (!Schema::hasColumn('medicines', 'dosis')) {
             unset($validated['dosis']);

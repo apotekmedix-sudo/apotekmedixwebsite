@@ -50,6 +50,7 @@ class AdminBusinessDataExportTest extends TestCase
         foreach ([
             'PRINCIPLE',
             'KATEGORI',
+            'DESKRIPSI',
             'OBAT',
             'STOK SATUAN',
             'LINK FOTO',
@@ -94,6 +95,7 @@ class AdminBusinessDataExportTest extends TestCase
         $this->assertTrue($product->is_resep);
         $this->assertTrue($product->is_grosir);
         $this->assertSame('OBAT', $product->kategori_produk);
+        $this->assertSame('Produk untuk tes export', $product->deskripsi);
         $this->assertSame(15500.0, (float) $product->harga);
         $this->assertSame('medicines/produk-export.jpg', $product->gambar);
         $this->assertSame(['medicines/produk-export-2.jpg'], $product->gambar_tambahan);

@@ -670,12 +670,6 @@
                     </a>
                 </li>
                 <li>
-                    <a href="<?php echo e(route('admin.banners.index')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'admin.banners')): ?> active <?php endif; ?>">
-                        <span>🖼️</span>
-                        <span>Banner Promo</span>
-                    </a>
-                </li>
-                <li>
                     <a href="<?php echo e(route('admin.promotions.index')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'admin.promotions') || str_contains(Route::current()->getName() ?? '', 'admin.discount-codes')): ?> active <?php endif; ?>">
                         <i class="fa-solid fa-tags"></i>
                         <span>Promo & Diskon</span>
