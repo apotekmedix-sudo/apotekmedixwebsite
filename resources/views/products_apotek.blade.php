@@ -343,34 +343,14 @@
             <span>/</span>
             <span class="current">Belanja B2C</span>
         </div>
-        <h1><i class="fa-solid fa-store"></i> Belanja <button type="button" class="b2c-secret-trigger" aria-label="Masukkan kode akses B2C" aria-haspopup="dialog" onclick="document.getElementById('b2cCodeDialog').showModal()">B2C</button></h1>
-        @if($b2cAccess)
-            <div class="b2c-access-status"><i class="fa-solid fa-unlock-keyhole" aria-hidden="true"></i> Produk khusus terbuka</div>
-        @endif
+        <h1><i class="fa-solid fa-store"></i> Belanja B2C</h1>
+        @include('partials.catalog-access-controls', ['accessReturnTo' => 'products.apotek'])
         <p>{{ $total }} produk tersedia dari berbagai perusahaan farmasi terpercaya</p>
     </div>
     <i class="fa-solid fa-pills header-deco-icon header-deco-icon-1"></i>
     <i class="fa-solid fa-capsules header-deco-icon header-deco-icon-2"></i>
     <i class="fa-solid fa-syringe header-deco-icon header-deco-icon-3"></i>
 </div>
-
-<dialog id="b2cCodeDialog" class="b2c-code-dialog" aria-labelledby="b2cCodeDialogNotice">
-    <form action="{{ route('products.apotek.activate') }}" method="POST" class="b2c-code-dialog-content">
-        @csrf
-        <div class="b2c-code-dialog-header">
-            <p id="b2cCodeDialogNotice" class="b2c-code-dialog-notice"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Peringatan</p>
-            <p class="b2c-code-dialog-hint">Anda salah klik</p>
-        </div>
-        <label class="sr-only" for="b2cAccessCode">Kode akses</label>
-        <input id="b2cAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" aria-label="Kode akses" required>
-        @if($errors->has('kode'))
-            <p class="b2c-code-error" role="alert">{{ $errors->first('kode') }}</p>
-        @endif
-        <div class="b2c-code-dialog-actions">
-            <button type="submit" class="b2c-code-submit">Kirim</button>
-        </div>
-    </form>
-</dialog>
 
 <div class="products-main">
     <div class="container">
@@ -445,14 +425,15 @@
                             <h3 class="medicine-name"><a href="{{ route('medicines.show', $medicine->id) }}">{{ $medicine->nama_obat }}</a></h3>
 
                             @php
-                                $promoPrice = $medicine->getChannelPromoPrice('b2c');
+                                $catalogPriceChannel = $internalAccess ? 'internal' : 'b2c';
+                                $promoPrice = $medicine->getChannelPromoPrice($catalogPriceChannel);
                             @endphp
                             <div class="medicine-card-details">
                                 <p title="{{ $medicine->komposisi ?: $medicine->nama_obat }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($medicine->komposisi ?: $medicine->nama_obat, 15, '...') }}</p>
                                 <p title="{{ $medicine->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($medicine->indikasi ?: '—', 15, '...') }}</p>
                                 <p title="{{ $medicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($medicine->golongan ?: '—', 15, '...') }}</p>
                             </div>
-                            @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => 'b2c'])
+                            @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => $catalogPriceChannel, 'redLogoAccess' => $redLogoAccess])
                             @php $stock = (int) $medicine->available_stock_units; @endphp
                             <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
@@ -468,7 +449,7 @@
                                     <i class="fa-solid fa-fire-flame-curved"></i> Terjual {{ number_format((int) $medicine->terjual, 0, ',', '.') }}
                                 </span>
                             </div>
-                            <button class="btn-cart {{ ($medicine->isRedLogo() && !($b2cAccess ?? false)) ? 'is-red-logo-locked' : '' }}" data-stock-cart @disabled($stock <= 0)
+                            <button class="btn-cart {{ ($medicine->isRedLogo() && !($redLogoAccess ?? false)) ? 'is-red-logo-locked' : '' }}" data-stock-cart @disabled($stock <= 0)
                                     data-product-id="{{ $medicine->id }}"
                                     data-package-unit-label="{{ $medicine->package_unit_label }}"
                                     data-product-name="{{ $medicine->nama_obat }}"
@@ -533,13 +514,6 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'apotekmedix_cart_apotek', wholesaleOrder: false };</script>
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_apotek', wholesaleOrder: false, syncProductPrices: true, priceMode: @json($internalAccess ? 'internal' : 'b2c') };</script>
 @include('partials.cart', ['cartWholesaleOrder' => false])
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    @if($errors->has('kode') || session('b2c_activation_required'))
-    document.getElementById('b2cCodeDialog')?.showModal();
-    @endif
-});
-</script>
 @endsection

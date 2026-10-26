@@ -6,6 +6,7 @@ use App\Models\Medicine;
 use App\Models\Banner;
 use App\Models\PurchaseHistory;
 use App\Models\PurchaseStockReservation;
+use App\Services\MedicineStockLedger;
 use Illuminate\Support\Facades\DB;
 use App\Constants\Companies;
 use Illuminate\Http\Request;
@@ -177,6 +178,16 @@ class AdminDashboardController extends Controller
     private function releaseOrRestoreOrderStock(PurchaseHistory $order): void
     {
         if (Schema::hasTable('purchase_stock_reservations')) {
+            $reservations = PurchaseStockReservation::where('purchase_history_id', $order->id)->get();
+            foreach ($reservations as $reservation) {
+                MedicineStockLedger::recordReservedChange(
+                    (int) $reservation->medicine_id,
+                    -(int) $reservation->quantity_units,
+                    $order->id,
+                    'release',
+                    'Reservasi dilepas karena pesanan dibatalkan atau dihapus.'
+                );
+            }
             PurchaseStockReservation::where('purchase_history_id', $order->id)->delete();
         }
 
@@ -198,11 +209,17 @@ class AdminDashboardController extends Controller
             }
             $factor = max(1, $product->getSaleUnitFactor($item['sale_unit'] ?? 'box'));
             $restoredUnits = $product->getPhysicalStockUnits() + ($qty * $factor);
-            $product->update([
-                'stock_base_units' => $restoredUnits,
-                'stok' => intdiv($restoredUnits, max(1, $product->units_per_box)),
-                'terjual' => max(0, (int) $product->terjual - $qty),
-            ]);
+            MedicineStockLedger::withContext(
+                'return',
+                $order->id,
+                fn () => $product->update([
+                    'stock_base_units' => $restoredUnits,
+                    'stok' => intdiv($restoredUnits, max(1, $product->units_per_box)),
+                    'terjual' => max(0, (int) $product->terjual - $qty),
+                ]),
+                0,
+                'Stok dikembalikan karena pesanan dibatalkan atau dihapus.'
+            );
         }
     }
 
@@ -221,11 +238,17 @@ class AdminDashboardController extends Controller
                         continue;
                     }
                     $remainingUnits = max(0, $product->getPhysicalStockUnits() - (int) $reservation->quantity_units);
-                    $product->update([
-                        'stock_base_units' => $remainingUnits,
-                        'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
-                        'terjual' => (int) $product->terjual + (int) $reservation->sale_quantity,
-                    ]);
+                    MedicineStockLedger::withContext(
+                        'sale',
+                        $order->id,
+                        fn () => $product->update([
+                            'stock_base_units' => $remainingUnits,
+                            'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
+                            'terjual' => (int) $product->terjual + (int) $reservation->sale_quantity,
+                        ]),
+                        -(int) $reservation->quantity_units,
+                        'Penjualan dicatat saat pesanan disetujui.'
+                    );
                 }
                 PurchaseStockReservation::where('purchase_history_id', $order->id)->delete();
                 return;
@@ -246,11 +269,17 @@ class AdminDashboardController extends Controller
             }
             $factor = max(1, $product->getSaleUnitFactor($item['sale_unit'] ?? 'box'));
             $remainingUnits = max(0, $product->getPhysicalStockUnits() - ($qty * $factor));
-            $product->update([
-                'stock_base_units' => $remainingUnits,
-                'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
-                'terjual' => (int) $product->terjual + $qty,
-            ]);
+            MedicineStockLedger::withContext(
+                'sale',
+                $order->id,
+                fn () => $product->update([
+                    'stock_base_units' => $remainingUnits,
+                    'stok' => intdiv($remainingUnits, max(1, $product->units_per_box)),
+                    'terjual' => (int) $product->terjual + $qty,
+                ]),
+                0,
+                'Penjualan dicatat saat pesanan disetujui.'
+            );
         }
     }
 

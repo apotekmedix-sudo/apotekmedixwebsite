@@ -4,19 +4,46 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Schema;
+use App\Models\MedicineStockMovement;
+use App\Services\MedicineStockLedger;
 
 class Medicine extends Model
 {
     use HasFactory;
 
+    private static ?\WeakMap $stockMovementBefore = null;
+
     protected $table = 'medicines';
 
     protected static function booted(): void
     {
+        static::created(function (Medicine $medicine): void {
+            MedicineStockLedger::recordOpening($medicine);
+        });
+
+        static::updating(function (Medicine $medicine): void {
+            self::$stockMovementBefore ??= new \WeakMap();
+            self::$stockMovementBefore[$medicine] = MedicineStockLedger::physicalUnitsFrom(
+                $medicine->getRawOriginal()
+            );
+        });
+
         static::creating(function (Medicine $medicine): void {
             if (Schema::hasColumn('medicines', 'stock_base_units') && $medicine->stock_base_units === null) {
                 $medicine->stock_base_units = (int) $medicine->stok * $medicine->units_per_box;
+            }
+        });
+
+        static::updated(function (Medicine $medicine): void {
+            if (isset(self::$stockMovementBefore[$medicine])) {
+                MedicineStockLedger::recordModelUpdate(
+                    $medicine,
+                    self::$stockMovementBefore[$medicine],
+                    $medicine->getPhysicalStockUnits()
+                );
+                unset(self::$stockMovementBefore[$medicine]);
             }
         });
 
@@ -411,6 +438,11 @@ class Medicine extends Model
         return $this->available_stock_units > 0;
     }
 
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(MedicineStockMovement::class);
+    }
+
     public function getAvailableStockUnitsAttribute(): int
     {
         if (array_key_exists('available_stock_units', $this->attributes)) {
@@ -707,6 +739,17 @@ class Medicine extends Model
 
     public function getChannelBasePrice(string $channel, string $unit = 'box'): float
     {
+        if ($channel === 'internal') {
+            $internalPrice = (float) $this->harga_internal;
+            if ($internalPrice <= 0 || !$this->usesTabletPackaging() || $unit === 'box') {
+                return $internalPrice;
+            }
+
+            $factor = $this->getSaleUnitFactor($unit);
+
+            return $factor > 0 ? $internalPrice * $factor / $this->units_per_box : 0;
+        }
+
         if ($channel === 'b2b') {
             $boxPrice = (float) $this->harga_grosir;
 

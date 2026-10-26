@@ -49,6 +49,12 @@ class AdminBusinessDataExportTest extends TestCase
         $content = $response->getContent();
         foreach ([
             'PRINCIPLE',
+            'STOK KEMASAN',
+            'STOK FISIK UNIT',
+            'STOK DIRESERVASI UNIT',
+            'STOK TERSEDIA UNIT',
+            'STRIP PER KEMASAN',
+            'TABLET PER STRIP',
             'HARGA JUAL PER TABLET',
             'LINK FOTO',
             'HARGA JUAL B2B',
@@ -56,6 +62,8 @@ class AdminBusinessDataExportTest extends TestCase
             'HARGA INTERNAL',
             '12000',
             'http://localhost/storage/medicines/produk-export.jpg',
+            'LINK FOTO 2',
+            'http://localhost/storage/medicines/produk-export-2.jpg',
         ] as $expected) {
             $this->assertStringContainsString($expected, $content);
         }
@@ -111,13 +119,13 @@ class AdminBusinessDataExportTest extends TestCase
             'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
             'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
             'MODAL', 'HARGA INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
-            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO',
+            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO 1', 'LINK FOTO 2',
         ]);
         fputcsv($stream, [
             $product->id, 'Principal Baru', 'Nama Baru', 'MERAH', 'Obat Bebas', 'Komposisi baru',
             'Indikasi baru', 'BOX', '10 strip @ 10 tablet', 'TABLET', '2', '10', '100',
             '6000', '7000', '13000', '14000', '1500', '150',
-            'http://localhost/storage/medicines/baru.jpg',
+            'http://localhost/storage/medicines/baru.jpg', '',
         ]);
         fclose($stream);
 

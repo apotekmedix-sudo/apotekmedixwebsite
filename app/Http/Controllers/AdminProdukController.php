@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use App\Models\PbfSupplier;
 use App\Support\CsvSpreadsheet;
 use RuntimeException;
@@ -290,9 +291,10 @@ class AdminProdukController extends Controller
         StockAvailability::annotate($products);
         $columns = [
             'NO', 'PRINCIPLE', 'NAMA PRODUK', 'LOGO', 'GOLONGAN', 'KOMPOSISI', 'INDIKASI',
-            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK SATUAN', 'PER STRIP', 'PER TABLET',
+            'SATUAN', 'KEMASAN', 'SEDIAAN', 'STOK KEMASAN', 'STRIP PER KEMASAN', 'TABLET PER STRIP',
+            'STOK FISIK UNIT', 'STOK DIRESERVASI UNIT', 'STOK TERSEDIA UNIT',
             'MODAL', 'HARGA INTERNAL', 'HARGA JUAL B2B', 'HARGA JUAL B2C',
-            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO',
+            'HARGA JUAL PER STRIP', 'HARGA JUAL PER TABLET', 'LINK FOTO 1', 'LINK FOTO 2',
         ];
         $rows = $products->map(fn ($product) => [
             $product->id,
@@ -305,9 +307,12 @@ class AdminProdukController extends Controller
             $product->satuan ?: '',
             $product->kemasan ?: '',
             $product->sediaan ?: '',
-            $product->stock_packages,
+            round($product->getPhysicalStockUnits() / max(1, $product->units_per_box), 6),
             $product->usesTabletPackaging() ? $product->strips_per_box : 0,
-            $product->usesTabletPackaging() ? $product->units_per_box : 0,
+            $product->usesTabletPackaging() ? $product->tablets_per_strip : 0,
+            $product->getPhysicalStockUnits(),
+            (int) $product->reserved_stock_units,
+            (int) $product->available_stock_units,
             $product->harga_modal,
             $product->harga_internal ?: '',
             $product->getChannelBasePrice('b2b'),
@@ -315,11 +320,12 @@ class AdminProdukController extends Controller
             $product->price_strip ?: 0,
             $product->price_tablet ?: 0,
             $product->image_url ?: '',
+            !empty($product->gambar_tambahan[0]) ? url('storage/' . $product->gambar_tambahan[0]) : '',
         ])->all();
         $widths = array_fill(0, count($columns), 20);
         $widths[2] = $widths[5] = $widths[6] = 30;
-        $widths[8] = $widths[19] = 48;
-        $numericColumns = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+        $widths[8] = $widths[22] = $widths[23] = 48;
+        $numericColumns = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 
         return \App\Helpers\XlsxWriter::download('produk.xlsx', $columns, $rows, $widths, $numericColumns);
     }
@@ -479,11 +485,8 @@ class AdminProdukController extends Controller
         unset($validated['stok']);
         $produk->fill($validated);
         $produk->setStockInPackages($stockPackages);
+        $this->assertStockCoversReservations($produk);
         $produk->save();
-
-        if (Schema::hasTable('purchase_stock_reservations')) {
-            PurchaseStockReservation::where('medicine_id', $produk->id)->delete();
-        }
 
         foreach ($imagesToDelete as $image) {
             ImageHelper::deleteProductImage($image);
@@ -557,10 +560,8 @@ class AdminProdukController extends Controller
     {
         $validated = $request->validate(['stok' => ['required', 'numeric', 'min:0', 'max:10000000']]);
         $produk->setStockInPackages((float) $validated['stok']);
+        $this->assertStockCoversReservations($produk);
         $produk->save();
-        if (Schema::hasTable('purchase_stock_reservations')) {
-            PurchaseStockReservation::where('medicine_id', $produk->id)->delete();
-        }
         return back()->with('success', 'Stok berhasil diupdate!');
     }
 
@@ -610,13 +611,25 @@ class AdminProdukController extends Controller
 
         $produk->fill($validated);
         $produk->setStockInPackages($stockPackages);
+        $this->assertStockCoversReservations($produk);
         $produk->save();
 
-        if (Schema::hasTable('purchase_stock_reservations')) {
-            PurchaseStockReservation::where('medicine_id', $produk->id)->delete();
+        return back()->with('success', 'Harga dan stok berhasil diupdate!');
+    }
+
+    private function assertStockCoversReservations(Medicine $product): void
+    {
+        if (!Schema::hasTable('purchase_stock_reservations')) {
+            return;
         }
 
-        return back()->with('success', 'Harga dan stok berhasil diupdate!');
+        $reservedUnits = (int) PurchaseStockReservation::where('medicine_id', $product->id)
+            ->sum('quantity_units');
+        if ($product->getPhysicalStockUnits() < $reservedUnits) {
+            throw ValidationException::withMessages([
+                'stok' => "Stok fisik tidak dapat kurang dari {$reservedUnits} unit yang sedang direservasi.",
+            ]);
+        }
     }
 
     private function resolveTabletsPerBox(Request $request, array $validated): int

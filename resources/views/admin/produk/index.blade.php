@@ -257,7 +257,10 @@
             <tbody>
                 @foreach($medicines as $medicine)
                 @php
-                    $converted = $medicine->getConvertedUnitStocksForUnits($medicine->available_stock_units);
+                    $physicalStockUnits = (int) $medicine->physical_stock_units;
+                    $reservedStockUnits = (int) $medicine->reserved_stock_units;
+                    $availableStockUnits = (int) $medicine->available_stock_units;
+                    $converted = $medicine->getConvertedUnitStocksForUnits($physicalStockUnits);
                 @endphp
                 <tr data-product-row="{{ $medicine->id }}" data-unit-label="{{ $medicine->package_unit_label }}" data-tablet-packaging="{{ \App\Models\Medicine::supportsTabletPackaging((string) $medicine->satuan, (string) $medicine->sediaan) ? '1' : '0' }}">
                     <td style="text-align:center;">
@@ -339,10 +342,15 @@
                     </td>
                     <td>
                         <div class="converted-stock-pills" data-converted-stock-pills>
+                            <div class="inventory-stock-summary" style="margin-bottom:.45rem;font-size:.72rem;line-height:1.5;color:#475569;">
+                                <div><strong>Fisik:</strong> {{ $medicine->getConvertedStockSummaryForUnits($physicalStockUnits) }}</div>
+                                <div><strong>Direservasi:</strong> {{ $medicine->getConvertedStockSummaryForUnits($reservedStockUnits) }}</div>
+                                <div><strong>Tersedia:</strong> {{ $medicine->getConvertedStockSummaryForUnits($availableStockUnits) }}</div>
+                            </div>
                             <div class="converted-stock-pill converted-stock-pill--box converted-stock-pill--editable">
                                 <span>{{ $medicine->package_unit_label }}:</span>
                                 <label class="stock-conversion-edit" for="stok-box-{{ $medicine->id }}">
-                                    <input id="stok-box-{{ $medicine->id }}" class="stock-quantity-input js-row-stock" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ rtrim(rtrim(number_format($medicine->stock_packages, 6, '.', ''), '0'), '.') }}" min="0" step="0.000001" aria-label="Stok {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
+                                    <input id="stok-box-{{ $medicine->id }}" class="stock-quantity-input js-row-stock" type="number" name="stok" form="inline-update-{{ $medicine->id }}" value="{{ rtrim(rtrim(number_format($physicalStockUnits / max(1, $medicine->units_per_box), 6, '.', ''), '0'), '.') }}" min="0" step="0.000001" aria-label="Stok {{ $medicine->package_unit_label }} {{ $medicine->nama_obat }}">
                                     {{ $medicine->package_unit_label }}
                                 </label>
                             </div>
@@ -365,7 +373,7 @@
                                 </div>
                             @endif
                         </div>
-                        <small style="display:block;margin-top:.25rem;color:#64748b;" data-row-breakdown>Sisa: {{ $medicine->stock_breakdown }}</small>
+                        <small style="display:block;margin-top:.25rem;color:#64748b;" data-row-breakdown>Rincian fisik: {{ $medicine->getConvertedStockSummaryForUnits($physicalStockUnits) }}</small>
                     </td>
                     <td style="font-size:0.82rem;color:#9ca3af;">{{ $medicine->created_at->format('d M Y') }}</td>
                     <td>

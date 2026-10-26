@@ -258,7 +258,10 @@
             <tbody>
                 <?php $__currentLoopData = $medicines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $medicine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <?php
-                    $converted = $medicine->getConvertedUnitStocksForUnits($medicine->available_stock_units);
+                    $physicalStockUnits = (int) $medicine->physical_stock_units;
+                    $reservedStockUnits = (int) $medicine->reserved_stock_units;
+                    $availableStockUnits = (int) $medicine->available_stock_units;
+                    $converted = $medicine->getConvertedUnitStocksForUnits($physicalStockUnits);
                 ?>
                 <tr data-product-row="<?php echo e($medicine->id); ?>" data-unit-label="<?php echo e($medicine->package_unit_label); ?>" data-tablet-packaging="<?php echo e(\App\Models\Medicine::supportsTabletPackaging((string) $medicine->satuan, (string) $medicine->sediaan) ? '1' : '0'); ?>">
                     <td style="text-align:center;">
@@ -341,10 +344,15 @@
                     </td>
                     <td>
                         <div class="converted-stock-pills" data-converted-stock-pills>
+                            <div class="inventory-stock-summary" style="margin-bottom:.45rem;font-size:.72rem;line-height:1.5;color:#475569;">
+                                <div><strong>Fisik:</strong> <?php echo e($medicine->getConvertedStockSummaryForUnits($physicalStockUnits)); ?></div>
+                                <div><strong>Direservasi:</strong> <?php echo e($medicine->getConvertedStockSummaryForUnits($reservedStockUnits)); ?></div>
+                                <div><strong>Tersedia:</strong> <?php echo e($medicine->getConvertedStockSummaryForUnits($availableStockUnits)); ?></div>
+                            </div>
                             <div class="converted-stock-pill converted-stock-pill--box converted-stock-pill--editable">
                                 <span><?php echo e($medicine->package_unit_label); ?>:</span>
                                 <label class="stock-conversion-edit" for="stok-box-<?php echo e($medicine->id); ?>">
-                                    <input id="stok-box-<?php echo e($medicine->id); ?>" class="stock-quantity-input js-row-stock" type="number" name="stok" form="inline-update-<?php echo e($medicine->id); ?>" value="<?php echo e(rtrim(rtrim(number_format($medicine->stock_packages, 6, '.', ''), '0'), '.')); ?>" min="0" step="0.000001" aria-label="Stok <?php echo e($medicine->package_unit_label); ?> <?php echo e($medicine->nama_obat); ?>">
+                                    <input id="stok-box-<?php echo e($medicine->id); ?>" class="stock-quantity-input js-row-stock" type="number" name="stok" form="inline-update-<?php echo e($medicine->id); ?>" value="<?php echo e(rtrim(rtrim(number_format($physicalStockUnits / max(1, $medicine->units_per_box), 6, '.', ''), '0'), '.')); ?>" min="0" step="0.000001" aria-label="Stok <?php echo e($medicine->package_unit_label); ?> <?php echo e($medicine->nama_obat); ?>">
                                     <?php echo e($medicine->package_unit_label); ?>
 
                                 </label>
@@ -368,7 +376,7 @@
                                 </div>
                             <?php endif; ?>
                         </div>
-                        <small style="display:block;margin-top:.25rem;color:#64748b;" data-row-breakdown>Sisa: <?php echo e($medicine->stock_breakdown); ?></small>
+                        <small style="display:block;margin-top:.25rem;color:#64748b;" data-row-breakdown>Rincian fisik: <?php echo e($medicine->getConvertedStockSummaryForUnits($physicalStockUnits)); ?></small>
                     </td>
                     <td style="font-size:0.82rem;color:#9ca3af;"><?php echo e($medicine->created_at->format('d M Y')); ?></td>
                     <td>

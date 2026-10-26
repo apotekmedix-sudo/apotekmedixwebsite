@@ -137,6 +137,13 @@ class MedicineUnitPackagingTest extends TestCase
             'quantity_units' => 123,
             'sale_quantity' => 6,
         ]);
+        $this->assertDatabaseHas('medicine_stock_movements', [
+            'medicine_id' => $medicine->id,
+            'movement_type' => 'reserve',
+            'physical_delta' => 0,
+            'reserved_delta' => 123,
+            'reference_id' => $order->id,
+        ]);
     }
 
     public function test_b2c_and_b2b_catalogs_offer_their_channel_package_prices(): void
@@ -158,6 +165,7 @@ class MedicineUnitPackagingTest extends TestCase
             'price_tablet' => 100,
             'price_strip' => 900,
             'price_box' => 1600,
+            'harga_internal' => 1200,
             'deskripsi' => 'Produk untuk pengujian harga kanal',
         ]);
         $b2bCode = ShoppingAccessCode::create([
@@ -181,6 +189,25 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertSee('Tablet · Rp 100', false)
             ->assertSee('Strip · Rp 900', false);
 
+        $internalCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
+            'code_hash' => Hash::make('67890'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $this->withSession([
+            'internal_access_expires_at' => now()->addDays(30)->timestamp,
+            'internal_access_code_hash' => $internalCode->code_hash,
+        ])->get(route('products.apotek'))
+            ->assertOk()
+            ->assertSee('Box · Rp 1.200', false)
+            ->assertDontSee('Tablet · Rp 100', false)
+            ->assertDontSee('Strip · Rp 900', false);
+        $this->get(route('medicines.show', $medicine))
+            ->assertOk()
+            ->assertSee('Rp 1.200')
+            ->assertDontSee('detail-unit-pill-name">Tablet', false)
+            ->assertDontSee('detail-unit-pill-name">Strip', false);
+
         $this->get('/belanja-internal')->assertNotFound();
 
         $this->postJson(route('orders.history.store'), [
@@ -193,6 +220,19 @@ class MedicineUnitPackagingTest extends TestCase
             ],
             'total' => 0,
         ])->assertUnprocessable();
+
+        $this->withSession([
+            'internal_access_expires_at' => now()->addDays(30)->timestamp,
+            'internal_access_code_hash' => $internalCode->code_hash,
+        ])->postJson(route('orders.history.store'), [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pelanggan Internal',
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 1, 'sale_unit' => 'tablet'],
+            ],
+            'total' => 100,
+        ])->assertUnprocessable()
+            ->assertJsonPath('message', 'Akses Internal hanya mendukung pembelian per kemasan.');
 
         $this->postJson(route('orders.history.store'), [
             'buyer_type' => 'pbf',

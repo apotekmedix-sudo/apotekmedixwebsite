@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\ShoppingAccessCode;
 use App\Models\DiscountCode;
 use App\Models\PurchaseStockReservation;
+use App\Services\MedicineStockLedger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -125,6 +126,9 @@ class PurchaseHistoryController extends Controller
         $originalTotal = 0;
         $discountedTotal = 0;
         $hasB2cAccess = null;
+        $hasInternalAccess = $channel === 'online'
+            && !$isPbfPurchaseOrder
+            && ShoppingAccessCode::hasActiveInternalSession();
 
         foreach ($items as $index => $item) {
             $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
@@ -153,10 +157,10 @@ class PurchaseHistoryController extends Controller
                         );
                 }
 
-                if (!$hasB2cAccess) {
+                if (!$hasB2cAccess && !$hasInternalAccess) {
                     return response()->json([
-                        'message' => 'Aktifkan kode akses B2C untuk memesan produk berlogo merah.',
-                        'errors' => ['items' => ['Produk berlogo merah memerlukan kode akses B2C aktif.']],
+                        'message' => 'Aktifkan kode akses B2C atau Internal untuk memesan produk berlogo merah.',
+                        'errors' => ['items' => ['Produk berlogo merah memerlukan kode akses B2C atau Internal yang aktif.']],
                     ], 403);
                 }
             }
@@ -167,14 +171,23 @@ class PurchaseHistoryController extends Controller
                     'errors' => ['items' => ["Produk {$product->nama_obat} hanya dapat dibeli per kemasan pada kanal ini."]],
                 ], 422);
             }
+            if ($product && $promoChannel === 'b2c' && $hasInternalAccess && $unit !== 'box') {
+                return response()->json([
+                    'message' => 'Akses Internal hanya mendukung pembelian per kemasan.',
+                    'errors' => ['items' => ["Produk {$product->nama_obat} hanya dapat dibeli per kemasan saat akses Internal aktif."]],
+                ], 422);
+            }
 
             if ($product) {
+                $priceChannel = $promoChannel === 'b2c' && $hasInternalAccess
+                    ? 'internal'
+                    : $promoChannel;
                 $price = $isPbfPurchaseOrder
                     ? (int) round((float) $product->harga_modal)
-                    : (int) round($product->getChannelBasePrice($promoChannel, $unit));
+                    : (int) round($product->getChannelBasePrice($priceChannel, $unit));
                 if ($price <= 0) {
                     return response()->json([
-                        'message' => "Harga {$promoChannel} untuk produk {$product->nama_obat} belum diatur.",
+                        'message' => "Harga {$priceChannel} untuk produk {$product->nama_obat} belum diatur.",
                         'errors' => ['items' => ["Harga produk {$product->nama_obat} belum diatur untuk kanal ini."]],
                     ], 422);
                 }
@@ -187,9 +200,11 @@ class PurchaseHistoryController extends Controller
                 }
             }
             $subtotal = $qty * $price;
-            $promoPercent = $isPbfPurchaseOrder ? 0 : ($product?->getPromoPercent($promoChannel) ?? 0);
+            $promoPercent = $isPbfPurchaseOrder || ($promoChannel === 'b2c' && $hasInternalAccess)
+                ? 0
+                : ($product?->getPromoPercent($promoChannel) ?? 0);
             $promoDiscount = (int) round($price * $promoPercent / 100) * $qty;
-            $manualDiscount = $isPbfPurchaseOrder
+            $manualDiscount = $isPbfPurchaseOrder || $hasInternalAccess
                 ? 0
                 : (int) ($item['potongan'] ?? $item['discount'] ?? 0);
             $discount = min($promoDiscount + $manualDiscount, $subtotal);
@@ -273,6 +288,13 @@ class PurchaseHistoryController extends Controller
                         'quantity_units' => $quantity,
                         'sale_quantity' => $saleQuantities[$productId],
                     ]);
+                    MedicineStockLedger::recordReservedChange(
+                        $productId,
+                        $quantity,
+                        $history->id,
+                        'reserve',
+                        'Stok ditahan untuk pesanan.'
+                    );
                 }
             }
 

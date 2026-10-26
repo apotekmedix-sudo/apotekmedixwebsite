@@ -343,34 +343,14 @@
             <span>/</span>
             <span class="current">Belanja B2C</span>
         </div>
-        <h1><i class="fa-solid fa-store"></i> Belanja <button type="button" class="b2c-secret-trigger" aria-label="Masukkan kode akses B2C" aria-haspopup="dialog" onclick="document.getElementById('b2cCodeDialog').showModal()">B2C</button></h1>
-        <?php if($b2cAccess): ?>
-            <div class="b2c-access-status"><i class="fa-solid fa-unlock-keyhole" aria-hidden="true"></i> Produk khusus terbuka</div>
-        <?php endif; ?>
+        <h1><i class="fa-solid fa-store"></i> Belanja B2C</h1>
+        <?php echo $__env->make('partials.catalog-access-controls', ['accessReturnTo' => 'products.apotek'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         <p><?php echo e($total); ?> produk tersedia dari berbagai perusahaan farmasi terpercaya</p>
     </div>
     <i class="fa-solid fa-pills header-deco-icon header-deco-icon-1"></i>
     <i class="fa-solid fa-capsules header-deco-icon header-deco-icon-2"></i>
     <i class="fa-solid fa-syringe header-deco-icon header-deco-icon-3"></i>
 </div>
-
-<dialog id="b2cCodeDialog" class="b2c-code-dialog" aria-labelledby="b2cCodeDialogNotice">
-    <form action="<?php echo e(route('products.apotek.activate')); ?>" method="POST" class="b2c-code-dialog-content">
-        <?php echo csrf_field(); ?>
-        <div class="b2c-code-dialog-header">
-            <p id="b2cCodeDialogNotice" class="b2c-code-dialog-notice"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Peringatan</p>
-            <p class="b2c-code-dialog-hint">Anda salah klik</p>
-        </div>
-        <label class="sr-only" for="b2cAccessCode">Kode akses</label>
-        <input id="b2cAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" aria-label="Kode akses" required>
-        <?php if($errors->has('kode')): ?>
-            <p class="b2c-code-error" role="alert"><?php echo e($errors->first('kode')); ?></p>
-        <?php endif; ?>
-        <div class="b2c-code-dialog-actions">
-            <button type="submit" class="b2c-code-submit">Kirim</button>
-        </div>
-    </form>
-</dialog>
 
 <div class="products-main">
     <div class="container">
@@ -445,14 +425,15 @@
                             <h3 class="medicine-name"><a href="<?php echo e(route('medicines.show', $medicine->id)); ?>"><?php echo e($medicine->nama_obat); ?></a></h3>
 
                             <?php
-                                $promoPrice = $medicine->getChannelPromoPrice('b2c');
+                                $catalogPriceChannel = $internalAccess ? 'internal' : 'b2c';
+                                $promoPrice = $medicine->getChannelPromoPrice($catalogPriceChannel);
                             ?>
                             <div class="medicine-card-details">
                                 <p title="<?php echo e($medicine->komposisi ?: $medicine->nama_obat); ?>"><strong>Komposisi:</strong> <?php echo e(\Illuminate\Support\Str::limit($medicine->komposisi ?: $medicine->nama_obat, 15, '...')); ?></p>
                                 <p title="<?php echo e($medicine->indikasi ?: '—'); ?>"><strong>Indikasi:</strong> <?php echo e(\Illuminate\Support\Str::limit($medicine->indikasi ?: '—', 15, '...')); ?></p>
                                 <p title="<?php echo e($medicine->golongan ?: '—'); ?>"><strong>Golongan:</strong> <?php echo e(\Illuminate\Support\Str::limit($medicine->golongan ?: '—', 15, '...')); ?></p>
                             </div>
-                            <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => 'b2c'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                            <?php echo $__env->make('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => $catalogPriceChannel, 'redLogoAccess' => $redLogoAccess], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                             <?php $stock = (int) $medicine->available_stock_units; ?>
                             <span class="product-stock <?php echo e($stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($medicine->id); ?>">
                                 <i class="fa-solid <?php echo e($stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
@@ -470,7 +451,7 @@
 
                                 </span>
                             </div>
-                            <button class="btn-cart <?php echo e(($medicine->isRedLogo() && !($b2cAccess ?? false)) ? 'is-red-logo-locked' : ''); ?>" data-stock-cart <?php if($stock <= 0): echo 'disabled'; endif; ?>
+                            <button class="btn-cart <?php echo e(($medicine->isRedLogo() && !($redLogoAccess ?? false)) ? 'is-red-logo-locked' : ''); ?>" data-stock-cart <?php if($stock <= 0): echo 'disabled'; endif; ?>
                                     data-product-id="<?php echo e($medicine->id); ?>"
                                     data-package-unit-label="<?php echo e($medicine->package_unit_label); ?>"
                                     data-product-name="<?php echo e($medicine->nama_obat); ?>"
@@ -535,15 +516,8 @@
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('scripts'); ?>
-<script>window.cartSettings = { storageKey: 'apotekmedix_cart_apotek', wholesaleOrder: false };</script>
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_apotek', wholesaleOrder: false, syncProductPrices: true, priceMode: <?php echo json_encode($internalAccess ? 'internal' : 'b2c', 15, 512) ?> };</script>
 <?php echo $__env->make('partials.cart', ['cartWholesaleOrder' => false], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    <?php if($errors->has('kode') || session('b2c_activation_required')): ?>
-    document.getElementById('b2cCodeDialog')?.showModal();
-    <?php endif; ?>
-});
-</script>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.frontend', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/products_apotek.blade.php ENDPATH**/ ?>

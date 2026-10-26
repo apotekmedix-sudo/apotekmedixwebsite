@@ -1,8 +1,13 @@
 <?php
     $priceChannel = $priceChannel ?? 'b2c';
-    $showUnitChoices = $showUnitChoices ?? true;
-    $b2cAccess = $b2cAccess ?? \App\Models\ShoppingAccessCode::hasActiveB2cSession();
-    $isRedLogoLocked = ($priceChannel === 'b2c') && $medicine->isRedLogo() && !$b2cAccess;
+    $showUnitChoices = ($showUnitChoices ?? true)
+        && !in_array($priceChannel, ['internal', 'b2b'], true);
+    $redLogoAccess = $redLogoAccess
+        ?? (($b2cAccess ?? \App\Models\ShoppingAccessCode::hasActiveB2cSession())
+            || \App\Models\ShoppingAccessCode::hasActiveInternalSession());
+    $isRedLogoLocked = in_array($priceChannel, ['b2c', 'internal'], true)
+        && $medicine->isRedLogo()
+        && !$redLogoAccess;
     $unitKeys = $showUnitChoices ? ['box', 'strip', 'tablet'] : ['box'];
     $unitPriceValues = [
         'box' => (int) round($medicine->getChannelPromoPrice($priceChannel, 'box')),
@@ -49,6 +54,7 @@
         data-unit-factors="<?php echo e(json_encode($unitFactors)); ?>"
         data-unit-labels="<?php echo e(json_encode($unitLabels)); ?>"
         data-price-channel="<?php echo e($priceChannel); ?>"
+        data-sales-channel="<?php echo e(in_array($priceChannel, ['b2c', 'internal'], true) ? 'b2c' : $priceChannel); ?>"
         data-red-logo="<?php echo e($medicine->isRedLogo() ? '1' : '0'); ?>"
         data-red-logo-locked="<?php echo e($isRedLogoLocked ? '1' : '0'); ?>"
         data-stock-units="<?php echo e($stockUnits); ?>">
@@ -67,7 +73,7 @@
                     $unitBasePrice = $unitBasePriceValues[$unit];
                 ?>
                 <div class="product-unit-card <?php echo e($isRedLogoLocked ? 'is-red-logo-locked' : ''); ?>" data-cart-unit="<?php echo e($unit); ?>">
-                    <button type="button" class="product-unit-choice <?php echo e($isRedLogoLocked ? 'is-red-logo-locked' : ''); ?>" aria-pressed="false"
+                    <button type="button" class="product-unit-choice<?php echo e($isRedLogoLocked ? ' is-red-logo-locked' : ''); ?>" aria-pressed="false"
                             data-unit-price="<?php echo e($unitPriceValues[$unit]); ?>"
                             data-price-target="<?php echo e($priceTargetId ?? ''); ?>"
                             data-red-logo-locked="<?php echo e($isRedLogoLocked ? '1' : '0'); ?>"

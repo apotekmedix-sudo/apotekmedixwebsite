@@ -13,6 +13,7 @@ class ShoppingAccessCode extends Model
 {
     public const CHANNEL_B2B = 'b2b';
     public const CHANNEL_B2C = 'b2c';
+    public const CHANNEL_INTERNAL = 'internal';
 
     protected $fillable = [
         'channel',
@@ -87,6 +88,18 @@ class ShoppingAccessCode extends Model
         }
 
         return self::matchesSession(self::CHANNEL_B2C, $codeHash);
+    }
+
+    public static function hasActiveInternalSession(): bool
+    {
+        $expiresAt = (int) session('internal_access_expires_at', 0);
+        $codeHash = session('internal_access_code_hash');
+
+        if ($expiresAt <= now()->timestamp || !$codeHash) {
+            return false;
+        }
+
+        return self::matchesSession(self::CHANNEL_INTERNAL, $codeHash);
     }
 
     public static function matchesSession(string $channel, ?string $sessionHash): bool
