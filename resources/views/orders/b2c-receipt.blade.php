@@ -47,12 +47,13 @@
         .well-wishes { margin: 14px 0 0; text-align: center; font-size: 11px; }
         .tagline { display: block; width: fit-content; margin: 3px auto 0; color: #163c9c; font-family: "Segoe Script", "Brush Script MT", cursive; font-size: 21px; font-style: italic; font-weight: 600; }
         .print-button { display: block; margin: 16px auto 0; padding: 9px 16px; border: 0; border-radius: 6px; color: #fff; background: #163c9c; cursor: pointer; }
+        .back-button { display: block; width: fit-content; margin: 10px auto 0; color: #163c9c; font-weight: 700; text-decoration: none; }
         @media print {
             @page { size: 80mm auto; margin: 0; }
             body { width: 80mm; padding: 0; background: #fff; font-size: 10px; }
             .receipt { width: 80mm; max-width: none; padding: 4mm; box-shadow: none; }
             .brand img { width: 78px; height: 54px; }
-            .print-button { display: none; }
+            .print-button, .back-button { display: none; }
         }
     </style>
 </head>
@@ -72,7 +73,7 @@
         <section class="details" aria-label="Detail transaksi">
             <span class="label">No. Transaksi</span><span>TRX/{{ $order->created_at?->format('Ymd') }}/{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</span>
             <span class="label">Tanggal</span><span>{{ $order->created_at?->format('d/m/Y H:i') ?? '-' }}</span>
-            <span class="label">Kasir</span><span>Online</span>
+            <span class="label">Kasir</span><span>{{ $cashierName ?? 'Online' }}</span>
             <span class="label">Pelanggan</span><span>{{ $order->buyer_name ?: 'Umum' }}</span>
             @if($order->phone)
                 <span class="label">No. Telepon</span><span>{{ $order->phone }}</span>
@@ -123,6 +124,12 @@
         <p class="well-wishes">Semoga lekas sembuh</p>
         <span class="tagline">Sehat Bersama Medix</span>
         <button class="print-button" type="button" onclick="window.print()">Cetak Struk</button>
+        @if($adminReceipt ?? false)
+            <a class="back-button" href="{{ route('cashier.dashboard') }}">Kembali ke dashboard admin</a>
+        @endif
     </main>
+    @if(request()->boolean('print'))
+        <script>window.addEventListener('load', () => window.setTimeout(() => window.print(), 350));</script>
+    @endif
 </body>
 </html>

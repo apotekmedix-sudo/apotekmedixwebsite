@@ -143,6 +143,7 @@
                                     <form action="{{ route('cashier.orders.printed', $order) }}" method="POST" onsubmit="return confirm('Pastikan invoice sudah berhasil dicetak.')">@csrf<button class="primary" type="submit">Tandai dicetak</button></form>
                                 @elseif($order->receipt_status === 'printed')
                                     <a class="action-link" href="{{ $receiptUrl }}" target="_blank" rel="noopener">Cetak ulang</a>
+                                    <form action="{{ route('cashier.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Batalkan struk transaksi #{{ $order->id }}? Stok akan dikembalikan jika sebelumnya sudah dikurangi. Pengembalian dana tidak dilakukan otomatis.')">@csrf<button class="danger" type="submit">Batalkan struk</button></form>
                                 @else
                                     <span class="muted">Tidak ada aksi</span>
                                 @endif

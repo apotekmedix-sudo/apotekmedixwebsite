@@ -8484,3 +8484,12 @@ Stack trace:
 #69 C:/project-library/ai-video/ApotekMedix/apotekmedixwebsite/vendor/phpunit/phpunit/phpunit(104): PHPUnit/TextUI/Application->run(Array)
 #70 {main}
 "} 
+[2026-10-26 02:03:14] testing.WARNING: Shopping access code could not be decrypted; regenerate the code. {"shopping_access_code_id":1,"channel":"b2b","exception":"Illuminate\\Contracts\\Encryption\\DecryptException"} 
+[2026-10-26 02:03:14] testing.WARNING: Shopping access code could not be decrypted; regenerate the code. {"shopping_access_code_id":1,"channel":"b2b","exception":"Illuminate\\Contracts\\Encryption\\DecryptException"} 
+[2026-10-26 02:03:14] testing.WARNING: Shopping access code could not be decrypted; regenerate the code. {"shopping_access_code_id":1,"channel":"b2b","exception":"Illuminate\\Contracts\\Encryption\\DecryptException"} 
+[2026-10-26 02:04:00] testing.WARNING: Shopping access code could not be decrypted; regenerate the code. {"shopping_access_code_id":1,"channel":"b2b","exception":"Illuminate\\Contracts\\Encryption\\DecryptException"} 
+[2026-10-26 02:04:00] testing.WARNING: Shopping access code could not be decrypted; regenerate the code. {"shopping_access_code_id":1,"channel":"b2b","exception":"Illuminate\\Contracts\\Encryption\\DecryptException"} 
+[2026-10-26 02:04:00] testing.WARNING: Shopping access code could not be decrypted; regenerate the code. {"shopping_access_code_id":1,"channel":"b2b","exception":"Illuminate\\Contracts\\Encryption\\DecryptException"} 
+[2026-10-26 02:08:13] testing.WARNING: Shopping access code could not be decrypted; regenerate the code. {"shopping_access_code_id":1,"channel":"b2b","exception":"Illuminate\\Contracts\\Encryption\\DecryptException"} 
+[2026-10-26 02:08:13] testing.WARNING: Shopping access code could not be decrypted; regenerate the code. {"shopping_access_code_id":1,"channel":"b2b","exception":"Illuminate\\Contracts\\Encryption\\DecryptException"} 
+[2026-10-26 02:08:13] testing.WARNING: Shopping access code could not be decrypted; regenerate the code. {"shopping_access_code_id":1,"channel":"b2b","exception":"Illuminate\\Contracts\\Encryption\\DecryptException"} 

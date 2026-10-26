@@ -180,8 +180,15 @@ class CashierController extends Controller
     {
         abort_unless(in_array($order->receipt_status, ['verified', 'printed'], true), 404);
         $items = is_array($order->items) ? $order->items : [];
+        $order->loadMissing('cashier');
+        $cashierName = $order->cashier?->name ?? 'Online';
 
-        return view('cashier.receipt', compact('order', 'items'));
+        return view('orders.b2c-receipt', [
+            'order' => $order,
+            'items' => $items,
+            'cashierName' => $cashierName,
+            'adminReceipt' => true,
+        ]);
     }
 
     public function markPrinted(PurchaseHistory $order): RedirectResponse
@@ -210,7 +217,7 @@ class CashierController extends Controller
     {
         $cancelled = DB::transaction(function () use ($order): bool {
             $lockedOrder = PurchaseHistory::whereKey($order->id)->lockForUpdate()->firstOrFail();
-            if ($lockedOrder->receipt_status !== 'pending' || $lockedOrder->payment_status === 'paid') {
+            if (!in_array($lockedOrder->receipt_status, ['pending', 'printed'], true)) {
                 return false;
             }
 
@@ -266,7 +273,9 @@ class CashierController extends Controller
 
         return back()->with(
             $cancelled ? 'success' : 'error',
-            $cancelled ? 'Transaksi dibatalkan dan stok dikembalikan.' : 'Hanya transaksi pending yang dapat dibatalkan.'
+            $cancelled
+                ? 'Transaksi dibatalkan dan stok dikembalikan jika sebelumnya sudah dikurangi. Pengembalian dana tidak dilakukan otomatis.'
+                : 'Hanya transaksi pending atau struk yang sudah dicetak yang dapat dibatalkan.'
         );
     }
 

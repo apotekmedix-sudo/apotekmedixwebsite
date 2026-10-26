@@ -166,9 +166,16 @@ class CashierWorkflowTest extends TestCase
 
         $this->post(route('cashier.orders.verify', $order))
             ->assertRedirect(route('cashier.orders.receipt', ['order' => $order->id, 'print' => 1]));
-        $this->get(route('cashier.orders.receipt', $order))
+        $this->get(route('cashier.orders.receipt', ['order' => $order->id, 'print' => 1]))
             ->assertOk()
-            ->assertSee('LUNAS');
+            ->assertSee('STRUK PENJUALAN')
+            ->assertSee('TRX/')
+            ->assertSee('No. Telepon')
+            ->assertSee('081234567890')
+            ->assertSee($cashier->name)
+            ->assertSee('Cetak Struk')
+            ->assertSee('window.print()')
+            ->assertSee('Lunas');
 
         $this->assertDatabaseHas('purchase_histories', [
             'id' => $order->id,
@@ -192,6 +199,14 @@ class CashierWorkflowTest extends TestCase
             'id' => $order->id,
             'receipt_status' => 'printed',
         ]);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)
+            ->get(route('cashier.orders.receipt', $order))
+            ->assertOk()
+            ->assertSee('STRUK PENJUALAN')
+            ->assertSee($cashier->name)
+            ->assertSee('Kembali ke dashboard admin');
     }
 
     public function test_admin_can_open_admin_dashboard_from_cashier_dashboard(): void
@@ -276,6 +291,54 @@ class CashierWorkflowTest extends TestCase
 
         $this->post(route('cashier.orders.cancel', $order))->assertRedirect();
         $this->assertSame(8, $medicine->fresh()->stock_base_units);
+    }
+
+    public function test_admin_can_cancel_a_printed_receipt_and_restore_stock_once(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $medicine = Medicine::create([
+            'nama_obat' => 'Obat Struk Dicetak',
+            'kategori' => 'MEDIX',
+            'harga' => 1000,
+            'stok' => 4,
+            'deskripsi' => 'Produk untuk uji pembatalan struk dicetak',
+        ]);
+        $order = PurchaseHistory::create([
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pembeli',
+            'items' => [[
+                'id' => $medicine->id,
+                'nama_obat' => $medicine->nama_obat,
+                'quantity' => 2,
+                'sale_unit' => 'box',
+            ]],
+            'total' => 2000,
+            'original_total' => 2000,
+            'discounted_total' => 2000,
+            'transaction_channel' => 'online',
+            'payment_status' => 'paid',
+            'receipt_status' => 'printed',
+            'stock_committed' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('cashier.dashboard', ['status' => 'printed']))
+            ->assertOk()
+            ->assertSee('Batalkan struk');
+
+        $this->post(route('cashier.orders.cancel', $order))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame(6, $medicine->fresh()->stock_base_units);
+        $this->assertDatabaseHas('purchase_histories', [
+            'id' => $order->id,
+            'receipt_status' => 'cancelled',
+            'payment_status' => 'cancelled',
+        ]);
+
+        $this->post(route('cashier.orders.cancel', $order))->assertRedirect();
+        $this->assertSame(6, $medicine->fresh()->stock_base_units);
     }
 
     public function test_cancelling_a_reserved_pending_order_releases_reserved_stock(): void
