@@ -445,6 +445,29 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertDontSee('unit dasar');
     }
 
+    public function test_inventory_report_uses_compact_pagination_controls(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        foreach (range(1, 31) as $number) {
+            Medicine::create([
+                'nama_obat' => "Produk Laporan {$number}",
+                'kategori' => 'Pabrik Contoh',
+                'harga' => 1000,
+                'stok' => 1,
+                'stock_base_units' => 1,
+                'deskripsi' => 'Produk untuk menguji pagination laporan stok.',
+            ]);
+        }
+
+        $this->actingAs($admin)->get(route('admin.inventory.index', ['search' => 'Produk']))
+            ->assertOk()
+            ->assertSee('class="inventory-pagination-nav" aria-label="Halaman produk"', false)
+            ->assertSee('class="inventory-page-link is-disabled"', false)
+            ->assertSee('products_page=2')
+            ->assertDontSee('relative inline-flex');
+    }
+
     public function test_customer_cannot_order_more_packages_than_remain_in_stock(): void
     {
         $medicine = Medicine::create([
