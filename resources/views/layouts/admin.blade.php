@@ -646,6 +646,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('admin.supplier-procurement.index') }}" class="@if(str_starts_with(Route::current()->getName() ?? '', 'admin.supplier-procurement')) active @endif">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                        <span>Pembelian Supplier</span>
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('admin.purchase-history.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.purchase-history')) active @endif">
                         <i class="fa-solid fa-receipt"></i>
                         <span>Transaksi</span>

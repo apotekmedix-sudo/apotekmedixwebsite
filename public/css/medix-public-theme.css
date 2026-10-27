@@ -100,6 +100,13 @@ body.public-theme .home-brand-hero {
     box-shadow: 0 14px 36px rgba(0, 24, 89, .3);
 }
 
+body.public-theme .home-brand-hero {
+    background:
+        linear-gradient(90deg, rgba(0, 48, 132, .9) 0%, rgba(0, 70, 158, .76) 48%, rgba(0, 82, 204, .22) 100%),
+        url("/BACKGROUND%20MEDIX%20DEKSTOP.jpeg") center right / cover no-repeat,
+        linear-gradient(118deg, #003eaa 0%, #0052cc 56%, #0878d1 100%) !important;
+}
+
 body.public-theme .home-brand-hero-label,
 body.public-theme .home-brand-hero h1 span,
 body.public-theme .section-eyebrow,
@@ -461,7 +468,7 @@ body.public-theme main h3 {
     color: #fff !important;
 }
 
-body.public-theme main a:not([class*="btn"]):not(.cart-drawer a):not(.cart-popup a):not(.modal-content a):not(dialog a):not(.home-brand-hero-actions a):not(:where([class*="card"] a, [class*="panel"] a, [class*="box"] a)) {
+body.public-theme main a:not([class*="btn"]):not(.cart-drawer a):not(.cart-popup a):not(.modal-content a):not(dialog a):not(.home-brand-hero-actions a):not(:where(.about-contact-details a, [class*="card"] a, [class*="panel"] a, [class*="box"] a)) {
     color: #55f3e8 !important;
 }
 
@@ -939,6 +946,10 @@ body.public-theme main .discounted-product-actions button:disabled {
     body.public-theme .home-brand-hero {
         margin-right: .75rem;
         margin-left: .75rem;
+        background:
+            linear-gradient(180deg, rgba(0, 48, 132, .72), rgba(0, 64, 150, .88)),
+            url("/BACKGROUND%20MEDIX%20MOBILE.jpeg") center 55% / cover no-repeat,
+            linear-gradient(118deg, #003eaa 0%, #0052cc 56%, #0878d1 100%) !important;
     }
 
     body.public-theme main :is(.medicine-card, .prod-card, .product-card, .discounted-product-card) {
@@ -2696,6 +2707,84 @@ body.public-theme main #coDiscountRow span {
 
 body.public-theme main #coShippingSummaryText {
     color: #64748b !important;
+}
+
+body.public-theme main .about-contact-details {
+    display: grid;
+    gap: .75rem;
+    margin-top: 1.25rem;
+    padding: 1rem 1.1rem;
+    border-left: 4px solid #1e88e5;
+    border-radius: 12px;
+    background: #eff6ff;
+    color: #26384f !important;
+    font-size: .9rem;
+}
+
+body.public-theme main .about-contact-details > div {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .4rem;
+    color: #26384f !important;
+}
+
+body.public-theme main .about-contact-details > div > i {
+    width: 1.1rem;
+    color: #0755c8 !important;
+}
+
+body.public-theme main .about-contact-details strong {
+    color: #172b4d !important;
+}
+
+body.public-theme main .about-contact-details a,
+body.public-theme main .about-contact-details a:hover {
+    color: #0755c8 !important;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+body.public-theme main .about-contact-details a:not([class*="btn"]),
+body.public-theme main .about-contact-details a:not([class*="btn"]):hover {
+    color: #0755c8 !important;
+}
+
+body.public-theme main .vm-section .vm-card {
+    color: #fff !important;
+    background: linear-gradient(135deg, #0d47a1 0%, #1565c0 60%, #1e88e5 100%) !important;
+    border-color: rgba(255, 255, 255, .18) !important;
+}
+
+body.public-theme main .vm-section .vm-card-misi {
+    background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 60%, #43a047 100%) !important;
+}
+
+body.public-theme main .vm-section .vm-card .vm-icon {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 60px;
+    height: 60px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .2) !important;
+    color: #fff !important;
+}
+
+body.public-theme main .vm-section .vm-card .vm-icon i,
+body.public-theme main .vm-section .vm-card h3,
+body.public-theme main .vm-section .vm-card p {
+    color: #fff !important;
+}
+
+body.public-theme main .contact-social-card .contact-social-title {
+    color: #172b4d !important;
+}
+
+body.public-theme main .contact-social-card .contact-social-title i {
+    color: #0755c8 !important;
 }
 
 body.public-theme main .co-totals-grand {

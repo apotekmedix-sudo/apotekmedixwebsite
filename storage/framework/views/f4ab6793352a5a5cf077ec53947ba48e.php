@@ -72,12 +72,6 @@
     font-size: clamp(1rem, 1.6vw, 1.25rem);
     line-height: 1.5;
 }
-.home-brand-hero-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.75rem;
-    max-width: 340px;
-}
 .home-product-search {
     display: grid;
     grid-template-columns: minmax(250px, 2fr) repeat(3, minmax(160px, 1fr)) auto;
@@ -170,35 +164,6 @@
         min-width: 0;
     }
 }
-.home-brand-hero-actions a {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    min-height: 56px;
-    padding: 0.85rem 1rem;
-    border: 1px solid rgba(255,255,255,0.62);
-    border-radius: 12px;
-    background: linear-gradient(135deg, #13dc82, #05bd78);
-    box-shadow: 0 5px 14px rgba(0, 45, 69, 0.18);
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 700;
-    text-decoration: none;
-    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-}
-.home-brand-hero-actions a { gap: 0.7rem; }
-.home-brand-hero-actions a > span {
-    display: grid;
-    flex: 0 0 36px;
-    width: 36px;
-    height: 36px;
-    place-items: center;
-    border-radius: 10px;
-    background: #ecfdf5;
-    color: #078a68;
-}
-.home-brand-hero-actions a svg { width: 21px; height: 21px; }
-.home-brand-hero-actions a:hover { transform: translateY(-2px); box-shadow: 0 9px 20px rgba(0, 45, 69, 0.24); background: linear-gradient(135deg, #08c975, #04a968); }
 .home-brand-hero-mark {
     position: relative;
     z-index: 1;
@@ -231,10 +196,6 @@
     .home-brand-hero-label { font-size: 0.72rem; }
     .home-brand-hero h1 { max-width: 290px; padding-right: 2.1rem; font-size: 1.8rem; }
     .home-brand-hero p { max-width: 330px; font-size: 0.92rem; }
-    .home-brand-hero-actions { gap: 0.55rem; }
-    .home-brand-hero-actions a { min-height: 58px; gap: 0.5rem; padding: 0.65rem 0.55rem; font-size: 0.78rem; }
-    .home-brand-hero-actions a > span { flex-basis: 30px; width: 30px; height: 30px; border-radius: 8px; }
-    .home-brand-hero-actions a svg { width: 18px; height: 18px; }
 }
 
 <style>
@@ -698,7 +659,9 @@
     padding: clamp(1.5rem, 4vw, 3.25rem);
     border-radius: 24px;
     background:
+        linear-gradient(90deg, rgba(0, 48, 132, .94) 0%, rgba(0, 70, 158, .82) 48%, rgba(0, 82, 204, .24) 100%),
         radial-gradient(circle at 82% 18%, rgba(0, 209, 178, .32), transparent 34%),
+        url("<?php echo e(asset('BACKGROUND MEDIX DEKSTOP.jpeg')); ?>") center right / cover no-repeat,
         linear-gradient(118deg, #003eaa 0%, #0052cc 56%, #0878d1 100%);
     box-shadow: 0 18px 44px rgba(0, 82, 204, .2);
 }
@@ -713,15 +676,30 @@
 .home-hero-search input { flex:1;min-width:0;padding:.78rem .4rem;border:0;outline:0;background:transparent;color:#1e293b;font:inherit; }
 .home-hero-search button { display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.78rem 1.2rem;border:0;border-radius:10px;background:#0052cc;color:#fff;font:inherit;font-weight:800;cursor:pointer; }
 .home-hero-search button:hover { background:#003eaa; }
-.home-brand-hero-actions { max-width:340px; }
-.home-brand-hero-actions a { min-height:54px;padding:.75rem .9rem;border-color:rgba(255,255,255,.65);border-radius:12px;color:#0052cc; }
-.home-brand-hero-actions a i { color:#00a98f; }
 .home-brand-hero-mark { width:270px;height:270px;flex-basis:270px; }
 .home-brand-hero-circle { border-color:rgba(255,255,255,.48);background:radial-gradient(circle,rgba(255,255,255,.32),rgba(255,255,255,.06) 70%); }
 .home-brand-hero-mark img { width:70%;height:70%; }
-.home-trust-strip { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;width:min(100% - 2rem,1200px);margin:0 auto 1.6rem; }
-.home-trust-item { display:flex;align-items:center;gap:.8rem;min-width:0;min-height:74px;padding:.85rem 1rem;border:1px solid #e2e8f0;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(15,23,42,.04); }
-.home-trust-item > div { min-width:0; }
+.home-service-links { display:block;width:min(100% - 2rem,1200px);margin:0 auto 1.6rem; }
+.home-service-items { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem; }
+.home-service-item { display:flex;align-items:center;gap:.8rem;min-width:0;min-height:74px;padding:.85rem 1rem;border:1px solid #e2e8f0;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(15,23,42,.04); }
+body.public-theme main .home-service-links { padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important; }
+body.public-theme main .home-service-links > .home-service-item--action { justify-content:center;width:min(100%,300px)!important;min-height:68px;margin:1rem auto 1rem;padding:.7rem 1.25rem;gap:.85rem;color:#0052cc!important;text-decoration:none;background:#fff!important;border:1px solid rgba(255,255,255,.9)!important;border-radius:18px;box-shadow:0 10px 24px rgba(0,26,90,.2)!important;transition:transform .2s,box-shadow .2s,border-color .2s,background-color .2s; }
+body.public-theme main .home-service-links > .home-service-item--action:hover { transform:translateY(-2px);border-color:#b8f3e5!important;background:#f7fffc!important;box-shadow:0 14px 28px rgba(0,26,90,.26)!important; }
+body.public-theme main .home-service-links > .home-service-item--action > strong { flex:0 1 auto;color:#0052cc!important;font-size:1rem;font-weight:750;line-height:1.2;white-space:nowrap; }
+body.public-theme main .home-service-links > .home-service-item--action > i { margin-left:.1rem;color:#0052cc!important;transition:transform .2s; }
+body.public-theme main .home-service-links > .home-service-item--action:hover > i { transform:translateX(3px); }
+body.public-theme main .home-service-links > .home-service-item--action .home-trust-icon { flex-basis:46px;width:46px;height:46px;border-radius:14px;background:#e8faf3!important;color:#078a68!important;font-size:1.15rem; }
+body.public-theme main .home-service-links > .home-service-item--action:focus-visible { outline:3px solid #00d1b2;outline-offset:3px; }
+body.public-theme main .home-service-items .home-service-item { color:#f7fbff!important;background:rgba(255,255,255,.1)!important;border:1px solid rgba(255,255,255,.3)!important;box-shadow:0 8px 20px rgba(0,26,90,.12)!important; }
+body.public-theme main .home-service-items .home-service-item strong { color:#fff!important; }
+body.public-theme main .home-service-items .home-service-item div > span { color:#dbeafe!important; }
+body.public-theme main .home-service-items .home-trust-icon { background:rgba(255,255,255,.95)!important;color:#0052cc!important; }
+body.public-theme main .home-service-items .home-service-item div > a { color:#7fffe2!important; }
+body.public-theme main .home-service-items .home-service-item div > a:hover { color:#fff!important; }
+.home-service-items .home-service-item > div { flex:1;min-width:0; }
+body.public-theme main .home-service-items .home-service-item > div > strong { display:block;line-height:1.35; }
+body.public-theme main .home-service-items .home-service-item > div > span { display:block;margin-top:.25rem;line-height:1.45; }
+body.public-theme main .home-service-items .home-service-item > div > a { display:inline-flex;align-items:center;gap:.4rem;margin-top:.35rem;line-height:1.35; }
 .home-trust-icon { display:grid;flex:0 0 42px;width:42px;height:42px;place-items:center;border-radius:12px;background:#ecfdf5;color:#10b981;font-size:1.1rem; }
 .home-trust-item strong { display:block;color:#1e293b;font-size:.88rem; }
 .home-trust-item div > span { display:block;margin-top:.15rem;color:#64748b;font-size:.76rem;line-height:1.4; }
@@ -818,10 +796,10 @@
     .discounted-product-body .product-unit-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 @media(max-width:768px) {
-    .home-brand-hero { margin:.25rem .8rem .5rem;padding:1.75rem 1.25rem; }
+    .home-brand-hero { margin:.25rem .8rem .5rem;padding:1.75rem 1.25rem;background:linear-gradient(180deg,rgba(0,48,132,.72),rgba(0,64,150,.86)),radial-gradient(circle at 82% 18%,rgba(0,209,178,.26),transparent 34%),url("<?php echo e(asset('BACKGROUND MEDIX MOBILE.jpeg')); ?>") center 55% / cover no-repeat,linear-gradient(118deg,#003eaa 0%,#0052cc 56%,#0878d1 100%); }
     .home-brand-hero-mark { width:150px;height:150px;flex-basis:150px; }
-    .home-trust-strip { grid-template-columns:1fr;gap:.55rem;margin-bottom:1rem; }
-    .home-trust-item { min-height:64px;padding:.75rem .85rem; }
+    .home-service-items { grid-template-columns:1fr;gap:.55rem; }
+    .home-service-item { min-height:64px;padding:.75rem .85rem; }
     .promo-products-section { padding:1.8rem 0; }
     .category-selection-inner { padding:0 1rem; }
 }
@@ -834,8 +812,6 @@
     .home-hero-search input { padding:.65rem .25rem;font-size:.83rem; }
     .home-hero-search button { gap:.35rem;padding:.68rem .75rem;font-size:.8rem; }
     .home-hero-search button span { display:inline; }
-    .home-brand-hero-actions { grid-template-columns:1fr; }
-    .home-brand-hero-actions a { min-height:50px;font-size:.74rem; }
     .category-grid { grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem; }
     .category-icon-btn { padding:.65rem .25rem;gap:.4rem;font-size:.72rem; }
     .category-icon { width:46px;height:46px;font-size:1.3rem; }
@@ -1099,36 +1075,10 @@
         <span class="home-brand-hero-label"><i class="fa-solid fa-heart-pulse"></i> Apotek Medix</span>
         <h1 id="homeHeroTitle">Solusi Kesehatan Terpercaya</h1>
         <p>Beli obat, suplemen, dan produk kesehatan dengan mudah. Tim Apotek Medix siap membantu Anda.</p>
-        <div class="home-brand-hero-actions">
-            <a href="<?php echo e(route('products.pbf')); ?>">
-                <span aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m3 7 9-4 9 4v10l-9 4-9-4V7Z"/>
-                        <path d="m3 7 9 4 9-4M12 11v10M7.5 5l9 4"/>
-                    </svg>
-                </span>
-                Belanja B2B
-            </a>
-        </div>
     </div>
     <div class="home-brand-hero-mark" aria-hidden="true">
         <span class="home-brand-hero-circle"></span>
         <img src="<?php echo e(asset('LOGO APOTEK MEDIX.PNG')); ?>" alt="">
-    </div>
-</section>
-
-<section class="home-trust-strip" aria-label="Informasi layanan Apotek Medix">
-    <div class="home-trust-item">
-        <span class="home-trust-icon"><i class="fa-solid fa-shield-heart"></i></span>
-        <div><strong>Belanja lebih tenang</strong><span>Informasi produk dan satuan tampil jelas.</span></div>
-    </div>
-    <div class="home-trust-item">
-        <span class="home-trust-icon"><i class="fa-solid fa-truck-fast"></i></span>
-        <div><strong>Praktis untuk kebutuhan Anda</strong><span>Pilih produk dan lanjutkan checkout online.</span></div>
-    </div>
-    <div class="home-trust-item">
-        <span class="home-trust-icon"><i class="fa-solid fa-user-doctor"></i></span>
-        <div><strong>Hubungi Customer Services</strong><a href="https://wa.me/6285882717844?text=Halo%20Apotek%20Medix%2C%20saya%20perlu%20bantuan." target="_blank" rel="noopener">Hubungi CS <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></div>
     </div>
 </section>
 
@@ -1882,7 +1832,6 @@
       <div class="sec-head-left">
         <div class="home-b2c-catalog-heading">
           <span class="sec-tag">🛍️ Katalog B2C</span>
-          <?php echo $__env->make('partials.catalog-access-controls', ['accessReturnTo' => 'home'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         </div>
         <h2 class="sec-title" style="margin:0;"><?php echo e($homeHasFilters ? 'Hasil Pencarian' : 'Semua Produk'); ?></h2>
         <p class="home-product-section-description">
@@ -1974,6 +1923,27 @@
 </section>
 <?php if(!$homeHasFilters): ?>
 
+<section class="home-service-links" aria-label="Informasi layanan Apotek Medix">
+    <a class="home-service-item home-service-item--action" href="<?php echo e(route('products.pbf')); ?>" aria-label="Belanja B2B">
+        <span class="home-trust-icon"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span>
+        <strong>Belanja B2B</strong>
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+    </a>
+    <div class="home-service-items">
+        <div class="home-service-item">
+            <span class="home-trust-icon"><i class="fa-solid fa-shield-heart" aria-hidden="true"></i></span>
+            <div><strong>Belanja lebih tenang</strong><span>Informasi produk dan satuan tampil jelas.</span></div>
+        </div>
+        <div class="home-service-item">
+            <span class="home-trust-icon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></span>
+            <div><strong>Praktis untuk kebutuhan Anda</strong><span>Pilih produk dan lanjutkan checkout online.</span></div>
+        </div>
+        <div class="home-service-item">
+            <span class="home-trust-icon"><i class="fa-solid fa-user-doctor" aria-hidden="true"></i></span>
+            <div><strong>Hubungi Customer Services</strong><a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20perlu%20bantuan." target="_blank" rel="noopener">Hubungi CS <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></div>
+        </div>
+    </div>
+</section>
 <?php echo $__env->make('components.category-selection', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
 
@@ -2473,14 +2443,14 @@
 .featured-nav-btn { color:#0052cc; }
 .prod-section,.prod-grid { background:#f8fafc; }
 @media(max-width:768px) {
-    .home-trust-strip { grid-template-columns:1fr; }
+    .home-service-items { grid-template-columns:1fr; }
     .home-category-grid { grid-auto-columns:minmax(130px,38vw);gap:.6rem; }
     .home-category-card { min-height:140px; }
     .promo-products-controls { display:flex;gap:.5rem; }
     .promo-scroll-button { width:38px;height:38px; }
 }
 @media(max-width:480px) {
-    .home-trust-strip { width:calc(100% - 1.3rem); }
+    .home-service-links { width:calc(100% - 1.3rem); }
     .home-hero-search button span { display:inline; }
     .home-category-heading { align-items:center; }
     .home-category-controls > a { display:none; }

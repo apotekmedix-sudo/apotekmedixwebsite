@@ -646,6 +646,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="<?php echo e(route('admin.supplier-procurement.index')); ?>" class="<?php if(str_starts_with(Route::current()->getName() ?? '', 'admin.supplier-procurement')): ?> active <?php endif; ?>">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                        <span>Pembelian Supplier</span>
+                    </a>
+                </li>
+                <li>
                     <a href="<?php echo e(route('admin.purchase-history.index')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'admin.purchase-history')): ?> active <?php endif; ?>">
                         <i class="fa-solid fa-receipt"></i>
                         <span>Transaksi</span>

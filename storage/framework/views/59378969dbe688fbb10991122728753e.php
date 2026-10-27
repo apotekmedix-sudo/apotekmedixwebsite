@@ -5,11 +5,235 @@
 
 <?php $__env->startSection('content'); ?>
 
+<nav class="transaction-tabs" aria-label="Jenis riwayat transaksi">
+    <a href="<?php echo e(route('admin.purchase-history.index', ['tab' => 'sales'])); ?>" class="<?php echo e($tab === 'sales' ? 'active' : ''); ?>"><i class="fa-solid fa-receipt"></i> Riwayat Penjualan</a>
+    <a href="<?php echo e(route('admin.purchase-history.index', ['tab' => 'purchases'])); ?>" class="<?php echo e($tab === 'purchases' ? 'active' : ''); ?>"><i class="fa-solid fa-truck-ramp-box"></i> Riwayat Pembelian</a>
+</nav>
+<?php if($tab === 'purchases'): ?>
+<?php if(session('status')): ?><div class="alert alert-success" role="status"><?php echo e(session('status')); ?></div><?php endif; ?>
+<?php if($errors->any()): ?><ul class="alert alert-danger" role="alert"><?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><li><?php echo e($error); ?></li><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?></ul><?php endif; ?>
+<div class="stats-grid" style="margin-bottom: 2rem;">
+    <div class="stat-card" style="border-top-color:#8b5cf6;">
+        <div class="stat-label">Total Nilai Pesanan Supplier</div>
+        <div class="stat-value" style="color:#8b5cf6;"><?php echo e('Rp ' . number_format($total_pembelian, 0, ',', '.')); ?></div>
+    </div>
+</div>
+<div class="card">
+    <div class="transaction-toolbar">
+        <div class="transaction-heading">Semua Riwayat Pembelian</div>
+        <div class="transaction-toolbar-actions">
+            <a class="btn btn-primary btn-sm" href="<?php echo e(route('admin.purchase-history.export', array_merge(request()->query(), ['tab' => 'purchases']))); ?>"><i class="fa-solid fa-download"></i> Download Excel</a>
+            <a class="btn btn-primary btn-sm" href="<?php echo e(route('admin.supplier-procurement.index')); ?>"><i class="fa-solid fa-plus"></i> Buat Pesanan</a>
+        </div>
+    </div>
+    <form method="GET" action="<?php echo e(route('admin.purchase-history.index')); ?>" class="purchase-history-filters">
+        <input type="hidden" name="tab" value="purchases">
+        <label>Tanggal
+            <input type="date" name="purchase_date" value="<?php echo e(request('purchase_date')); ?>">
+        </label>
+        <label>Nomor SP
+            <input type="search" name="order_number" value="<?php echo e(request('order_number')); ?>" placeholder="Cari nomor SP">
+        </label>
+        <label>Supplier / PBF
+            <input type="search" name="supplier" list="purchaseSupplierNames" value="<?php echo e(request('supplier')); ?>" placeholder="Cari nama supplier">
+            <datalist id="purchaseSupplierNames">
+                <?php $__currentLoopData = $supplierNames; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $supplierName): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><option value="<?php echo e($supplierName); ?>"><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </datalist>
+        </label>
+        <label>Jumlah produk
+            <input type="number" name="product_count" min="0" value="<?php echo e(request('product_count')); ?>" placeholder="Semua">
+        </label>
+        <label>Total modal minimal
+            <input type="number" name="total_min" min="0" step="1" value="<?php echo e(request('total_min')); ?>" placeholder="Rp minimal">
+        </label>
+        <label>Total modal maksimal
+            <input type="number" name="total_max" min="0" step="1" value="<?php echo e(request('total_max')); ?>" placeholder="Rp maksimal">
+        </label>
+        <label>Status
+            <select name="purchase_status">
+                <option value="">Semua status</option>
+                <option value="ordered" <?php if(request('purchase_status') === 'ordered'): echo 'selected'; endif; ?>>Dipesan</option>
+                <option value="partially_received" <?php if(request('purchase_status') === 'partially_received'): echo 'selected'; endif; ?>>Diterima sebagian</option>
+                <option value="received" <?php if(request('purchase_status') === 'received'): echo 'selected'; endif; ?>>Diterima lengkap</option>
+                <option value="returned" <?php if(request('purchase_status') === 'returned'): echo 'selected'; endif; ?>>Dikembalikan</option>
+                <option value="cancelled" <?php if(request('purchase_status') === 'cancelled'): echo 'selected'; endif; ?>>Dibatalkan</option>
+            </select>
+        </label>
+        <label>Urutkan tanggal
+            <select name="purchase_sort">
+                <option value="newest" <?php if(request('purchase_sort', 'newest') === 'newest'): echo 'selected'; endif; ?>>Terbaru ke lama</option>
+                <option value="oldest" <?php if(request('purchase_sort') === 'oldest'): echo 'selected'; endif; ?>>Terlama ke baru</option>
+            </select>
+        </label>
+        <div class="purchase-history-filter-actions">
+            <button class="btn btn-primary btn-sm" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cari / Filter</button>
+            <a class="btn btn-secondary btn-sm" href="<?php echo e(route('admin.purchase-history.index', ['tab' => 'purchases'])); ?>">Reset</a>
+        </div>
+    </form>
+    <div class="table-container transaction-table-container">
+        <table class="table transaction-table">
+            <thead><tr><th>Tanggal</th><th>No. SP</th><th>Supplier / PBF</th><th>Produk</th><th>Total Modal</th><th>Status</th><th>Dokumen</th><th>Aksi</th></tr></thead>
+            <tbody>
+            <?php $__empty_1 = true; $__currentLoopData = $supplierOrders; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <?php
+                    $purchase = $row['model'];
+                    $isSupplierOrder = $row['source'] === 'supplier';
+                    $purchaseStatusLabels = ['ordered' => 'Dipesan', 'partially_received' => 'Diterima sebagian', 'received' => 'Diterima lengkap', 'cancelled' => 'Dibatalkan', 'returned' => 'Dikembalikan'];
+                    $purchaseStatusColors = ['ordered' => '#92400e', 'partially_received' => '#92400e', 'received' => '#166534', 'cancelled' => '#991b1b', 'returned' => '#991b1b'];
+                    $purchaseStatusBgs = ['ordered' => '#fef3c7', 'partially_received' => '#fffbeb', 'received' => '#dcfce7', 'cancelled' => '#fee2e2', 'returned' => '#fee2e2'];
+                ?>
+                <tr>
+                    <td><?php echo e($row['date']?->translatedFormat('d M Y')); ?></td>
+                    <td><strong><?php echo e($row['order_number']); ?></strong></td>
+                    <td><?php echo e($row['supplier']); ?></td>
+                    <td><?php echo e($row['product_count']); ?> produk</td>
+                    <td style="font-weight:700;">Rp <?php echo e(number_format($row['total'], 0, ',', '.')); ?></td>
+                    <td><span style="display:inline-block;padding:.25rem .65rem;border-radius:999px;font-size:.75rem;font-weight:700;color:<?php echo e($purchaseStatusColors[$row['status']] ?? '#334155'); ?>;background:<?php echo e($purchaseStatusBgs[$row['status']] ?? '#f1f5f9'); ?>"><?php echo e($purchaseStatusLabels[$row['status']] ?? $row['status']); ?></span></td>
+                    <td>
+                        <?php if($isSupplierOrder): ?>
+                            <a class="btn btn-secondary btn-sm" href="<?php echo e(route('admin.supplier-procurement.orders.purchase-order', $purchase)); ?>" target="_blank" rel="noopener"><i class="fa-solid fa-file-lines"></i> Lihat SP</a>
+                        <?php else: ?>
+                            <a class="btn btn-secondary btn-sm" href="<?php echo e(route('admin.purchase-history.purchase-order', $purchase)); ?>" target="_blank" rel="noopener"><i class="fa-solid fa-file-lines"></i> Lihat SP</a>
+                        <?php endif; ?>
+                    </td>
+                    <td style="min-width:175px;">
+                        <?php if($isSupplierOrder && in_array($row['status'], ['ordered', 'partially_received'], true)): ?>
+                            <form method="POST" action="<?php echo e(route('admin.supplier-procurement.orders.receive', $purchase)); ?>" onsubmit="return confirm('Selesaikan pesanan ini dan tambahkan seluruh sisa barang ke stok?');" style="margin-bottom:.4rem;">
+                                <?php echo csrf_field(); ?>
+                                <input type="hidden" name="from_purchase_history" value="1">
+                                <?php $__currentLoopData = $purchase->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php
+                                        $remainingQuantity = max(0, $item->quantity - $item->received_quantity);
+                                    ?>
+                                    <input type="hidden" name="received_now[<?php echo e($item->id); ?>]" value="<?php echo e($remainingQuantity); ?>">
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                <button class="btn btn-success btn-sm" type="submit"><i class="fa-solid fa-check"></i> Selesai</button>
+                            </form>
+                            <details>
+                                <summary class="btn btn-secondary btn-sm" style="cursor:pointer;list-style:none;"><i class="fa-solid fa-list-ol"></i> Tidak sesuai jumlah</summary>
+                                <form method="POST" action="<?php echo e(route('admin.supplier-procurement.orders.receive', $purchase)); ?>" style="margin-top:.65rem;min-width:300px;">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="from_purchase_history" value="1">
+                                    <p style="margin:.25rem 0 .5rem;font-size:.78rem;color:#64748b;">Isi jumlah yang benar-benar diterima untuk setiap produk. Stok bertambah sesuai angka ini.</p>
+                                    <div style="display:grid;gap:.55rem;">
+                                        <?php $__currentLoopData = $purchase->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php
+                                                $remainingQuantity = max(0, $item->quantity - $item->received_quantity);
+                                            ?>
+                                            <?php if($remainingQuantity > 0): ?>
+                                                <label style="display:grid;gap:.25rem;font-size:.78rem;font-weight:700;">
+                                                    <?php echo e($item->product_name); ?><small style="font-weight:400;color:#64748b;">Pesan <?php echo e($item->quantity); ?> · Sudah diterima <?php echo e($item->received_quantity); ?> · Sisa <?php echo e($remainingQuantity); ?> <?php echo e($item->unit_label); ?></small>
+                                                    <input type="number" name="received_now[<?php echo e($item->id); ?>]" min="0" max="<?php echo e($remainingQuantity); ?>" value="0" required style="width:100%;padding:.4rem;border:1px solid #cbd5e1;border-radius:.4rem;">
+                                                </label>
+                                            <?php endif; ?>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" type="submit" style="margin-top:.6rem;"><i class="fa-solid fa-boxes-stacked"></i> Simpan penerimaan</button>
+                                </form>
+                            </details>
+                            <?php if($row['status'] === 'ordered'): ?>
+                                <form method="POST" action="<?php echo e(route('admin.supplier-procurement.orders.return', $purchase)); ?>" onsubmit="return confirm('Kembalikan pesanan ini? Status akan menjadi Dikembalikan dan stok tidak akan bertambah.');" style="margin-top:.4rem;">
+                                    <?php echo csrf_field(); ?>
+                                    <button class="btn btn-danger btn-sm" type="submit"><i class="fa-solid fa-rotate-left"></i> Kembalikan</button>
+                                </form>
+                            <?php endif; ?>
+                        <?php elseif($isSupplierOrder && $row['status'] === 'returned'): ?>
+                            <form method="POST" action="<?php echo e(route('admin.supplier-procurement.orders.destroy', $purchase)); ?>" onsubmit="return confirm('Hapus permanen riwayat pesanan yang dikembalikan ini?');">
+                                <?php echo csrf_field(); ?>
+                                <?php echo method_field('DELETE'); ?>
+                                <button class="btn btn-danger btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Hapus riwayat</button>
+                            </form>
+                        <?php elseif(!$isSupplierOrder && in_array($row['status'], ['ordered', 'partially_received'], true)): ?>
+                            <?php
+                                $legacyItems = is_array($purchase->items) ? $purchase->items : [];
+                            ?>
+                            <form method="POST" action="<?php echo e(route('admin.purchase-history.receive', $purchase)); ?>" onsubmit="return confirm('Selesaikan pesanan ini dan tambahkan seluruh sisa barang ke stok?');" style="margin-bottom:.4rem;">
+                                <?php echo csrf_field(); ?>
+                                <?php $__currentLoopData = $legacyItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $itemIndex => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php
+                                        $remainingQuantity = max(0, (int) ($item['quantity'] ?? $item['qty'] ?? 0) - (int) ($item['received_quantity'] ?? 0));
+                                    ?>
+                                    <input type="hidden" name="received_now[<?php echo e($itemIndex); ?>]" value="<?php echo e($remainingQuantity); ?>">
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                <button class="btn btn-success btn-sm" type="submit"><i class="fa-solid fa-check"></i> Selesai</button>
+                            </form>
+                            <details>
+                                <summary class="btn btn-secondary btn-sm" style="cursor:pointer;list-style:none;"><i class="fa-solid fa-list-ol"></i> Tidak sesuai jumlah</summary>
+                                <form method="POST" action="<?php echo e(route('admin.purchase-history.receive', $purchase)); ?>" style="margin-top:.65rem;min-width:300px;">
+                                    <?php echo csrf_field(); ?>
+                                    <p style="margin:.25rem 0 .5rem;font-size:.78rem;color:#64748b;">Isi jumlah yang benar-benar diterima untuk setiap produk.</p>
+                                    <div style="display:grid;gap:.55rem;">
+                                        <?php $__currentLoopData = $legacyItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $itemIndex => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php
+                                                $quantity = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
+                                                $alreadyReceived = (int) ($item['received_quantity'] ?? 0);
+                                                $remainingQuantity = max(0, $quantity - $alreadyReceived);
+                                            ?>
+                                            <?php if($remainingQuantity > 0): ?>
+                                                <label style="display:grid;gap:.25rem;font-size:.78rem;font-weight:700;">
+                                                    <?php echo e($item['nama_obat'] ?? $item['name'] ?? 'Produk'); ?>
+
+                                                    <small style="font-weight:400;color:#64748b;">Pesan <?php echo e($quantity); ?> · Sudah diterima <?php echo e($alreadyReceived); ?> · Sisa <?php echo e($remainingQuantity); ?></small>
+                                                    <input type="number" name="received_now[<?php echo e($itemIndex); ?>]" min="0" max="<?php echo e($remainingQuantity); ?>" value="0" required style="width:100%;padding:.4rem;border:1px solid #cbd5e1;border-radius:.4rem;">
+                                                </label>
+                                            <?php endif; ?>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" type="submit" style="margin-top:.6rem;"><i class="fa-solid fa-boxes-stacked"></i> Simpan penerimaan</button>
+                                </form>
+                            </details>
+                            <?php if($row['status'] === 'ordered'): ?>
+                                <form method="POST" action="<?php echo e(route('admin.purchase-history.return', $purchase)); ?>" onsubmit="return confirm('Kembalikan pesanan ini? Stok tidak akan bertambah.');" style="margin-top:.4rem;">
+                                    <?php echo csrf_field(); ?>
+                                    <button class="btn btn-danger btn-sm" type="submit"><i class="fa-solid fa-rotate-left"></i> Kembalikan</button>
+                                </form>
+                            <?php endif; ?>
+                        <?php elseif(!$isSupplierOrder && $row['status'] === 'returned'): ?>
+                            <form method="POST" action="<?php echo e(route('admin.purchase-history.destroy-returned', $purchase)); ?>" onsubmit="return confirm('Hapus permanen riwayat pesanan yang dikembalikan ini?');">
+                                <?php echo csrf_field(); ?>
+                                <?php echo method_field('DELETE'); ?>
+                                <button class="btn btn-danger btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Hapus riwayat</button>
+                            </form>
+                        <?php else: ?>
+                            <span style="color:#64748b;font-size:.78rem;">Tidak ada aksi</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                <tr><td colspan="8" style="text-align:center;color:#6b7280;padding:2rem;">Tidak ada riwayat yang sesuai dengan pencarian.</td></tr>
+            <?php endif; ?>
+            <?php if($supplierOrders->isEmpty() && $legacyPbfOrders->isEmpty()): ?>
+                <tr><td colspan="8" style="text-align:center;color:#6b7280;padding:2rem;">Belum ada riwayat pembelian.</td></tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php if($supplierOrders->total() > 0): ?>
+        <div class="transaction-pagination">
+            <p class="transaction-pagination-summary">Menampilkan <?php echo e(number_format($supplierOrders->firstItem(), 0, ',', '.')); ?>–<?php echo e(number_format($supplierOrders->lastItem(), 0, ',', '.')); ?> dari <?php echo e(number_format($supplierOrders->total(), 0, ',', '.')); ?> pesanan</p>
+            <?php if($supplierOrders->hasPages()): ?>
+                <nav class="transaction-pagination-nav" aria-label="Navigasi halaman riwayat pembelian">
+                    <?php if($supplierOrders->onFirstPage()): ?>
+                        <span class="transaction-page-link is-disabled" aria-disabled="true">‹ Sebelumnya</span>
+                    <?php else: ?>
+                        <a class="transaction-page-link" rel="prev" href="<?php echo e($supplierOrders->previousPageUrl()); ?>">‹ Sebelumnya</a>
+                    <?php endif; ?>
+                    <?php if($supplierOrders->hasMorePages()): ?>
+                        <a class="transaction-page-link" rel="next" href="<?php echo e($supplierOrders->nextPageUrl()); ?>">Berikutnya ›</a>
+                    <?php else: ?>
+                        <span class="transaction-page-link is-disabled" aria-disabled="true">Berikutnya ›</span>
+                    <?php endif; ?>
+                </nav>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+</div>
+<?php else: ?>
 
 <div class="transaction-history-page">
 <div class="stats-grid" style="margin-bottom: 2rem;">
     <div class="stat-card" style="border-top-color:#8b5cf6;">
-        <div class="stat-label">Total Omzet dari Semua Pembelian</div>
+        <div class="stat-label">Total Omzet Penjualan</div>
         <div class="stat-value" style="color:#8b5cf6;"><?php echo e('Rp ' . number_format($total_omzet, 0, ',', '.')); ?></div>
     </div>
 </div>
@@ -22,7 +246,7 @@
             <a href="<?php echo e(route('admin.purchase-history.export')); ?>" class="btn btn-primary btn-sm" title="Download sebagai Excel/CSV">
                 <i class="fa-solid fa-download"></i> Download
             </a>
-            <form id="deleteAllForm" method="POST" action="<?php echo e(route('admin.purchase-history.destroyAll')); ?>" onsubmit="return confirm('Yakin ingin menghapus SEMUA riwayat pembelian?');">
+            <form id="deleteAllForm" method="POST" action="<?php echo e(route('admin.purchase-history.destroyAll')); ?>" onsubmit="return confirm('Yakin ingin menghapus SEMUA riwayat penjualan? Pesanan pembelian supplier tidak akan dihapus.');">
                 <?php echo csrf_field(); ?>
                 <?php echo method_field('DELETE'); ?>
                 <button type="submit" class="btn btn-danger btn-sm">Hapus Semua</button>
@@ -163,7 +387,7 @@
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="9" style="text-align:center;color:#6b7280;padding:2rem;">
-                            Belum ada riwayat pembelian.
+                            Belum ada riwayat penjualan.
                         </td>
                     </tr>
                 <?php endif; ?>
@@ -220,6 +444,7 @@
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <?php $__env->stopSection(); ?>
 
@@ -230,6 +455,9 @@
     min-width: 0;
     max-width: 100%;
 }
+.transaction-tabs { display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1.25rem; }
+.transaction-tabs a { display:inline-flex;align-items:center;gap:.45rem;padding:.7rem 1rem;border:1px solid #dbe3ec;border-radius:.6rem;background:#fff;color:#334155;font-weight:700;text-decoration:none; }
+.transaction-tabs a.active { border-color:#1d4ed8;background:#eff6ff;color:#1d4ed8; }
 .transaction-toolbar {
     display: flex;
     align-items: center;
@@ -241,6 +469,40 @@
     color: #1e293b;
     font-size: 1.3rem;
     font-weight: 700;
+}
+.purchase-history-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: .75rem;
+    margin: 0 0 1rem;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: .65rem;
+    background: #f8fafc;
+}
+.purchase-history-filters label {
+    display: grid;
+    gap: .3rem;
+    color: #475569;
+    font-size: .78rem;
+    font-weight: 700;
+}
+.purchase-history-filters input,
+.purchase-history-filters select {
+    width: 100%;
+    min-height: 38px;
+    padding: .45rem .6rem;
+    border: 1px solid #cbd5e1;
+    border-radius: .45rem;
+    background: #fff;
+    color: #1e293b;
+    font: inherit;
+    font-size: .84rem;
+}
+.purchase-history-filter-actions {
+    display: flex;
+    align-items: end;
+    gap: .5rem;
 }
 .transaction-toolbar-actions {
     display: flex;
@@ -404,6 +666,7 @@
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('scripts'); ?>
+<?php if($tab === 'sales'): ?>
 <script>
     const ordersData = {
         <?php $__currentLoopData = $orders; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $order): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -544,6 +807,7 @@
         return true;
     }
 </script>
+<?php endif; ?>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views/admin/purchase-history.blade.php ENDPATH**/ ?>

@@ -1135,7 +1135,7 @@
 <script>
   const PRODUCT_CATALOG = @json($productCatalog ?? []);
   const FALLBACK_LOGO_URL = '{{ asset("LOGO APOTEK MEDIX.PNG") }}';
-  const WA_NUMBER = '6285882717844';
+  const WA_NUMBER = '6285890007359';
   const CART_CONTEXT_KEY = 'apotekmedix_active_cart_context';
 
   let activeCtx = {

@@ -23,7 +23,7 @@
     position: relative;
     z-index: 2;
     width: 100%;
-    padding: 5rem 0 4rem;
+    padding: 2.5rem 0 3rem;
 }
 .about-hero-badge {
     display: inline-flex;
@@ -45,7 +45,7 @@
     max-height: 100px;
     object-fit: contain;
     padding: .65rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: .75rem;
     border-radius: 14px;
     background: #fff;
 }
@@ -257,7 +257,7 @@
                 <i class="fa-solid fa-award"></i> Terpercaya Sejak 2016
             </div>
             <h1>Kesehatan Anda,<br>Prioritas <span class="accent">Apotek Medix</span></h1>
-            <p>Distributor farmasi & apotik online yang menjadi mitra strategis bagi praktisi kesehatan dan masyarakat Indonesia — produk berkualitas, harga terjangkau, layanan 24/7.</p>
+            <p>Apotek Medix menghadirkan layanan farmasi dan apotek digital yang memudahkan pelanggan mencari produk, melakukan pemesanan, dan bertransaksi secara praktis. Didukung produk berkualitas serta tim profesional, kami berkomitmen menjadi mitra kesehatan tepercaya bagi masyarakat dan praktisi kesehatan Indonesia.</p>
             <div class="hero-btns">
                 <a href="{{ route('products.index') }}" class="btn-hero-primary">
                     <i class="fa-solid fa-cart-shopping"></i> Lihat Produk Kami
@@ -302,23 +302,30 @@
                 <div class="section-tag"><i class="fa-solid fa-building"></i> Profil Perusahaan</div>
                 <h2 class="section-title">Distributor & Apotik<br>Terpercaya di Indonesia</h2>
                 <p class="section-lead">
-                    <strong>APOTEK MEDIX</strong> hadir sebagai solusi distribusi dan apotek kesehatan yang menjembatani kebutuhan masyarakat dengan para praktisi kesehatan — RS, Apotek, Dokter, Bidan, Klinik — untuk kebutuhan medis berkualitas dengan harga terjangkau.
+                    <strong>APOTEK MEDIX</strong> berada di bawah naungan distributor farmasi dan menjembatani kebutuhan masyarakat serta praktisi kesehatan — rumah sakit, apotek, dokter, bidan, dan klinik — dengan produk kesehatan berkualitas.
                 </p>
                 <p class="section-lead" style="margin-top:.75rem;">
-                    Sejak 2016, kami mengelola rantai distribusi secara mandiri melalui kerjasama dengan PBF lokal dan nasional untuk memastikan keamanan dan keaslian produk hingga ke tangan mitra dan masyarakat.
+                    Melalui pengadaan langsung dari pabrik, rantai pasok menjadi lebih efisien sehingga kami dapat menawarkan harga yang lebih terjangkau. Sejak 2016, kami juga bekerja sama dengan PBF lokal dan nasional untuk menjaga keamanan serta keaslian produk hingga ke tangan pelanggan.
                 </p>
                 <div class="who-checks">
                     <div class="who-check"><i class="fa-solid fa-circle-check"></i><span><strong>Distributor Resmi</strong> — izin lengkap BPOM & Kementerian Kesehatan</span></div>
                     <div class="who-check"><i class="fa-solid fa-circle-check"></i><span><strong>Produk Original</strong> — tersertifikasi dan berstandar GMP internasional</span></div>
                     <div class="who-check"><i class="fa-solid fa-circle-check"></i><span><strong>Jaringan Luas</strong> — distribusi ke 50+ kota di seluruh Indonesia</span></div>
-                    <div class="who-check"><i class="fa-solid fa-circle-check"></i><span><strong>Harga Kompetitif</strong> — langsung dari distributor tanpa markup berlebih</span></div>
+                    <div class="who-check"><i class="fa-solid fa-circle-check"></i><span><strong>Harga Lebih Terjangkau</strong> — pengadaan langsung dari pabrik membantu menjaga harga tetap kompetitif</span></div>
                     <div class="who-check"><i class="fa-solid fa-circle-check"></i><span><strong>Apotik Online 24/7</strong> — konsultasi dan pemesanan sepanjang waktu</span></div>
                     <div class="who-check"><i class="fa-solid fa-circle-check"></i><span><strong>Konsultasi Profesional</strong> — tim apoteker berpengalaman siap membantu</span></div>
                 </div>
-                <div style="padding:.85rem 1.1rem;background:#eff6ff;border-radius:12px;border-left:4px solid #1E88E5;font-size:.88rem;color:#374151;">
-                    <i class="fa-solid fa-envelope" style="color:#1E88E5;margin-right:.4rem;"></i>
-                    <strong>Email:</strong>
-                    <a href="mailto:apotekmedix@gmail.com" style="color:#1E88E5;text-decoration:none;font-weight:600;">apotekmedix@gmail.com</a>
+                <div class="about-contact-details">
+                    <div>
+                        <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+                        <strong>Email:</strong>
+                        <a href="mailto:apotekmedix@gmail.com">apotekmedix@gmail.com</a>
+                    </div>
+                    <div>
+                        <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                        <strong>Telepon:</strong>
+                        <a href="tel:085890007359">085890007359</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -428,7 +435,7 @@
             <h2>Ada Pertanyaan?<br>Hubungi Kami Sekarang</h2>
             <p>Tim kami siap membantu Anda menemukan produk yang tepat dan menjawab setiap pertanyaan Anda kapan saja.</p>
             <div>
-                <a href="https://wa.me/6285882717844" target="_blank" rel="noopener" class="btn-cta-wa">
+                <a href="https://wa.me/6285890007359" target="_blank" rel="noopener" class="btn-cta-wa">
                     <i class="fa-brands fa-whatsapp" style="font-size:1.2rem;"></i> Chat via WhatsApp
                 </a>
                 <a href="{{ route('contact') }}" class="btn-cta-produk">

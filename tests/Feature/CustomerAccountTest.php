@@ -46,16 +46,18 @@ class CustomerAccountTest extends TestCase
     {
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('0858 8271 7844')
+            ->assertSee('0858 9000 7359')
             ->assertSee('apotekmedix@gmail.com')
             ->assertSee('Jl. Raya Ciawi Prapatan No.256 C')
-            ->assertDontSee('hello@apotekmedix.com')
-            ->assertDontSee('0858 9000 7359');
+            ->assertDontSee('hello@apotekmedix.com');
 
         $this->get(route('contact'))
             ->assertOk()
             ->assertDontSee('Persyaratan Dokumen Pemesanan')
-            ->assertSee('0858 8271 7844')
+            ->assertSee('Ikuti Kami')
+            ->assertSee('class="contact-social-card"', false)
+            ->assertSee('class="contact-social-title"', false)
+            ->assertSee('0858 9000 7359')
             ->assertSee('apotekmedix@gmail.com')
             ->assertSee('Sindangsari')
             ->assertSee('Senin–Sabtu: 08.00–20.00')
@@ -69,6 +71,9 @@ class CustomerAccountTest extends TestCase
         $this->get(route('about'))
             ->assertOk()
             ->assertSee('LOGO APOTEK MEDIX.PNG')
+            ->assertSee('tel:085890007359', false)
+            ->assertSee('class="vm-icon"', false)
+            ->assertSee('fa-solid fa-eye', false)
             ->assertDontSee('page1.jpeg')
             ->assertDontSee('page2.jpeg')
             ->assertDontSee('page3.jpeg')

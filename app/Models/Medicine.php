@@ -440,6 +440,31 @@ class Medicine extends Model
         return $this->isRedLogo();
     }
 
+    public function getPurchaseOrderCategory(): string
+    {
+        $group = mb_strtolower(trim((string) $this->golongan));
+
+        if (str_contains($group, 'prekursor') || str_contains($group, 'precursor')) {
+            return 'precursor';
+        }
+
+        if (preg_match('/obat[\s-]*obat[\s-]*tertentu/u', $group) === 1
+            || preg_match('/\boot\b/u', $group) === 1) {
+            return 'oot';
+        }
+
+        return 'regular';
+    }
+
+    public function getPurchaseOrderCategoryLabel(): string
+    {
+        return match ($this->getPurchaseOrderCategory()) {
+            'oot' => 'OOT',
+            'precursor' => 'Prekursor',
+            default => 'Reguler',
+        };
+    }
+
     public function isAvailable(): bool
     {
         return $this->available_stock_units > 0;

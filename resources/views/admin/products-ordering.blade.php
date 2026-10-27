@@ -12,7 +12,7 @@
     .supplier-actions { display:flex; justify-content:flex-end; gap:.55rem; }
     .supplier-toggle { border:0; border-radius:.5rem; padding:.65rem .9rem; background:#1e88e5; color:#fff; font-weight:700; cursor:pointer; white-space:nowrap; transition:background .2s,box-shadow .2s; }
     .supplier-toggle:hover { background:#1565c0; box-shadow:0 4px 12px rgba(30,136,229,.25); }
-    .supplier-manage-toggle { border:1px solid #bfdbfe; border-radius:.5rem; padding:.62rem .85rem; background:#eff6ff; color:#1d4ed8; font-weight:700; cursor:pointer; white-space:nowrap; transition:background .2s,border-color .2s; }
+    .supplier-manage-toggle { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; border:1px solid #bfdbfe; border-radius:.5rem; padding:.62rem .85rem; background:#eff6ff; color:#1d4ed8; font-weight:700; cursor:pointer; text-decoration:none; white-space:nowrap; transition:background .2s,border-color .2s; }
     .supplier-manage-toggle:hover { background:#dbeafe; border-color:#93c5fd; }
     .supplier-form-panel { display:none; margin:-.2rem 0 1.15rem; padding:1rem; border:1px solid #cbd5e1; border-radius:.75rem; background:#fff; box-shadow:0 2px 8px rgba(15,23,42,.06); }
     .supplier-form-panel.open { display:block; }
@@ -60,10 +60,14 @@
     .supplier-edit-actions button[type="button"] { background:#e2e8f0; color:#334155; }
     .supplier-list-empty { padding:2rem 1rem; color:#64748b; text-align:center; }
     .supplier-search-empty { display:none; padding:2rem 1rem; color:#64748b; text-align:center; }
-    @media (max-width: 760px) { .supplier-form { grid-template-columns:1fr; } }
+    @media (max-width: 760px) { .supplier-form { grid-template-columns:1fr; } .ordering-filter-form { grid-template-columns:1fr !important; } .ordering-filter-form .supplier-manage-toggle { justify-content:center; } }
     .ordering-search { display:flex; gap:.55rem; max-width:430px; width:100%; }
     .ordering-search input { flex:1; min-width:0; padding:.65rem .8rem; border:1px solid #d1d5db; border-radius:.5rem; font-size:.88rem; }
     .ordering-search button { border:0; border-radius:.5rem; padding:.65rem 1rem; background:#1e88e5; color:white; font-weight:700; cursor:pointer; }
+    .ordering-filter-form { grid-template-columns:minmax(230px,.9fr) minmax(0,1.6fr) auto; }
+    .ordering-filter-form > * { min-width:0; }
+    .ordering-filter-form select { width:100%; min-width:0; }
+    .ordering-filter-form .ordering-search { max-width:none; min-width:0; }
     .ordering-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:1rem; }
     .ordering-card { background:white; border:1px solid #e5e7eb; border-radius:.75rem; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.06); display:flex; flex-direction:column; }
     .ordering-image { position:relative; height:145px; background:linear-gradient(135deg,#e3f2fd,#f3f8fc); display:flex; align-items:center; justify-content:center; overflow:hidden; }
@@ -81,6 +85,7 @@
     .ordering-meta strong { color:#334155; }
     .ordering-price { color:#1e88e5; font-size:1.05rem; font-weight:800; margin-top:auto; }
     .ordering-button { border:0; border-radius:.5rem; padding:.6rem; background:#25d366; color:white; font-weight:700; cursor:pointer; width:100%; }
+    .ordering-readonly { margin-top:.75rem; padding:.55rem; border:1px solid #cbd5e1; border-radius:.5rem; background:#f8fafc; color:#64748b; font-size:.78rem; font-weight:700; text-align:center; }
     .ordering-empty { padding:4rem 1rem; text-align:center; color:#6b7280; background:white; border-radius:.75rem; border:1px solid #e5e7eb; }
     .ordering-pages { margin-top:1.25rem; display:flex; justify-content:center; gap:.35rem; }
     .ordering-pages a, .ordering-pages span { min-width:32px; padding:.45rem .65rem; text-align:center; border:1px solid #e5e7eb; border-radius:.4rem; text-decoration:none; color:#374151; background:white; }
@@ -96,7 +101,7 @@
 @section('content')
 <div class="ordering-head" style="flex-direction:column;align-items:stretch;">
     <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;width:100%;">
-        <div><h2>Pesan ke PBF</h2><p>{{ $total }} produk tersedia untuk pengadaan Apotek Medix ke distributor. Pesanan dibuat menggunakan surat pesanan resmi Apotek Medix.</p></div>
+        <div><h2>Pesan ke PBF</h2><p>{{ $total }} harga produk tersedia{{ $selectedSupplier ? ' dari ' . $selectedSupplier->name . ' untuk pengadaan Apotek Medix' : ' dari seluruh supplier' }}. Pilih supplier tertentu untuk membuat SP.</p></div>
         <div class="ordering-heading-actions">
             <div class="supplier-actions">
                 <button class="supplier-toggle" type="button" onclick="toggleSupplierForm()"><i class="fa-solid fa-plus"></i> Tambah Supplier</button>
@@ -104,13 +109,24 @@
             </div>
         </div>
     </div>
-    <form method="GET" action="{{ route('admin.produk-pbf.index') }}" style="background:white;padding:1rem;border-radius:.75rem;border:1px solid #e5e7eb;width:100%;">
+    <form method="GET" action="{{ route('admin.produk-pbf.index') }}" class="ordering-filter-form" style="display:grid;align-items:end;gap:.7rem;background:white;padding:1rem;border-radius:.75rem;border:1px solid #e5e7eb;width:100%;">
+        <label style="display:grid;gap:.3rem;color:#475569;font-size:.78rem;font-weight:700;">Harga supplier
+            <select name="supplier_id" onchange="this.form.requestSubmit()" style="min-height:42px;padding:.6rem .75rem;border:1px solid #cbd5e1;border-radius:.5rem;color:#1e293b;font:inherit;">
+                <option value="">Semua Produk — semua harga supplier</option>
+                @foreach($suppliers as $supplier)<option value="{{ $supplier->id }}" @selected($selectedSupplier?->id === $supplier->id)>{{ $supplier->name }}</option>@endforeach
+            </select>
+        </label>
         <div class="ordering-search" style="max-width:none;">
             <input name="search" value="{{ $search }}" placeholder="Cari nama, indikasi, komposisi, golongan, sediaan, dosis..."><button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
         </div>
-
+        <a class="supplier-manage-toggle" href="{{ route('admin.supplier-procurement.index', ['tab' => 'offers']) }}"><i class="fa-solid fa-tags"></i> Kelola harga supplier</a>
     </form>
 </div>
+@if($selectedSupplier)
+    <div class="supplier-notice" role="status">Harga dan pesanan menggunakan data <strong>{{ $selectedSupplier->name }}</strong>. Hanya produk yang sudah memiliki harga aktif di supplier ini yang ditampilkan.</div>
+@else
+    <div class="supplier-notice" role="status">Semua Produk menampilkan harga aktif dari seluruh supplier. Produk yang sama dapat muncul beberapa kali dengan harga berbeda. Tampilan ini hanya untuk membandingkan harga dan tidak bisa digunakan untuk transaksi; pilih satu supplier untuk membuat SP.</div>
+@endif
 @if(session('status'))
     <div class="supplier-notice" role="status">{{ session('status') }}</div>
 @endif
@@ -203,9 +219,10 @@
         </div>
     </section>
 </div>
-@if($medicines->count())
+@if($productOffers->count())
     <div class="ordering-grid">
-        @foreach($medicines as $medicine)
+        @foreach($productOffers as $supplierOffer)
+            @php($medicine = $supplierOffer->medicine)
             <article class="ordering-card">
                 <div class="ordering-image">
                     @if($medicine->image_url)<img src="{{ $medicine->image_url }}" alt="{{ $medicine->nama_obat }}">@else<i class="fa-solid fa-pills"></i>@endif
@@ -218,31 +235,42 @@
                         <p><strong>Logo:</strong> {{ $medicine->logo ?: '—' }}</p>
                         <p title="{{ $medicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ $medicine->golongan ?: '—' }}</p>
                     </div>
-                    <div class="ordering-price">{{ $medicine->getFormattedCatalogPrice('harga_modal') }}</div>
-                    <button class="ordering-button" data-package-unit-label="{{ $medicine->package_unit_label }}" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $medicine->harga_modal }}, '{{ $medicine->image_url ?: '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this)"><i class="fa-solid fa-cart-plus"></i> Tambah Pesanan</button>
+                    <div class="ordering-price">Rp {{ number_format((float) $supplierOffer->purchase_price, 0, ',', '.') }} <small>/ {{ $medicine->package_unit_label }}</small></div>
+                    <div class="ordering-meta"><p><strong>Supplier:</strong> {{ $supplierOffer->supplier->name }}</p></div>
+                    @if($selectedSupplier)
+                        <div class="ordering-meta"><p><strong>Kode supplier:</strong> {{ $supplierOffer->supplier_code ?: '—' }}</p><p><strong>Minimum:</strong> {{ $supplierOffer->minimum_quantity }} {{ $medicine->package_unit_label }}</p></div>
+                        <button class="ordering-button" data-package-unit-label="{{ $medicine->package_unit_label }}" onclick="addToCart({{ $medicine->id }}, '{{ addslashes($medicine->nama_obat) }}', {{ $supplierOffer->purchase_price }}, '{{ $medicine->image_url ?: '' }}', '{{ addslashes($medicine->brand ?: $medicine->kategori) }}', this, null, {{ $supplierOffer->id }}, {{ $supplierOffer->minimum_quantity }})"><i class="fa-solid fa-cart-plus"></i> Tambah Pesanan</button>
+                    @else
+                        <div class="ordering-readonly"><i class="fa-solid fa-eye"></i> Perbandingan harga saja</div>
+                    @endif
                 </div>
             </article>
         @endforeach
     </div>
     <div class="ordering-pages">
-        @if($medicines->onFirstPage())<span>Previous</span>@else<a href="{{ $medicines->previousPageUrl() }}">Previous</a>@endif
-        @foreach($medicines->getUrlRange(1, $medicines->lastPage()) as $page => $url)
-            @if($page === 1 || $page === $medicines->lastPage() || abs($page - $medicines->currentPage()) <= 2)
-                @if($page === $medicines->currentPage())<span class="active">{{ $page }}</span>@else<a href="{{ $url }}">{{ $page }}</a>@endif
-            @elseif($page === 2 || $page === $medicines->lastPage() - 1)
+        @if($productOffers->onFirstPage())<span>Previous</span>@else<a href="{{ $productOffers->previousPageUrl() }}">Previous</a>@endif
+        @foreach($productOffers->getUrlRange(1, $productOffers->lastPage()) as $page => $url)
+            @if($page === 1 || $page === $productOffers->lastPage() || abs($page - $productOffers->currentPage()) <= 2)
+                @if($page === $productOffers->currentPage())<span class="active">{{ $page }}</span>@else<a href="{{ $url }}">{{ $page }}</a>@endif
+            @elseif($page === 2 || $page === $productOffers->lastPage() - 1)
                 <span>...</span>
             @endif
         @endforeach
-        @if($medicines->hasMorePages())<a href="{{ $medicines->nextPageUrl() }}">Next</a>@else<span>Next</span>@endif
+        @if($productOffers->hasMorePages())<a href="{{ $productOffers->nextPageUrl() }}">Next</a>@else<span>Next</span>@endif
     </div>
 @else
-    <div class="ordering-empty"><i class="fa-solid fa-box-open" style="font-size:2.5rem"></i><p>Belum ada produk dengan harga modal.</p></div>
+    <div class="ordering-empty"><i class="fa-solid fa-box-open" style="font-size:2.5rem"></i><p>{{ $selectedSupplier ? 'Belum ada harga produk aktif untuk supplier ini. Tambahkan harga melalui Kelola harga supplier.' : 'Belum ada harga supplier aktif. Tambahkan harga melalui Kelola harga supplier.' }}</p></div>
 @endif
-<button class="ordering-cart-button" onclick="openCart()"><i class="fa-solid fa-cart-shopping"></i> Keranjang <span class="cart-badge" id="adminCartBadge">0</span></button>
+@if($selectedSupplier)
+    <button class="ordering-cart-button" onclick="openCart()"><i class="fa-solid fa-cart-shopping"></i> Keranjang <span class="cart-badge" id="adminCartBadge">0</span></button>
+@endif
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'apotekmedix_cart_pbf_admin', receiptStoreName: 'APOTEK MEDIX', receiptStoreAddress: 'Jl. Raya Tajur No. 256 C, Bogor Timur, Kota Bogor, 16146', receiptFilePrefix: 'surat-pesanan-apotek-medix', adminPbfOrder: true, adminPurchaseOrderBase: '{{ str_replace('/0/', '/__ORDER__/', route('admin.purchase-history.purchase-order', ['order' => 0])) }}', continueShoppingUrl: @json(route('admin.produk-pbf.index')), suppliers: @json($suppliers) };
+@if($selectedSupplier)
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_pbf_admin_supplier_{{ $selectedSupplier->id }}', receiptStoreName: 'APOTEK MEDIX', receiptStoreAddress: 'Jl. Raya Tajur No. 256 C, Bogor Timur, Kota Bogor, 16146', receiptFilePrefix: 'surat-pesanan-apotek-medix', adminPbfOrder: true, selectedSupplier: @json($selectedSupplier), supplierOrderUrl: @json(route('admin.supplier-procurement.orders.store')), supplierPurchaseOrderBase: @json(route('admin.supplier-procurement.index')), adminPurchaseOrderBase: '{{ str_replace('/0/', '/__ORDER__/', route('admin.purchase-history.purchase-order', ['order' => 0])) }}', continueShoppingUrl: @json(route('admin.produk-pbf.index')), suppliers: @json($suppliers) };</script>
+@endif
+<script>
 function toggleSupplierForm() { document.getElementById('supplierFormPanel').classList.toggle('open'); }
 function openSupplierManager() { document.getElementById('supplierManagerBackdrop').classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeSupplierManager(event) { if (event && event.target !== event.currentTarget) return; document.getElementById('supplierManagerBackdrop').classList.remove('open'); document.body.style.overflow = ''; }
@@ -264,5 +292,7 @@ if (supplierManagerSearch) {
 }
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSupplierManager(); });
 </script>
+@if($selectedSupplier)
 @include('partials.cart', ['cartAdminPbfOrder' => true])
+@endif
 @endsection

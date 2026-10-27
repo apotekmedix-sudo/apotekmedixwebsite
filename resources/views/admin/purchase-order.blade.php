@@ -111,9 +111,9 @@
         .notes { margin-top: 11px; color: #475569; font-size: 10px; line-height: 1.45; }
         .signature { width: 275px; margin: 16px 0 0 auto; text-align: left; line-height: 1.8; }
         .signature-space { position:relative; width:300px; height:105px; }
-        .signature-stamp { position:absolute; top:50%; width:155px; height:90px; object-fit:cover; object-position:center; mix-blend-mode:multiply; transform:translateY(-50%); }
-        .signature-stamp-pharmacist { left:0; z-index:2; }
-        .signature-stamp-pharmacy { left:138px; z-index:1; }
+        .signature-stamp { position:absolute; top:30%; width:1320px; height:640px; object-fit:cover; object-position:center; mix-blend-mode:multiply; transform:translateY(-50%); }
+        .signature-stamp-pharmacist { left:-2000px; z-index:1; }
+        .signature-stamp-pharmacy { left:-100px ; z-index:1; }
         .signature-name { font-weight: 700; }
         @media (max-width: 620px) {
             .paper { min-height: 0; padding: 20px 14px; }
@@ -148,7 +148,7 @@
         </header>
         <h1>{{ $title }}</h1>
         <div class="subtitle">({{ $subtitle }})</div>
-        <div class="order-number">Nomor SP: MDX/SP/{{ strtoupper($type) }}/{{ $order->created_at?->format('Ymd') }}/{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</div>
+        <div class="order-number">Nomor SP: {{ $order->purchase_order_profile === 'medikpedia' ? 'MDK' : 'MDX' }}/SP/{{ strtoupper($type) }}/{{ $order->created_at?->format('Ymd') }}/{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</div>
         <div class="intro">Yang bertanda tangan di bawah ini:</div>
         <div class="detail-row"><b>Nama Apoteker</b><span>:</span><span>{{ $order->requester_name ?: $identity['signer'] }}</span></div>
         <div class="detail-row"><b>Jabatan</b><span>:</span><span>{{ $order->apj ?: $identity['title'] }}</span></div>

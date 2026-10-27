@@ -344,7 +344,6 @@
             <span class="current">Belanja B2C</span>
         </div>
         <h1><i class="fa-solid fa-store"></i> Belanja B2C</h1>
-        @include('partials.catalog-access-controls', ['accessReturnTo' => 'products.apotek'])
         <p>{{ $total }} produk tersedia dari berbagai perusahaan farmasi terpercaya</p>
     </div>
     <i class="fa-solid fa-pills header-deco-icon header-deco-icon-1"></i>

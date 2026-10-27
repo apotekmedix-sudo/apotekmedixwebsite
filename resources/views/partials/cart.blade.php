@@ -328,10 +328,10 @@
         Silakan hubungi Dokter atau Apoteker kami untuk konsultasi dan pemesanan resep.
       </div>
       <div class="red-logo-btn-grid">
-        <a id="btnHubungiDokter" href="https://wa.me/6285882717844" target="_blank" rel="noopener" class="red-logo-action-btn red-logo-btn-doctor">
+        <a id="btnHubungiDokter" href="https://wa.me/6285890007359" target="_blank" rel="noopener" class="red-logo-action-btn red-logo-btn-doctor">
           <i class="fa-solid fa-user-doctor"></i> Hubungi Dokter
         </a>
-        <a id="btnHubungiApoteker" href="https://wa.me/6285882717844" target="_blank" rel="noopener" class="red-logo-action-btn red-logo-btn-pharmacist">
+        <a id="btnHubungiApoteker" href="https://wa.me/6285890007359" target="_blank" rel="noopener" class="red-logo-action-btn red-logo-btn-pharmacist">
           <i class="fa-solid fa-prescription-bottle-medical"></i> Hubungi Apoteker
         </a>
       </div>
@@ -532,7 +532,7 @@
       <h3>Surat pesanan berhasil dibuat</h3>
       <p>Surat tersimpan atas nama Apotek Medix. Buka untuk meninjau atau mencetak sebelum dikirim ke distributor.</p>
       <a id="pbfInvoiceLink" href="#" hidden></a>
-      <button class="pbf-checkout-submit" id="pbfViewInvoiceButton" type="button" onclick="openPbfInvoice()"><i class="fa-solid fa-file-invoice"></i> Lihat Invoice</button>
+      <button class="pbf-checkout-submit" id="pbfViewInvoiceButton" type="button" onclick="openPbfInvoice()"><i class="fa-solid fa-file-invoice"></i> Lihat / cetak SP</button>
     </div>
   </section>
 </div>
@@ -550,7 +550,7 @@
 {{-- ===== CART JAVASCRIPT ===== --}}
 <script>
 // Keranjang disimpan per konteks halaman melalui CART_CONFIG.storageKey.
-const WA = '6285882717844';
+const WA = '6285890007359';
 const CART_DEFAULT_SETTINGS = {
   storageKey: 'apotekmedix_cart',
   receiptStoreName: 'APOTEK MEDIX',
@@ -816,7 +816,7 @@ function closeRedLogoModal() {
   document.body.style.overflow = '';
 }
 
-function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
+function addToCart(id, name, price, img, brand, btn, unitSelectId = null, supplierOfferId = null, minimumQuantity = 1) {
   var unitSelect = unitSelectId ? document.getElementById(unitSelectId) : null;
   if (btn?.disabled) return;
   if (unitSelect && Number(unitSelect.dataset.stockUnits || 0) < 1) {
@@ -875,6 +875,8 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
     if (existing) {
       existing.name = name;
       existing.price = Number(unitPrices[unit] || 0);
+      existing.supplierOfferId = supplierOfferId;
+      existing.minimumQuantity = Number(minimumQuantity) || 1;
       existing.qty = addition.qty;
       existing.brand = brand;
       existing.img = img;
@@ -893,7 +895,8 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
         id, name, price: Number(unitPrices[unit] || 0), img, brand: brand || '',
         qty: addition.qty, note: '', discount: 0, saleUnit: unit, unitLabel,
         unitLabels, unitPrices, unitFactors, availableQty, stockUnits,
-        packageUnitLabel: unitLabels.box || fallbackUnitLabel
+        packageUnitLabel: unitLabels.box || fallbackUnitLabel,
+        supplierOfferId, minimumQuantity: Number(minimumQuantity) || 1
       });
     }
 
@@ -925,6 +928,8 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
   if (ex) {
     ex.qty++;
     ex.brand = brand;
+    ex.supplierOfferId = supplierOfferId;
+    ex.minimumQuantity = Number(minimumQuantity) || 1;
     ex.internalPriceUnavailable = CART_CONFIG.priceMode === 'internal' && unitPrice <= 0;
     ex.unitLabels = unitLabels;
     ex.unitLabel = unitLabel;
@@ -933,6 +938,7 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null) {
     id, name, price: unitPrice, img, brand: brand || '', qty: 1, note: '', discount: 0,
     saleUnit, unitLabel, unitLabels, unitPrices, unitFactors, availableQty, packageUnitLabel,
     stockUnits: unitSelect ? Number(unitSelect.dataset.stockUnits || 0) : null,
+    supplierOfferId, minimumQuantity: Number(minimumQuantity) || 1,
     internalPriceUnavailable: CART_CONFIG.priceMode === 'internal' && unitPrice <= 0
   });
   console.log('Cart item:', cart.find(i => i.id === id && (i.saleUnit || 'box') === saleUnit));
@@ -1458,6 +1464,61 @@ async function submitPbfOrder() {
     return;
   }
 
+  if (CART_CONFIG.selectedSupplier) {
+    const invalidMinimum = cart.find(item =>
+      !item.supplierOfferId || item.qty < Number(item.minimumQuantity || 1)
+    );
+    if (invalidMinimum) {
+      errorPanel.textContent = `${invalidMinimum.name}: jumlah minimal pembelian ${invalidMinimum.minimumQuantity} ${invalidMinimum.unitLabel || 'unit'}.`;
+      errorPanel.style.display = 'block';
+      return;
+    }
+
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Membuat surat pesanan...';
+    try {
+      const response = await fetch(CART_CONFIG.supplierOrderUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          supplier_id: CART_CONFIG.selectedSupplier.id,
+          quantities: Object.fromEntries(cart.map(item => [item.supplierOfferId, item.qty])),
+          requested_discounts: Object.fromEntries(cart.map(item => [item.supplierOfferId, Math.max(0, Number(item.discount) || 0)])),
+          purchase_order_type: purchaseOrderType,
+          purchase_order_profile: document.getElementById('pbfOrderProfile').value,
+          requester_name: signer,
+          apj: title,
+          sia,
+          sipa
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        const messages = Object.values(result.errors || {}).flat().join(' ');
+        throw new Error(messages || result.message || 'Surat pesanan gagal dibuat.');
+      }
+
+      document.getElementById('pbfInvoiceLink').href = result.purchase_order_url;
+      document.getElementById('pbfCheckoutForm').style.display = 'none';
+      document.getElementById('pbfCheckoutResult').style.display = '';
+      cart = [];
+      save();
+      render();
+      return;
+    } catch (error) {
+      errorPanel.textContent = error instanceof Error ? error.message : 'Surat pesanan gagal dibuat.';
+      errorPanel.style.display = 'block';
+      return;
+    } finally {
+      submitButton.disabled = false;
+      submitButton.innerHTML = '<i class="fa-solid fa-file-signature"></i> Buat Surat Pesanan';
+    }
+  }
+
   const originalTotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const payload = {
     buyer_type: 'apotik',
@@ -1478,6 +1539,7 @@ async function submitPbfOrder() {
       nama_obat: item.name,
       quantity: item.qty,
       harga: item.price,
+      potongan: Math.max(0, Number(item.discount) || 0),
       sale_unit: item.saleUnit || 'box',
       catatan: item.note || ''
     })),
@@ -1702,6 +1764,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeSupplierIndex = -1;
     let autoFilledAddress = '';
     let autoFilledPhone = '';
+    if (CART_CONFIG.selectedSupplier) {
+      supplierName.value = CART_CONFIG.selectedSupplier.name;
+      supplierAddress.value = CART_CONFIG.selectedSupplier.address || '';
+      supplierPhone.value = CART_CONFIG.selectedSupplier.phone || '';
+      supplierName.readOnly = true;
+      supplierAddress.readOnly = true;
+      supplierPhone.readOnly = true;
+      autoFilledAddress = supplierAddress.value;
+      autoFilledPhone = supplierPhone.value;
+      supplierToggle.hidden = true;
+    }
 
     const closeSupplierMenu = () => {
       supplierPicker.classList.remove('is-open');

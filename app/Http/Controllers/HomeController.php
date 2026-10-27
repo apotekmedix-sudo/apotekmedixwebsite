@@ -34,17 +34,21 @@ class HomeController extends Controller
         $b2cCatalogQuery = fn () => Medicine::nonPbf()
             ->availableForB2c();
 
-        $featuredProducts = $b2cCatalogQuery()
+        $featuredQuery = $b2cCatalogQuery()
             ->where('grade', 'A')
-            ->where('terjual', '>=', 10)
+            ->where('terjual', '>=', 10);
+        StockAvailability::prioritizeAvailableStock($featuredQuery);
+        $featuredProducts = $featuredQuery
             ->orderByDesc('terjual')
             ->orderBy('nama_obat')
             ->limit(20)
             ->get();
 
         if ($featuredProducts->isEmpty()) {
-            $featuredProducts = $b2cCatalogQuery()
-                ->where('terjual', '>=', 10)
+            $featuredQuery = $b2cCatalogQuery()
+                ->where('terjual', '>=', 10);
+            StockAvailability::prioritizeAvailableStock($featuredQuery);
+            $featuredProducts = $featuredQuery
                 ->orderByDesc('terjual')
                 ->orderBy('nama_obat')
                 ->limit(20)
@@ -66,8 +70,10 @@ class HomeController extends Controller
         $promoProducts = Schema::hasTable('promo_products') ? PromoProduct::aktif()->get() : collect();
         $banners = Schema::hasTable('banners') ? Banner::aktif()->get() : collect();
 
-        $discountedProducts = $b2cCatalogQuery()
-            ->where('promo_b2c_percent', '>', 0)
+        $discountedQuery = $b2cCatalogQuery()
+            ->where('promo_b2c_percent', '>', 0);
+        StockAvailability::prioritizeAvailableStock($discountedQuery);
+        $discountedProducts = $discountedQuery
             ->orderByDesc('promo_b2c_percent')
             ->orderByDesc('terjual')
             ->limit(20)
@@ -81,6 +87,8 @@ class HomeController extends Controller
         if ($perusahaan !== '') {
             $allB2cQuery->where('kategori', $perusahaan);
         }
+
+        StockAvailability::prioritizeAvailableStock($allB2cQuery);
 
         match ($sort) {
             'harga_asc' => $allB2cQuery->orderByRaw('COALESCE(NULLIF(harga_retail, 0), NULLIF(price_box, 0), harga) asc'),
@@ -156,7 +164,7 @@ class HomeController extends Controller
         $relatedQuery = $b2bAccess
             ? Medicine::query()->where('harga_grosir', '>', 0)
             : Medicine::nonPbf()->availableForB2c();
-        $relatedMedicines = $relatedQuery
+        $relatedMedicines = StockAvailability::prioritizeAvailableStock($relatedQuery)
             ->where('kategori', $medicine->kategori)
             ->where('id', '!=', $medicine->id)
             ->limit(4)
@@ -179,8 +187,9 @@ class HomeController extends Controller
     public function byCategory($kategori)
     {
         // Hanya tampilkan produk OTC di halaman kategori publik
-        $medicines = Medicine::where('kategori', $kategori)
-            ->where('is_resep', false)
+        $categoryQuery = Medicine::where('kategori', $kategori)
+            ->where('is_resep', false);
+        $medicines = StockAvailability::prioritizeAvailableStock($categoryQuery)
             ->paginate(12);
         $allCategories = Medicine::where('is_resep', false)
             ->distinct()

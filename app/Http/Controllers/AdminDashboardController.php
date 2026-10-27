@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use App\Constants\Companies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class AdminDashboardController extends Controller
 {
@@ -66,16 +67,144 @@ class AdminDashboardController extends Controller
         ]);
     }
 
-    public function purchaseHistory()
+    public function purchaseHistory(Request $request)
     {
-        $orders = Schema::hasTable('purchase_histories')
-            ? PurchaseHistory::with('cashier')->latest()->paginate(20)
-            : new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
-        $total_omzet = Schema::hasTable('purchase_histories')
-            ? $this->revenueOrders()->get()->sum(fn ($order) => $order->effective_total)
-            : 0;
+        $tab = $request->query('tab') === 'purchases' ? 'purchases' : 'sales';
+        $orders = null;
+        $supplierOrders = null;
+        $legacyPbfOrders = null;
+        $supplierNames = collect();
+        $total_omzet = 0;
+        $total_pembelian = 0;
 
-        return view('admin.purchase-history', compact('orders', 'total_omzet'));
+        if ($tab === 'sales') {
+            $ordersQuery = Schema::hasTable('purchase_histories')
+                ? PurchaseHistory::with('cashier')->latest()
+                : PurchaseHistory::query()->whereRaw('1 = 0');
+            if (Schema::hasColumn('purchase_histories', 'is_pbf_purchase_order')) {
+                $ordersQuery->where(fn ($query) => $query->whereNull('is_pbf_purchase_order')->orWhere('is_pbf_purchase_order', false));
+            }
+            $orders = $ordersQuery->paginate(20)->withQueryString();
+            $total_omzet = $this->revenueOrders()->get()->sum(fn ($order) => $order->effective_total);
+        } else {
+            [$purchaseRows, $supplierNames] = $this->supplierPurchaseHistoryRows($request);
+
+            $perPage = 20;
+            $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+            $supplierOrders = new \Illuminate\Pagination\LengthAwarePaginator(
+                $purchaseRows->forPage($currentPage, $perPage)->values(),
+                $purchaseRows->count(),
+                $perPage,
+                $currentPage,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+            $legacyPbfOrders = collect();
+            $total_pembelian = \App\Models\SupplierPurchaseOrderItem::whereHas(
+                'order',
+                fn ($query) => $query->whereNotIn('status', ['cancelled', 'returned'])
+            )->sum('line_total');
+            $total_pembelian += PurchaseHistory::query()
+                ->where('is_pbf_purchase_order', true)
+                ->whereNotIn('receipt_status', ['cancelled', 'returned'])
+                ->sum('total');
+        }
+
+        return view('admin.purchase-history', compact('tab', 'orders', 'supplierOrders', 'legacyPbfOrders', 'supplierNames', 'total_omzet', 'total_pembelian'));
+    }
+
+    private function supplierPurchaseHistoryRows(Request $request): array
+    {
+        $filters = $request->validate([
+            'purchase_date' => ['nullable', 'date'],
+            'order_number' => ['nullable', 'string', 'max:100'],
+            'supplier' => ['nullable', 'string', 'max:255'],
+            'product_count' => ['nullable', 'integer', 'min:0'],
+            'total_min' => ['nullable', 'numeric', 'min:0'],
+            'total_max' => ['nullable', 'numeric', 'min:0'],
+            'purchase_status' => ['nullable', 'in:ordered,partially_received,received,returned,cancelled'],
+            'purchase_sort' => ['nullable', 'in:oldest,newest'],
+        ]);
+
+        $purchaseRows = \App\Models\SupplierPurchaseOrder::with('items')
+            ->get()
+            ->map(function ($order): array {
+                return [
+                    'source' => 'supplier',
+                    'model' => $order,
+                    'date' => $order->ordered_at,
+                    'order_number' => $order->order_number,
+                    'supplier' => $order->supplier_name,
+                    'product_count' => $order->items->count(),
+                    'total' => (float) $order->items->sum(fn ($item) => (float) $item->line_total),
+                    'status' => $order->status,
+                ];
+            });
+
+        if (Schema::hasColumn('purchase_histories', 'is_pbf_purchase_order')) {
+            $legacyRows = PurchaseHistory::query()
+                ->where('is_pbf_purchase_order', true)
+                ->get()
+                ->map(function (PurchaseHistory $order): array {
+                    $items = is_array($order->items) ? $order->items : [];
+                    $status = match (true) {
+                        $order->receipt_status === 'returned' => 'returned',
+                        $order->receipt_status === 'cancelled' || $order->approval_status === 'rejected' => 'cancelled',
+                        $order->receipt_status === 'partially_received' => 'partially_received',
+                        in_array($order->receipt_status, ['verified', 'printed'], true) => 'received',
+                        default => 'ordered',
+                    };
+
+                    return [
+                        'source' => 'legacy',
+                        'model' => $order,
+                        'date' => $order->created_at,
+                        'order_number' => ($order->purchase_order_profile === 'medikpedia' ? 'MDK' : 'MDX') . '/SP/' . strtoupper($order->purchase_order_type ?: 'regular') . '/'
+                            . $order->created_at?->format('Ymd') . '/'
+                            . str_pad((string) $order->id, 5, '0', STR_PAD_LEFT),
+                        'supplier' => $order->pbf_name ?: 'PBF tidak tercatat',
+                        'product_count' => count($items),
+                        'total' => (float) $order->effective_total,
+                        'status' => $status,
+                    ];
+                });
+            $purchaseRows = $purchaseRows->concat($legacyRows);
+        }
+
+        $supplierNames = $purchaseRows->pluck('supplier')->unique()->sort()->values();
+        $purchaseRows = $purchaseRows
+            ->filter(function (array $row) use ($filters): bool {
+                if (!empty($filters['purchase_date']) && $row['date']?->format('Y-m-d') !== $filters['purchase_date']) {
+                    return false;
+                }
+                if (!empty($filters['order_number']) && !Str::contains(Str::lower($row['order_number']), Str::lower(trim($filters['order_number'])))) {
+                    return false;
+                }
+                if (!empty($filters['supplier']) && !Str::contains(Str::lower($row['supplier']), Str::lower(trim($filters['supplier'])))) {
+                    return false;
+                }
+                if (isset($filters['product_count']) && $row['product_count'] !== (int) $filters['product_count']) {
+                    return false;
+                }
+                if (isset($filters['total_min']) && $row['total'] < (float) $filters['total_min']) {
+                    return false;
+                }
+                if (isset($filters['total_max']) && $row['total'] > (float) $filters['total_max']) {
+                    return false;
+                }
+
+                return empty($filters['purchase_status']) || $row['status'] === $filters['purchase_status'];
+            })
+            ->sort(function (array $left, array $right) use ($filters): int {
+                $comparison = ($left['date']?->getTimestamp() ?? 0) <=> ($right['date']?->getTimestamp() ?? 0);
+                if ($comparison === 0) {
+                    $comparison = strcmp($left['order_number'], $right['order_number']);
+                }
+
+                return ($filters['purchase_sort'] ?? 'newest') === 'oldest' ? $comparison : -$comparison;
+            })
+            ->values();
+
+        return [$purchaseRows, $supplierNames];
     }
 
     public function notifications(Request $request)
@@ -197,6 +326,10 @@ class AdminDashboardController extends Controller
         if (!\Schema::hasTable('purchase_histories')) {
             return redirect()->route('admin.purchase-history.index')->with('error', 'Tabel purchase_histories tidak tersedia.');
         }
+        if ($order->is_pbf_purchase_order) {
+            return redirect()->route('admin.purchase-history.index', ['tab' => 'sales'])
+                ->with('error', 'Pesanan PBF bukan transaksi penjualan dan tidak dapat dihapus dari riwayat penjualan.');
+        }
 
         DB::transaction(function () use ($order) {
             $lockedOrder = PurchaseHistory::whereKey($order->id)->lockForUpdate()->first();
@@ -218,12 +351,16 @@ class AdminDashboardController extends Controller
         }
 
         DB::transaction(function () {
-            foreach (PurchaseHistory::query()->lockForUpdate()->get() as $order) {
+            $query = PurchaseHistory::query();
+            if (Schema::hasColumn('purchase_histories', 'is_pbf_purchase_order')) {
+                $query->where(fn ($builder) => $builder->whereNull('is_pbf_purchase_order')->orWhere('is_pbf_purchase_order', false));
+            }
+            foreach ($query->lockForUpdate()->get() as $order) {
                 $this->releaseOrRestoreOrderStock($order);
                 $order->delete();
             }
         });
-        return redirect()->route('admin.purchase-history.index')->with('success', 'Semua riwayat pembelian berhasil dihapus dan stok dikembalikan.');
+        return redirect()->route('admin.purchase-history.index', ['tab' => 'sales'])->with('success', 'Semua riwayat penjualan berhasil dihapus dan stok dikembalikan.');
     }
 
     private function releaseOrRestoreOrderStock(PurchaseHistory $order): void
@@ -343,13 +480,44 @@ class AdminDashboardController extends Controller
     /**
      * Export purchase history to XLSX
      */
-    public function exportPurchaseHistory()
+    public function exportPurchaseHistory(Request $request)
     {
+        if ($request->query('tab') === 'purchases') {
+            [$purchaseRows] = $this->supplierPurchaseHistoryRows($request);
+            $statusLabels = [
+                'ordered' => 'Dipesan',
+                'partially_received' => 'Diterima sebagian',
+                'received' => 'Diterima lengkap',
+                'returned' => 'Dikembalikan',
+                'cancelled' => 'Dibatalkan',
+            ];
+            $rows = $purchaseRows->map(fn (array $row): array => [
+                $row['date']?->format('d/m/Y'),
+                $row['order_number'],
+                $row['supplier'],
+                $row['product_count'],
+                $row['total'],
+                $statusLabels[$row['status']] ?? $row['status'],
+            ])->all();
+
+            return \App\Helpers\XlsxWriter::download(
+                'riwayat_pembelian_' . now()->format('Y-m-d_His') . '.xlsx',
+                ['Tanggal', 'Nomor SP', 'Supplier / PBF', 'Jumlah Produk', 'Total Modal (Rp)', 'Status'],
+                $rows,
+                [16, 34, 30, 16, 22, 24],
+                [3, 4]
+            );
+        }
+
         if (!\Schema::hasTable('purchase_histories')) {
             return redirect()->route('admin.purchase-history.index')->with('error', 'Tabel purchase_histories tidak tersedia.');
         }
 
-        $orders = PurchaseHistory::with('cashier')->latest()->get();
+        $ordersQuery = PurchaseHistory::with('cashier')->latest();
+        if (Schema::hasColumn('purchase_histories', 'is_pbf_purchase_order')) {
+            $ordersQuery->where(fn ($query) => $query->whereNull('is_pbf_purchase_order')->orWhere('is_pbf_purchase_order', false));
+        }
+        $orders = $ordersQuery->get();
 
         $headers = [
             'ID',

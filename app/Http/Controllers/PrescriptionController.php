@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Medicine;
 use App\Constants\Companies;
+use App\Support\StockAvailability;
 use Illuminate\Http\Request;
 
 class PrescriptionController extends Controller
@@ -26,6 +27,8 @@ class PrescriptionController extends Controller
         if ($perusahaan) {
             $query->where('kategori', $perusahaan);
         }
+
+        StockAvailability::prioritizeAvailableStock($query);
 
         match ($sort) {
             'harga_asc'  => $query->orderBy('harga', 'asc'),

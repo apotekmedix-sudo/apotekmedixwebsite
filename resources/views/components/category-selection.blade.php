@@ -405,7 +405,7 @@
             <a href="https://www.instagram.com/apotekmedix" target="_blank" rel="noopener" class="social-follow-link" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);" title="Instagram" aria-label="Instagram">
                 <i class="fa-brands fa-instagram"></i>
             </a>
-            <a href="https://wa.me/6285882717844" target="_blank" rel="noopener" class="social-follow-link" style="background:#25D366;" title="WhatsApp" aria-label="WhatsApp">
+            <a href="https://wa.me/6285890007359" target="_blank" rel="noopener" class="social-follow-link" style="background:#25D366;" title="WhatsApp" aria-label="WhatsApp">
                 <i class="fa-brands fa-whatsapp"></i>
             </a>
             <a href="https://facebook.com/apotekmedix" target="_blank" rel="noopener" class="social-follow-link" style="background:#1877F2;" title="Facebook" aria-label="Facebook">

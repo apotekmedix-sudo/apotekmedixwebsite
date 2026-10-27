@@ -56,7 +56,9 @@ class ProductController extends Controller
             ->availableForB2c()
             ->where('kategori', $medicine->kategori)
             ->where('id', '!=', $medicine->id);
-        $relatedMedicines = $relatedQuery->limit(4)->get();
+        $relatedMedicines = StockAvailability::prioritizeAvailableStock($relatedQuery)
+            ->limit(4)
+            ->get();
         StockAvailability::annotate($relatedMedicines);
         return view('medicines.detail', compact('medicine', 'relatedMedicines'));
     }
@@ -107,6 +109,8 @@ class ProductController extends Controller
         if ($perusahaan) {
             $query->where('kategori', $perusahaan);
         }
+
+        StockAvailability::prioritizeAvailableStock($query);
 
         match ($sort) {
             'harga_asc'  => $query->orderBy('harga_grosir', 'asc'),
@@ -220,6 +224,8 @@ class ProductController extends Controller
         if ($perusahaan) {
             $query->where('kategori', $perusahaan);
         }
+
+        StockAvailability::prioritizeAvailableStock($query);
 
         match ($sort) {
             'harga_asc'  => $query->orderBy('harga', 'asc'),

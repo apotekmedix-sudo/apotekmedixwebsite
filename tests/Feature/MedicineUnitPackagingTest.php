@@ -5,14 +5,19 @@ namespace Tests\Feature;
 use App\Constants\Companies;
 use App\Helpers\ImageHelper;
 use App\Helpers\XlsxWriter;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\PrescriptionController;
 use App\Models\Medicine;
+use App\Models\PbfSupplier;
 use App\Models\PurchaseHistory;
 use App\Models\ShoppingAccessCode;
+use App\Models\SupplierProductOffer;
 use App\Models\User;
 use App\Support\StockAvailability;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Http\Request;
 use Tests\TestCase;
 
 class MedicineUnitPackagingTest extends TestCase
@@ -533,6 +538,7 @@ class MedicineUnitPackagingTest extends TestCase
         $medicine = Medicine::create([
             'nama_obat' => 'Obat Pesanan PBF',
             'kategori' => 'Pabrik Contoh',
+            'golongan' => 'OOT',
             'harga' => 700,
             'harga_grosir' => 1200,
             'harga_retail' => 1400,
@@ -556,7 +562,7 @@ class MedicineUnitPackagingTest extends TestCase
             'is_pbf_purchase_order' => true,
             'transaction_channel' => 'online',
             'items' => [
-                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 2, 'harga' => 1200],
+                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 2, 'harga' => 1200, 'potongan' => 200],
             ],
             'total' => 2400,
         ])->assertOk();
@@ -571,6 +577,7 @@ class MedicineUnitPackagingTest extends TestCase
         $this->assertSame(1000, $order->total);
         $this->assertSame(500, $order->items[0]['harga']);
         $this->assertSame(500, $order->items[0]['harga_modal']);
+        $this->assertSame(200, $order->items[0]['potongan']);
         $this->assertSame('Pabrik Contoh', $order->items[0]['brand']);
         $this->assertDatabaseHas('medicines', [
             'id' => $medicine->id,
@@ -584,6 +591,7 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertOk()
             ->assertSee('SURAT PESANAN')
             ->assertSee('OBAT-OBAT TERTENTU')
+            ->assertSee('Nomor: MDK/SP/OOT/')
             ->assertSee('Nomor telepon')
             ->assertSee('021-12345678')
             ->assertSee('Zat Aktif OOT')
@@ -599,14 +607,74 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertSee('mix-blend-mode:multiply')
             ->assertSee('signature-stamp-pharmacist')
             ->assertSee('signature-stamp-pharmacy')
-            ->assertSee('width:155px')
-            ->assertSee('left:138px')
+            ->assertSee('top:30%; width:310px; height:160px')
+            ->assertSee('object-fit:cover; object-position:center')
+            ->assertSee('left:-200px')
+            ->assertSee('left:20px')
             ->assertSee('SIPA-123')
             ->assertSee('Obat Pesanan PBF')
             ->assertSee('Bentuk / Kekuatan')
-            ->assertDontSee('MODAL')
-            ->assertDontSee('Rp 500')
+            ->assertSee('Harga Modal')
+            ->assertSee('Subtotal')
+            ->assertSee('class="order-totals"', false)
+            ->assertDontSee('<tfoot>', false)
+            ->assertSeeInOrder(['</table>', 'Total ajuan potongan: Rp 200', 'Total: Rp 1.000'])
+            ->assertSee('Rp 500')
+            ->assertDontSee('<th class="number">Ajuan Potongan</th>', false)
+            ->assertSee('Ajuan potongan: Rp 200')
+            ->assertSee('potongan menunggu persetujuan supplier')
             ->assertDontSee('Rp 900');
+    }
+
+    public function test_admin_pbf_purchase_order_rejects_products_that_do_not_match_order_type(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $medicine = Medicine::create([
+            'nama_obat' => 'Produk Kategori Uji',
+            'kategori' => 'Pabrik Contoh',
+            'golongan' => 'Obat Keras',
+            'harga' => 700,
+            'harga_modal' => 500,
+            'stok' => 0,
+            'deskripsi' => 'Produk untuk uji kategori SP',
+        ]);
+        $payload = [
+            'buyer_type' => 'apotik',
+            'requester_name' => 'Apoteker',
+            'apj' => 'Apoteker',
+            'sia' => 'SIA-123',
+            'sipa' => 'SIPA-123',
+            'pbf_name' => 'PBF Contoh',
+            'pbf_address' => 'Alamat PBF',
+            'pbf_phone' => '021-12345678',
+            'purchase_order_type' => 'oot',
+            'is_pbf_purchase_order' => true,
+            'transaction_channel' => 'online',
+            'items' => [
+                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 1],
+            ],
+            'total' => 500,
+        ];
+
+        $this->actingAs($admin)
+            ->postJson(route('orders.history.store'), $payload)
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.purchase_order_type.0', 'Produk Kategori Uji termasuk kategori Reguler dan tidak dapat dimasukkan ke SP OOT.');
+        $this->assertDatabaseCount('purchase_histories', 0);
+
+        $medicine->update(['golongan' => 'OOT']);
+        $payload['purchase_order_type'] = 'regular';
+        $this->postJson(route('orders.history.store'), $payload)
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.purchase_order_type.0', 'Produk Kategori Uji termasuk kategori OOT dan tidak dapat dimasukkan ke SP Reguler.');
+        $this->assertDatabaseCount('purchase_histories', 0);
+
+        $medicine->update(['golongan' => 'Prekursor Farmasi']);
+        $payload['purchase_order_type'] = 'oot';
+        $this->postJson(route('orders.history.store'), $payload)
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.purchase_order_type.0', 'Produk Kategori Uji termasuk kategori Prekursor dan tidak dapat dimasukkan ke SP OOT.');
+        $this->assertDatabaseCount('purchase_histories', 0);
     }
 
     public function test_precursor_purchase_order_shows_active_ingredient_and_quantity_in_words(): void
@@ -640,7 +708,9 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertSee('PREKURSOR FARMASI')
             ->assertSee('Zat Aktif Prekursor')
             ->assertSee('Pseudoephedrine')
-            ->assertSee('2 (Dua) Box');
+            ->assertSee('2 (Dua) Box')
+            ->assertSee('Harga Modal')
+            ->assertSee('Rp 0');
     }
 
     public function test_regular_purchase_order_uses_regular_medicine_columns(): void
@@ -675,7 +745,10 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertSee('Satuan')
             ->assertSee('Jumlah')
             ->assertSee('Tablet / 500 mg')
-            ->assertDontSee('MODAL')
+            ->assertSee('Satuan')
+            ->assertSee('Box')
+            ->assertSee('Harga Modal')
+            ->assertSee('Rp 0')
             ->assertDontSee('CONTOH ILUSTRASI');
 
         preg_match('/<tbody>(.*?)<\\/tbody>/s', $response->getContent(), $tableBody);
@@ -686,7 +759,7 @@ class MedicineUnitPackagingTest extends TestCase
     public function test_admin_pbf_ordering_page_uses_dedicated_purchase_order_checkout(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        Medicine::create([
+        $medicine = Medicine::create([
             'nama_obat' => 'Obat PBF Logo Merah',
             'satuan' => 'Box',
             'kategori' => 'Pabrik Contoh',
@@ -697,32 +770,49 @@ class MedicineUnitPackagingTest extends TestCase
             'stok' => 5,
             'deskripsi' => 'Produk untuk pengujian kartu PBF.',
         ]);
+        $supplierA = PbfSupplier::create(['name' => 'Supplier Murah', 'address' => 'Alamat A', 'phone' => '021111']);
+        $supplierB = PbfSupplier::create(['name' => 'Supplier Lain', 'address' => 'Alamat B', 'phone' => '021222']);
+        SupplierProductOffer::create([
+            'supplier_id' => $supplierA->id,
+            'medicine_id' => $medicine->id,
+            'purchase_price' => 4200,
+            'minimum_quantity' => 1,
+        ]);
+        SupplierProductOffer::create([
+            'supplier_id' => $supplierB->id,
+            'medicine_id' => $medicine->id,
+            'purchase_price' => 4800,
+            'minimum_quantity' => 1,
+        ]);
 
         $this->actingAs($admin)
             ->get(route('admin.produk-pbf.index'))
             ->assertOk()
             ->assertSee('Pesan ke PBF')
+            ->assertSee('Semua Produk — semua harga supplier')
+            ->assertSee('Supplier Murah')
+            ->assertSee('Supplier Lain')
+            ->assertSee('4.200')
+            ->assertSee('4.800')
+            ->assertSee('Perbandingan harga saja')
             ->assertSee('Logo:</strong> Merah', false)
             ->assertSee('Golongan:</strong> Obat Keras', false)
             ->assertSee('product-logo-marker--red', false)
-            ->assertSee('pengadaan Apotek Medix ke distributor')
-            ->assertSee('Buat Surat Pesanan')
-            ->assertSee('adminPbfOrder: true', false)
-            ->assertSee('function openOrder()', false)
-            ->assertSee('if (CART_CONFIG.adminPbfOrder)', false)
-            ->assertSee("document.getElementById('cartDrawer').classList.add('open')", false)
-            ->assertSee("document.getElementById('cartOverlay').classList.add('open')", false)
-            ->assertSee('openPbfCheckout();', false)
+            ->assertSee('Pilih supplier tertentu untuk membuat SP')
+            ->assertDontSee('Tambah Pesanan')
+            ->assertDontSee('<button class="ordering-cart-button"', false)
+            ->assertDontSee('id="pbfOrderType"', false)
+            ->assertDontSee('id="cartDrawer"', false)
+            ->assertDontSee('Buat Surat Pesanan');
+
+        $this->actingAs($admin)
+            ->get(route('admin.produk-pbf.index', ['supplier_id' => $supplierA->id]))
+            ->assertOk()
+            ->assertSee('Supplier Murah')
+            ->assertSee('4.200')
+            ->assertSee('Tambah Pesanan')
             ->assertSee('id="pbfOrderType"', false)
-            ->assertSee('id="pbfOrderProfile"', false)
-            ->assertSee('SP Biasa (Obat Reguler)')
-            ->assertSee('SP OOT (Obat-Obat Tertentu)')
-            ->assertSee('SP Prekursor')
-            ->assertSee('id="pbfOrderPhone"', false)
-            ->assertSee('.purchase-order-preview-panel iframe { display:block; flex:1 1 auto; width:100%; height:0; min-height:0; border:0; }', false)
-            ->assertSee('window.location.href = \'' . route('cart.index') . '\'', false)
-            ->assertDontSee('id="orderModal"', false)
-            ->assertDontSee('id="f_payment"', false);
+            ->assertDontSee('4.800');
     }
 
     public function test_admin_pbf_product_search_matches_medicine_details_and_dose_in_description(): void
@@ -739,6 +829,13 @@ class MedicineUnitPackagingTest extends TestCase
             'komposisi' => 'Kandungan pencarian komposisi',
             'golongan' => 'Pencarian golongan',
             'sediaan' => 'Pencarian sediaan',
+        ]);
+        $supplier = PbfSupplier::create(['name' => 'Supplier Pencarian', 'address' => 'Alamat', 'phone' => '021']);
+        SupplierProductOffer::create([
+            'supplier_id' => $supplier->id,
+            'medicine_id' => $medicine->id,
+            'purchase_price' => 500,
+            'minimum_quantity' => 1,
         ]);
 
         foreach (['indikasi', 'komposisi', 'golongan', 'sediaan', '5 mg'] as $search) {
@@ -1070,6 +1167,94 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertDontSee('Produk Tanpa Harga B2C');
     }
 
+    public function test_product_catalogs_prioritize_available_stock_before_the_selected_sort_order(): void
+    {
+        Medicine::create([
+            'nama_obat' => 'Stok Tersedia Prioritas',
+            'kategori' => 'Obat Oral',
+            'kategori_produk' => 'OBAT',
+            'harga' => 2000,
+            'harga_retail' => 2000,
+            'harga_grosir' => 2000,
+            'stok' => 5,
+            'is_grosir' => true,
+            'deskripsi' => 'Produk dengan stok tersedia.',
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Stok Habis Terbaru',
+            'kategori' => 'Obat Oral',
+            'kategori_produk' => 'OBAT',
+            'harga' => 1000,
+            'harga_retail' => 1000,
+            'harga_grosir' => 1000,
+            'stok' => 0,
+            'is_grosir' => true,
+            'deskripsi' => 'Produk tanpa stok.',
+        ]);
+
+        $this->get(route('home', ['sort' => 'harga_asc']))
+            ->assertOk()
+            ->assertSeeInOrder(['Stok Tersedia Prioritas', 'Stok Habis Terbaru']);
+
+        $this->get(route('products.apotek', ['sort' => 'harga_asc']))
+            ->assertOk()
+            ->assertSeeInOrder(['Stok Tersedia Prioritas', 'Stok Habis Terbaru']);
+
+        $b2bCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2B,
+            'code_hash' => Hash::make('54321'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $this->withSession([
+            'pbf_access_expires_at' => now()->addDays(30)->timestamp,
+            'pbf_access_code_hash' => $b2bCode->code_hash,
+        ])->get(route('products.pbf', ['sort' => 'harga_asc']))
+            ->assertOk()
+            ->assertSeeInOrder(['Stok Tersedia Prioritas', 'Stok Habis Terbaru']);
+
+        $prescriptionResponse = app(PrescriptionController::class)->index(
+            Request::create(route('prescriptions.index', ['sort' => 'harga_asc']), 'GET')
+        );
+        $this->assertSame(
+            'Stok Tersedia Prioritas',
+            $prescriptionResponse->getData()['medicines']->first()->nama_obat
+        );
+
+        $categoryResponse = app(CategoryController::class)->layer2(
+            Request::create('/category/apotik/oral?main=apotik&sub=oral', 'GET')
+        );
+        $this->assertSame(
+            'Stok Tersedia Prioritas',
+            $categoryResponse->getData()['medicines']->first()->nama_obat
+        );
+    }
+
+    public function test_homepage_places_service_information_above_social_links_after_product_sections(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSeeInOrder([
+                '<h2 id="homeCategoryTitle">Kategori Produk</h2>',
+                '<section class="discounted-products-section home-b2c-section home-b2c-section--alt">',
+                '<section class="featured-section home-b2c-section">',
+                '<section class="all-b2c-products-section home-b2c-section home-b2c-section--alt" id="homeProductSearchResults">',
+                '<section class="home-service-links" aria-label="Informasi layanan Apotek Medix">',
+                '<a class="home-service-item home-service-item--action" href="' . route('products.pbf') . '" aria-label="Belanja B2B">',
+                '<div class="home-service-items">',
+                'Belanja lebih tenang',
+                'Praktis untuk kebutuhan Anda',
+                'Hubungi Customer Services',
+                '<h2 class="social-follow-title">',
+            ], false)
+            ->assertSee('Belanja B2B')
+            ->assertSee('url("' . asset('BACKGROUND MEDIX DEKSTOP.jpeg') . '")', false)
+            ->assertSee('url("' . asset('BACKGROUND MEDIX MOBILE.jpeg') . '")', false)
+            ->assertSee('body.public-theme main .home-service-links { padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important; }', false)
+            ->assertSee('body.public-theme main .home-service-items .home-service-item strong { color:#fff!important; }', false)
+            ->assertSee('body.public-theme main .home-service-items .home-service-item { color:#f7fbff!important;background:rgba(255,255,255,.1)!important;', false)
+            ->assertDontSee('<div class="home-brand-hero-actions">', false);
+    }
+
     public function test_admin_can_create_products_with_zero_one_or_two_images_and_gallery_is_capped_at_two(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -1297,15 +1482,36 @@ class MedicineUnitPackagingTest extends TestCase
         $this->get(route('products.apotek'))
             ->assertOk()
             ->assertSee('product-gallery-secondary', false)
+            ->assertSee('product-gallery-link--has-secondary', false)
             ->assertSee('foto-kedua.jpg', false)
             ->assertSee('object-fit: contain !important', false)
             ->assertSee('transition: opacity .7s cubic-bezier(.22, 1, .36, 1)', false)
-            ->assertSee('.product-gallery-link:hover .product-gallery-secondary', false)
+            ->assertSee('.product-gallery-link--has-secondary:hover .product-gallery-secondary', false)
             ->assertSee(route('medicines.show', $medicine->id), false);
 
         $this->get(route('medicines.show', $medicine->id))
             ->assertOk()
             ->assertSee('detail-gallery-thumb', false)
             ->assertSee('foto-kedua.jpg', false);
+    }
+
+    public function test_product_gallery_does_not_swap_images_when_only_one_photo_exists(): void
+    {
+        Medicine::create([
+            'nama_obat' => 'Produk Satu Foto Katalog',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 1000,
+            'harga_grosir' => 1400,
+            'harga_retail' => 1600,
+            'gambar' => 'medicines/foto-utama.jpg',
+            'gambar_tambahan' => [],
+            'stok' => 10,
+            'deskripsi' => 'Produk dengan satu foto',
+        ]);
+
+        $this->get(route('products.apotek'))
+            ->assertOk()
+            ->assertSee('<a class="product-gallery-link"', false)
+            ->assertDontSee('<a class="product-gallery-link product-gallery-link--has-secondary"', false);
     }
 }

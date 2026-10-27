@@ -886,10 +886,10 @@
         }
         .product-gallery-primary { opacity: 1; }
         .product-gallery-secondary { opacity: 0; }
-        .product-gallery-link:hover .product-gallery-primary,
-        .product-gallery-link:focus-visible .product-gallery-primary { opacity: 0; }
-        .product-gallery-link:hover .product-gallery-secondary,
-        .product-gallery-link:focus-visible .product-gallery-secondary { opacity: 1; }
+        .product-gallery-link--has-secondary:hover .product-gallery-primary,
+        .product-gallery-link--has-secondary:focus-visible .product-gallery-primary { opacity: 0; }
+        .product-gallery-link--has-secondary:hover .product-gallery-secondary,
+        .product-gallery-link--has-secondary:focus-visible .product-gallery-secondary { opacity: 1; }
         .medicine-name a,.prod-name a,.product-name a { color:inherit; text-decoration:none; }
         .medicine-name a:hover,.prod-name a:hover,.product-name a:hover { color:#1d4ed8; }
         .promo-gallery-secondary { position:absolute; inset:0; width:100%; height:100%; padding:1rem; object-fit:contain; opacity:0; transition:opacity .7s cubic-bezier(.22,1,.36,1); will-change:opacity; pointer-events:none; }
@@ -1117,9 +1117,12 @@
                     <div style="display:flex; gap:0.75rem;">
                         <a href="https://facebook.com/apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#1877f2'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-facebook-f"></i></a>
                         <a href="https://www.instagram.com/apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#e1306c'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="https://wa.me/6285882717844" aria-label="WhatsApp Apotek Medix" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#25d366'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-whatsapp"></i></a>
+                        <a href="https://wa.me/6285890007359" aria-label="WhatsApp Apotek Medix" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#25d366'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-whatsapp"></i></a>
                         <a href="https://pin.it/69pbGoR2f" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#e60023'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" title="Pinterest"><i class="fa-brands fa-pinterest-p"></i></a>
                         <a href="https://www.youtube.com/@apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#ff0000'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                        @if(request()->routeIs('home', 'products.apotek'))
+                            @include('partials.catalog-access-controls', ['accessReturnTo' => request()->routeIs('products.apotek') ? 'products.apotek' : 'home'])
+                        @endif
                     </div>
                 </div>
                 <div>
@@ -1142,9 +1145,9 @@
                     <h3>Kontak</h3>
                     <ul>
                         <li style="margin-bottom:0.75rem;">
-                            <a href="tel:+6285882717844" class="footer-contact-link">
+                            <a href="tel:+6285890007359" class="footer-contact-link">
                                 <i class="fa-solid fa-phone"></i>
-                                <span>0858 8271 7844</span>
+                                <span>0858 9000 7359</span>
                             </a>
                         </li>
                         <li style="margin-bottom:0.75rem;">
@@ -1187,7 +1190,7 @@
     </style>
 
     <div class="float-wrap">
-        <a href="https://wa.me/6285882717844?text=Halo%20Apotek%20Medix%2C%20saya%20ingin%20bertanya%20tentang%20produk%20obat."
+        <a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20ingin%20bertanya%20tentang%20produk%20obat."
            target="_blank" rel="noopener" class="float-btn-wa" aria-label="Chat WhatsApp Apotek Medix">
             <i class="fa-brands fa-whatsapp"></i>
         </a>

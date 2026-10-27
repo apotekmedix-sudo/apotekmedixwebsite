@@ -35,7 +35,10 @@ class CategoryController extends Controller
         }
         $query->filterByAttributes($request->only(['indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan']));
 
-        $medicines = $query->latest()->paginate(12)->withQueryString();
+        $medicines = StockAvailability::prioritizeAvailableStock($query)
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
         StockAvailability::annotate($medicines->getCollection());
 
         return view('category-layer2', compact(

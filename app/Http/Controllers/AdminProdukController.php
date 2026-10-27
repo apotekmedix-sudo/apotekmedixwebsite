@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use App\Models\PbfSupplier;
+use App\Models\SupplierProductOffer;
 use App\Support\CsvSpreadsheet;
 use RuntimeException;
 
@@ -79,32 +80,54 @@ class AdminProdukController extends Controller
     public function indexPbf(Request $request)
     {
         $search    = $request->get('search', '');
+        $supplierId = $request->integer('supplier_id') ?: null;
         $indikasi  = $request->get('indikasi', '');
         $komposisi = $request->get('komposisi', '');
         $sediaan   = $request->get('sediaan', '');
         $dosis     = $request->get('dosis', '');
         $golongan  = $request->get('golongan', '');
 
-        $query = Medicine::where('harga_modal', '>', 0)->latest();
+        $suppliers = Schema::hasTable('pbf_suppliers')
+            ? PbfSupplier::orderBy('name')->get(['id', 'name', 'address', 'phone'])
+            : collect();
+        $selectedSupplier = $supplierId
+            ? $suppliers->firstWhere('id', $supplierId)
+            : null;
+        abort_if($supplierId && !$selectedSupplier, 404);
 
-        if ($search !== '') {
-            $query->search($search);
+        $query = SupplierProductOffer::query()
+            ->with(['medicine', 'supplier'])
+            ->where('is_active', true)
+            ->whereHas('medicine', function ($medicineQuery) use ($search, $indikasi, $komposisi, $sediaan, $dosis, $golongan): void {
+                if ($search !== '') {
+                    $medicineQuery->search($search);
+                }
+                $medicineQuery->filterByAttributes([
+                    'indikasi'  => $indikasi,
+                    'komposisi' => $komposisi,
+                    'sediaan'   => $sediaan,
+                    'dosis'     => $dosis,
+                    'golongan'  => $golongan,
+                ]);
+            });
+        if ($selectedSupplier) {
+            $query->where('supplier_id', $selectedSupplier->id);
         }
-
-        $query->filterByAttributes([
-            'indikasi'  => $indikasi,
-            'komposisi' => $komposisi,
-            'sediaan'   => $sediaan,
-            'dosis'     => $dosis,
-            'golongan'  => $golongan,
-        ]);
-
         $attrOptions = Medicine::getAttributeFilterOptions();
-        $medicines = $query->paginate(15)->withQueryString();
-        StockAvailability::annotate($medicines->getCollection());
+        $productOffers = $query->orderBy('medicine_id')
+            ->orderBy('supplier_id')
+            ->paginate(15)
+            ->withQueryString();
+        StockAvailability::annotate(
+            $productOffers->getCollection()
+                ->pluck('medicine')
+                ->filter()
+                ->unique('id')
+                ->values()
+        );
 
         return view('admin.products-ordering', [
-            'medicines'    => $medicines,
+            'productOffers' => $productOffers,
             'search'       => $search,
             'indikasi'     => $indikasi,
             'komposisi'    => $komposisi,
@@ -113,8 +136,9 @@ class AdminProdukController extends Controller
             'golongan'     => $golongan,
             'sediaanList'  => $attrOptions['sediaanList'],
             'golonganList' => $attrOptions['golonganList'],
-            'total'        => Medicine::where('harga_modal', '>', 0)->count(),
-            'suppliers'    => Schema::hasTable('pbf_suppliers') ? PbfSupplier::orderBy('name')->get(['id', 'name', 'address', 'phone']) : collect(),
+            'total'        => (clone $query)->count(),
+            'suppliers'    => $suppliers,
+            'selectedSupplier' => $selectedSupplier,
         ]);
     }
 

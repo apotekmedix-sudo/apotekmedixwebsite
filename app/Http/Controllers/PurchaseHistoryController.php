@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\PurchaseHistory;
 use App\Models\Medicine;
 use App\Models\Customer;
+use App\Models\SupplierPurchaseOrder;
+use App\Models\SupplierPurchaseOrderItem;
 use App\Models\ShoppingAccessCode;
 use App\Models\DiscountCode;
 use App\Models\PurchaseStockReservation;
@@ -83,6 +85,33 @@ class PurchaseHistoryController extends Controller
                 'message' => 'Data surat pesanan belum lengkap.',
                 'errors' => ['pbf_name' => ['Lengkapi jenis surat pesanan, nama, alamat, dan nomor telepon distributor, data penandatangan, serta produk.']],
             ], 422);
+        }
+
+        if ($isPbfPurchaseOrder) {
+            $purchaseOrderType = $data['purchase_order_type'];
+            $products = Medicine::whereIn(
+                'id',
+                collect($data['items'])->pluck('id')->filter()->unique()
+            )->get()->keyBy('id');
+
+            foreach ($data['items'] as $item) {
+                $product = $products->get((int) $item['id']);
+                if (!$product || $product->getPurchaseOrderCategory() === $purchaseOrderType) {
+                    continue;
+                }
+
+                $orderTypeName = match ($purchaseOrderType) {
+                    'oot' => 'SP OOT',
+                    'precursor' => 'SP Prekursor',
+                    default => 'SP Reguler',
+                };
+                $message = "{$product->nama_obat} termasuk kategori {$product->getPurchaseOrderCategoryLabel()} dan tidak dapat dimasukkan ke {$orderTypeName}.";
+
+                return response()->json([
+                    'message' => 'Kategori produk tidak sesuai dengan jenis surat pesanan.',
+                    'errors' => ['purchase_order_type' => [$message]],
+                ], 422);
+            }
         }
 
         if ($isPbfPurchaseOrder) {
@@ -205,11 +234,14 @@ class PurchaseHistoryController extends Controller
                 ? 0
                 : (int) ($item['potongan'] ?? $item['discount'] ?? 0);
             $discount = min($promoDiscount + $manualDiscount, $subtotal);
+            $requestedDiscount = $isPbfPurchaseOrder
+                ? min(max(0, (int) ($item['potongan'] ?? $item['discount'] ?? 0)), $subtotal)
+                : $discount;
             $originalTotal += $subtotal;
             $discountedTotal += max(0, $subtotal - $discount);
 
             $items[$index]['harga'] = $price;
-            $items[$index]['potongan'] = $discount;
+            $items[$index]['potongan'] = $requestedDiscount;
             $items[$index]['promo_percent'] = $promoPercent;
             $items[$index]['sale_unit'] = $unit;
             $items[$index]['unit_label'] = match ($unit) {
@@ -451,14 +483,52 @@ class PurchaseHistoryController extends Controller
     {
         $items = is_string($order->items) ? json_decode($order->items, true) : ($order->items ?? []);
         $items = is_array($items) ? $items : [];
-        $items = array_map(function (array $item): array {
-            if (!isset($item['harga_modal']) && !empty($item['id'])) {
-                $item['harga_modal'] = Medicine::whereKey($item['id'])->value('harga_modal')
-                    ?: ($item['harga'] ?? $item['price'] ?? 0);
-            }
-            return $item;
-        }, $items);
+        $medicineIds = collect($items)
+            ->filter(fn (array $item) => ($item['harga_modal'] ?? $item['harga'] ?? $item['price'] ?? null) === null && !empty($item['id']))
+            ->pluck('id')
+            ->unique()
+            ->all();
+        $currentPrices = $medicineIds === []
+            ? collect()
+            : Medicine::whereIn('id', $medicineIds)->pluck('harga_modal', 'id');
 
-        return view('admin.purchase-order', compact('order', 'items'));
+        $purchaseOrder = new SupplierPurchaseOrder([
+            'order_number' => ($order->purchase_order_profile === 'medikpedia' ? 'MDK' : 'MDX') . '/SP/' . strtoupper($order->purchase_order_type ?: 'regular') . '/'
+                . $order->created_at?->format('Ymd') . '/'
+                . str_pad((string) $order->id, 5, '0', STR_PAD_LEFT),
+            'ordered_at' => $order->created_at,
+            'purchase_order_type' => $order->purchase_order_type ?: 'regular',
+            'purchase_order_profile' => $order->purchase_order_profile ?: 'medix',
+            'requester_name' => $order->requester_name,
+            'apj' => $order->apj,
+            'sia' => $order->sia,
+            'sipa' => $order->sipa,
+            'supplier_name' => $order->pbf_name ?: 'PBF tidak tercatat',
+            'supplier_address' => $order->pbf_address,
+            'supplier_phone' => $order->pbf_phone,
+        ]);
+        $purchaseOrder->setRelation('items', collect($items)->map(function (array $item) use ($currentPrices): SupplierPurchaseOrderItem {
+            $quantity = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
+            $unitCost = $item['harga_modal'] ?? $item['harga'] ?? $item['price'] ?? null;
+            if ($unitCost === null && !empty($item['id'])) {
+                $unitCost = $currentPrices->get($item['id'], 0);
+            }
+            $unitCost = (float) $unitCost;
+
+            return new SupplierPurchaseOrderItem([
+                'product_name' => $item['nama_obat'] ?? $item['name'] ?? 'Produk',
+                'supplier_code' => $item['supplier_code'] ?? null,
+                'active_ingredient' => $item['komposisi'] ?? $item['active_ingredient'] ?? null,
+                'dosage_form' => $item['sediaan'] ?? $item['dosage_form'] ?? null,
+                'strength' => $item['dosis'] ?? $item['strength'] ?? null,
+                'unit_label' => $item['unit_label'] ?? $item['package_unit_label'] ?? 'Kemasan',
+                'quantity' => $quantity,
+                'unit_cost' => $unitCost,
+                'line_total' => (float) ($item['line_total'] ?? $item['subtotal'] ?? ($unitCost * $quantity)),
+                'requested_discount' => (float) ($item['potongan'] ?? $item['discount'] ?? 0),
+            ]);
+        }));
+
+        return view('admin.supplier-procurement.purchase-order', ['order' => $purchaseOrder]);
     }
 }

@@ -5,16 +5,239 @@
 
 @section('content')
 
+<nav class="transaction-tabs" aria-label="Jenis riwayat transaksi">
+    <a href="{{ route('admin.purchase-history.index', ['tab' => 'sales']) }}" class="{{ $tab === 'sales' ? 'active' : '' }}"><i class="fa-solid fa-receipt"></i> Riwayat Penjualan</a>
+    <a href="{{ route('admin.purchase-history.index', ['tab' => 'purchases']) }}" class="{{ $tab === 'purchases' ? 'active' : '' }}"><i class="fa-solid fa-truck-ramp-box"></i> Riwayat Pembelian</a>
+</nav>
+@if($tab === 'purchases')
+@if(session('status'))<div class="alert alert-success" role="status">{{ session('status') }}</div>@endif
+@if($errors->any())<ul class="alert alert-danger" role="alert">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>@endif
+<div class="stats-grid" style="margin-bottom: 2rem;">
+    <div class="stat-card" style="border-top-color:#8b5cf6;">
+        <div class="stat-label">Total Nilai Pesanan Supplier</div>
+        <div class="stat-value" style="color:#8b5cf6;">{{ 'Rp ' . number_format($total_pembelian, 0, ',', '.') }}</div>
+    </div>
+</div>
+<div class="card">
+    <div class="transaction-toolbar">
+        <div class="transaction-heading">Semua Riwayat Pembelian</div>
+        <div class="transaction-toolbar-actions">
+            <a class="btn btn-primary btn-sm" href="{{ route('admin.purchase-history.export', array_merge(request()->query(), ['tab' => 'purchases'])) }}"><i class="fa-solid fa-download"></i> Download Excel</a>
+            <a class="btn btn-primary btn-sm" href="{{ route('admin.supplier-procurement.index') }}"><i class="fa-solid fa-plus"></i> Buat Pesanan</a>
+        </div>
+    </div>
+    <form method="GET" action="{{ route('admin.purchase-history.index') }}" class="purchase-history-filters">
+        <input type="hidden" name="tab" value="purchases">
+        <label>Tanggal
+            <input type="date" name="purchase_date" value="{{ request('purchase_date') }}">
+        </label>
+        <label>Nomor SP
+            <input type="search" name="order_number" value="{{ request('order_number') }}" placeholder="Cari nomor SP">
+        </label>
+        <label>Supplier / PBF
+            <input type="search" name="supplier" list="purchaseSupplierNames" value="{{ request('supplier') }}" placeholder="Cari nama supplier">
+            <datalist id="purchaseSupplierNames">
+                @foreach($supplierNames as $supplierName)<option value="{{ $supplierName }}">@endforeach
+            </datalist>
+        </label>
+        <label>Jumlah produk
+            <input type="number" name="product_count" min="0" value="{{ request('product_count') }}" placeholder="Semua">
+        </label>
+        <label>Total modal minimal
+            <input type="number" name="total_min" min="0" step="1" value="{{ request('total_min') }}" placeholder="Rp minimal">
+        </label>
+        <label>Total modal maksimal
+            <input type="number" name="total_max" min="0" step="1" value="{{ request('total_max') }}" placeholder="Rp maksimal">
+        </label>
+        <label>Status
+            <select name="purchase_status">
+                <option value="">Semua status</option>
+                <option value="ordered" @selected(request('purchase_status') === 'ordered')>Dipesan</option>
+                <option value="partially_received" @selected(request('purchase_status') === 'partially_received')>Diterima sebagian</option>
+                <option value="received" @selected(request('purchase_status') === 'received')>Diterima lengkap</option>
+                <option value="returned" @selected(request('purchase_status') === 'returned')>Dikembalikan</option>
+                <option value="cancelled" @selected(request('purchase_status') === 'cancelled')>Dibatalkan</option>
+            </select>
+        </label>
+        <label>Urutkan tanggal
+            <select name="purchase_sort">
+                <option value="newest" @selected(request('purchase_sort', 'newest') === 'newest')>Terbaru ke lama</option>
+                <option value="oldest" @selected(request('purchase_sort') === 'oldest')>Terlama ke baru</option>
+            </select>
+        </label>
+        <div class="purchase-history-filter-actions">
+            <button class="btn btn-primary btn-sm" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cari / Filter</button>
+            <a class="btn btn-secondary btn-sm" href="{{ route('admin.purchase-history.index', ['tab' => 'purchases']) }}">Reset</a>
+        </div>
+    </form>
+    <div class="table-container transaction-table-container">
+        <table class="table transaction-table">
+            <thead><tr><th>Tanggal</th><th>No. SP</th><th>Supplier / PBF</th><th>Produk</th><th>Total Modal</th><th>Status</th><th>Dokumen</th><th>Aksi</th></tr></thead>
+            <tbody>
+            @forelse($supplierOrders as $row)
+                @php
+                    $purchase = $row['model'];
+                    $isSupplierOrder = $row['source'] === 'supplier';
+                    $purchaseStatusLabels = ['ordered' => 'Dipesan', 'partially_received' => 'Diterima sebagian', 'received' => 'Diterima lengkap', 'cancelled' => 'Dibatalkan', 'returned' => 'Dikembalikan'];
+                    $purchaseStatusColors = ['ordered' => '#92400e', 'partially_received' => '#92400e', 'received' => '#166534', 'cancelled' => '#991b1b', 'returned' => '#991b1b'];
+                    $purchaseStatusBgs = ['ordered' => '#fef3c7', 'partially_received' => '#fffbeb', 'received' => '#dcfce7', 'cancelled' => '#fee2e2', 'returned' => '#fee2e2'];
+                @endphp
+                <tr>
+                    <td>{{ $row['date']?->translatedFormat('d M Y') }}</td>
+                    <td><strong>{{ $row['order_number'] }}</strong></td>
+                    <td>{{ $row['supplier'] }}</td>
+                    <td>{{ $row['product_count'] }} produk</td>
+                    <td style="font-weight:700;">Rp {{ number_format($row['total'], 0, ',', '.') }}</td>
+                    <td><span style="display:inline-block;padding:.25rem .65rem;border-radius:999px;font-size:.75rem;font-weight:700;color:{{ $purchaseStatusColors[$row['status']] ?? '#334155' }};background:{{ $purchaseStatusBgs[$row['status']] ?? '#f1f5f9' }}">{{ $purchaseStatusLabels[$row['status']] ?? $row['status'] }}</span></td>
+                    <td>
+                        @if($isSupplierOrder)
+                            <a class="btn btn-secondary btn-sm" href="{{ route('admin.supplier-procurement.orders.purchase-order', $purchase) }}" target="_blank" rel="noopener"><i class="fa-solid fa-file-lines"></i> Lihat SP</a>
+                        @else
+                            <a class="btn btn-secondary btn-sm" href="{{ route('admin.purchase-history.purchase-order', $purchase) }}" target="_blank" rel="noopener"><i class="fa-solid fa-file-lines"></i> Lihat SP</a>
+                        @endif
+                    </td>
+                    <td style="min-width:175px;">
+                        @if($isSupplierOrder && in_array($row['status'], ['ordered', 'partially_received'], true))
+                            <form method="POST" action="{{ route('admin.supplier-procurement.orders.receive', $purchase) }}" onsubmit="return confirm('Selesaikan pesanan ini dan tambahkan seluruh sisa barang ke stok?');" style="margin-bottom:.4rem;">
+                                @csrf
+                                <input type="hidden" name="from_purchase_history" value="1">
+                                @foreach($purchase->items as $item)
+                                    @php
+                                        $remainingQuantity = max(0, $item->quantity - $item->received_quantity);
+                                    @endphp
+                                    <input type="hidden" name="received_now[{{ $item->id }}]" value="{{ $remainingQuantity }}">
+                                @endforeach
+                                <button class="btn btn-success btn-sm" type="submit"><i class="fa-solid fa-check"></i> Selesai</button>
+                            </form>
+                            <details>
+                                <summary class="btn btn-secondary btn-sm" style="cursor:pointer;list-style:none;"><i class="fa-solid fa-list-ol"></i> Tidak sesuai jumlah</summary>
+                                <form method="POST" action="{{ route('admin.supplier-procurement.orders.receive', $purchase) }}" style="margin-top:.65rem;min-width:300px;">
+                                    @csrf
+                                    <input type="hidden" name="from_purchase_history" value="1">
+                                    <p style="margin:.25rem 0 .5rem;font-size:.78rem;color:#64748b;">Isi jumlah yang benar-benar diterima untuk setiap produk. Stok bertambah sesuai angka ini.</p>
+                                    <div style="display:grid;gap:.55rem;">
+                                        @foreach($purchase->items as $item)
+                                            @php
+                                                $remainingQuantity = max(0, $item->quantity - $item->received_quantity);
+                                            @endphp
+                                            @if($remainingQuantity > 0)
+                                                <label style="display:grid;gap:.25rem;font-size:.78rem;font-weight:700;">
+                                                    {{ $item->product_name }}<small style="font-weight:400;color:#64748b;">Pesan {{ $item->quantity }} · Sudah diterima {{ $item->received_quantity }} · Sisa {{ $remainingQuantity }} {{ $item->unit_label }}</small>
+                                                    <input type="number" name="received_now[{{ $item->id }}]" min="0" max="{{ $remainingQuantity }}" value="0" required style="width:100%;padding:.4rem;border:1px solid #cbd5e1;border-radius:.4rem;">
+                                                </label>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" type="submit" style="margin-top:.6rem;"><i class="fa-solid fa-boxes-stacked"></i> Simpan penerimaan</button>
+                                </form>
+                            </details>
+                            @if($row['status'] === 'ordered')
+                                <form method="POST" action="{{ route('admin.supplier-procurement.orders.return', $purchase) }}" onsubmit="return confirm('Kembalikan pesanan ini? Status akan menjadi Dikembalikan dan stok tidak akan bertambah.');" style="margin-top:.4rem;">
+                                    @csrf
+                                    <button class="btn btn-danger btn-sm" type="submit"><i class="fa-solid fa-rotate-left"></i> Kembalikan</button>
+                                </form>
+                            @endif
+                        @elseif($isSupplierOrder && $row['status'] === 'returned')
+                            <form method="POST" action="{{ route('admin.supplier-procurement.orders.destroy', $purchase) }}" onsubmit="return confirm('Hapus permanen riwayat pesanan yang dikembalikan ini?');">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-danger btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Hapus riwayat</button>
+                            </form>
+                        @elseif(!$isSupplierOrder && in_array($row['status'], ['ordered', 'partially_received'], true))
+                            @php
+                                $legacyItems = is_array($purchase->items) ? $purchase->items : [];
+                            @endphp
+                            <form method="POST" action="{{ route('admin.purchase-history.receive', $purchase) }}" onsubmit="return confirm('Selesaikan pesanan ini dan tambahkan seluruh sisa barang ke stok?');" style="margin-bottom:.4rem;">
+                                @csrf
+                                @foreach($legacyItems as $itemIndex => $item)
+                                    @php
+                                        $remainingQuantity = max(0, (int) ($item['quantity'] ?? $item['qty'] ?? 0) - (int) ($item['received_quantity'] ?? 0));
+                                    @endphp
+                                    <input type="hidden" name="received_now[{{ $itemIndex }}]" value="{{ $remainingQuantity }}">
+                                @endforeach
+                                <button class="btn btn-success btn-sm" type="submit"><i class="fa-solid fa-check"></i> Selesai</button>
+                            </form>
+                            <details>
+                                <summary class="btn btn-secondary btn-sm" style="cursor:pointer;list-style:none;"><i class="fa-solid fa-list-ol"></i> Tidak sesuai jumlah</summary>
+                                <form method="POST" action="{{ route('admin.purchase-history.receive', $purchase) }}" style="margin-top:.65rem;min-width:300px;">
+                                    @csrf
+                                    <p style="margin:.25rem 0 .5rem;font-size:.78rem;color:#64748b;">Isi jumlah yang benar-benar diterima untuk setiap produk.</p>
+                                    <div style="display:grid;gap:.55rem;">
+                                        @foreach($legacyItems as $itemIndex => $item)
+                                            @php
+                                                $quantity = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
+                                                $alreadyReceived = (int) ($item['received_quantity'] ?? 0);
+                                                $remainingQuantity = max(0, $quantity - $alreadyReceived);
+                                            @endphp
+                                            @if($remainingQuantity > 0)
+                                                <label style="display:grid;gap:.25rem;font-size:.78rem;font-weight:700;">
+                                                    {{ $item['nama_obat'] ?? $item['name'] ?? 'Produk' }}
+                                                    <small style="font-weight:400;color:#64748b;">Pesan {{ $quantity }} · Sudah diterima {{ $alreadyReceived }} · Sisa {{ $remainingQuantity }}</small>
+                                                    <input type="number" name="received_now[{{ $itemIndex }}]" min="0" max="{{ $remainingQuantity }}" value="0" required style="width:100%;padding:.4rem;border:1px solid #cbd5e1;border-radius:.4rem;">
+                                                </label>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" type="submit" style="margin-top:.6rem;"><i class="fa-solid fa-boxes-stacked"></i> Simpan penerimaan</button>
+                                </form>
+                            </details>
+                            @if($row['status'] === 'ordered')
+                                <form method="POST" action="{{ route('admin.purchase-history.return', $purchase) }}" onsubmit="return confirm('Kembalikan pesanan ini? Stok tidak akan bertambah.');" style="margin-top:.4rem;">
+                                    @csrf
+                                    <button class="btn btn-danger btn-sm" type="submit"><i class="fa-solid fa-rotate-left"></i> Kembalikan</button>
+                                </form>
+                            @endif
+                        @elseif(!$isSupplierOrder && $row['status'] === 'returned')
+                            <form method="POST" action="{{ route('admin.purchase-history.destroy-returned', $purchase) }}" onsubmit="return confirm('Hapus permanen riwayat pesanan yang dikembalikan ini?');">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-danger btn-sm" type="submit"><i class="fa-solid fa-trash"></i> Hapus riwayat</button>
+                            </form>
+                        @else
+                            <span style="color:#64748b;font-size:.78rem;">Tidak ada aksi</span>
+                        @endif
+                    </td>
+                </tr>
+            @empty
+                <tr><td colspan="8" style="text-align:center;color:#6b7280;padding:2rem;">Tidak ada riwayat yang sesuai dengan pencarian.</td></tr>
+            @endforelse
+            @if($supplierOrders->isEmpty() && $legacyPbfOrders->isEmpty())
+                <tr><td colspan="8" style="text-align:center;color:#6b7280;padding:2rem;">Belum ada riwayat pembelian.</td></tr>
+            @endif
+            </tbody>
+        </table>
+    </div>
+    @if($supplierOrders->total() > 0)
+        <div class="transaction-pagination">
+            <p class="transaction-pagination-summary">Menampilkan {{ number_format($supplierOrders->firstItem(), 0, ',', '.') }}–{{ number_format($supplierOrders->lastItem(), 0, ',', '.') }} dari {{ number_format($supplierOrders->total(), 0, ',', '.') }} pesanan</p>
+            @if($supplierOrders->hasPages())
+                <nav class="transaction-pagination-nav" aria-label="Navigasi halaman riwayat pembelian">
+                    @if($supplierOrders->onFirstPage())
+                        <span class="transaction-page-link is-disabled" aria-disabled="true">‹ Sebelumnya</span>
+                    @else
+                        <a class="transaction-page-link" rel="prev" href="{{ $supplierOrders->previousPageUrl() }}">‹ Sebelumnya</a>
+                    @endif
+                    @if($supplierOrders->hasMorePages())
+                        <a class="transaction-page-link" rel="next" href="{{ $supplierOrders->nextPageUrl() }}">Berikutnya ›</a>
+                    @else
+                        <span class="transaction-page-link is-disabled" aria-disabled="true">Berikutnya ›</span>
+                    @endif
+                </nav>
+            @endif
+        </div>
+    @endif
+</div>
+@else
 {{-- Total Omset --}}
 <div class="transaction-history-page">
 <div class="stats-grid" style="margin-bottom: 2rem;">
     <div class="stat-card" style="border-top-color:#8b5cf6;">
-        <div class="stat-label">Total Omzet dari Semua Pembelian</div>
+        <div class="stat-label">Total Omzet Penjualan</div>
         <div class="stat-value" style="color:#8b5cf6;">{{ 'Rp ' . number_format($total_omzet, 0, ',', '.') }}</div>
     </div>
 </div>
 
-{{-- Tabel Riwayat Pembelian --}}
+{{-- Tabel Riwayat Penjualan --}}
 <div class="card">
     <div class="transaction-toolbar">
         <div class="transaction-heading">Semua Transaksi</div>
@@ -22,7 +245,7 @@
             <a href="{{ route('admin.purchase-history.export') }}" class="btn btn-primary btn-sm" title="Download sebagai Excel/CSV">
                 <i class="fa-solid fa-download"></i> Download
             </a>
-            <form id="deleteAllForm" method="POST" action="{{ route('admin.purchase-history.destroyAll') }}" onsubmit="return confirm('Yakin ingin menghapus SEMUA riwayat pembelian?');">
+            <form id="deleteAllForm" method="POST" action="{{ route('admin.purchase-history.destroyAll') }}" onsubmit="return confirm('Yakin ingin menghapus SEMUA riwayat penjualan? Pesanan pembelian supplier tidak akan dihapus.');">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-danger btn-sm">Hapus Semua</button>
@@ -160,7 +383,7 @@
                 @empty
                     <tr>
                         <td colspan="9" style="text-align:center;color:#6b7280;padding:2rem;">
-                            Belum ada riwayat pembelian.
+                            Belum ada riwayat penjualan.
                         </td>
                     </tr>
                 @endforelse
@@ -217,6 +440,7 @@
         </div>
     </div>
 </div>
+@endif
 
 @endsection
 
@@ -227,6 +451,9 @@
     min-width: 0;
     max-width: 100%;
 }
+.transaction-tabs { display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1.25rem; }
+.transaction-tabs a { display:inline-flex;align-items:center;gap:.45rem;padding:.7rem 1rem;border:1px solid #dbe3ec;border-radius:.6rem;background:#fff;color:#334155;font-weight:700;text-decoration:none; }
+.transaction-tabs a.active { border-color:#1d4ed8;background:#eff6ff;color:#1d4ed8; }
 .transaction-toolbar {
     display: flex;
     align-items: center;
@@ -238,6 +465,40 @@
     color: #1e293b;
     font-size: 1.3rem;
     font-weight: 700;
+}
+.purchase-history-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: .75rem;
+    margin: 0 0 1rem;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: .65rem;
+    background: #f8fafc;
+}
+.purchase-history-filters label {
+    display: grid;
+    gap: .3rem;
+    color: #475569;
+    font-size: .78rem;
+    font-weight: 700;
+}
+.purchase-history-filters input,
+.purchase-history-filters select {
+    width: 100%;
+    min-height: 38px;
+    padding: .45rem .6rem;
+    border: 1px solid #cbd5e1;
+    border-radius: .45rem;
+    background: #fff;
+    color: #1e293b;
+    font: inherit;
+    font-size: .84rem;
+}
+.purchase-history-filter-actions {
+    display: flex;
+    align-items: end;
+    gap: .5rem;
 }
 .transaction-toolbar-actions {
     display: flex;
@@ -401,6 +662,7 @@
 @endsection
 
 @section('scripts')
+@if($tab === 'sales')
 <script>
     const ordersData = {
         @foreach($orders as $order)
@@ -541,4 +803,5 @@
         return true;
     }
 </script>
+@endif
 @endsection

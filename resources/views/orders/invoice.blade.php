@@ -601,7 +601,7 @@
                     </div>
                     <div class="contact-row">
                         <i class="fa-solid fa-phone"></i>
-                        <span>HP. 085882717844</span>
+                        <span>HP. 0858 9000 7359</span>
                     </div>
                     <div class="contact-row">
                         <i class="fa-solid fa-globe"></i>

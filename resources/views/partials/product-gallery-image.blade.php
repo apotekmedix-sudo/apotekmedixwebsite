@@ -1,7 +1,11 @@
 @php
     $gallery = $medicine->image_gallery;
+    $hasSecondaryImage = count($gallery) > 1;
+    $galleryLinkClass = $hasSecondaryImage
+        ? 'product-gallery-link product-gallery-link--has-secondary'
+        : 'product-gallery-link';
 @endphp
-<a class="product-gallery-link" href="{{ route('medicines.show', $medicine->id) }}" aria-label="Lihat detail {{ $medicine->nama_obat }}">
+<a class="{{ $galleryLinkClass }}" href="{{ route('medicines.show', $medicine->id) }}" aria-label="Lihat detail {{ $medicine->nama_obat }}">
     @if($gallery)
         <img class="product-gallery-photo product-gallery-primary" src="{{ $medicine->image_url }}" alt="{{ $medicine->nama_obat }}" loading="lazy">
         @if(count($gallery) > 1)

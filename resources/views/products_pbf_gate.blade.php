@@ -107,7 +107,7 @@
             'Mohon informasi dan bantuan untuk aktivasi kode akses. Terima kasih.'
         ].join('\n');
 
-        window.open(`https://wa.me/6285882717844?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+        window.open(`https://wa.me/6285890007359?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
         requestAccessDialog.close();
     });
 </script>
