@@ -22,7 +22,13 @@ class AdminSupplierProcurementTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $supplierA = PbfSupplier::create(['name' => 'Supplier A', 'address' => 'Alamat A', 'phone' => '021111']);
         $supplierB = PbfSupplier::create(['name' => 'Supplier B', 'address' => 'Alamat B', 'phone' => '021222']);
-        $medicine = $this->medicine(['stok' => 5, 'harga_modal' => 9000]);
+        $medicine = $this->medicine([
+            'stok' => 5,
+            'harga_modal' => 9000,
+            'sediaan' => 'Tablet',
+            'komposisi' => 'Paracetamol',
+            'dosis' => '500 mg',
+        ]);
         $offerA = SupplierProductOffer::create([
             'supplier_id' => $supplierA->id,
             'medicine_id' => $medicine->id,
@@ -61,6 +67,7 @@ class AdminSupplierProcurementTest extends TestCase
             ->assertDontSee('Kode Supplier')
             ->assertDontSee('A-001')
             ->assertSee('8.000')
+            ->assertSee('Tablet / Paracetamol / 500 mg')
             ->assertDontSee('7.500');
 
         $this->actingAs($admin)
@@ -223,6 +230,33 @@ class AdminSupplierProcurementTest extends TestCase
             'supplier_code' => 'EXT-22',
             'purchase_price' => 7650,
             'minimum_quantity' => 3,
+        ]);
+    }
+
+    public function test_supplier_offer_import_accepts_zero_and_prices_below_one_thousand(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $supplier = PbfSupplier::create(['name' => 'Supplier Harga Rendah', 'address' => 'Alamat', 'phone' => '021']);
+        $freeMedicine = $this->medicine(['sku' => 'SKU-GRATIS']);
+        $lowPriceMedicine = $this->medicine(['sku' => 'SKU-MURAH']);
+        $csv = "SKU PRODUK,NAMA SUPPLIER,HARGA MODAL\n"
+            . "SKU-GRATIS,Supplier Harga Rendah,0\n"
+            . "SKU-MURAH,Supplier Harga Rendah,500\n";
+        $file = UploadedFile::fake()->createWithContent('low-price-offers.csv', $csv);
+
+        $this->actingAs($admin)
+            ->post(route('admin.supplier-procurement.offers.import'), ['file' => $file])
+            ->assertRedirect(route('admin.supplier-procurement.index'));
+
+        $this->assertDatabaseHas('supplier_product_offers', [
+            'supplier_id' => $supplier->id,
+            'medicine_id' => $freeMedicine->id,
+            'purchase_price' => 0,
+        ]);
+        $this->assertDatabaseHas('supplier_product_offers', [
+            'supplier_id' => $supplier->id,
+            'medicine_id' => $lowPriceMedicine->id,
+            'purchase_price' => 500,
         ]);
     }
 

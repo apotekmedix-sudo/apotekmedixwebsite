@@ -598,6 +598,7 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertSee('PBF Contoh')
             ->assertSee('APOTEK MEDIKPEDIA')
             ->assertSee('ITC CEMPAKA MAS LT.1 NO.88, KEL. SUMUR BATU, KEC. KEMAYORAN, JAKARTA PUSAT')
+            ->assertSee('Jakarta,')
             ->assertSee('Telepon: 085890007359')
             ->assertSee('Kode Pos: 10640')
             ->assertSee('Website: medikpedia.com')

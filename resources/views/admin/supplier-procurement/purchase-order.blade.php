@@ -189,7 +189,7 @@
                             @endif
                         </td>
                     @else
-                        <td>{{ collect([$item->dosage_form, $item->strength])->filter()->implode(' / ') ?: '—' }}</td>
+                        <td>{{ collect([$item->dosage_form, $item->active_ingredient, $item->strength])->filter()->implode(' / ') ?: '—' }}</td>
                         <td>{{ $item->unit_label }}</td>
                         <td>{{ number_format($item->quantity, 0, ',', '.') }}</td>
                         <td class="number">Rp {{ number_format((float) $item->unit_cost, 0, ',', '.') }}</td>
@@ -215,7 +215,7 @@
         @endif
         @if($order->notes)<div class="notes"><strong>Catatan:</strong><br>{{ $order->notes }}</div>@endif
         <div class="signature">
-            Bogor, {{ $order->ordered_at?->translatedFormat('d F Y') }}
+            {{ $profile === 'medikpedia' ? 'Jakarta' : 'Bogor' }}, {{ $order->ordered_at?->translatedFormat('d F Y') }}
             <br>Pemesan,
             <div class="signature-space">
                 @if($identity['pharmacist_stamp'])

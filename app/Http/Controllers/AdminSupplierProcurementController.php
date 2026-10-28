@@ -209,7 +209,7 @@ class AdminSupplierProcurementController extends Controller
                 'product_name' => ['nullable', 'string', 'max:255'],
                 'supplier_id' => ['nullable', 'integer', 'min:1'],
                 'supplier_name' => ['nullable', 'string', 'max:255'],
-                'purchase_price' => ['required', 'numeric', 'gt:0', 'max:999999999999'],
+                'purchase_price' => ['required', 'numeric', 'gte:0', 'max:999999999999'],
                 'minimum_quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
                 'supplier_code' => ['nullable', 'string', 'max:100'],
             ]);

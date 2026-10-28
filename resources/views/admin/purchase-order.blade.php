@@ -183,7 +183,7 @@
                         $quantity = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
                         $name = $item['nama_obat'] ?? $item['name'] ?? '-';
                         $activeIngredient = $item['komposisi'] ?? '-';
-                        $formStrength = collect([$item['sediaan'] ?? null, $item['dosis'] ?? null])->filter()->implode(' / ') ?: '-';
+                        $formStrength = collect([$item['sediaan'] ?? null, $item['komposisi'] ?? null, $item['dosis'] ?? null])->filter()->implode(' / ') ?: '-';
                         $unit = $item['unit_label'] ?? $item['package_unit_label'] ?? 'Kemasan';
                     @endphp
                     <tr>
@@ -219,7 +219,7 @@
             @endif
         </div>
         <div class="signature">
-            Bogor, {{ $order->created_at?->timezone('Asia/Jakarta')->translatedFormat('d F Y') }}<br>
+            {{ $profile === 'medikpedia' ? 'Jakarta' : 'Bogor' }}, {{ $order->created_at?->timezone('Asia/Jakarta')->translatedFormat('d F Y') }}<br>
             Pemesan,
             <div class="signature-space">
                 @if($identity['pharmacist_stamp'])
