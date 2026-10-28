@@ -163,11 +163,11 @@
         <table class="{{ $type === 'regular' ? 'regular-table' : 'special-table' }}">
             <thead>
                 @if($type === 'precursor')
-                    <tr><th style="width:5%">No.</th><th>Nama Obat</th><th>Zat Aktif Prekursor</th><th>Bentuk / Kekuatan</th><th>Jumlah</th><th class="number">Harga Modal</th><th class="number">Subtotal</th></tr>
+                    <tr><th style="width:5%">No.</th><th>Nama Obat</th><th>Zat Aktif Prekursor</th><th>Bentuk / Kekuatan</th><th>Jumlah</th><th class="number">Harga</th><th class="number">Subtotal</th></tr>
                 @elseif($type === 'oot')
-                    <tr><th style="width:5%">No.</th><th>Nama Obat</th><th>Zat Aktif OOT</th><th>Bentuk / Kekuatan</th><th>Jumlah</th><th class="number">Harga Modal</th><th class="number">Subtotal</th></tr>
+                    <tr><th style="width:5%">No.</th><th>Nama Obat</th><th>Zat Aktif OOT</th><th>Bentuk / Kekuatan</th><th>Jumlah</th><th class="number">Harga</th><th class="number">Subtotal</th></tr>
                 @else
-                    <tr><th style="width:5%">No.</th><th>Nama Produk</th><th>Bentuk / Kekuatan</th><th>Satuan</th><th>Jumlah</th><th class="number">Harga Modal</th><th class="number">Subtotal</th></tr>
+                    <tr><th style="width:5%">No.</th><th>Nama Produk</th><th>Bentuk / Kekuatan</th><th>Satuan</th><th>Jumlah</th><th class="number">Harga</th><th class="number">Subtotal</th></tr>
                 @endif
             </thead>
             <tbody>

@@ -259,6 +259,17 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             ->assertSee('data-price-target="home-price-b-', false);
     }
 
+    public function test_homepage_hides_promo_and_bestseller_sections_when_they_have_no_products(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('Produk Promo')
+            ->assertDontSee('Produk Terlaris')
+            ->assertDontSee('Promo B2C')
+            ->assertDontSee('Belum ada produk promo B2C saat ini.')
+            ->assertDontSee('Belum ada produk terlaris tersedia saat ini.');
+    }
+
     public function test_homepage_expands_additional_products_below_the_first_twenty(): void
     {
         foreach (range(1, 22) as $number) {

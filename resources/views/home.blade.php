@@ -1675,7 +1675,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 }
 </style>
 
-@if(!$homeHasFilters)
+@if(!$homeHasFilters && isset($discountedProducts) && $discountedProducts->isNotEmpty())
 {{-- 1. PRODUK PROMO (B2C) — 4 ke kanan x 5 ke bawah --}}
 <section class="discounted-products-section home-b2c-section home-b2c-section--alt">
   <div class="container">
@@ -1686,7 +1686,6 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
         <p class="home-product-section-description">{{ $internalAccess ? 'Harga internal berlaku untuk produk-produk pilihan ini.' : 'Harga retail spesial untuk belanja B2C.' }}</p>
       </div>
     </div>
-    @if(isset($discountedProducts) && $discountedProducts->isNotEmpty())
     <div class="discounted-products-grid home-b2c-grid-4x5">
       @foreach($discountedProducts->take(20) as $promoMedicine)
         @php
@@ -1745,17 +1744,11 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
         </article>
       @endforeach
     </div>
-    @else
-    <div style="text-align:center;padding:2.5rem;background:#fff;border-radius:16px;border:1px solid #e5e7eb;">
-      <i class="fa-solid fa-tags" style="font-size:2.5rem;color:#d1d5db;display:block;margin-bottom:.75rem;"></i>
-      <p style="color:#6b7280;margin:0;">Belum ada produk promo B2C saat ini.</p>
-    </div>
-    @endif
   </div>
 </section>
 @endif
 
-@if(!$homeHasFilters)
+@if(!$homeHasFilters && isset($featuredProducts) && $featuredProducts->isNotEmpty())
 {{-- 2. PRODUK TERLARIS (B2C) — 4 ke kanan x 5 ke bawah --}}
 <section class="featured-section home-b2c-section">
   <div class="container">
@@ -1767,7 +1760,6 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
       </div>
     </div>
 
-    @if(isset($featuredProducts) && $featuredProducts->count() > 0)
     <div class="home-b2c-grid-4x5">
       @foreach($featuredProducts->take(20) as $med)
       <div class="prod-card">
@@ -1821,12 +1813,6 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
       </div>
       @endforeach
     </div>
-    @else
-    <div style="text-align:center;padding:3rem;background:#fff;border-radius:16px;border:1px solid #e5e7eb;">
-      <i class="fa-solid fa-box-open" style="font-size:3rem;color:#d1d5db;display:block;margin-bottom:1rem;"></i>
-      <p style="color:#6b7280;margin:0;">Belum ada produk terlaris tersedia saat ini.</p>
-    </div>
-    @endif
   </div>
 </section>
 @endif

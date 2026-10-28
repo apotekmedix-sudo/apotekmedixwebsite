@@ -1671,7 +1671,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 }
 </style>
 
-<?php if(!$homeHasFilters): ?>
+<?php if(!$homeHasFilters && isset($discountedProducts) && $discountedProducts->isNotEmpty()): ?>
 
 <section class="discounted-products-section home-b2c-section home-b2c-section--alt">
   <div class="container">
@@ -1682,7 +1682,6 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
         <p class="home-product-section-description"><?php echo e($internalAccess ? 'Harga internal berlaku untuk produk-produk pilihan ini.' : 'Harga retail spesial untuk belanja B2C.'); ?></p>
       </div>
     </div>
-    <?php if(isset($discountedProducts) && $discountedProducts->isNotEmpty()): ?>
     <div class="discounted-products-grid home-b2c-grid-4x5">
       <?php $__currentLoopData = $discountedProducts->take(20); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $promoMedicine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <?php
@@ -1743,17 +1742,11 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
         </article>
       <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
-    <?php else: ?>
-    <div style="text-align:center;padding:2.5rem;background:#fff;border-radius:16px;border:1px solid #e5e7eb;">
-      <i class="fa-solid fa-tags" style="font-size:2.5rem;color:#d1d5db;display:block;margin-bottom:.75rem;"></i>
-      <p style="color:#6b7280;margin:0;">Belum ada produk promo B2C saat ini.</p>
-    </div>
-    <?php endif; ?>
   </div>
 </section>
 <?php endif; ?>
 
-<?php if(!$homeHasFilters): ?>
+<?php if(!$homeHasFilters && isset($featuredProducts) && $featuredProducts->isNotEmpty()): ?>
 
 <section class="featured-section home-b2c-section">
   <div class="container">
@@ -1765,7 +1758,6 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
       </div>
     </div>
 
-    <?php if(isset($featuredProducts) && $featuredProducts->count() > 0): ?>
     <div class="home-b2c-grid-4x5">
       <?php $__currentLoopData = $featuredProducts->take(20); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $med): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
       <div class="prod-card">
@@ -1821,12 +1813,6 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
       </div>
       <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
-    <?php else: ?>
-    <div style="text-align:center;padding:3rem;background:#fff;border-radius:16px;border:1px solid #e5e7eb;">
-      <i class="fa-solid fa-box-open" style="font-size:3rem;color:#d1d5db;display:block;margin-bottom:1rem;"></i>
-      <p style="color:#6b7280;margin:0;">Belum ada produk terlaris tersedia saat ini.</p>
-    </div>
-    <?php endif; ?>
   </div>
 </section>
 <?php endif; ?>
