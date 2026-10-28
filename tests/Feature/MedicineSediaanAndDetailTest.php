@@ -223,6 +223,8 @@ class MedicineSediaanAndDetailTest extends TestCase
             'obat-diabetes',
             'obat-hipertensi',
             'obat-kolesterol',
+            'injeksi-infus',
+            'skincare-kosmetik',
         ], array_keys($response->viewData('kategoriPilihanOptions')));
 
         $this->get(route('home'))
@@ -230,6 +232,44 @@ class MedicineSediaanAndDetailTest extends TestCase
             ->assertSee('href="' . route('home', [
                 'kategori_pilihan' => 'vitamin-suplemen',
             ]) . '#homeSearchSection"', false);
+    }
+
+    public function test_home_category_filter_includes_injection_infusion_and_skincare_products(): void
+    {
+        Medicine::create([
+            'nama_obat' => 'Cairan Medis Contoh',
+            'kategori_produk' => 'OBAT',
+            'sediaan' => 'Injeksi Infus',
+            'harga' => 10000,
+            'stok' => 5,
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Krim Wajah Contoh',
+            'kategori_produk' => 'OBAT',
+            'kategori' => 'Skincare',
+            'sediaan' => 'Krim',
+            'harga' => 8000,
+            'stok' => 5,
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Produk Kapsul Contoh',
+            'kategori_produk' => 'OBAT',
+            'sediaan' => 'Kapsul',
+            'harga' => 7000,
+            'stok' => 5,
+        ]);
+
+        $this->get(route('home', ['kategori_pilihan' => 'injeksi-infus']))
+            ->assertOk()
+            ->assertSee('Cairan Medis Contoh')
+            ->assertDontSee('Krim Wajah Contoh')
+            ->assertDontSee('Produk Kapsul Contoh');
+
+        $this->get(route('home', ['kategori_pilihan' => 'skincare-kosmetik']))
+            ->assertOk()
+            ->assertSee('Krim Wajah Contoh')
+            ->assertDontSee('Cairan Medis Contoh')
+            ->assertDontSee('Produk Kapsul Contoh');
     }
 
     public function test_legacy_b2c_catalog_redirects_to_home_search_with_category_selected(): void

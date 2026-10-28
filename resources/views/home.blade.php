@@ -1557,6 +1557,12 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
             <a href="{{ route('home', ['kategori_pilihan' => 'obat-kolesterol']) }}#homeSearchSection" class="home-category-card">
                 <span><i class="fa-solid fa-heart-circle-check" aria-hidden="true"></i></span><strong>Obat Kolesterol</strong>
             </a>
+            <a href="{{ route('home', ['kategori_pilihan' => 'injeksi-infus']) }}#homeSearchSection" class="home-category-card">
+                <span><i class="fa-solid fa-syringe" aria-hidden="true"></i></span><strong>Injeksi &amp; Infus</strong>
+            </a>
+            <a href="{{ route('home', ['kategori_pilihan' => 'skincare-kosmetik']) }}#homeSearchSection" class="home-category-card">
+                <span><i class="fa-solid fa-pump-soap" aria-hidden="true"></i></span><strong>Skincare &amp; Kosmetik</strong>
+            </a>
         </div>
     </div>
 </section>

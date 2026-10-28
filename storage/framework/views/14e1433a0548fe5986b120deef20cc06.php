@@ -191,7 +191,7 @@
                             <?php endif; ?>
                         </td>
                     <?php else: ?>
-                        <td><?php echo e(collect([$item->dosage_form, $item->strength])->filter()->implode(' / ') ?: '—'); ?></td>
+                        <td><?php echo e(collect([$item->dosage_form, $item->active_ingredient, $item->strength])->filter()->implode(' / ') ?: '—'); ?></td>
                         <td><?php echo e($item->unit_label); ?></td>
                         <td><?php echo e(number_format($item->quantity, 0, ',', '.')); ?></td>
                         <td class="number">Rp <?php echo e(number_format((float) $item->unit_cost, 0, ',', '.')); ?></td>
@@ -218,7 +218,7 @@
         <?php endif; ?>
         <?php if($order->notes): ?><div class="notes"><strong>Catatan:</strong><br><?php echo e($order->notes); ?></div><?php endif; ?>
         <div class="signature">
-            Bogor, <?php echo e($order->ordered_at?->translatedFormat('d F Y')); ?>
+            <?php echo e($profile === 'medikpedia' ? 'Jakarta' : 'Bogor'); ?>, <?php echo e($order->ordered_at?->translatedFormat('d F Y')); ?>
 
             <br>Pemesan,
             <div class="signature-space">

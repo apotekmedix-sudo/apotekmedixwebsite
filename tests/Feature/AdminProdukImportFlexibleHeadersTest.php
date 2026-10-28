@@ -394,6 +394,43 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         ]);
     }
 
+    public function test_import_accepts_every_category_label_shown_in_the_product_category_list(): void
+    {
+        $categories = \App\Support\HomepageProductCategories::options();
+        $rows = [];
+        foreach ($categories as $label) {
+            $rows[] = ['Produk ' . count($rows), $label];
+        }
+
+        $path = tempnam(sys_get_temp_dir(), 'all-category-import');
+        file_put_contents($path, XlsxWriter::build(['NAMA PRODUK', 'KATEGORI'], $rows));
+        $file = new UploadedFile(
+            $path,
+            'all-categories.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        try {
+            $response = (new AdminProdukImportController())->import($request);
+            $errors = $response->getSession()->get('errors');
+            $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
+        } finally {
+            @unlink($path);
+        }
+
+        foreach (array_keys($categories) as $index => $category) {
+            $this->assertDatabaseHas('medicines', [
+                'nama_obat' => 'Produk ' . $index,
+                'kategori_produk' => $category,
+            ]);
+        }
+    }
+
     public function test_import_accepts_blank_optional_product_columns_and_incomplete_packaging_columns(): void
     {
         $path = tempnam(sys_get_temp_dir(), 'blank-product-import');

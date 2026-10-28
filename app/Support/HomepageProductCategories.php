@@ -20,6 +20,8 @@ class HomepageProductCategories
             'obat-diabetes' => '💧 Obat Diabetes',
             'obat-hipertensi' => '❤️ Obat Hipertensi',
             'obat-kolesterol' => '💙 Obat Kolesterol',
+            'injeksi-infus' => '💉 Injeksi & Infus',
+            'skincare-kosmetik' => '🧴 Skincare & Kosmetik',
         ];
     }
 
@@ -37,6 +39,8 @@ class HomepageProductCategories
             'obat-diabetes' => ['terms' => ['diabetes', 'gula darah']],
             'obat-hipertensi' => ['terms' => ['hipertensi', 'darah tinggi']],
             'obat-kolesterol' => ['terms' => ['kolesterol']],
+            'injeksi-infus' => ['terms' => ['injeksi', 'injection', 'infus', 'infusion']],
+            'skincare-kosmetik' => ['terms' => ['skincare', 'skin care', 'kosmetik', 'cosmetic']],
         ];
 
         if (!isset($categoryFilters[$category])) {
@@ -62,7 +66,7 @@ class HomepageProductCategories
                     ->orWhere(function (Builder $termsQuery) use ($filter) {
                         foreach ($filter['terms'] as $term) {
                             $termsQuery->orWhere(function (Builder $termQuery) use ($term) {
-                                foreach (['nama_obat', 'kategori', 'deskripsi', 'indikasi', 'komposisi'] as $column) {
+                                foreach (['nama_obat', 'kategori', 'deskripsi', 'indikasi', 'komposisi', 'sediaan'] as $column) {
                                     $termQuery->orWhere($column, 'like', '%' . $term . '%');
                                 }
                             });

@@ -49,6 +49,7 @@
     <ol>
         <li>Pilih mode import sesuai tujuan: tambah/lengkapi produk atau edit massal dari hasil export</li>
         <li>Untuk edit massal, download file Export Produk di bawah, edit kolomnya, lalu pilih mode Edit massal</li>
+        <li>Kolom <strong>KATEGORI</strong> menerima semua nama kategori pada dropdown produk, termasuk emoji; isi sesuai nama tampilannya atau slug kategorinya.</li>
         <li>Isi jumlah stok sesuai satuan pada kolom <strong>SATUAN</strong> di <strong>STOK SATUAN</strong>, misalnya stok 5 botol diisi <strong>5</strong>.</li>
         <li>Isi satu harga B2C untuk satuan kemasan produk pada kolom <strong>HARGA JUAL B2C</strong>. Template ini tidak lagi meminta harga atau rasio per strip/tablet.</li>
         <li>Isi kolom <strong>DESKRIPSI</strong>, <strong>KOMPOSISI</strong>, dan <strong>INDIKASI</strong> secara terpisah sesuai informasi produk.</li>
