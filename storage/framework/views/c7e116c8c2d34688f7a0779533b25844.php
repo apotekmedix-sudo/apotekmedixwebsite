@@ -24,26 +24,26 @@
     .catalog-access-error { margin:.65rem 0 0!important; color:#b91c1c!important; font-weight:700; }
 </style>
 <div class="catalog-access-controls" aria-label="Akses katalog">
-    <button type="button" class="catalog-access-trigger catalog-access-trigger--b2c" aria-label="Masukkan kode B2C untuk membuka produk berlogo merah" aria-haspopup="dialog" onclick="document.getElementById('b2cAccessDialog').showModal()">
+    <button type="button" class="catalog-access-trigger catalog-access-trigger--b2c" aria-label="Masukkan kode akses harga internal" aria-haspopup="dialog" onclick="document.getElementById('internalAccessDialog').showModal()">
         <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
     </button>
-    <?php if($b2cAccess ?? false): ?>
-        <div class="catalog-access-state"><span>B2C aktif</span>
-            <form action="<?php echo e(route('products.apotek.access.logout', 'b2c')); ?>" method="POST">
-                <?php echo csrf_field(); ?>
-                <input type="hidden" name="redirect_to" value="<?php echo e($accessReturnTo); ?>">
-                <button type="submit" class="catalog-access-exit" aria-label="Keluar dari akses B2C" title="Keluar dari akses B2C"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></button>
-            </form>
-        </div>
-    <?php endif; ?>
-
-    <button type="button" class="catalog-access-trigger catalog-access-trigger--internal" aria-label="Masukkan kode akses harga internal" aria-haspopup="dialog" onclick="document.getElementById('internalAccessDialog').showModal()">K</button>
     <?php if($internalAccess ?? false): ?>
         <div class="catalog-access-state"><span>Internal aktif</span>
             <form action="<?php echo e(route('products.apotek.access.logout', 'internal')); ?>" method="POST">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="redirect_to" value="<?php echo e($accessReturnTo); ?>">
                 <button type="submit" class="catalog-access-exit" aria-label="Keluar dari akses harga internal" title="Keluar dari akses harga internal"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></button>
+            </form>
+        </div>
+    <?php endif; ?>
+
+    <button type="button" class="catalog-access-trigger catalog-access-trigger--internal" aria-label="Masukkan kode B2C untuk membuka produk berlogo merah" aria-haspopup="dialog" onclick="document.getElementById('b2cAccessDialog').showModal()">K</button>
+    <?php if($b2cAccess ?? false): ?>
+        <div class="catalog-access-state"><span>B2C aktif</span>
+            <form action="<?php echo e(route('products.apotek.access.logout', 'b2c')); ?>" method="POST">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="redirect_to" value="<?php echo e($accessReturnTo); ?>">
+                <button type="submit" class="catalog-access-exit" aria-label="Keluar dari akses B2C" title="Keluar dari akses B2C"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></button>
             </form>
         </div>
     <?php endif; ?>

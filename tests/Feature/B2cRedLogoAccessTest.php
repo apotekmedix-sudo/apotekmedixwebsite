@@ -26,9 +26,10 @@ class B2cRedLogoAccessTest extends TestCase
             ->assertSee('Produk Logo Merah')
             ->assertSee('is-red-logo-locked', false)
             ->assertSee('data-red-logo-locked="1"', false)
-            ->assertSee('aria-label="Masukkan kode B2C untuk membuka produk berlogo merah"', false)
+            ->assertSee('aria-label="Masukkan kode akses harga internal" aria-haspopup="dialog" onclick="document.getElementById(\'internalAccessDialog\').showModal()"', false)
+            ->assertSee('aria-label="Masukkan kode B2C untuk membuka produk berlogo merah" aria-haspopup="dialog" onclick="document.getElementById(\'b2cAccessDialog\').showModal()">K', false)
             ->assertSee('id="b2cAccessDialog"', false)
-            ->assertSee('Kode B2C hanya membuka akses pembelian produk berlogo merah.', false)
+            ->assertSee('WARNING B2C SALAH KLIK', false)
             ->assertDontSee('placeholder="5 digit"', false)
             ->assertSee('id="b2cAccessCode" name="kode" type="password"', false)
             ->assertSee(route('products.apotek.activate'), false);
