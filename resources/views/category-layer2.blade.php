@@ -614,7 +614,7 @@
                 <div class="search-box-category" style="max-width:none;width:100%;">
                     <input type="hidden" name="main" value="{{ $mainCategory }}">
                     <input type="hidden" name="sub" value="{{ $subCategory }}">
-                    <input type="text" name="search" placeholder="Cari obat, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan..." value="{{ request('search') }}">
+                    <input type="text" name="search" placeholder="Cari obat, deskripsi, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan..." value="{{ request('search') }}">
                     <button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
                 </div>
                 @include('partials.product-attribute-filters', ['resetUrl' => route('category.layer2', ['main' => $mainCategory, 'sub' => $subCategory])])

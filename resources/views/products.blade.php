@@ -331,7 +331,7 @@
             <div class="filter-group" style="flex: 2; min-width: 200px;">
                 <label class="filter-label"><i class="fa-solid fa-magnifying-glass"></i> Cari Produk</label>
                 <input type="text" name="search" class="filter-input"
-                       placeholder="Cari nama obat, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan..."
+                       placeholder="Cari nama obat, deskripsi, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan..."
                        value="{{ $search }}">
             </div>
             <div class="filter-group">

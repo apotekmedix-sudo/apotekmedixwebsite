@@ -1573,7 +1573,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
         <form class="home-product-search" method="GET" action="{{ route('home') }}" role="search">
             <div class="home-search-field">
                 <label class="home-search-label" for="homeProductSearchInput"><i class="fa-solid fa-magnifying-glass"></i> Cari Produk</label>
-                <input id="homeProductSearchInput" type="search" name="search" value="{{ $search }}" placeholder="Cari nama obat, komposisi, indikasi, atau golongan..." aria-label="Kata kunci produk">
+                <input id="homeProductSearchInput" type="search" name="search" value="{{ $search }}" placeholder="Cari nama obat, deskripsi, komposisi, indikasi, atau golongan..." aria-label="Kata kunci produk">
             </div>
             <div class="home-search-field">
                 <label class="home-search-label" for="homeCategoryFilter"><i class="fa-solid fa-tag"></i> Kategori</label>

@@ -306,6 +306,7 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             'harga_retail' => 15000,
             'stok' => 10,
             'komposisi' => 'Asam askorbat',
+            'deskripsi' => 'Kata khusus pencarian deskripsi',
         ]);
 
         $this->get(route('home', ['search' => 'demam']))
@@ -319,6 +320,11 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             ->assertDontSee('Vitamin C Medix')
             ->assertDontSee('Produk Terlaris')
             ->assertSee('id="homeProductSearchResults"', false);
+
+        $this->get(route('home', ['search' => 'khusus pencarian deskripsi']))
+            ->assertOk()
+            ->assertSee('Vitamin C Medix')
+            ->assertDontSee('Paracetamol Medix');
     }
 
     public function test_import_maps_template_fields_without_tablet_or_strip_prices_and_conversions(): void
