@@ -696,7 +696,8 @@ const FALLBACK_LOGO_URL = '{{ asset("LOGO APOTEK MEDIX.PNG") }}';
 const CART_CONTEXT_KEY = 'apotekmedix_active_cart_context';
 
 let activeCtx = {
-  storageKey: 'apotekmedix_cart_retail',
+  storageKey: 'apotekmedix_cart_b2c',
+  priceChannel: 'b2c',
   wholesaleOrder: false,
   adminPbfOrder: false,
   continueShoppingUrl: '{{ route("products.index") }}'
@@ -710,17 +711,6 @@ try {
 } catch (e) {}
 
 let cartItems = JSON.parse(localStorage.getItem(activeCtx.storageKey) || '[]');
-if (!cartItems.length) {
-  for (const key of ['apotekmedix_cart_retail', 'apotekmedix_cart', 'apotekmedix_cart_apotek', 'apotekmedix_cart_pbf']) {
-    const candidate = JSON.parse(localStorage.getItem(key) || '[]');
-    if (candidate.length) {
-      activeCtx.storageKey = key;
-      cartItems = candidate;
-      localStorage.setItem(CART_CONTEXT_KEY, JSON.stringify(activeCtx));
-      break;
-    }
-  }
-}
 
 function getCartPackageLabel(item) {
   return String(item.packageUnitLabel || item.unitLabels?.box || (item.saleUnit === 'box' ? item.unitLabel : '') || 'Box').trim() || 'Box';
@@ -749,8 +739,11 @@ function normalizeCartPackageUnits(item) {
   return item;
 }
 
-if (activeCtx.storageKey === 'apotekmedix_cart_pbf') {
+if (activeCtx.storageKey === 'apotekmedix_cart_b2b' || activeCtx.storageKey === 'apotekmedix_cart_pbf') {
   activeCtx.wholesaleOrder = true;
+}
+if (!activeCtx.priceChannel) {
+  activeCtx.priceChannel = activeCtx.wholesaleOrder ? 'b2b' : 'b2c';
 }
 cartItems = cartItems.map(normalizeCartPackageUnits);
 

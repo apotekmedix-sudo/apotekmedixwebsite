@@ -72,6 +72,28 @@
     font-size: clamp(1rem, 1.6vw, 1.25rem);
     line-height: 1.5;
 }
+.home-hero-chat-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-top: 1rem;
+}
+.home-hero-chat-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    min-height: 46px;
+    padding: .7rem 1.1rem;
+    border: 1px solid rgba(255,255,255,.9);
+    border-radius: 12px;
+    background: #fff;
+    color: #0755c8;
+    font: inherit;
+    font-weight: 800;
+    box-shadow: 0 6px 16px rgba(0,24,89,.2);
+}
+.home-hero-chat-button--pharmacist { color: #08734f; }
 .home-product-search {
     display: grid;
     grid-template-columns: minmax(250px, 2fr) repeat(3, minmax(160px, 1fr)) auto;
@@ -150,18 +172,42 @@
     }
 }
 @media (max-width: 600px) {
+    .home-search-section {
+        padding: .5rem 0;
+    }
     .home-product-search {
-        grid-template-columns: minmax(0, 1fr);
-        gap: .75rem;
-        padding: 1rem;
-        border-radius: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .5rem;
+        padding: .7rem;
+        border-radius: 14px;
     }
     .home-search-field:first-child {
-        grid-column: auto;
+        grid-column: 1 / -1;
+    }
+    .home-search-label {
+        margin-bottom: .2rem;
+        font-size: .78rem;
+    }
+    .home-product-search input,
+    .home-product-search select {
+        height: 42px;
+        padding: .5rem .65rem;
+        border-radius: 11px;
+        font-size: .84rem;
     }
     .home-product-search button {
+        grid-column: 2;
+        grid-row: 3;
         width: 100%;
+        height: 42px;
         min-width: 0;
+        padding: .5rem .75rem;
+        border-radius: 11px;
+    }
+    .home-search-clear {
+        grid-column: 1 / -1;
+        margin: 0;
+        font-size: .78rem;
     }
 }
 .home-brand-hero-mark {
@@ -808,6 +854,8 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
     .home-brand-hero-mark { top:.65rem;right:.65rem;width:60px;height:60px; }
     .home-brand-hero h1 { max-width:290px;padding-right:2rem;font-size:1.78rem; }
     .home-brand-hero p { max-width:330px;font-size:.9rem; }
+    .home-hero-chat-actions { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin-top:.85rem; }
+    .home-hero-chat-button { min-width:0;padding:.65rem .45rem;font-size:.82rem; }
     .home-hero-search { gap:.25rem;margin:.95rem 0;padding:.3rem .32rem .3rem .65rem; }
     .home-hero-search input { padding:.65rem .25rem;font-size:.83rem; }
     .home-hero-search button { gap:.35rem;padding:.68rem .75rem;font-size:.8rem; }
@@ -1079,6 +1127,16 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
         <span class="home-brand-hero-label"><i class="fa-solid fa-heart-pulse"></i> Apotek Medix</span>
         <h1 id="homeHeroTitle">Solusi Kesehatan Terpercaya</h1>
         <p>Beli obat, suplemen, dan produk kesehatan dengan mudah. Tim Apotek Medix siap membantu Anda.</p>
+        <div class="home-hero-chat-actions" aria-label="Pilihan konsultasi">
+            <button type="button" class="home-hero-chat-button">
+                <i class="fa-solid fa-user-doctor" aria-hidden="true"></i>
+                Chat Dokter
+            </button>
+            <button type="button" class="home-hero-chat-button home-hero-chat-button--pharmacist">
+                <i class="fa-solid fa-user-nurse" aria-hidden="true"></i>
+                Chat Apoteker
+            </button>
+        </div>
     </div>
     <div class="home-brand-hero-mark" aria-hidden="true">
         <span class="home-brand-hero-circle"></span>
@@ -1612,26 +1670,90 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 
 
 <style>
-/* ===== HOME B2C 4x5 PRODUCT GRIDS ===== */
+/* ===== HOME B2C HORIZONTAL PRODUCT CARDS ===== */
 .home-b2c-section { padding: 2.75rem 0; }
 .home-b2c-section--alt { background: #f8fafc; border-block: 1px solid #e2e8f0; }
 .featured-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 1.5rem; flex-wrap: wrap; gap: .75rem;
 }
-.home-b2c-catalog-heading { display:flex; align-items:center; gap:.65rem; flex-wrap:wrap; }
+.home-b2c-catalog-heading { display:flex; align-items:center; gap:.65rem; flex-wrap:nowrap; }
+.home-b2c-transaction-label,.home-b2b-catalog-link { display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:42px;padding:.55rem .95rem;border:1px solid #bfdbfe;border-radius:999px;background:#fff;color:#0052cc;font-size:.9rem;font-weight:750;line-height:1.2;white-space:nowrap; }
+.home-b2b-catalog-link { text-decoration:none;transition:background-color .2s,border-color .2s; }
+.home-b2b-catalog-link:hover { border-color:#93c5fd;background:#eff6ff; }
+.home-b2b-catalog-link:focus-visible { outline:3px solid #00d1b2;outline-offset:3px; }
 .home-b2c-grid-4x5,
 .discounted-products-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) !important;
     gap: 1rem;
     align-items: stretch;
 }
 .home-b2c-grid-4x5 .prod-card,
 .discounted-products-grid .discounted-product-card {
+    display: grid !important;
+    grid-template-columns: minmax(140px, 22%) minmax(0, 1fr) !important;
+    grid-template-rows: auto 1fr !important;
     min-width: 0;
     height: 100%;
 }
+.home-b2c-grid-4x5 .medicine-card-brand,
+.discounted-products-grid .medicine-card-brand {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+}
+.home-b2c-grid-4x5 .prod-img,
+.discounted-products-grid .discounted-product-image {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    align-self: start;
+    width: auto;
+    height: 180px;
+}
+.home-b2c-grid-4x5 .prod-body,
+.discounted-products-grid .discounted-product-body {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 28%);
+    align-content: start;
+    align-items: start;
+    column-gap: 1rem;
+    min-width: 0;
+}
+.home-b2c-grid-4x5 .medicine-card-principal,
+.home-b2c-grid-4x5 .prod-name,
+.home-b2c-grid-4x5 .medicine-card-details,
+.discounted-products-grid .medicine-card-principal,
+.discounted-products-grid .discounted-product-name,
+.discounted-products-grid .medicine-card-details {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+.home-b2c-grid-4x5 .prod-name {
+    display: block;
+    min-height: 0;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    flex: initial;
+    -webkit-line-clamp: unset;
+}
+.home-b2c-grid-4x5 .product-unit-section,
+.discounted-products-grid .product-unit-section { grid-column: 1; }
+.home-b2c-grid-4x5 .product-stock,
+.home-b2c-grid-4x5 .medicine-meta-row,
+.home-b2c-grid-4x5 .btn-cart,
+.discounted-products-grid .product-stock,
+.discounted-products-grid .medicine-meta-row,
+.discounted-products-grid .discounted-product-actions {
+    grid-column: 2;
+}
+.home-b2c-grid-4x5 .btn-cart { max-width: 320px; }
+.home-b2c-grid-4x5 .medicine-card-details p:nth-child(n + 2),
+.discounted-products-grid .medicine-card-details p:nth-child(n + 2) {
+    display: none !important;
+}
+.discounted-products-grid .discounted-product-badge { z-index: 2; }
 .home-b2c-grid-4x5 .product-unit-section { margin: .55rem 0; text-align: left; }
 .home-b2c-grid-4x5 .product-unit-heading { color: #64748b; font-size: .7rem; }
 .home-b2c-grid-4x5 .product-unit-grid { grid-template-columns: repeat(auto-fit, minmax(74px, 1fr)); }
@@ -1662,21 +1784,42 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 @media (max-width: 992px) {
     .home-b2c-grid-4x5,
     .discounted-products-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr) !important;
     }
 }
 @media (max-width: 600px) {
     .home-b2c-grid-4x5,
     .discounted-products-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr) !important;
         gap: .75rem;
     }
-    .home-product-search input { height: 46px; padding: .65rem .75rem; font-size: .88rem; }
+    .home-b2c-grid-4x5 .prod-card,
+    .discounted-products-grid .discounted-product-card {
+        grid-template-columns: minmax(96px, 30%) minmax(0, 1fr) !important;
+    }
+    .home-b2c-grid-4x5 .prod-body,
+    .discounted-products-grid .discounted-product-body {
+        grid-template-columns: minmax(0, 1fr);
+        column-gap: 0;
+    }
+    .home-b2c-grid-4x5 .product-unit-section,
+    .home-b2c-grid-4x5 .product-stock,
+    .home-b2c-grid-4x5 .medicine-meta-row,
+    .home-b2c-grid-4x5 .btn-cart,
+    .discounted-products-grid .product-unit-section,
+    .discounted-products-grid .product-stock,
+    .discounted-products-grid .medicine-meta-row,
+    .discounted-products-grid .discounted-product-actions {
+        grid-column: 1;
+    }
+    .home-b2c-grid-4x5 .prod-img,
+    .discounted-products-grid .discounted-product-image { height: 150px; }
+    .home-product-search input { height: 42px; padding: .5rem .65rem; font-size: .84rem; }
 }
 </style>
 
 @if(!$homeHasFilters && isset($discountedProducts) && $discountedProducts->isNotEmpty())
-{{-- 1. PRODUK PROMO (B2C) — 4 ke kanan x 5 ke bawah --}}
+{{-- 1. PRODUK PROMO (B2C) — kartu horizontal --}}
 <section class="discounted-products-section home-b2c-section home-b2c-section--alt">
   <div class="container">
     <div class="featured-header">
@@ -1694,7 +1837,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
           $promoUnitId = 'home-promo-unit-' . $promoMedicine->id;
         @endphp
         <article class="discounted-product-card">
-          @if(!$internalAccess)<span class="discounted-product-badge">Diskon {{ $promoMedicine->getPromoPercent('b2c') }}%</span>@endif
+          @if(!$internalAccess)<span class="discounted-product-badge product-discount-badge">Diskon {{ $promoMedicine->getPromoPercent('b2c') }}%</span>@endif
           <div class="medicine-card-brand">Apotek Medix</div>
           <a class="discounted-product-image" href="{{ route('medicines.show', ['id' => $promoMedicine->id, 'from' => 'home']) }}" aria-label="Lihat {{ $promoMedicine->nama_obat }}">
             @include('partials.product-logo-marker', ['medicine' => $promoMedicine])
@@ -1716,8 +1859,6 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
             <h3 class="discounted-product-name"><a href="{{ route('medicines.show', ['id' => $promoMedicine->id, 'from' => 'home']) }}" style="color:inherit;text-decoration:none;">{{ $promoMedicine->nama_obat }}</a></h3>
             <div class="medicine-card-details">
               <p title="{{ $promoMedicine->komposisi ?: '—' }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->komposisi ?: '—', 15, '...') }}</p>
-              <p title="{{ $promoMedicine->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->indikasi ?: '—', 15, '...') }}</p>
-              <p title="{{ $promoMedicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($promoMedicine->golongan ?: '—', 15, '...') }}</p>
             </div>
             @include('partials.product-unit-selector', ['medicine' => $promoMedicine, 'unitSelectId' => $promoUnitId, 'priceTargetId' => 'home-price-b-' . $promoMedicine->id, 'priceChannel' => $promoPriceChannel, 'redLogoAccess' => $redLogoAccess])
             @php
@@ -1749,7 +1890,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 @endif
 
 @if(!$homeHasFilters && isset($featuredProducts) && $featuredProducts->isNotEmpty())
-{{-- 2. PRODUK TERLARIS (B2C) — 4 ke kanan x 5 ke bawah --}}
+{{-- 2. PRODUK TERLARIS (B2C) — kartu horizontal --}}
 <section class="featured-section home-b2c-section">
   <div class="container">
     <div class="featured-header">
@@ -1771,7 +1912,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
             <span class="prod-badge-label">{{ $med->kategori_produk==='SKINCARE & KOSMETIK'?'✨':($med->kategori_produk==='ALAT KESEHATAN'?'🩺':'💊') }}</span>
           @endif
           @if(!$internalAccess && $med->getPromoPercent('b2c') > 0)
-            <span style="position:absolute;bottom:.55rem;left:.55rem;z-index:2;padding:.25rem .55rem;border-radius:999px;background:#ef4444;color:#fff!important;font-size:.7rem;font-weight:800;">-{{ $med->getPromoPercent('b2c') }}%</span>
+            <span class="product-discount-badge">Diskon {{ $med->getPromoPercent('b2c') }}%</span>
           @endif
         </div>
         <div class="prod-body">
@@ -1779,8 +1920,6 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
           <h3 class="prod-name"><a href="{{ route('medicines.show', ['id' => $med->id, 'from' => 'home']) }}">{{ $med->nama_obat }}</a></h3>
           <div class="medicine-card-details">
             <p title="{{ $med->komposisi ?: '—' }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($med->komposisi ?: '—', 15, '...') }}</p>
-            <p title="{{ $med->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($med->indikasi ?: '—', 15, '...') }}</p>
-            <p title="{{ $med->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($med->golongan ?: '—', 15, '...') }}</p>
           </div>
           @php
             $homePriceChannel = $internalAccess ? 'internal' : 'b2c';
@@ -1817,13 +1956,17 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 </section>
 @endif
 
-{{-- 3. SEMUA PRODUK (B2C) — 4 ke kanan x 5 ke bawah --}}
+{{-- 3. SEMUA PRODUK (B2C) — kartu horizontal --}}
 <section class="all-b2c-products-section home-b2c-section home-b2c-section--alt" id="homeProductSearchResults">
   <div class="container">
     <div class="featured-header">
       <div class="sec-head-left">
         <div class="home-b2c-catalog-heading">
-          <span class="sec-tag">🛍️ Katalog B2C</span>
+          <span class="home-b2c-transaction-label"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Transaksi B2C</span>
+          <a class="home-b2b-catalog-link" href="{{ route('products.pbf') }}" aria-label="Transaksi B2B">
+            <i class="fa-solid fa-box-open" aria-hidden="true"></i> <span class="home-b2b-transaction-text">Transaksi B2B</span>
+            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+          </a>
         </div>
         <h2 class="sec-title" style="margin:0;">{{ $homeHasFilters ? 'Hasil Pencarian' : 'Semua Produk' }}</h2>
         <p class="home-product-section-description">
@@ -1842,7 +1985,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
     @if(isset($allB2cProducts) && $allB2cProducts->count() > 0)
     <div class="home-b2c-grid-4x5" id="homeAllB2cProductsGrid">
       @foreach($allB2cProducts as $productIndex => $med)
-      <div class="prod-card" @if(!$homeHasFilters && $productIndex >= 20) hidden data-additional-home-product @endif>
+      <div class="prod-card" @if(!$homeHasFilters && $productIndex >= 10) hidden data-additional-home-product @endif>
         <div class="medicine-card-brand">Apotek Medix</div>
         <div class="prod-img">
           @include('partials.product-gallery-image', ['medicine' => $med])
@@ -1851,7 +1994,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
             <span class="prod-badge-label">{{ $med->kategori_produk==='SKINCARE & KOSMETIK'?'✨':($med->kategori_produk==='ALAT KESEHATAN'?'🩺':'💊') }}</span>
           @endif
           @if(!$internalAccess && $med->getPromoPercent('b2c') > 0)
-            <span style="position:absolute;bottom:.55rem;left:.55rem;z-index:2;padding:.25rem .55rem;border-radius:999px;background:#ef4444;color:#fff!important;font-size:.7rem;font-weight:800;">-{{ $med->getPromoPercent('b2c') }}%</span>
+            <span class="product-discount-badge">Diskon {{ $med->getPromoPercent('b2c') }}%</span>
           @endif
         </div>
         <div class="prod-body">
@@ -1859,8 +2002,6 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
           <h3 class="prod-name"><a href="{{ route('medicines.show', ['id' => $med->id, 'from' => 'home', 'search' => $search ?: null]) }}">{{ $med->nama_obat }}</a></h3>
           <div class="medicine-card-details">
             <p title="{{ $med->komposisi ?: '—' }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($med->komposisi ?: '—', 15, '...') }}</p>
-            <p title="{{ $med->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($med->indikasi ?: '—', 15, '...') }}</p>
-            <p title="{{ $med->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($med->golongan ?: '—', 15, '...') }}</p>
           </div>
           @php
             $allPriceChannel = $internalAccess ? 'internal' : 'b2c';
@@ -1900,7 +2041,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
     </div>
     @endif
 
-    @if(!$homeHasFilters && $allB2cProducts->count() > 20)
+    @if(!$homeHasFilters && $allB2cProducts->count() > 10)
     <div class="featured-cta">
       <button type="button" class="home-show-more-products" id="homeShowMoreProducts"
               aria-expanded="false" aria-controls="homeAllB2cProductsGrid">
@@ -1914,11 +2055,6 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 @if(!$homeHasFilters)
 {{-- KATEGORI PILIHAN / IKUTI KAMI --}}
 <section class="home-service-links" aria-label="Informasi layanan Apotek Medix">
-    <a class="home-service-item home-service-item--action" href="{{ route('products.pbf') }}" aria-label="Belanja B2B">
-        <span class="home-trust-icon"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span>
-        <strong>Belanja B2B</strong>
-        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-    </a>
     <div class="home-service-items">
         <div class="home-service-item">
             <span class="home-trust-icon"><i class="fa-solid fa-shield-heart" aria-hidden="true"></i></span>
@@ -2434,6 +2570,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 .prod-section,.prod-grid { background:#f8fafc; }
 @media(max-width:768px) {
     .home-service-items { grid-template-columns:1fr; }
+    .home-service-links { margin-top:1rem; }
     .home-category-grid { grid-auto-columns:minmax(130px,38vw);gap:.6rem; }
     .home-category-card { min-height:140px; }
     .promo-products-controls { display:flex;gap:.5rem; }
@@ -2442,6 +2579,8 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 @media(max-width:480px) {
     .home-service-links { width:calc(100% - 1.3rem); }
     .home-hero-search button span { display:inline; }
+    .home-b2c-catalog-heading { gap:.4rem; }
+    .home-b2c-transaction-label,.home-b2b-catalog-link { min-height:44px;gap:.35rem;padding:.45rem .65rem;font-size:.78rem; }
     .home-category-heading { align-items:center; }
     .home-category-controls > a { display:none; }
     .home-category-scroll { width:32px;height:32px; }
@@ -2457,7 +2596,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'apotekmedix_cart_retail', syncProductPrices: true, priceMode: @json($internalAccess ? 'internal' : 'b2c') };</script>
+<script>window.cartSettings = { storageKey: @json($internalAccess ? 'apotekmedix_cart_internal' : 'apotekmedix_cart_b2c'), priceChannel: @json($internalAccess ? 'internal' : 'b2c'), syncProductPrices: true, priceMode: @json($internalAccess ? 'internal' : 'b2c') };</script>
 @include('partials.cart')
 <script>
 (() => {
@@ -2470,15 +2609,18 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
     const showMoreProductsButton = document.getElementById('homeShowMoreProducts');
     if (showMoreProductsButton) {
         const productsGrid = document.getElementById(showMoreProductsButton.getAttribute('aria-controls'));
-        const extraProducts = productsGrid
-            ? Array.from(productsGrid.querySelectorAll('[data-additional-home-product]'))
+        const allProducts = productsGrid
+            ? Array.from(productsGrid.querySelectorAll('.prod-card'))
             : [];
+        let expanded = false;
 
-        showMoreProductsButton.addEventListener('click', () => {
-            const expanded = showMoreProductsButton.getAttribute('aria-expanded') !== 'true';
-            extraProducts.forEach((product) => {
-                product.hidden = !expanded;
+        const updateVisibleProducts = () => {
+            const visibleLimit = 10;
+            allProducts.forEach((product, index) => {
+                product.hidden = !expanded && index >= visibleLimit;
             });
+
+            showMoreProductsButton.hidden = allProducts.length <= visibleLimit;
             showMoreProductsButton.setAttribute('aria-expanded', String(expanded));
             showMoreProductsButton.querySelector('span').textContent = expanded
                 ? 'Tampilkan lebih sedikit'
@@ -2486,6 +2628,12 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
             showMoreProductsButton.querySelector('i').className = expanded
                 ? 'fa-solid fa-chevron-up'
                 : 'fa-solid fa-chevron-down';
+        };
+
+        updateVisibleProducts();
+        showMoreProductsButton.addEventListener('click', () => {
+            expanded = !expanded;
+            updateVisibleProducts();
         });
     }
 

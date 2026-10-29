@@ -177,6 +177,12 @@
             border-left-color: var(--primary);
         }
 
+        .alert-warning {
+            background: #fffbeb;
+            color: #92400e;
+            border-left-color: #f59e0b;
+        }
+
         .alert-error {
             background: #fee2e2;
             color: #7f1d1d;
@@ -730,6 +736,17 @@
             @if ($message = Session::get('success'))
                 <div class="alert alert-success">
                     ✓ {{ $message }}
+                </div>
+            @endif
+
+            @if ($imageImportWarnings = Session::get('warning'))
+                <div class="alert alert-warning" role="status">
+                    <strong>Impor tetap berhasil, tetapi {{ count($imageImportWarnings) }} foto tidak dapat disimpan. Produk tetap diimpor; ganti tautan foto berikut agar dapat dilengkapi:</strong>
+                    <ul style="margin:0.5rem 0 0 1.25rem;padding:0;">
+                        @foreach ($imageImportWarnings as $imageImportWarning)
+                            <li style="font-size:0.875rem;margin-top:0.25rem;">{{ $imageImportWarning }}</li>
+                        @endforeach
+                    </ul>
                 </div>
             @endif
 

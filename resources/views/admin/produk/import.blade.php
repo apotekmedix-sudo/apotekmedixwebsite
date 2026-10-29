@@ -33,6 +33,13 @@
     .template-table td { padding:0.4rem 0.75rem; border:1px solid #d1d5db; color:#6b7280; }
     .import-mode { width:100%; max-width:620px; padding:0.7rem 0.85rem; border:1px solid #d1d5db; border-radius:0.5rem; color:#1f2937; background:#fff; font-size:0.9rem; }
     .mode-description { margin:0.55rem 0 0; color:#6b7280; font-size:0.82rem; line-height:1.6; }
+    .import-progress { display:none; margin-top:1rem; padding:1rem; border:1px solid #bfdbfe; border-radius:.65rem; background:#f8fbff; }
+    .import-progress.is-visible { display:block; }
+    .import-progress-heading { display:flex; justify-content:space-between; gap:.75rem; align-items:center; color:#1f2937; font-size:.88rem; font-weight:700; }
+    .import-progress-track { height:12px; margin:.75rem 0 .55rem; overflow:hidden; border-radius:999px; background:#dbeafe; }
+    .import-progress-bar { width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#1e88e5,#10b981);transition:width .25s ease; }
+    .import-progress-meta { display:flex;justify-content:space-between;gap:.5rem;color:#475569;font-size:.78rem; }
+    .import-progress-note { margin:.6rem 0 0;color:#64748b;font-size:.76rem;line-height:1.5; }
 </style>
 @endsection
 
@@ -206,6 +213,20 @@
             <p style="color:#9ca3af;font-size:0.875rem;margin:0.75rem 0 0;" id="fileLabel"></p>
         </div>
         <input type="file" id="fileInput" name="file" accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" onchange="updateFileLabel(this)">
+        <section class="import-progress" id="importProgress" aria-live="polite" aria-hidden="true">
+            <div class="import-progress-heading">
+                <span id="importProgressStatus">Menyiapkan import...</span>
+                <span id="importProgressPercent">0%</span>
+            </div>
+            <div class="import-progress-track" id="importProgressTrack" role="progressbar" aria-label="Progres import produk" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div class="import-progress-bar" id="importProgressBar"></div>
+            </div>
+            <div class="import-progress-meta">
+                <span id="importProgressWorkload"></span>
+                <span id="importProgressEta">Menghitung estimasi...</span>
+            </div>
+            <p class="import-progress-note" id="importProgressNote">Progres unggah file akurat. Progres pemrosesan dan sisa waktu merupakan perkiraan berdasarkan jumlah produk dan foto.</p>
+        </section>
     </div>
     <div class="form-footer" style="justify-content:flex-end; flex-wrap:wrap;">
         <form action="{{ route('admin.produk.import.process') }}" method="POST" enctype="multipart/form-data" id="submitForm" style="display:none;">
@@ -247,13 +268,228 @@ function handleDrop(e) {
 }
 function submitForm() {
     const fileInput = document.getElementById('fileInput');
-    if (fileInput.files.length > 0) {
-        const dt = new DataTransfer();
-        dt.items.add(fileInput.files[0]);
-        document.getElementById('fileInputHidden').files = dt.files;
-        document.getElementById('importModeHidden').value = document.getElementById('importMode').value;
-        document.getElementById('submitForm').submit();
-    }
+    if (!fileInput.files.length) return;
+
+    const file = fileInput.files[0];
+    const form = document.getElementById('submitForm');
+    const button = document.getElementById('submitBtn');
+    const progress = document.getElementById('importProgress');
+    const progressBar = document.getElementById('importProgressBar');
+    const progressTrack = document.getElementById('importProgressTrack');
+    const progressStatus = document.getElementById('importProgressStatus');
+    const progressPercent = document.getElementById('importProgressPercent');
+    const progressWorkload = document.getElementById('importProgressWorkload');
+    const progressEta = document.getElementById('importProgressEta');
+    const progressNote = document.getElementById('importProgressNote');
+    const formatDuration = seconds => {
+        const total = Math.max(0, Math.ceil(seconds));
+        const minutes = Math.floor(total / 60);
+        const remainingSeconds = total % 60;
+        if (minutes === 0) return `${remainingSeconds} dtk`;
+        return remainingSeconds ? `${minutes} m ${remainingSeconds} dtk` : `${minutes} m`;
+    };
+    const setProgress = (value, status) => {
+        const percent = Math.max(0, Math.min(100, Math.round(value)));
+        progressBar.style.width = `${percent}%`;
+        progressTrack.setAttribute('aria-valuenow', String(percent));
+        progressPercent.textContent = `${percent}%`;
+        progressStatus.textContent = status;
+    };
+    const estimateWorkload = async selectedFile => {
+        const extension = selectedFile.name.split('.').pop().toLowerCase();
+        if (extension === 'csv' || extension === 'xls') {
+            const text = await selectedFile.text();
+            const delimiter = (text.split(/\r?\n/, 1)[0].match(/;/g) || []).length > (text.split(/\r?\n/, 1)[0].match(/,/g) || []).length ? ';' : ',';
+            const rows = [];
+            let row = [];
+            let cell = '';
+            let quoted = false;
+            for (let index = 0; index < text.length; index++) {
+                const character = text[index];
+                if (character === '"' && quoted && text[index + 1] === '"') {
+                    cell += '"';
+                    index++;
+                } else if (character === '"') {
+                    quoted = !quoted;
+                } else if (character === delimiter && !quoted) {
+                    row.push(cell);
+                    cell = '';
+                } else if ((character === '\n' || character === '\r') && !quoted) {
+                    if (character === '\r' && text[index + 1] === '\n') index++;
+                    row.push(cell);
+                    if (row.some(value => value.trim() !== '')) rows.push(row);
+                    row = [];
+                    cell = '';
+                } else {
+                    cell += character;
+                }
+            }
+            row.push(cell);
+            if (row.some(value => value.trim() !== '')) rows.push(row);
+            return countImportWorkload(rows);
+        }
+
+        const buffer = await selectedFile.arrayBuffer();
+        const view = new DataView(buffer);
+        let endRecord = -1;
+        for (let offset = buffer.byteLength - 22; offset >= Math.max(0, buffer.byteLength - 65557); offset--) {
+            if (view.getUint32(offset, true) === 0x06054b50) {
+                endRecord = offset;
+                break;
+            }
+        }
+        if (endRecord < 0) throw new Error('Direktori XLSX tidak ditemukan.');
+        const entries = view.getUint16(endRecord + 10, true);
+        let directoryOffset = view.getUint32(endRecord + 16, true);
+        const decoder = new TextDecoder();
+        const zipEntries = new Map();
+        for (let entryIndex = 0; entryIndex < entries; entryIndex++) {
+            if (view.getUint32(directoryOffset, true) !== 0x02014b50) throw new Error('Struktur XLSX tidak valid.');
+            const method = view.getUint16(directoryOffset + 10, true);
+            const compressedSize = view.getUint32(directoryOffset + 20, true);
+            const nameLength = view.getUint16(directoryOffset + 28, true);
+            const extraLength = view.getUint16(directoryOffset + 30, true);
+            const commentLength = view.getUint16(directoryOffset + 32, true);
+            const localOffset = view.getUint32(directoryOffset + 42, true);
+            const name = decoder.decode(new Uint8Array(buffer, directoryOffset + 46, nameLength));
+            const localNameLength = view.getUint16(localOffset + 26, true);
+            const localExtraLength = view.getUint16(localOffset + 28, true);
+            const dataOffset = localOffset + 30 + localNameLength + localExtraLength;
+            zipEntries.set(name, { method, data: buffer.slice(dataOffset, dataOffset + compressedSize) });
+            directoryOffset += 46 + nameLength + extraLength + commentLength;
+        }
+        const readZipText = async name => {
+            const entry = zipEntries.get(name);
+            if (!entry) return '';
+            let data = entry.data;
+            if (entry.method === 8) {
+                if (!window.DecompressionStream) throw new Error('Browser tidak mendukung pembacaan XLSX untuk estimasi.');
+                data = await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+            } else if (entry.method !== 0) {
+                throw new Error('Format kompresi XLSX tidak didukung untuk estimasi.');
+            }
+            return decoder.decode(data);
+        };
+        const sharedXml = await readZipText('xl/sharedStrings.xml');
+        const sheetXml = await readZipText('xl/worksheets/sheet1.xml');
+        const parseXml = xml => new DOMParser().parseFromString(xml, 'application/xml');
+        const sharedDocument = parseXml(sharedXml);
+        const sharedStrings = Array.from(sharedDocument.getElementsByTagNameNS('*', 'si'), item =>
+            Array.from(item.getElementsByTagNameNS('*', 't'), text => text.textContent || '').join('')
+        );
+        const sheetDocument = parseXml(sheetXml);
+        const worksheetRows = Array.from(sheetDocument.getElementsByTagNameNS('*', 'sheetData')[0]?.children || []);
+        const rows = worksheetRows.map(xmlRow => {
+            const cells = [];
+            for (const xmlCell of Array.from(xmlRow.children)) {
+                const columnLetters = (xmlCell.getAttribute('r') || '').match(/^[A-Z]+/)?.[0] || 'A';
+                let columnIndex = 0;
+                for (const letter of columnLetters) columnIndex = columnIndex * 26 + letter.charCodeAt(0) - 64;
+                const valueElement = xmlCell.getElementsByTagNameNS('*', 'v')[0];
+                let value = valueElement?.textContent || '';
+                if (xmlCell.getAttribute('t') === 's') value = sharedStrings[Number(value)] || '';
+                else if (xmlCell.getAttribute('t') === 'inlineStr') {
+                    value = Array.from(xmlCell.getElementsByTagNameNS('*', 't'), text => text.textContent || '').join('');
+                }
+                cells[columnIndex - 1] = value;
+            }
+            return cells;
+        });
+        return countImportWorkload(rows);
+    };
+    const countImportWorkload = rows => {
+        const normalize = value => String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const header = rows[0] || [];
+        const photoColumns = header.map((value, index) => /^(LINKFOTO|GAMBARTAMBAHAN|GAMBAR|IMAGE)/.test(normalize(value)) ? index : -1).filter(index => index >= 0);
+        const nameColumn = header.findIndex(value => ['NAMAPRODUK', 'NAMA', 'PRODUK'].includes(normalize(value)));
+        const dataRows = rows.slice(1).filter(row => String(row[nameColumn] || '').trim() !== '');
+        const photoCount = dataRows.reduce((total, row) => total + photoColumns.filter(index => String(row[index] || '').trim() !== '').length, 0);
+        return { products: dataRows.length, photos: photoCount };
+    };
+
+    button.disabled = true;
+    button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengimpor...';
+    document.getElementById('importModeHidden').value = document.getElementById('importMode').value;
+    progress.classList.add('is-visible');
+    progress.setAttribute('aria-hidden', 'false');
+    setProgress(0, 'Menganalisis file...');
+
+    estimateWorkload(file).catch(error => ({
+        products: Math.max(1, Math.round(file.size / 250)),
+        photos: Math.max(0, Math.round(file.size / 250 * 0.35)),
+        fallbackReason: error.message
+    })).then(workload => {
+        const estimatedSeconds = Math.max(20, workload.products * 0.025 + workload.photos * 0.45);
+        const formData = new FormData(form);
+        formData.set('file', file);
+        const request = new XMLHttpRequest();
+        let uploadComplete = false;
+        let importStartedAt = null;
+        let progressTimer = null;
+
+        progressWorkload.textContent = `${workload.products} produk · ${workload.photos} foto`;
+        progressEta.textContent = `Estimasi awal: ${formatDuration(estimatedSeconds)}`;
+        if (workload.fallbackReason) {
+            progressNote.textContent = `Browser tidak dapat membaca isi file untuk menghitung jumlah produk dan foto (${workload.fallbackReason}). Estimasi berikut dihitung kasar dari ukuran file; progres unggah tetap akurat.`;
+        }
+        setProgress(0, 'Mengunggah file...');
+
+        request.upload.addEventListener('progress', event => {
+            if (!event.lengthComputable) return;
+            const uploadPercent = Math.min(100, event.loaded / event.total * 100);
+            setProgress(uploadPercent * 0.2, `Mengunggah file... ${Math.round(uploadPercent)}%`);
+        });
+        request.upload.addEventListener('load', () => {
+            uploadComplete = true;
+            importStartedAt = Date.now();
+            setProgress(20, `Memproses ${workload.products} produk dan ${workload.photos} foto...`);
+            progressTimer = window.setInterval(() => {
+                const elapsedSeconds = (Date.now() - importStartedAt) / 1000;
+                const processPercent = Math.min(75, elapsedSeconds / estimatedSeconds * 75);
+                setProgress(20 + processPercent, 'Server sedang memproses produk dan mengunduh foto...');
+                progressEta.textContent = elapsedSeconds >= estimatedSeconds
+                    ? `Estimasi terlewati · waktu berjalan ${formatDuration(elapsedSeconds)}`
+                    : `Perkiraan sisa: ${formatDuration(estimatedSeconds - elapsedSeconds)}`;
+            }, 1000);
+        });
+        request.addEventListener('load', () => {
+            if (progressTimer) window.clearInterval(progressTimer);
+            if (request.status >= 400) {
+                let errorMessage = `Server mengembalikan HTTP ${request.status}.`;
+                try {
+                    const response = JSON.parse(request.responseText);
+                    if (response.errors) errorMessage = Object.values(response.errors).flat().join(' ');
+                    else if (response.message) errorMessage = response.message;
+                } catch (error) {
+                    errorMessage += ' Respons import tidak dapat dibaca.';
+                }
+                progressNote.textContent = `${errorMessage} Periksa file dan status produk sebelum mencoba kembali.`;
+                setProgress(95, 'Server melaporkan import belum berhasil.');
+                return;
+            }
+            if (request.responseURL && new URL(request.responseURL).origin === window.location.origin) {
+                window.location.assign(request.responseURL);
+                return;
+            }
+            setProgress(100, 'Import selesai. Memuat hasil...');
+            window.location.reload();
+        });
+        request.addEventListener('error', () => {
+            if (progressTimer) window.clearInterval(progressTimer);
+            progressNote.textContent = uploadComplete
+                ? 'Koneksi terputus saat server memproses import. Periksa daftar produk sebelum mencoba ulang agar produk tidak terduplikasi.'
+                : 'Unggah gagal karena koneksi terputus. Silakan coba kembali.';
+            setProgress(uploadComplete ? 95 : 0, 'Import belum menerima konfirmasi dari server.');
+        });
+        request.addEventListener('abort', () => {
+            if (progressTimer) window.clearInterval(progressTimer);
+            progressNote.textContent = 'Import dibatalkan sebelum server mengonfirmasi hasilnya.';
+            setProgress(0, 'Import dibatalkan.');
+        });
+        request.open('POST', form.action);
+        request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        request.send(formData);
+    });
 }
 function updateImportMode() {
     const mode = document.getElementById('importMode').value;

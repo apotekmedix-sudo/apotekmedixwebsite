@@ -85,6 +85,158 @@ class CashierWorkflowTest extends TestCase
             ->assertSessionHas('pbf_access_code_hash', $b2bCode->code_hash);
     }
 
+    public function test_b2b_catalog_shows_only_active_promos_discounted_from_wholesale_price(): void
+    {
+        $b2bCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2B,
+            'code_hash' => Hash::make('54321'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $promoMedicine = Medicine::create([
+            'nama_obat' => 'Obat Promo Grosir',
+            'harga' => 1000,
+            'harga_grosir' => 5000,
+            'promo_b2b_percent' => 25,
+            'stok' => 10,
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Obat Tanpa Promo Grosir',
+            'harga' => 1000,
+            'harga_grosir' => 5000,
+            'promo_b2b_percent' => 0,
+            'stok' => 10,
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Promo Tanpa Harga Grosir',
+            'harga' => 1000,
+            'promo_b2b_percent' => 50,
+            'stok' => 10,
+        ]);
+
+        $this->withSession([
+            'pbf_access_expires_at' => now()->addDays(10)->timestamp,
+            'pbf_access_code_hash' => $b2bCode->code_hash,
+        ])->get(route('products.pbf'))
+            ->assertOk()
+            ->assertViewHas('promoProducts', function ($products) use ($promoMedicine): bool {
+                return $products->count() === 1
+                    && $products->first()->is($promoMedicine);
+            })
+            ->assertSee('Produk Promo B2B')
+            ->assertSee('PROMO B2B -25%')
+            ->assertSee('Rp 5.000')
+            ->assertSee('Rp 3.750')
+            ->assertDontSee('Promo Tanpa Harga Grosir')
+            ->assertSessionHas('pbf_access_code_hash', $b2bCode->code_hash);
+    }
+
+    public function test_checkout_includes_product_logo_markers_for_cart_thumbnails(): void
+    {
+        Medicine::create([
+            'nama_obat' => 'Produk Logo Hijau',
+            'logo' => 'Hijau',
+            'harga' => 10000,
+            'stok' => 5,
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Produk Logo Merah',
+            'logo' => 'Merah',
+            'harga' => 10000,
+            'stok' => 5,
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Produk Logo Biru',
+            'logo' => 'Biru',
+            'harga' => 10000,
+            'stok' => 5,
+        ]);
+
+        $this->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('"logo_color":"green"', false)
+            ->assertSee('"logo_color":"red"', false)
+            ->assertSee('"logo_color":"blue"', false)
+            ->assertSee('co-sum-logo-marker--${logoColor}', false)
+            ->assertSee('${logoColor === \'red\' ? \'K\' : \'\'}', false);
+    }
+
+    public function test_b2b_access_stays_active_when_returning_from_invoice_to_catalog(): void
+    {
+        $b2bCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2B,
+            'code_hash' => Hash::make('54321'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $session = [
+            'pbf_access_expires_at' => now()->addDays(10)->timestamp,
+            'pbf_access_code_hash' => $b2bCode->code_hash,
+        ];
+
+        $orderResponse = $this->withSession($session)->postJson('/orders/history', [
+            'buyer_type' => 'pbf',
+            'buyer_name' => 'PT Contoh PBF',
+            'phone' => '081234567891',
+            'address' => 'Jl. PBF No. 10',
+            'items' => [
+                ['name' => 'Paracetamol', 'qty' => 1, 'price' => 10000],
+            ],
+            'total' => 10000,
+        ])->assertOk();
+
+        $this->get($orderResponse->json('invoice_url'))
+            ->assertOk()
+            ->assertSessionHas('pbf_access_code_hash', $b2bCode->code_hash);
+        $this->get(route('products.pbf'))
+            ->assertOk()
+            ->assertSee('Anda masuk sebagai mitra PBF terverifikasi')
+            ->assertSessionHas('pbf_access_code_hash', $b2bCode->code_hash);
+    }
+
+    public function test_explicit_b2b_checkout_uses_b2b_price_with_separate_active_internal_access(): void
+    {
+        $b2bCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2B,
+            'code_hash' => Hash::make('54321'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $internalCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_INTERNAL,
+            'code_hash' => Hash::make('12345'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $medicine = Medicine::create([
+            'nama_obat' => 'Produk Harga B2B Internal',
+            'kategori' => 'MEDIX',
+            'harga' => 32000,
+            'harga_retail' => 32000,
+            'harga_internal' => 4500,
+            'harga_grosir' => 17000,
+            'stok' => 5,
+        ]);
+
+        $response = $this->withSession([
+            'pbf_access_expires_at' => now()->addDays(20)->timestamp,
+            'pbf_access_code_hash' => $b2bCode->code_hash,
+            'internal_access_expires_at' => now()->addDays(20)->timestamp,
+            'internal_access_code_hash' => $internalCode->code_hash,
+        ])->postJson(route('orders.history.store'), [
+            'buyer_type' => 'pbf',
+            'price_channel' => 'b2b',
+            'buyer_name' => 'Mitra B2B',
+            'requester_name' => 'Apoteker',
+            'phone' => '081234567890',
+            'address' => 'Alamat Mitra',
+            'items' => [
+                ['id' => $medicine->id, 'name' => $medicine->nama_obat, 'quantity' => 1, 'harga' => 1],
+            ],
+            'total' => 1,
+        ])->assertOk();
+
+        $history = PurchaseHistory::findOrFail($response->json('id'));
+        $this->assertSame(17000, $history->items[0]['harga']);
+        $this->assertSame(17000, $history->total);
+    }
+
     public function test_access_lock_endpoint_only_locks_b2b_sessions(): void
     {
         $this->withSession([
@@ -464,6 +616,9 @@ class CashierWorkflowTest extends TestCase
 
     public function test_b2b_access_gate_shows_whatsapp_code_request_form(): void
     {
+        $this->assertSame('/product-b2b', route('products.pbf', [], false));
+        $this->get('/products-pbf')->assertRedirect('/product-b2b');
+
         $this->get(route('products.pbf'))
             ->assertOk()
             ->assertSee('Belum memiliki kode akses?')
@@ -472,9 +627,17 @@ class CashierWorkflowTest extends TestCase
             ->assertSee('Nama apoteker / dokter')
             ->assertSee('Nama outlet')
             ->assertSee('Nomor SIA')
-            ->assertSee('Nomor SIPA')
+            ->assertSee('Nomor SIPA / SIP')
+            ->assertSee('Nomor STR')
             ->assertSee('Nomor telepon')
             ->assertSee('Alamat outlet')
+            ->assertSee('name="requester_name" type="text" autocomplete="name" required', false)
+            ->assertSee('name="phone" type="tel" autocomplete="tel" required', false)
+            ->assertDontSee('name="outlet_name" type="text" autocomplete="organization" required', false)
+            ->assertDontSee('name="sia" type="text" required', false)
+            ->assertDontSee('name="sipa" type="text" required', false)
+            ->assertDontSee('name="str" type="text" required', false)
+            ->assertDontSee('name="address" type="text" autocomplete="street-address" required', false)
             ->assertSee('Chat WhatsApp untuk meminta kode');
     }
 

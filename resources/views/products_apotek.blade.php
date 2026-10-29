@@ -429,8 +429,6 @@
                             @endphp
                             <div class="medicine-card-details">
                                 <p title="{{ $medicine->komposisi ?: '—' }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($medicine->komposisi ?: '—', 15, '...') }}</p>
-                                <p title="{{ $medicine->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($medicine->indikasi ?: '—', 15, '...') }}</p>
-                                <p title="{{ $medicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($medicine->golongan ?: '—', 15, '...') }}</p>
                             </div>
                             @include('partials.product-unit-selector', ['medicine' => $medicine, 'unitSelectId' => 'apotik-unit-' . $medicine->id, 'priceChannel' => $catalogPriceChannel, 'redLogoAccess' => $redLogoAccess])
                             @php
@@ -517,6 +515,6 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'apotekmedix_cart_apotek', wholesaleOrder: false, syncProductPrices: true, priceMode: @json($internalAccess ? 'internal' : 'b2c') };</script>
+<script>window.cartSettings = { storageKey: @json($internalAccess ? 'apotekmedix_cart_internal' : 'apotekmedix_cart_b2c'), priceChannel: @json($internalAccess ? 'internal' : 'b2c'), wholesaleOrder: false, syncProductPrices: true, priceMode: @json($internalAccess ? 'internal' : 'b2c') };</script>
 @include('partials.cart', ['cartWholesaleOrder' => false])
 @endsection

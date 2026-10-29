@@ -282,6 +282,34 @@ body.public-theme main .why-item {
     border-radius: 16px;
 }
 
+body.public-theme main .why-card-content {
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+body.public-theme main .why-card-badge {
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+body.public-theme main .why-card:nth-child(1) .why-card-badge {
+    color: #1565c0 !important;
+    background: #e3f2fd !important;
+}
+
+body.public-theme main .why-card:nth-child(2) .why-card-badge {
+    color: #1b5e20 !important;
+    background: #e8f5e9 !important;
+}
+
+body.public-theme main .why-card:nth-child(3) .why-card-badge {
+    color: #bf360c !important;
+    background: #fff3e0 !important;
+}
+
 body.public-theme.public-theme-standalone > main {
     color: #f7fbff !important;
     background: linear-gradient(145deg, #0756c6, #06449f) !important;
@@ -3066,4 +3094,404 @@ body.public-theme main .products-header h1 i {
     box-shadow: none !important;
     border: 0 !important;
     padding: 0 !important;
+}
+
+/* Homepage catalog products use horizontal cards in a two-column desktop grid. */
+body.public-theme main .home-b2c-grid-4x5,
+body.public-theme main .discounted-products-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+}
+
+body.public-theme main .home-b2c-grid-4x5 .prod-card,
+body.public-theme main .discounted-products-grid .discounted-product-card {
+    display: grid !important;
+    grid-template-columns: minmax(150px, 18%) minmax(0, 1fr) !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    align-items: start !important;
+}
+
+body.public-theme main .home-b2c-grid-4x5 .medicine-card-brand,
+body.public-theme main .discounted-products-grid .medicine-card-brand {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+}
+
+body.public-theme main .home-b2c-grid-4x5 .prod-img,
+body.public-theme main .discounted-products-grid .discounted-product-image {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    height: 190px !important;
+    min-height: 0 !important;
+    aspect-ratio: auto !important;
+    align-self: start !important;
+}
+
+body.public-theme main .home-b2c-grid-4x5 .prod-body,
+body.public-theme main .discounted-products-grid .discounted-product-body {
+    display: grid !important;
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 25%) !important;
+    align-content: start !important;
+    align-items: start !important;
+    column-gap: 1rem !important;
+    min-width: 0 !important;
+}
+
+body.public-theme main .home-b2c-grid-4x5 :is(.medicine-card-principal, .prod-name, .medicine-card-details),
+body.public-theme main .discounted-products-grid :is(.medicine-card-principal, .discounted-product-name, .medicine-card-details) {
+    grid-column: 1 / -1 !important;
+    min-width: 0 !important;
+}
+
+body.public-theme main .home-b2c-grid-4x5 .prod-name {
+    display: block !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    overflow-wrap: anywhere !important;
+    white-space: normal !important;
+    text-overflow: clip !important;
+    -webkit-line-clamp: unset !important;
+}
+
+body.public-theme main .home-b2c-grid-4x5 .medicine-card-details,
+body.public-theme main .discounted-products-grid .medicine-card-details {
+    height: auto !important;
+    min-height: 0 !important;
+    grid-template-rows: auto !important;
+}
+
+body.public-theme main .home-b2c-grid-4x5 .medicine-card-details p:nth-child(n + 2),
+body.public-theme main .discounted-products-grid .medicine-card-details p:nth-child(n + 2) {
+    display: none !important;
+}
+
+body.public-theme main .home-b2c-grid-4x5 .product-unit-section,
+body.public-theme main .discounted-products-grid .product-unit-section {
+    grid-column: 1 !important;
+}
+
+body.public-theme main .home-b2c-grid-4x5 :is(.product-stock, .medicine-meta-row, .btn-cart),
+body.public-theme main .discounted-products-grid :is(.product-stock, .medicine-meta-row, .discounted-product-actions) {
+    grid-column: 2 !important;
+}
+
+@media (max-width: 600px) {
+    body.public-theme main .home-b2c-grid-4x5 .prod-card,
+    body.public-theme main .discounted-products-grid .discounted-product-card {
+        grid-template-columns: minmax(96px, 30%) minmax(0, 1fr) !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .prod-img,
+    body.public-theme main .discounted-products-grid .discounted-product-image {
+        height: 150px !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .prod-body,
+    body.public-theme main .discounted-products-grid .discounted-product-body {
+        grid-template-columns: minmax(0, 1fr) !important;
+        column-gap: 0 !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 :is(.product-unit-section, .product-stock, .medicine-meta-row, .btn-cart),
+    body.public-theme main .discounted-products-grid :is(.product-unit-section, .product-stock, .medicine-meta-row, .discounted-product-actions) {
+        grid-column: 1 !important;
+    }
+}
+
+/* Keep the home catalog at two products per row on desktop and one on mobile. */
+body.public-theme main .home-b2c-grid-4x5,
+body.public-theme main .discounted-products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+body.public-theme main .home-b2c-grid-4x5 .prod-card[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 600px) {
+    body.public-theme main .home-b2c-grid-4x5,
+    body.public-theme main .discounted-products-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+}
+
+@media (max-width: 600px) {
+    body.public-theme main .home-brand-hero {
+        margin-top: calc(var(--navbar-height, 66px) - 2rem) !important;
+        min-height: 0 !important;
+        padding-bottom: 1.3rem !important;
+    }
+
+    body.public-theme main .home-brand-hero-mark {
+        overflow: hidden;
+        border: 2px solid rgba(255, 255, 255, .9);
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(0, 24, 89, .28);
+    }
+
+    body.public-theme main .home-brand-hero-circle {
+        border-color: rgba(7, 85, 200, .15);
+        background: transparent;
+        box-shadow: none;
+    }
+}
+
+@media (max-width: 600px) {
+    body.public-theme main .home-b2c-grid-4x5 .prod-card,
+    body.public-theme main .discounted-products-grid .discounted-product-card {
+        grid-template-columns: minmax(88px, 28%) minmax(0, 1fr) !important;
+        grid-template-rows: auto minmax(0, 1fr) !important;
+        gap: 0 !important;
+        padding: .65rem !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .medicine-card-brand,
+    body.public-theme main .discounted-products-grid .medicine-card-brand {
+        padding: 0 .1rem .35rem !important;
+        text-align: left !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .prod-img,
+    body.public-theme main .discounted-products-grid .discounted-product-image {
+        height: 132px !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .prod-body,
+    body.public-theme main .discounted-products-grid .discounted-product-body {
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        align-content: start !important;
+        align-items: center !important;
+        column-gap: .45rem !important;
+        row-gap: .35rem !important;
+        padding: .1rem 0 0 .55rem !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .medicine-card-principal,
+    body.public-theme main .home-b2c-grid-4x5 .prod-name,
+    body.public-theme main .discounted-products-grid .medicine-card-principal,
+    body.public-theme main .discounted-products-grid .discounted-product-name,
+    body.public-theme main .home-b2c-grid-4x5 .medicine-card-details,
+    body.public-theme main .discounted-products-grid .medicine-card-details {
+        grid-column: 1 / -1 !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .prod-name,
+    body.public-theme main .discounted-products-grid .discounted-product-name {
+        margin: 0 !important;
+        font-size: .9rem !important;
+        line-height: 1.25 !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .medicine-card-details,
+    body.public-theme main .discounted-products-grid .medicine-card-details {
+        display: block !important;
+        grid-row: 3 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: #475569 !important;
+        font-size: .68rem !important;
+        line-height: 1.25 !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .medicine-card-details p,
+    body.public-theme main .discounted-products-grid .medicine-card-details p {
+        display: block !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        color: #475569 !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .medicine-card-details strong,
+    body.public-theme main .discounted-products-grid .medicine-card-details strong {
+        color: #1755a3 !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .product-unit-section,
+    body.public-theme main .discounted-products-grid .product-unit-section {
+        grid-column: 1 !important;
+        grid-row: 4 !important;
+        width: max-content !important;
+        margin: 0 !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .product-unit-card,
+    body.public-theme main .discounted-products-grid .product-unit-card {
+        padding: .25rem .4rem !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .product-unit-choice,
+    body.public-theme main .discounted-products-grid .product-unit-choice {
+        min-height: 0 !important;
+        padding: .2rem .1rem !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .product-stock,
+    body.public-theme main .discounted-products-grid .product-stock {
+        grid-column: 1 !important;
+        grid-row: 5 !important;
+        justify-self: start !important;
+        margin: 0 !important;
+        padding: .3rem .5rem !important;
+        font-size: .62rem !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .medicine-meta-row,
+    body.public-theme main .discounted-products-grid .medicine-meta-row {
+        display: contents !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .medicine-sold-badge,
+    body.public-theme main .discounted-products-grid .medicine-sold-badge {
+        grid-column: 2 !important;
+        grid-row: 5 !important;
+        justify-self: end !important;
+        margin: 0 !important;
+    }
+
+    body.public-theme main .home-b2c-grid-4x5 .btn-cart,
+    body.public-theme main .discounted-products-grid .discounted-product-actions {
+        grid-column: 1 / -1 !important;
+        grid-row: 6 !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-height: 36px !important;
+        margin: .1rem 0 0 !important;
+        padding: .5rem !important;
+        font-size: .72rem !important;
+    }
+}
+
+body.public-theme main .home-b2c-catalog-heading .home-b2c-transaction-label,
+body.public-theme main .home-b2c-catalog-heading > a.home-b2b-catalog-link,
+body.public-theme main .home-b2c-catalog-heading > a.home-b2b-catalog-link:visited {
+    color: #0646a5 !important;
+    background: #ffffff !important;
+    border: 2px solid #0755c8 !important;
+    text-decoration: none !important;
+}
+
+body.public-theme main .home-b2c-catalog-heading .home-b2c-transaction-label *,
+body.public-theme main .home-b2c-catalog-heading > a.home-b2b-catalog-link *,
+body.public-theme main .home-b2c-catalog-heading > a.home-b2b-catalog-link > .home-b2b-transaction-text {
+    color: #0646a5 !important;
+}
+
+body.public-theme main .home-b2c-catalog-heading a.home-b2b-catalog-link:hover {
+    color: #0646a5 !important;
+    background: #ffffff !important;
+    border-color: #0755c8 !important;
+}
+
+body.public-theme main .product-discount-badge {
+    border: 1px solid #67e8f9 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background: #123b70 !important;
+    box-shadow: 0 4px 12px rgba(7, 45, 99, .32), 0 0 0 2px rgba(255, 255, 255, .9) !important;
+    text-shadow: 0 1px 2px #000000 !important;
+}
+
+body.public-theme main :is(
+    .products-main .medicine-card-details,
+    .products-pbf .medicine-card-details,
+    .home-b2c-grid-4x5 .medicine-card-details,
+    .discounted-products-grid .medicine-card-details
+) {
+    height: auto !important;
+    min-height: 0 !important;
+    grid-template-rows: none !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+body.public-theme main :is(
+    .home-b2c-grid-4x5 .medicine-card-principal,
+    .discounted-products-grid .medicine-card-principal
+) {
+    width: auto !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #64748b !important;
+    font-size: .78rem !important;
+    line-height: 1.4 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+}
+
+body.public-theme main :is(
+    .home-b2c-grid-4x5 .prod-body,
+    .discounted-products-grid .discounted-product-body
+) {
+    padding-left: 1rem !important;
+}
+
+@media (min-width: 601px) {
+    body.public-theme main :is(
+        .home-b2c-grid-4x5 .medicine-meta-row,
+        .discounted-products-grid .medicine-meta-row
+    ) {
+        display: contents !important;
+    }
+
+    body.public-theme main :is(
+        .home-b2c-grid-4x5 .product-stock,
+        .discounted-products-grid .product-stock
+    ) {
+        grid-column: 1 !important;
+        grid-row: 5 !important;
+        justify-self: start !important;
+        align-self: center !important;
+        margin: 0 !important;
+    }
+
+    body.public-theme main :is(
+        .home-b2c-grid-4x5 .medicine-sold-badge,
+        .discounted-products-grid .medicine-sold-badge
+    ) {
+        grid-column: 2 !important;
+        grid-row: 5 !important;
+        justify-self: end !important;
+        align-self: center !important;
+        margin: 0 !important;
+    }
+
+    body.public-theme main :is(
+        .home-b2c-grid-4x5 .btn-cart,
+        .discounted-products-grid .discounted-product-actions
+    ) {
+        grid-column: 1 / -1 !important;
+        grid-row: 6 !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin-top: 0 !important;
+    }
+}
+
+@media (max-width: 600px) {
+    body.public-theme main :is(
+        .home-b2c-grid-4x5 .prod-body,
+        .discounted-products-grid .discounted-product-body
+    ) {
+        padding-left: .9rem !important;
+    }
 }

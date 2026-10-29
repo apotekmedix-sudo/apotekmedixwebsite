@@ -63,6 +63,7 @@ class PurchaseHistoryController extends Controller
             'payment_method'  => ['nullable', 'string', 'max:255'],
             'payment_term_days' => ['nullable', 'integer', 'min:1'],
             'transaction_channel' => ['nullable', 'string', 'in:online'],
+            'price_channel'   => ['nullable', 'string', 'in:b2c,internal,b2b'],
             'is_pbf_purchase_order' => ['nullable', 'boolean'],
             'discount_code'   => ['nullable', 'string', 'max:64'],
         ]);
@@ -164,6 +165,29 @@ class PurchaseHistoryController extends Controller
                 ShoppingAccessCode::CHANNEL_B2B,
                 $request->session()->get('pbf_access_code_hash')
             );
+        $requestedPriceChannel = $data['price_channel'] ?? null;
+
+        if (
+            ($requestedPriceChannel === 'internal' && !$hasInternalAccess)
+            || ($requestedPriceChannel === 'b2b' && !$hasB2bAccess)
+        ) {
+            return response()->json([
+                'message' => 'Akses harga untuk kanal transaksi ini sudah tidak aktif.',
+                'errors' => ['price_channel' => ['Aktifkan kembali kode akses untuk kanal harga yang dipilih.']],
+            ], 403);
+        }
+        if (
+            $requestedPriceChannel !== null
+            && (
+                ($requestedPriceChannel === 'b2b' && $data['buyer_type'] === 'umum')
+                || ($requestedPriceChannel !== 'b2b' && $data['buyer_type'] === 'pbf')
+            )
+        ) {
+            return response()->json([
+                'message' => 'Jenis transaksi tidak sesuai dengan kanal harga yang dipilih.',
+                'errors' => ['price_channel' => ['Gunakan jenis transaksi dan keranjang sesuai kanal B2C, Internal, atau B2B.']],
+            ], 422);
+        }
 
         foreach ($items as $index => $item) {
             $qty = (int) ($item['quantity'] ?? $item['qty'] ?? 0);
@@ -178,9 +202,21 @@ class PurchaseHistoryController extends Controller
                 ], 422);
             }
 
-            $promoChannel = (($product && $product->kelompok === 'PBF') || $data['buyer_type'] === 'pbf' || !empty($data['pbf_name']) || ($hasB2bAccess && !$hasB2cAccess && ($product?->getChannelBasePrice('b2b') ?? 0) > 0)
+            $promoChannel = $requestedPriceChannel ?? (
+                ($product && $product->kelompok === 'PBF')
+                || $data['buyer_type'] === 'pbf'
+                || !empty($data['pbf_name'])
+                || ($hasB2bAccess && !$hasB2cAccess && ($product?->getChannelBasePrice('b2b') ?? 0) > 0)
                     ? 'b2b'
-                    : 'b2c');
+                    : 'b2c'
+            );
+
+            if ($product && $product->kelompok === 'PBF' && $promoChannel !== 'b2b') {
+                return response()->json([
+                    'message' => 'Produk PBF harus dipesan melalui kanal B2B.',
+                    'errors' => ['price_channel' => ['Pilih keranjang dan kanal harga B2B untuk produk ini.']],
+                ], 422);
+            }
 
             if ($product?->hasRedLogo() && $promoChannel === 'b2c' && !$hasB2bAccess && !in_array($data['buyer_type'], ['pbf', 'apotik', 'dokter'], true)) {
                 if (!$hasB2cAccess && !$hasInternalAccess) {
@@ -197,7 +233,12 @@ class PurchaseHistoryController extends Controller
                     'errors' => ['items' => ["Produk {$product->nama_obat} hanya dapat dibeli per kemasan pada kanal ini."]],
                 ], 422);
             }
-            if ($product && $promoChannel === 'b2c' && $hasInternalAccess && $unit !== 'box') {
+            $priceChannel = $requestedPriceChannel ?? (
+                $promoChannel === 'b2c' && $hasInternalAccess ? 'internal' : $promoChannel
+            );
+            $usesInternalPricing = $priceChannel === 'internal';
+
+            if ($product && $usesInternalPricing && $unit !== 'box') {
                 return response()->json([
                     'message' => 'Akses Internal hanya mendukung pembelian per kemasan.',
                     'errors' => ['items' => ["Produk {$product->nama_obat} hanya dapat dibeli per kemasan saat akses Internal aktif."]],
@@ -205,9 +246,6 @@ class PurchaseHistoryController extends Controller
             }
 
             if ($product) {
-                $priceChannel = $promoChannel === 'b2c' && $hasInternalAccess
-                    ? 'internal'
-                    : $promoChannel;
                 $price = $isPbfPurchaseOrder
                     ? (int) round((float) $product->harga_modal)
                     : (int) round($product->getChannelBasePrice($priceChannel, $unit));
@@ -226,11 +264,11 @@ class PurchaseHistoryController extends Controller
                 }
             }
             $subtotal = $qty * $price;
-            $promoPercent = $isPbfPurchaseOrder || ($promoChannel === 'b2c' && $hasInternalAccess)
+            $promoPercent = $isPbfPurchaseOrder || $usesInternalPricing
                 ? 0
                 : ($product?->getPromoPercent($promoChannel) ?? 0);
             $promoDiscount = (int) round($price * $promoPercent / 100) * $qty;
-            $manualDiscount = $isPbfPurchaseOrder || $hasInternalAccess
+            $manualDiscount = $isPbfPurchaseOrder || $usesInternalPricing
                 ? 0
                 : (int) ($item['potongan'] ?? $item['discount'] ?? 0);
             $discount = min($promoDiscount + $manualDiscount, $subtotal);

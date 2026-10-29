@@ -416,6 +416,31 @@
     .btn-cart:hover { background: #e3f2fd; transform: translateY(-1px); }
     .btn-cart.added { background: #d1fae5; color: #065f46; border-color: #34d399; }
 
+    .pbf-promo-section {
+        margin-bottom: 2rem;
+    }
+    .pbf-promo-heading {
+        margin: 0 0 1rem;
+        color: #0f172a !important;
+        font-size: 1.35rem;
+        font-weight: 800;
+    }
+    .pbf-promo-card .prod-img {
+        position: relative;
+    }
+    .pbf-promo-badge {
+        position: absolute;
+        z-index: 3;
+        bottom: .55rem;
+        left: .55rem;
+        padding: .3rem .55rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 800;
+        line-height: 1.2;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .2);
+    }
+
     .empty-state { text-align: center; padding: 5rem 2rem; background: white; border-radius: 16px; border: 1px solid #e5e7eb; }
     .empty-state h3 { font-size: 1.4rem; font-weight: 700; color: #1f2937; margin: 1rem 0 0.5rem; }
     .empty-state p  { color: #6b7280; }
@@ -587,6 +612,68 @@
 
         </form>
 
+        @if($promoProducts->isNotEmpty())
+            <section class="pbf-promo-section" aria-labelledby="pbfPromoHeading">
+                <h2 class="pbf-promo-heading" id="pbfPromoHeading">
+                    <i class="fa-solid fa-tags" aria-hidden="true"></i> Produk Promo B2B
+                </h2>
+                <div class="medicines-grid home-b2c-grid-4x5">
+                    @foreach($promoProducts as $medicine)
+                        @php
+                            $promoPercent = $medicine->getPromoPercent('b2b');
+                            $promoPrice = $medicine->getChannelPromoPrice('b2b');
+                            $promoStockUnits = (int) $medicine->available_stock_units;
+                            $promoStock = $promoStockUnits / max(1, $medicine->units_per_box);
+                        @endphp
+                        <article class="prod-card pbf-promo-card">
+                            <div class="medicine-card-brand">Apotek Medix</div>
+                            <div class="prod-img">
+                                @include('partials.product-gallery-image', ['medicine' => $medicine, 'detailOrigin' => 'b2b'])
+                                @include('partials.product-logo-marker', ['medicine' => $medicine])
+                                <span class="pbf-promo-badge product-discount-badge">PROMO B2B -{{ $promoPercent }}%</span>
+                            </div>
+                            <div class="prod-body">
+                                <div class="medicine-card-principal">{{ $medicine->brand ?: $medicine->kategori }}</div>
+                                <h3 class="prod-name">
+                                    <a href="{{ route('medicines.show', ['id' => $medicine->id, 'from' => 'b2b']) }}">{{ $medicine->nama_obat }}</a>
+                                </h3>
+                                @include('partials.product-unit-selector', [
+                                    'medicine' => $medicine,
+                                    'unitSelectId' => 'pbf-promo-unit-' . $medicine->id,
+                                    'priceChannel' => 'b2b',
+                                    'showUnitChoices' => false,
+                                ])
+                                <span class="product-stock {{ $promoStock <= 0 ? 'empty' : ($promoStock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}" data-stock-unit-factor="{{ max(1, $medicine->units_per_box) }}">
+                                    <i class="fa-solid {{ $promoStock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
+                                    {{ $promoStock > 0 ? 'Stok: ' . rtrim(rtrim(number_format($promoStock, 6, ',', '.'), '0'), ',') : 'Stok habis' }}
+                                </span>
+                                <div class="medicine-meta medicine-meta-row">
+                                    <span class="medicine-meta-sediaan">
+                                        @if($medicine->sediaan_label)
+                                            <i class="fa-solid fa-cube"></i> <span>Sediaan: {{ $medicine->sediaan_label }}</span>
+                                        @endif
+                                    </span>
+                                    <span class="medicine-sold-badge" data-sold-product-id="{{ $medicine->id }}">
+                                        <i class="fa-solid fa-fire-flame-curved"></i> Terjual {{ number_format((int) $medicine->terjual, 0, ',', '.') }}
+                                    </span>
+                                </div>
+                                <button class="btn-cart" data-stock-cart data-sales-channel="b2b" @disabled($promoStock <= 0)
+                                        data-product-id="{{ $medicine->id }}"
+                                        data-package-unit-label="{{ $medicine->package_unit_label }}"
+                                        data-product-name="{{ $medicine->nama_obat }}"
+                                        data-product-price="{{ $promoPrice }}"
+                                        data-product-image="{{ $medicine->image_url ?: '' }}"
+                                        data-product-brand="{{ $medicine->brand ?: $medicine->kategori }}"
+                                        onclick="addToCart({{ $medicine->id }}, this.dataset.productName, Number(this.dataset.productPrice), this.dataset.productImage, this.dataset.productBrand, this, 'pbf-promo-unit-{{ $medicine->id }}')">
+                                    <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang
+                                </button>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         <div class="result-info">
             <p>
                 Menampilkan <strong>{{ $medicines->firstItem() ?? 0 }}–{{ $medicines->lastItem() ?? 0 }}</strong>
@@ -598,17 +685,17 @@
         </div>
 
         @if($medicines->count() > 0)
-            <div class="medicines-grid">
+            <div class="medicines-grid home-b2c-grid-4x5">
                 @foreach($medicines as $medicine)
-                    <div class="medicine-card">
+                    <div class="prod-card">
                         <div class="medicine-card-brand">Apotek Medix</div>
-                        <div class="medicine-image">
-                            @include('partials.product-gallery-image', ['medicine' => $medicine])
+                        <div class="prod-img">
+                            @include('partials.product-gallery-image', ['medicine' => $medicine, 'detailOrigin' => 'b2b'])
                             @include('partials.product-logo-marker', ['medicine' => $medicine])
                         </div>
-                        <div class="medicine-body">
+                        <div class="prod-body">
                             <div class="medicine-card-principal">{{ $medicine->brand ?: $medicine->kategori }}</div>
-                            <h3 class="medicine-name"><a href="{{ route('medicines.show', ['id' => $medicine->id, 'from' => 'b2b']) }}">{{ $medicine->nama_obat }}</a></h3>
+                            <h3 class="prod-name"><a href="{{ route('medicines.show', ['id' => $medicine->id, 'from' => 'b2b']) }}">{{ $medicine->nama_obat }}</a></h3>
 
                             @php
                                 $basePrice = $medicine->getChannelBasePrice('b2b');
@@ -616,8 +703,6 @@
                             @endphp
                             <div class="medicine-card-details">
                                 <p title="{{ $medicine->komposisi ?: '—' }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($medicine->komposisi ?: '—', 15, '...') }}</p>
-                                <p title="{{ $medicine->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($medicine->indikasi ?: '—', 15, '...') }}</p>
-                                <p title="{{ $medicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($medicine->golongan ?: '—', 15, '...') }}</p>
                             </div>
                             @include('partials.product-unit-selector', [
                                 'medicine' => $medicine,
@@ -630,7 +715,7 @@
                                 $stock = $stockUnits / max(1, $medicine->units_per_box);
                                 $stockDisplay = rtrim(rtrim(number_format($stock, 6, ',', '.'), '0'), ',');
                             @endphp
-                            <span class="stock-badge {{ $stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}" data-stock-unit-factor="{{ max(1, $medicine->units_per_box) }}">
+                            <span class="product-stock {{ $stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available') }}" data-stock-badge data-stock-product-id="{{ $medicine->id }}" data-stock-unit-factor="{{ max(1, $medicine->units_per_box) }}">
                                 <i class="fa-solid {{ $stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked' }}"></i>
                                 {{ $stock > 0 ? 'Stok: ' . $stockDisplay : 'Stok habis' }}
                             </span>
@@ -645,7 +730,7 @@
                                 </span>
                             </div>
                             @if($basePrice > 0)
-                                <button class="btn-cart" data-stock-cart @disabled($stock <= 0)
+                                <button class="btn-cart" data-stock-cart data-sales-channel="b2b" @disabled($stock <= 0)
                                         data-product-id="{{ $medicine->id }}"
                                         data-package-unit-label="{{ $medicine->package_unit_label }}"
                                         data-product-name="{{ $medicine->nama_obat }}"
@@ -656,7 +741,7 @@
                                     <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang
                                 </button>
                             @else
-                                <button class="btn-cart" type="button" disabled style="opacity:.55;cursor:not-allowed;">
+                                <button class="btn-cart" type="button" data-sales-channel="b2b" disabled style="opacity:.55;cursor:not-allowed;">
                                     Harga belum tersedia
                                 </button>
                             @endif
@@ -717,7 +802,8 @@
 @section('scripts')
 <script>
 window.cartSettings = {
-    storageKey: 'apotekmedix_cart_pbf',
+    storageKey: 'apotekmedix_cart_b2b',
+    priceChannel: 'b2b',
     wholesaleOrder: true,
     receiptStoreName: 'Apotek Medix',
     receiptStoreAddress: 'Jl. Pendawa Jl. Sersan Muis No.99, 2 Ilir, Kec. Ilir Tim. II, Kota Palembang\nSumatera Selatan 30118',

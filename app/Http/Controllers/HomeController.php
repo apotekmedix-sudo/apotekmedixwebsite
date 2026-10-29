@@ -161,14 +161,27 @@ class HomeController extends Controller
 
         StockAvailability::annotate($medicine->newCollection([$medicine]));
 
-        $relatedQuery = $b2bAccess
-            ? Medicine::query()->where('harga_grosir', '>', 0)
-            : Medicine::nonPbf()->availableForB2c();
-        $relatedMedicines = StockAvailability::prioritizeAvailableStock($relatedQuery)
-            ->where('kategori', $medicine->kategori)
-            ->where('id', '!=', $medicine->id)
-            ->limit(4)
-            ->get();
+        $similarityConditions = array_filter([
+            'indikasi' => trim((string) $medicine->indikasi),
+            'komposisi' => trim((string) $medicine->komposisi),
+        ], static fn (string $value): bool => $value !== '');
+
+        $relatedMedicines = collect();
+        if ($similarityConditions !== []) {
+            $relatedQuery = $b2bAccess
+                ? Medicine::query()->where('harga_grosir', '>', 0)
+                : Medicine::nonPbf()->availableForB2c();
+            $relatedQuery
+                ->where('id', '!=', $medicine->id)
+                ->where(function ($query) use ($similarityConditions): void {
+                    foreach ($similarityConditions as $attribute => $value) {
+                        $query->orWhere($attribute, $value);
+                    }
+                });
+            $relatedMedicines = StockAvailability::prioritizeAvailableStock($relatedQuery)
+                ->limit(4)
+                ->get();
+        }
 
         StockAvailability::annotate($relatedMedicines);
 

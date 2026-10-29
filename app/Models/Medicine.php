@@ -396,7 +396,7 @@ class Medicine extends Model
 
     /**
      * Scope: exclude produk PBF — dipakai di semua halaman publik
-     * kecuali halaman /products-pbf
+     * kecuali halaman /product-b2b
      */
     public function scopeNonPbf($query)
     {

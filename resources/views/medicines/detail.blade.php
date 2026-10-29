@@ -253,32 +253,50 @@
 
     .stock-info {
         display: flex;
-        gap: 0.65rem;
-        margin-bottom: 1.2rem;
+        gap: 0.5rem;
+        margin-bottom: 0.85rem;
         flex-wrap: wrap;
     }
 
     .stock-item {
-        flex: 1;
-        min-width: 110px;
-        padding: 0.75rem 0.65rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        flex: 0 0 auto;
+        min-width: 0;
+        padding: 0.45rem 0.75rem;
         background: #f8fafc !important;
         border: 1px solid #cbd5e1;
-        border-radius: 10px;
-        text-align: center;
+        border-radius: 9px;
+        text-align: left;
     }
 
     .stock-item-label {
         font-size: 0.74rem;
         color: #475569 !important;
-        margin-bottom: 0.25rem;
+        margin: 0;
         font-weight: 700;
     }
 
     .stock-item-value {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
         font-weight: 800;
         color: #0f172a !important;
+    }
+
+    .detail-manufacturer {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        padding: 0.35rem 0.75rem;
+        border: 1px solid #bae6fd;
+        border-radius: 999px;
+        background: #e0f2fe !important;
+        color: #0369a1 !important;
+        font-size: 0.8rem;
+        font-weight: 800;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
     }
 
     .detail-meta-list {
@@ -292,7 +310,17 @@
         border-radius: 12px;
     }
 
+    .detail-image-col .detail-meta-list {
+        width: 100%;
+        max-width: 340px;
+        margin: 1rem 0 0;
+        text-align: left;
+    }
+
     .detail-meta-row {
+        display: grid;
+        grid-template-columns: minmax(110px, 30%) minmax(0, 1fr);
+        gap: 0.65rem;
         font-size: 0.88rem;
         line-height: 1.5;
         color: #1e293b !important;
@@ -301,21 +329,66 @@
     .detail-meta-row strong {
         color: #0f172a !important;
         font-weight: 800;
-        margin-right: 0.3rem;
+        margin-right: 0;
     }
 
     .detail-meta-row span {
         color: #334155 !important;
         font-weight: 500;
+        overflow-wrap: anywhere;
+    }
+    .detail-meta-text-dialog {
+        width: min(92vw, 560px);
+        max-height: min(80vh, 680px);
+        padding: 1.25rem;
+        border: 1px solid #dbeafe;
+        border-radius: 16px;
+        color: #172033;
+        background: #fff;
+        box-shadow: 0 20px 55px rgba(15, 23, 42, .28);
+    }
+    .detail-meta-text-dialog::backdrop { background: rgba(15, 23, 42, .65); }
+    .detail-meta-text-dialog h2 { margin: 0 2.5rem .85rem 0; color: #0f172a; font-size: 1.1rem; }
+    .detail-meta-text-dialog p { margin: 0; color: #334155; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .detail-meta-text-dialog button {
+        position: absolute;
+        top: .7rem;
+        right: .7rem;
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 50%;
+        color: #334155;
+        background: #f1f5f9;
+        font-size: 1.2rem;
+        cursor: pointer;
+    }
+    .detail-meta-row > span.is-collapsible {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+    }
+    .detail-meta-more {
+        grid-column: 2;
+        justify-self: start;
+        padding: .25rem 0;
+        border: 0;
+        color: #0755c8;
+        background: transparent;
+        font: inherit;
+        font-size: .8rem;
+        font-weight: 800;
+        cursor: pointer;
     }
 
     /* Purchase Box */
     .detail-purchase-box {
-        background: transparent !important;
-        border-radius: 0;
-        padding: 0;
-        margin: 1.25rem 0;
-        border: 0;
+        background: #f8fafc !important;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+        border: 1px solid #e2e8f0;
         color: #0f172a !important;
     }
 
@@ -323,7 +396,7 @@
         font-size: 0.95rem;
         font-weight: 800;
         color: #0f172a !important;
-        margin: 0 0 0.9rem;
+        margin: 0 0 0.7rem;
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -337,7 +410,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
         gap: 0.55rem;
-        margin-bottom: 0.95rem;
+        margin-bottom: 0.7rem;
     }
 
     .detail-unit-pill {
@@ -397,7 +470,7 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        margin-bottom: 0.95rem;
+        margin-bottom: 0.7rem;
     }
 
     .detail-qty-btn {
@@ -436,7 +509,7 @@
     }
 
     .detail-total-bar {
-        margin-bottom: 1rem;
+        margin-bottom: 0.7rem;
         padding: 0.25rem 0;
         background: transparent !important;
         border: 0;
@@ -460,12 +533,12 @@
     .detail-action-buttons {
         display: grid;
         grid-template-columns: 1fr 1.35fr;
-        gap: 0.75rem;
+        gap: 0.55rem;
     }
 
     .btn-detail-buy,
     .btn-detail-cart {
-        padding: 0.82rem 1rem;
+        padding: 0.72rem 0.85rem;
         border-radius: 11px;
         font-size: 0.9rem;
         font-weight: 800;
@@ -628,22 +701,88 @@
 
     @media (max-width: 768px) {
         .detail-grid {
-            grid-template-columns: 1fr;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.45rem;
+            padding: 0 0 .75rem;
         }
-        .detail-image-col {
-            padding: 1.25rem;
+        .detail-grid > .detail-image-col,
+        .detail-grid > .detail-info {
+            display: contents;
+        }
+        .detail-grid > .detail-image-col,
+        .detail-grid > .detail-info,
+        .detail-grid > .detail-image-col > *,
+        .detail-grid > .detail-info > * {
+            min-width: 0;
+        }
+        .detail-container {
+            overflow: hidden;
+            background: #fff !important;
+        }
+        .detail-grid > .detail-image-col,
+        .detail-grid > .detail-info {
+            background: transparent !important;
+            border: 0 !important;
+            padding: 0 !important;
         }
         .detail-image {
-            max-width: 240px;
-            margin: 0 auto 0.85rem;
+            order: 1;
+            margin: .85rem auto .25rem;
         }
-        .detail-desc {
-            max-width: 100%;
+        .detail-gallery-thumbnails {
+            order: 2;
+            margin: 0 auto .35rem;
         }
-        .detail-info {
-            padding: 1.25rem;
-            border-left: none;
-            border-top: 1px solid #e2e8f0;
+        .detail-heading-row {
+            order: 3;
+            padding: 0 1rem;
+            margin: .25rem 0 0 !important;
+        }
+        .detail-product-name {
+            order: 4;
+            padding: 0 1rem;
+            margin: 0 !important;
+        }
+        .stock-info {
+            order: 5;
+            padding: 0 1rem;
+            margin: 0 !important;
+        }
+        .price-section {
+            order: 6;
+            padding: 0 1rem !important;
+            margin: .1rem 0 .25rem !important;
+        }
+        .detail-meta-list--image {
+            order: 7;
+        }
+        .detail-meta-list--info {
+            order: 8;
+        }
+        .detail-meta-list {
+            width: auto !important;
+            max-width: none !important;
+            gap: .55rem;
+            margin: 0 .75rem !important;
+            padding: .25rem .25rem 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        .detail-meta-row {
+            grid-template-columns: minmax(90px, 30%) minmax(0, 1fr);
+            gap: .5rem;
+            padding: 0 .25rem;
+        }
+        .detail-purchase-box {
+            order: 9;
+            margin: .35rem 1rem 0 !important;
+        }
+        .btn-back-catalog {
+            order: 10;
+            margin: 0 1rem;
         }
         .related-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -654,10 +793,7 @@
 
     @media (max-width: 480px) {
         .detail-wrapper { margin: 1rem auto; padding: 0 0.5rem; }
-        .detail-image-col { padding: 1rem; }
         .detail-image { max-width: 190px; }
-        .detail-info { padding: 1rem; }
-        .price-section { padding: 1rem; }
         .detail-action-buttons {
             grid-template-columns: 1fr;
         }
@@ -674,6 +810,11 @@
     $internalAccess = $internalAccess ?? \App\Models\ShoppingAccessCode::hasActiveInternalSession();
     $b2bAccess = $b2bAccess ?? false;
     $priceChannel = $b2bAccess ? 'b2b' : ($internalAccess ? 'internal' : 'b2c');
+    $detailCartStorageKey = match ($priceChannel) {
+        'b2b' => 'apotekmedix_cart_b2b',
+        'internal' => 'apotekmedix_cart_internal',
+        default => 'apotekmedix_cart_b2c',
+    };
     $b2cAccess = $b2cAccess ?? \App\Models\ShoppingAccessCode::hasActiveB2cSession();
     $redLogoAccess = $redLogoAccess ?? ($b2cAccess || $internalAccess);
     $isRedLogoLocked = $medicine->isRedLogo() && !$redLogoAccess;
@@ -702,7 +843,7 @@
             <span class="current">{{ Str::limit($medicine->nama_obat, 30) }}</span>
         </div>
         <h1>{{ $medicine->nama_obat }}</h1>
-        <p><i class="fa-solid fa-building fa-sm"></i> {{ $medicine->kategori }}</p>
+        <p><i class="fa-solid fa-building fa-sm"></i> Pabrik: {{ $medicine->kategori ?: ($medicine->brand ?: '—') }}</p>
     </div>
 </div>
 
@@ -729,23 +870,19 @@
                     </div>
                 @endif
 
-                @if($medicine->deskripsi)
-                <div class="detail-desc">
-                    <h3><i class="fa-solid fa-circle-info icon"></i>Deskripsi Produk</h3>
-                    <p>{!! nl2br(e($medicine->deskripsi)) !!}</p>
+                <div class="detail-meta-list detail-meta-list--image">
+                    <div class="detail-meta-row"><strong>Deskripsi:</strong> <span>{!! nl2br(e($medicine->deskripsi ?: '—')) !!}</span></div>
+                    <div class="detail-meta-row"><strong>Golongan:</strong> <span>{{ $medicine->golongan ?: '—' }}</span></div>
+                    <div class="detail-meta-row"><strong>Kategori:</strong> <span>{{ $medicine->kategori_produk ?: '—' }}</span></div>
                 </div>
-                @endif
             </div>
 
             <!-- Info Column -->
             <div class="detail-info">
-                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.85rem;">
-                    <span class="detail-category" style="margin-bottom:0;">{{ $medicine->kategori }}</span>
-                    <span class="medicine-sold-badge" data-sold-product-id="{{ $medicine->id }}" style="margin-left:0;font-size:0.78rem;padding:0.28rem 0.75rem;">
-                        <i class="fa-solid fa-fire-flame-curved"></i> Terjual {{ number_format((int) $medicine->terjual, 0, ',', '.') }}
-                    </span>
+                <div class="detail-heading-row" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.85rem;">
+                    <span class="detail-manufacturer">Pabrik / Brand: {{ $medicine->kategori ?: ($medicine->brand ?: '—') }}</span>
                 </div>
-                <h1>{{ $medicine->nama_obat }}</h1>
+                <h1 class="detail-product-name">{{ $medicine->nama_obat }}</h1>
 
                 <div class="price-section">
                     <div class="price" id="detailUnitPriceDisplay">Rp {{ number_format($unitPriceValues[$defaultUnit] ?? $medicine->harga, 0, ',', '.') }}</div>
@@ -757,34 +894,26 @@
                         <div class="stock-item-label">Stok</div>
                         <div class="stock-item-value">{{ $detailStockDisplay }}</div>
                     </div>
+                    <span class="medicine-sold-badge" data-sold-product-id="{{ $medicine->id }}" style="margin-left:0;font-size:0.78rem;padding:0.28rem 0.75rem;">
+                        <i class="fa-solid fa-fire-flame-curved"></i> Terjual {{ number_format((int) $medicine->terjual, 0, ',', '.') }}
+                    </span>
                 </div>
 
-                <div class="detail-meta-list">
-                    @if(!empty($medicine->golongan))
-                        <div class="detail-meta-row"><strong>Golongan:</strong> <span>{{ $medicine->golongan }}</span></div>
-                    @endif
-
-                    @if(!empty($medicine->sediaan))
-                        <div class="detail-meta-row"><strong>Sediaan:</strong> <span>{{ $medicine->sediaan_label }}</span></div>
-                    @endif
-
-                    @if(!empty($medicine->dosis))
+                <div class="detail-meta-list detail-meta-list--info">
+                    <div class="detail-meta-row"><strong>Komposisi:</strong> <span>{!! nl2br(e($medicine->komposisi ?: '—')) !!}</span></div>
+                    <div class="detail-meta-row"><strong>Indikasi:</strong> <span>{!! nl2br(e($medicine->indikasi ?: '—')) !!}</span></div>
+                    <div class="detail-meta-row"><strong>Satuan:</strong> <span>{{ $medicine->satuan ?: '—' }}</span></div>
+                    <div class="detail-meta-row"><strong>Kemasan:</strong> <span>{{ $medicine->kemasan ?: '—' }}</span></div>
+                    <div class="detail-meta-row"><strong>Sediaan:</strong> <span>{{ $medicine->sediaan ? $medicine->sediaan_label : '—' }}</span></div>
+                    @if(filled($medicine->dosis))
                         <div class="detail-meta-row"><strong>Dosis / Aturan Pakai:</strong> <span>{{ $medicine->dosis }}</span></div>
-                    @endif
-
-                    @if(!empty($medicine->komposisi))
-                        <div class="detail-meta-row"><strong>Komposisi:</strong> <span>{!! nl2br(e($medicine->komposisi)) !!}</span></div>
-                    @endif
-
-                    @if(!empty($medicine->indikasi))
-                        <div class="detail-meta-row"><strong>Indikasi:</strong> <span>{!! nl2br(e($medicine->indikasi)) !!}</span></div>
                     @endif
                 </div>
 
                 <!-- Pembelian Produk -->
                 <div class="detail-purchase-box {{ $isRedLogoLocked ? 'is-red-logo-locked' : '' }}">
                     <h3 class="detail-purchase-title">
-                        <i class="fa-solid fa-bag-shopping"></i> Pilih Jumlah & Pembelian
+                        <i class="fa-solid fa-bag-shopping"></i> Pembelian
                     </h3>
 
                     @if(count($unitPriceValues) > 1)
@@ -811,18 +940,8 @@
                         </div>
                     @endif
 
-                    <div>
-                        <label class="detail-qty-label" for="qtyInput">Jumlah Pembelian</label>
-                        <div class="detail-qty-controls">
-                            <button type="button" class="detail-qty-btn {{ $isRedLogoLocked ? 'is-red-logo-locked' : '' }}" onclick="changeDetailQty(-1)" aria-label="Kurangi jumlah">−</button>
-                            <input type="number" id="qtyInput" class="detail-qty-input {{ $isRedLogoLocked ? 'is-red-logo-locked' : '' }}" value="1" min="1" max="{{ max(1, intdiv($stockUnits, max(1, (int) ($unitFactors[$defaultUnit] ?? 1)))) }}"
-                                oninput="updateDetailTotal()">
-                            <button type="button" class="detail-qty-btn {{ $isRedLogoLocked ? 'is-red-logo-locked' : '' }}" onclick="changeDetailQty(1)" aria-label="Tambah jumlah">+</button>
-                        </div>
-                    </div>
-
                     <div class="detail-total-bar {{ $isRedLogoLocked ? 'is-red-logo-locked' : '' }}">
-                        <span class="detail-total-label">Total Harga</span>
+                        <span class="detail-total-label">Harga per satuan</span>
                         <span id="totalHarga" class="detail-total-value">Rp {{ number_format($unitPriceValues[$defaultUnit] ?? $medicine->harga, 0, ',', '.') }}</span>
                     </div>
 
@@ -853,7 +972,7 @@
 
     @if($relatedMedicines->count() > 0)
     <div class="related-section">
-        <h2><i class="fa-solid fa-pills"></i> Produk Serupa &mdash; {{ $medicine->kategori }}</h2>
+        <h2><i class="fa-solid fa-pills"></i> Produk Serupa</h2>
         <div class="related-grid">
             @foreach($relatedMedicines as $related)
                 <a href="{{ route('medicines.show', ['id' => $related->id, 'from' => $detailOrigin, 'search' => $detailOrigin === 'home' ? request()->query('search') : null]) }}" class="related-card">
@@ -874,13 +993,21 @@
     </div>
     @endif
 </div>
+<dialog class="detail-meta-text-dialog" id="detailMetaTextDialog" aria-labelledby="detailMetaTextTitle">
+    <button type="button" id="closeDetailMetaTextDialog" aria-label="Tutup">&times;</button>
+    <h2 id="detailMetaTextTitle"></h2>
+    <p id="detailMetaTextContent"></p>
+</dialog>
 
 @endsection
 
 @section('scripts')
 <script>
 window.cartSettings = {
-    storageKey: 'apotekmedix_cart_retail'
+    storageKey: @json($detailCartStorageKey),
+    priceChannel: @json($priceChannel),
+    wholesaleOrder: @json($priceChannel === 'b2b'),
+    priceMode: @json($priceChannel)
 };
 </script>
 @include('partials.cart')
@@ -893,6 +1020,53 @@ document.querySelectorAll('.detail-gallery-thumb').forEach(button => {
         document.querySelectorAll('.detail-gallery-thumb').forEach(thumb => thumb.classList.toggle('active', thumb === button));
     });
 });
+
+(() => {
+    const dialog = document.getElementById('detailMetaTextDialog');
+    const title = document.getElementById('detailMetaTextTitle');
+    const content = document.getElementById('detailMetaTextContent');
+    const closeButton = document.getElementById('closeDetailMetaTextDialog');
+    if (!dialog || !title || !content || !closeButton) return;
+
+    const addLongTextButtons = () => {
+        document.querySelectorAll('.detail-meta-row').forEach(row => {
+            const value = row.querySelector(':scope > span');
+            if (!value) return;
+
+            const existingButton = row.querySelector('.detail-meta-more');
+            value.classList.add('is-collapsible');
+            const lineHeight = Number.parseFloat(window.getComputedStyle(value).lineHeight);
+            value.classList.remove('is-collapsible');
+            const fullHeight = value.getBoundingClientRect().height;
+            value.classList.add('is-collapsible');
+            if (Number.isFinite(lineHeight) && fullHeight <= lineHeight * 4 + 1) {
+                value.classList.remove('is-collapsible');
+                existingButton?.remove();
+                return;
+            }
+
+            if (!existingButton) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'detail-meta-more';
+                button.textContent = 'Lihat selengkapnya';
+                button.addEventListener('click', () => {
+                    title.textContent = row.querySelector('strong')?.innerText.replace(/:$/, '').trim() || 'Informasi produk';
+                    content.textContent = value.innerText.trim();
+                    dialog.showModal();
+                });
+                row.append(button);
+            }
+        });
+    };
+
+    closeButton.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', event => {
+        if (event.target === dialog) dialog.close();
+    });
+    addLongTextButtons();
+    window.addEventListener('resize', addLongTextButtons);
+})();
 
 const DETAIL_PRODUCT = {
     id: {{ (int) $medicine->id }},
@@ -933,46 +1107,11 @@ function selectDetailUnit(btn) {
     });
 
     const unitPrice = Number(DETAIL_PRODUCT.unitPrices[unit] || 0);
-    const availableQty = getSelectedUnitAvailableQty();
 
     const priceDisplayEl = document.getElementById('detailUnitPriceDisplay');
     if (priceDisplayEl) priceDisplayEl.textContent = formatRupiah(unitPrice);
-
-    const qtyInput = document.getElementById('qtyInput');
-    if (qtyInput) {
-        qtyInput.max = String(Math.max(1, availableQty));
-        if (parseInt(qtyInput.value, 10) > availableQty && availableQty > 0) {
-            qtyInput.value = String(availableQty);
-        }
-    }
-    updateDetailTotal();
-}
-
-function changeDetailQty(delta) {
-    if (DETAIL_PRODUCT.isRedLogoLocked) {
-        if (typeof openRedLogoModal === 'function') openRedLogoModal(DETAIL_PRODUCT.name);
-        return;
-    }
-    const input = document.getElementById('qtyInput');
-    if (!input) return;
-    const maxQty = Math.max(1, getSelectedUnitAvailableQty());
-    let val = (parseInt(input.value, 10) || 1) + delta;
-    if (val < 1) val = 1;
-    if (val > maxQty) val = maxQty;
-    input.value = val;
-    updateDetailTotal();
-}
-
-function updateDetailTotal() {
-    const input = document.getElementById('qtyInput');
-    const totalEl = document.getElementById('totalHarga');
-    if (!input || !totalEl) return;
-    const maxQty = Math.max(1, getSelectedUnitAvailableQty());
-    const qty = Math.max(1, Math.min(parseInt(input.value, 10) || 1, maxQty));
-    input.value = qty;
-    const unit = DETAIL_PRODUCT.selectedUnit || 'box';
-    const unitPrice = Number(DETAIL_PRODUCT.unitPrices[unit] || 0);
-    totalEl.textContent = formatRupiah(unitPrice * qty);
+    const priceTotalEl = document.getElementById('totalHarga');
+    if (priceTotalEl) priceTotalEl.textContent = formatRupiah(unitPrice);
 }
 
 function commitDetailItemToCart() {
@@ -987,8 +1126,7 @@ function commitDetailItemToCart() {
     const unitLabel = DETAIL_PRODUCT.unitLabels[unit] || unit;
     const unitPrice = Number(DETAIL_PRODUCT.unitPrices[unit] || 0);
     const availableQty = getSelectedUnitAvailableQty();
-    const qtyInput = document.getElementById('qtyInput');
-    const qty = Math.max(1, parseInt(qtyInput?.value, 10) || 1);
+    const qty = 1;
 
     if (availableQty < 1 || qty > availableQty) {
         alert('Stok untuk satuan ' + unitLabel + ' tidak mencukupi.');
@@ -997,8 +1135,11 @@ function commitDetailItemToCart() {
 
     const existing = cart.find(item => item.id === DETAIL_PRODUCT.id && (item.saleUnit || 'box') === unit);
     if (existing) {
-        const nextQty = Math.min(availableQty, existing.qty + qty);
-        existing.qty = nextQty;
+        if (existing.qty + qty > availableQty) {
+            alert('Stok untuk satuan ' + unitLabel + ' tidak mencukupi.');
+            return false;
+        }
+        existing.qty += qty;
         existing.price = unitPrice;
         existing.brand = DETAIL_PRODUCT.brand;
         existing.img = DETAIL_PRODUCT.img;

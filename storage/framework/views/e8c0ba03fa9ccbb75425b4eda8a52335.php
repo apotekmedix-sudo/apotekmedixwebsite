@@ -5,7 +5,7 @@
         ? 'product-gallery-link product-gallery-link--has-secondary'
         : 'product-gallery-link';
 ?>
-<a class="<?php echo e($galleryLinkClass); ?>" href="<?php echo e(route('medicines.show', $medicine->id)); ?>" aria-label="Lihat detail <?php echo e($medicine->nama_obat); ?>">
+<a class="<?php echo e($galleryLinkClass); ?>" href="<?php echo e(route('medicines.show', ['id' => $medicine->id, 'from' => $detailOrigin ?? null])); ?>" aria-label="Lihat detail <?php echo e($medicine->nama_obat); ?>">
     <?php if($gallery): ?>
         <img class="product-gallery-photo product-gallery-primary" src="<?php echo e($medicine->image_url); ?>" alt="<?php echo e($medicine->nama_obat); ?>" loading="lazy">
         <?php if(count($gallery) > 1): ?>

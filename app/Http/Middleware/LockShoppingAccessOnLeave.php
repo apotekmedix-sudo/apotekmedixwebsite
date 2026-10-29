@@ -22,6 +22,7 @@ class LockShoppingAccessOnLeave
         'checkout.index',
         'checkout.validate-discount',
         'orders.history.store',
+        'orders.invoice',
     ];
 
     public function handle(Request $request, Closure $next): Response

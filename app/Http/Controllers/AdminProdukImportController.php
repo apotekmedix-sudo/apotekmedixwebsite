@@ -25,6 +25,8 @@ class AdminProdukImportController extends Controller
             'mode' => ['nullable', 'in:complete,bulk_edit'],
         ]);
 
+        set_time_limit(600);
+
         $file      = $request->file('file');
         $extension = strtolower($file->getClientOriginalExtension());
         $mode = $request->input('mode', 'legacy');
@@ -269,6 +271,7 @@ class AdminProdukImportController extends Controller
         $imported      = 0;
         $skipped       = 0;
         $downloadedImages = [];
+        $imageImportWarnings = [];
         $validKategori = array_keys(HomepageProductCategories::options());
         $medicineColumns = array_flip(Schema::getColumnListing('medicines'));
         if (isset($headerKeySet['HARGA_INTERNAL']) && !isset($medicineColumns['harga_internal'])) {
@@ -487,13 +490,21 @@ class AdminProdukImportController extends Controller
                 }
                 if ($exportRow) {
                     if (trim((string) ($data['LINK_FOTO'] ?? '')) !== '') {
-                        $attributes['gambar'] = $this->parseProductImageLink($data['LINK_FOTO'], $downloadedImages);
+                        try {
+                            $attributes['gambar'] = $this->parseProductImageLink($data['LINK_FOTO'], $downloadedImages);
+                        } catch (\InvalidArgumentException $exception) {
+                            $imageImportWarnings[] = "{$namaProduk} (LINK FOTO 1): {$exception->getMessage()}";
+                        }
                     }
                 }
                 if (trim((string) ($data['LINK_FOTO_2'] ?? '')) !== '') {
-                    $attributes['gambar_tambahan'] = [
-                        $this->parseProductImageLink($data['LINK_FOTO_2'], $downloadedImages),
-                    ];
+                    try {
+                        $attributes['gambar_tambahan'] = [
+                            $this->parseProductImageLink($data['LINK_FOTO_2'], $downloadedImages),
+                        ];
+                    } catch (\InvalidArgumentException $exception) {
+                        $imageImportWarnings[] = "{$namaProduk} (LINK FOTO 2): {$exception->getMessage()}";
+                    }
                 }
                 foreach ([
                     'PROMO_B2B_PERCENT' => 'promo_b2b_percent',
@@ -580,7 +591,12 @@ class AdminProdukImportController extends Controller
             ? "Import selesai: {$imported} produk ditambahkan/dilengkapi, {$skipped} baris dilewati."
             : "Import berhasil: {$imported} produk diperbarui, {$skipped} baris dilewati.";
 
-        return redirect()->route('admin.produk.index')->with('success', $message);
+        $response = redirect()->route('admin.produk.index')->with('success', $message);
+        if ($imageImportWarnings !== []) {
+            $response->with('warning', $imageImportWarnings);
+        }
+
+        return $response;
     }
 
     private function onlyFillMissingProductFields(Medicine $product, array $attributes, array $data): array
@@ -854,7 +870,7 @@ class AdminProdukImportController extends Controller
 
     private function parseProductImageLink($value, array &$downloadedImages): ?string
     {
-        $value = trim((string) $value);
+        $value = $this->normalizeProductImageLink((string) $value);
         if ($value === '') {
             return null;
         }
@@ -894,6 +910,40 @@ class AdminProdukImportController extends Controller
         }
 
         return $path;
+    }
+
+    private function normalizeProductImageLink(string $value): string
+    {
+        $value = trim($value);
+        if (str_starts_with(strtolower($value), 'blob:')) {
+            throw new \InvalidArgumentException(
+                'LINK FOTO berformat blob: hanya tersedia di browser asal dan tidak dapat diunduh oleh server. Gunakan URL gambar HTTPS publik langsung, seperti link ibyteimg.com.'
+            );
+        }
+
+        if (preg_match('/^=HYPERLINK\(\s*"([^"]+)"/i', $value, $matches)) {
+            $value = $matches[1];
+        } elseif (preg_match('/^\[[^\]]*\]\((https?:\/\/.+)\)$/i', $value, $matches)) {
+            $value = $matches[1];
+        } elseif (preg_match('/<a\b[^>]*\bhref=["\']([^"\']+)["\'][^>]*>/i', $value, $matches)) {
+            $value = html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        } else {
+            $value = trim($value, " \t\n\r\0\x0B\"'");
+            if (str_starts_with($value, '<') && str_ends_with($value, '>')) {
+                $value = trim(substr($value, 1, -1));
+            }
+        }
+
+        if (preg_match('~https?://[^\s<>"\]\)]+~i', $value, $matches)) {
+            $value = rtrim($matches[0], '.,;:!?');
+        }
+
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        if (preg_match('/^www\./i', $value)) {
+            $value = 'https://' . $value;
+        }
+
+        return trim($value);
     }
 
     private function parsePackaging(string $value): array

@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $__env->yieldContent('title', 'Admin - Apotek Medix'); ?></title>
+    <link rel="icon" type="image/x-icon" href="<?php echo e(asset('favicon.ico')); ?>">
+
+    <!-- Font Awesome (icons for admin UI) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
+
+    <style>
+        :root {
+            --primary: #0F172A;
+            --secondary: #1E293B;
+            --accent: #84CC16;
+            --dark: #1E293B;
+            --light: #F8FAFC;
+            --sidebar: #0F172A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+        }
+
+        .admin-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(180deg, #0F172A 0%, #111C31 100%);
+            color: white;
+            width: 250px;
+            padding: 2rem 0;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 12px rgba(0,0,0,0.3);
+        }
+
+        .sidebar-brand {
+            padding: 0 1.5rem;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin: 0;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            color: #d1d5db;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu a:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: var(--accent);
+        }
+
+        .sidebar-menu a.active {
+            background: rgba(16,185,129,0.1);
+            color: var(--accent);
+            border-left-color: var(--accent);
+        }
+
+        .sidebar-menu a i {
+            font-size: 1.25rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 2rem;
+        }
+
+        /* Topbar */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(90deg, white 0%, #F5F7FA 100%);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .topbar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(30, 136, 229, 0.3);
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left-color: var(--primary);
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            color: #92400e;
+            border-left-color: #f59e0b;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #7f1d1d;
+            border-left-color: #ef4444;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-top: 4px solid var(--primary);
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        /* Table */
+        .table-container {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table thead {
+            background: var(--light);
+        }
+
+        .table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .form-errors {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Card */
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1000;
+                width: 260px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+            }
+
+            .sidebar-overlay.open {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 0;
+                padding-bottom: 70px;
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* Topbar sticky di atas */
+            .topbar {
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                border-radius: 0;
+                margin-bottom: 0;
+                padding: 0.85rem 1rem;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+
+            .topbar-title {
+                font-size: 1rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 160px;
+            }
+
+            /* Sembunyikan nama user, tampilkan avatar saja */
+            .user-info > div:last-child {
+                display: none;
+            }
+
+            .hamburger-btn {
+                display: flex !important;
+            }
+
+            /* Konten dalam padding */
+            .main-content > *:not(.topbar) {
+                padding-left: 0.85rem;
+                padding-right: 0.85rem;
+            }
+
+            .main-content > .alert {
+                margin-top: 0.85rem;
+            }
+
+            .main-content > .stats-grid {
+                margin-top: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.65rem;
+                margin-bottom: 1rem;
+            }
+
+            .stat-card {
+                padding: 0.9rem 1rem;
+                border-radius: 0.65rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .stat-label {
+                font-size: 0.72rem;
+            }
+
+            .card {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1rem;
+            }
+
+            .card-title {
+                font-size: 0.95rem;
+                margin-bottom: 0.85rem;
+            }
+
+            /* Quick actions grid 2 kolom */
+            .quick-actions-grid {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.6rem;
+            }
+
+            .quick-actions-grid .btn {
+                text-align: center;
+                font-size: 0.78rem;
+                padding: 0.6rem 0.4rem;
+                line-height: 1.3;
+            }
+
+            /* Table scroll horizontal */
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 0.65rem;
+            }
+
+            .table {
+                font-size: 0.78rem;
+                min-width: 480px;
+            }
+
+            .table th,
+            .table td {
+                padding: 0.55rem 0.65rem;
+                white-space: nowrap;
+            }
+
+            .bottom-nav {
+                display: flex !important;
+            }
+
+            .logout-btn {
+                font-size: 0.78rem;
+                padding: 0.4rem 0.65rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .topbar-title {
+                font-size: 0.9rem;
+                max-width: 120px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+
+            .stat-card {
+                padding: 0.75rem;
+            }
+
+            .stat-value {
+                font-size: 1.3rem;
+            }
+
+            .stat-label {
+                font-size: 0.68rem;
+            }
+
+            .main-content > *:not(.topbar) {
+                padding-left: 0.65rem;
+                padding-right: 0.65rem;
+            }
+        }
+
+        /* Hamburger button - hidden on desktop */
+        .hamburger-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        /* Bottom navigation - hidden on desktop */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            z-index: 998;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            padding: 0.5rem 0;
+        }
+
+        .bottom-nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.4rem 0.75rem;
+            text-decoration: none;
+            color: #6b7280;
+            font-size: 0.65rem;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.2s;
+            min-width: 55px;
+        }
+
+        .bottom-nav-item span:first-child {
+            font-size: 1.3rem;
+        }
+
+        .bottom-nav-item.active,
+        .bottom-nav-item:hover {
+            color: var(--primary);
+        }
+
+        .bottom-nav-item.active span:first-child {
+            transform: scale(1.15);
+        }
+    </style>
+
+    <?php echo $__env->yieldContent('styles'); ?>
+</head>
+<body>
+    <?php
+        $tempoUnpaidOrders = \Illuminate\Support\Facades\Schema::hasTable('purchase_histories')
+            ? \App\Models\PurchaseHistory::whereRaw('LOWER(TRIM(COALESCE(payment_method, ""))) = ?', ['tempo'])
+                ->where(fn ($q) => $q->whereNull('payment_status')->orWhere('payment_status', '!=', 'paid'))
+                ->where(fn ($q) => $q->whereNull('receipt_status')->orWhere('receipt_status', '!=', 'cancelled'))
+                ->where(fn ($q) => $q->whereNull('approval_status')->orWhere('approval_status', '!=', 'rejected'))
+                ->get()
+            : collect();
+        $tempoAlertCount = $tempoUnpaidOrders->count();
+        $tempoUrgentCount = $tempoUnpaidOrders->filter(fn ($o) => in_array($o->tempo_due_status, ['overdue', 'due_today', 'due_soon'], true))->count();
+    ?>
+    <div class="admin-container">
+        <!-- Sidebar Overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <img src="<?php echo e(asset('LOGO APOTEK MEDIX.PNG')); ?>" alt="Apotek Medix" style="height: 35px; object-fit: contain;">
+                <span style="white-space: nowrap;">Admin</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="<?php echo e(route('admin.dashboard')); ?>" class="<?php if(Route::current()->getName() == 'admin.dashboard'): ?> active <?php endif; ?>">
+                        <span>📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo e(route('admin.produk.index')); ?>" class="<?php if(Route::current()->getName() === 'admin.produk.index'): ?> active <?php endif; ?>">
+                        <span>🛒</span>
+                        <span>Produk Kami</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo e(route('admin.inventory.index')); ?>" class="<?php if(str_starts_with(Route::current()->getName() ?? '', 'admin.inventory')): ?> active <?php endif; ?>">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <span>Laporan Stok</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo e(route('admin.produk-pbf.index')); ?>" class="<?php if(Route::current()->getName() === 'admin.produk-pbf.index'): ?> active <?php endif; ?>">
+                        <span>📦</span>
+                        <span>Pesan ke PBF</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo e(route('admin.supplier-procurement.index')); ?>" class="<?php if(str_starts_with(Route::current()->getName() ?? '', 'admin.supplier-procurement')): ?> active <?php endif; ?>">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                        <span>Pembelian Supplier</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo e(route('admin.purchase-history.index')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'admin.purchase-history')): ?> active <?php endif; ?>">
+                        <i class="fa-solid fa-receipt"></i>
+                        <span>Transaksi</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo e(route('cashier.dashboard')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'cashier.')): ?> active <?php endif; ?>">
+                        <i class="fa-solid fa-cash-register"></i>
+                        <span>Dashboard Kasir</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo e(route('admin.customers.index')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'admin.customers')): ?> active <?php endif; ?>">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Data Customer</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo e(route('admin.access-codes.index')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'admin.access-codes')): ?> active <?php endif; ?>">
+                        <i class="fa-solid fa-key"></i>
+                        <span>Aktivasi Kode Belanja</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo e(route('admin.promotions.index')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'admin.promotions') || str_contains(Route::current()->getName() ?? '', 'admin.discount-codes')): ?> active <?php endif; ?>">
+                        <i class="fa-solid fa-tags"></i>
+                        <span>Promo & Diskon</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo e(route('home')); ?>">
+                        <span>🏠</span>
+                        <span>Kembali ke Home</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Topbar -->
+            <div class="topbar">
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
+                    <h1 class="topbar-title"><?php echo $__env->yieldContent('page-title', 'Dashboard'); ?></h1>
+                    <div style="display:inline-flex;align-items:center;gap:0.55rem;padding:0.42rem 0.85rem;border-radius:999px;background:#f8fafc;border:1px solid #dbe4f0;font-size:0.8rem;font-weight:700;color:#0f172a;white-space:nowrap;margin-left:0.5rem;" title="Waktu Realtime WIB">
+                        <span style="width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.2);"></span>
+                        <span id="adminRealtimeDate" style="color:#475569;font-weight:600;"><?php echo e(now()->timezone('Asia/Jakarta')->translatedFormat('l, d M Y')); ?></span>
+                        <span style="color:#cbd5e1;">•</span>
+                        <span id="adminRealtimeTime" style="color:#0052cc;font-weight:800;font-variant-numeric:tabular-nums;"><?php echo e(now()->timezone('Asia/Jakarta')->format('H:i:s')); ?> WIB</span>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <a href="<?php echo e(route('admin.notifications.index')); ?>" style="position:relative;display:inline-flex;align-items:center;gap:0.45rem;padding:0.48rem 0.85rem;border-radius:999px;background:<?php echo e(($tempoUrgentCount ?? 0) > 0 ? '#fef2f2' : '#eff6ff'); ?>;border:1px solid <?php echo e(($tempoUrgentCount ?? 0) > 0 ? '#fecaca' : '#bfdbfe'); ?>;color:<?php echo e(($tempoUrgentCount ?? 0) > 0 ? '#dc2626' : '#0052cc'); ?>;font-size:0.8rem;font-weight:800;text-decoration:none;white-space:nowrap;" title="Lihat Notifikasi Jatuh Tempo">
+                        <i class="fa-solid fa-bell"></i>
+                        <span>Notifikasi Tempo</span>
+                        <?php if(($tempoAlertCount ?? 0) > 0): ?>
+                            <span style="background:<?php echo e(($tempoUrgentCount ?? 0) > 0 ? '#dc2626' : '#0052cc'); ?>;color:#ffffff;font-size:0.7rem;font-weight:800;padding:0.1rem 0.45rem;border-radius:999px;"><?php echo e($tempoAlertCount); ?></span>
+                        <?php endif; ?>
+                    </a>
+                    <div class="user-info">
+                        <div class="user-avatar"><?php echo e(strtoupper(substr(auth()->user()->name, 0, 1))); ?></div>
+                        <div>
+                            <div style="font-weight: 600;"><?php echo e(auth()->user()->name); ?></div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Admin</div>
+                        </div>
+                    </div>
+                    <form action="<?php echo e(route('logout')); ?>" method="POST" style="display: inline;">
+                        <?php echo csrf_field(); ?>
+                        <button type="submit" class="logout-btn">Logout</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Alert Messages -->
+            <?php if($message = Session::get('success')): ?>
+                <div class="alert alert-success">
+                    ✓ <?php echo e($message); ?>
+
+                </div>
+            <?php endif; ?>
+
+            <?php if($imageImportWarnings = Session::get('warning')): ?>
+                <div class="alert alert-warning" role="status">
+                    <strong>Impor tetap berhasil, tetapi <?php echo e(count($imageImportWarnings)); ?> foto tidak dapat disimpan. Produk tetap diimpor; ganti tautan foto berikut agar dapat dilengkapi:</strong>
+                    <ul style="margin:0.5rem 0 0 1.25rem;padding:0;">
+                        <?php $__currentLoopData = $imageImportWarnings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $imageImportWarning): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <li style="font-size:0.875rem;margin-top:0.25rem;"><?php echo e($imageImportWarning); ?></li>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
+            <?php if($message = Session::get('error')): ?>
+                <div class="alert alert-error">
+                    ✕ <?php echo e($message); ?>
+
+                </div>
+            <?php endif; ?>
+
+            <?php if($errors->any()): ?>
+                <div class="alert alert-error" style="margin-bottom:1rem;">
+                    <strong>⚠️ Terdapat kesalahan:</strong>
+                    <ul style="margin:0.5rem 0 0 1.25rem;padding:0;">
+                        <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <li style="font-size:0.875rem;"><?php echo e($error); ?></li>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
+            <!-- Content -->
+            <?php echo $__env->yieldContent('content'); ?>
+        </main>
+    </div>
+
+    <?php echo $__env->yieldContent('scripts'); ?>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('open');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('open');
+        }
+
+        (function() {
+            const dEl = document.getElementById('adminRealtimeDate');
+            const tEl = document.getElementById('adminRealtimeTime');
+            const tick = () => {
+                const now = new Date();
+                if (dEl) dEl.textContent = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' }).format(now);
+                if (tEl) tEl.textContent = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now).replace(/\./g, ':') + ' WIB';
+            };
+            tick();
+            setInterval(tick, 1000);
+        })();
+    </script>
+
+    <!-- Bottom Navigation (mobile only) -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-items">
+            <a href="<?php echo e(route('admin.dashboard')); ?>" class="bottom-nav-item <?php if(Route::current()->getName() == 'admin.dashboard'): ?> active <?php endif; ?>">
+                <span>📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="<?php echo e(route('admin.produk.index')); ?>" class="bottom-nav-item <?php if(str_contains(Route::current()->getName() ?? '', 'admin.produk')): ?> active <?php endif; ?>">
+                <span>🛒</span>
+                <span>Produk</span>
+            </a>
+            <a href="<?php echo e(route('home')); ?>" class="bottom-nav-item">
+                <span>🏠</span>
+                <span>Home</span>
+            </a>
+        </div>
+    </nav>
+</body>
+</html>
+<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views\layouts\admin.blade.php ENDPATH**/ ?>

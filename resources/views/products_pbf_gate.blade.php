@@ -53,23 +53,26 @@
     <h2 id="requestAccessTitle">Permohonan kode akses</h2>
     <p>Isi data berikut untuk mengajukan permohonan kode akses B2B melalui WhatsApp.</p>
     <form id="requestAccessForm">
-        <label for="requesterName">Nama apoteker / dokter</label>
+        <label for="requesterName">Nama apoteker / dokter (wajib)</label>
         <input id="requesterName" name="requester_name" type="text" autocomplete="name" required>
 
-        <label for="outletName">Nama outlet</label>
-        <input id="outletName" name="outlet_name" type="text" autocomplete="organization" required>
+        <label for="outletName">Nama outlet (opsional)</label>
+        <input id="outletName" name="outlet_name" type="text" autocomplete="organization">
 
-        <label for="siaNumber">Nomor SIA</label>
-        <input id="siaNumber" name="sia" type="text" required>
+        <label for="siaNumber">Nomor SIA (opsional)</label>
+        <input id="siaNumber" name="sia" type="text">
 
-        <label for="sipaNumber">Nomor SIPA</label>
-        <input id="sipaNumber" name="sipa" type="text" required>
+        <label for="sipaNumber">Nomor SIPA / SIP (opsional)</label>
+        <input id="sipaNumber" name="sipa" type="text">
 
-        <label for="contactPhone">Nomor telepon</label>
+        <label for="strNumber">Nomor STR (opsional)</label>
+        <input id="strNumber" name="str" type="text">
+
+        <label for="contactPhone">Nomor telepon (wajib)</label>
         <input id="contactPhone" name="phone" type="tel" autocomplete="tel" required>
 
-        <label for="outletAddress">Alamat outlet</label>
-        <input id="outletAddress" name="address" type="text" autocomplete="street-address" required>
+        <label for="outletAddress">Alamat outlet (opsional)</label>
+        <input id="outletAddress" name="address" type="text" autocomplete="street-address">
 
         <button type="submit">Chat WhatsApp untuk meminta kode</button>
     </form>
@@ -98,11 +101,16 @@
             'Halo Admin Apotek Medix, saya ingin mengajukan permohonan kode akses B2B.',
             '',
             `Nama apoteker/dokter: ${formData.get('requester_name')}`,
-            `Nama outlet: ${formData.get('outlet_name')}`,
-            `Nomor SIA: ${formData.get('sia')}`,
-            `Nomor SIPA: ${formData.get('sipa')}`,
             `Nomor telepon: ${formData.get('phone')}`,
-            `Alamat outlet: ${formData.get('address')}`,
+            ...[
+                ['Nama outlet', formData.get('outlet_name')],
+                ['Nomor SIA', formData.get('sia')],
+                ['Nomor SIPA / SIP', formData.get('sipa')],
+                ['Nomor STR', formData.get('str')],
+                ['Alamat outlet', formData.get('address')],
+            ]
+                .filter(([, value]) => String(value).trim() !== '')
+                .map(([label, value]) => `${label}: ${value}`),
             '',
             'Mohon informasi dan bantuan untuk aktivasi kode akses. Terima kasih.'
         ].join('\n');

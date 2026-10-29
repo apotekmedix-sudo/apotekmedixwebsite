@@ -1,10 +1,13 @@
 <style>
     .products-main .medicines-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 1.25rem;
         align-items: stretch;
     }
     .products-main .medicine-card {
+        display: grid;
+        grid-template-columns: minmax(130px, 30%) minmax(0, 1fr);
+        grid-template-rows: auto 1fr;
         padding: 0.75rem;
         border: 1px solid #dbe3ec;
         border-radius: 18px;
@@ -17,6 +20,7 @@
         box-shadow: 0 14px 28px rgba(15, 23, 42, 0.13);
     }
     .medicine-card-brand {
+        grid-column: 1 / -1;
         padding: 0.05rem 0.15rem 0.55rem;
         color: #111827;
         font-size: 0.82rem;
@@ -24,9 +28,13 @@
         text-align: right;
     }
     .products-main .medicine-image {
+        grid-column: 1;
+        grid-row: 2;
+        align-self: start;
         width: 100%;
-        height: auto;
-        aspect-ratio: 1 / 0.92;
+        height: 180px;
+        min-height: 0;
+        aspect-ratio: auto;
         border-radius: 12px;
         background: #e4f3ff;
         font-size: 2rem;
@@ -59,6 +67,9 @@
         padding: 0.55rem;
     }
     .products-main .medicine-body {
+        grid-column: 2;
+        grid-row: 2;
+        min-width: 0;
         padding: 0.8rem 0.15rem 0.15rem;
         gap: 0.45rem;
     }
@@ -350,7 +361,7 @@
         background: #d1fae5;
     }
     @media (max-width: 1100px) {
-        .products-main .medicines-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .products-main .medicines-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 900px) {
         .products-main .medicines-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -396,7 +407,8 @@
         .products-main { padding: 1.25rem 0 3rem; }
         .products-main .medicines-grid { grid-template-columns: minmax(0, 1fr); gap: 0.9rem; }
         .products-main .medicine-card { padding: 0.75rem; border-radius: 16px; }
-        .products-main .medicine-image { aspect-ratio: 1.9 / 1; }
+        .products-main .medicine-card { grid-template-columns: minmax(100px, 30%) minmax(0, 1fr); }
+        .products-main .medicine-image { height: 150px; }
         .products-main .medicine-body { padding: 0.7rem 0.1rem 0.1rem; gap: 0.4rem; }
         .products-main .medicine-name { font-size: 1rem; }
         .medicine-card-details { font-size: 0.82rem; }
@@ -438,7 +450,8 @@
     .products-main .btn-cart { min-height: 42px; font-size: 0.84rem; }
     }
     @media (max-width: 380px) {
-        .products-main .medicine-image { aspect-ratio: 1.6 / 1; }
+        .products-main .medicine-card { grid-template-columns: minmax(90px, 30%) minmax(0, 1fr); }
+        .products-main .medicine-image { height: 130px; }
         .products-main .medicines-grid { grid-template-columns: minmax(0, 1fr); }
         .product-unit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }

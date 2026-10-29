@@ -52,13 +52,25 @@ class ProductController extends Controller
         $medicine = Medicine::findOrFail($id);
 
         StockAvailability::annotate($medicine->newCollection([$medicine]));
-        $relatedQuery = Medicine::nonPbf()
-            ->availableForB2c()
-            ->where('kategori', $medicine->kategori)
-            ->where('id', '!=', $medicine->id);
-        $relatedMedicines = StockAvailability::prioritizeAvailableStock($relatedQuery)
-            ->limit(4)
-            ->get();
+        $similarityConditions = array_filter([
+            'indikasi' => trim((string) $medicine->indikasi),
+            'komposisi' => trim((string) $medicine->komposisi),
+        ], static fn (string $value): bool => $value !== '');
+
+        $relatedMedicines = collect();
+        if ($similarityConditions !== []) {
+            $relatedQuery = Medicine::nonPbf()
+                ->availableForB2c()
+                ->where('id', '!=', $medicine->id)
+                ->where(function ($query) use ($similarityConditions): void {
+                    foreach ($similarityConditions as $attribute => $value) {
+                        $query->orWhere($attribute, $value);
+                    }
+                });
+            $relatedMedicines = StockAvailability::prioritizeAvailableStock($relatedQuery)
+                ->limit(4)
+                ->get();
+        }
         StockAvailability::annotate($relatedMedicines);
         return view('medicines.detail', compact('medicine', 'relatedMedicines'));
     }
@@ -89,6 +101,30 @@ class ProductController extends Controller
         $dosis           = $request->get('dosis', '');
         $golongan        = $request->get('golongan', '');
         $sort            = $request->get('sort', 'terbaru');
+
+        $promoQuery = Medicine::where('harga_grosir', '>', 0)
+            ->where('promo_b2b_percent', '>', 0);
+        if ($search !== '') {
+            $promoQuery->search($search);
+        }
+        HomepageProductCategories::apply($promoQuery, $kategoriPilihan);
+        $promoQuery->filterByAttributes([
+            'indikasi'  => $indikasi,
+            'komposisi' => $komposisi,
+            'sediaan'   => $sediaan,
+            'dosis'     => $dosis,
+            'golongan'  => $golongan,
+        ]);
+        if ($perusahaan) {
+            $promoQuery->where('kategori', $perusahaan);
+        }
+        StockAvailability::prioritizeAvailableStock($promoQuery);
+        $promoProducts = $promoQuery
+            ->orderByDesc('promo_b2b_percent')
+            ->orderByDesc('terjual')
+            ->limit(8)
+            ->get();
+        StockAvailability::annotate($promoProducts);
 
         $query = Medicine::where('harga_grosir', '>', 0);
 
@@ -135,7 +171,7 @@ class ProductController extends Controller
         $golonganList    = $attrOptions['golonganList'];
 
         return view('products_pbf', compact(
-            'medicines', 'search', 'kategoriPilihan', 'kategoriPilihanOptions', 'perusahaan',
+            'medicines', 'promoProducts', 'search', 'kategoriPilihan', 'kategoriPilihanOptions', 'perusahaan',
             'indikasi', 'komposisi', 'sediaan', 'dosis', 'golongan',
             'sediaanList', 'golonganList',
             'sort', 'total', 'perusahaanList'
@@ -441,16 +477,25 @@ class ProductController extends Controller
             : null;
 
         $productCatalog = Medicine::query()
-            ->get(['id', 'nama_obat', 'kategori', 'brand', 'satuan', 'sediaan', 'gambar', 'gambar_tambahan'])
-            ->mapWithKeys(fn (Medicine $med) => [
-                $med->id => [
+            ->get(['id', 'nama_obat', 'kategori', 'brand', 'satuan', 'sediaan', 'gambar', 'gambar_tambahan', 'logo'])
+            ->mapWithKeys(function (Medicine $med): array {
+                $rawLogo = mb_strtolower(trim((string) $med->logo));
+                $logoColor = match ($rawLogo) {
+                    'hijau', 'green', 'logo hijau' => 'green',
+                    'merah', 'red', 'logo merah', 'k' => 'red',
+                    'biru', 'blue', 'logo biru' => 'blue',
+                    default => $med->isRedLogo() ? 'red' : null,
+                };
+
+                return [$med->id => [
                     'image_url' => $med->image_url,
                     'nama_obat' => $med->nama_obat,
                     'kategori' => $med->brand ?: $med->kategori,
                     'unit_label' => $med->package_unit_label,
                     'sediaan_label' => $med->sediaan_label,
-                ],
-            ])
+                    'logo_color' => $logoColor,
+                ]];
+            })
             ->all();
 
         return view('checkout', compact('defaultShippingAddress', 'productCatalog'));

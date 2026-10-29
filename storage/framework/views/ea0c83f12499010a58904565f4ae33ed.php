@@ -416,6 +416,31 @@
     .btn-cart:hover { background: #e3f2fd; transform: translateY(-1px); }
     .btn-cart.added { background: #d1fae5; color: #065f46; border-color: #34d399; }
 
+    .pbf-promo-section {
+        margin-bottom: 2rem;
+    }
+    .pbf-promo-heading {
+        margin: 0 0 1rem;
+        color: #0f172a !important;
+        font-size: 1.35rem;
+        font-weight: 800;
+    }
+    .pbf-promo-card .prod-img {
+        position: relative;
+    }
+    .pbf-promo-badge {
+        position: absolute;
+        z-index: 3;
+        bottom: .55rem;
+        left: .55rem;
+        padding: .3rem .55rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 800;
+        line-height: 1.2;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .2);
+    }
+
     .empty-state { text-align: center; padding: 5rem 2rem; background: white; border-radius: 16px; border: 1px solid #e5e7eb; }
     .empty-state h3 { font-size: 1.4rem; font-weight: 700; color: #1f2937; margin: 1rem 0 0.5rem; }
     .empty-state p  { color: #6b7280; }
@@ -546,7 +571,7 @@
             <div class="filter-group" style="flex: 2; min-width: 200px;">
                 <label class="filter-label"><i class="fa-solid fa-magnifying-glass"></i> Cari Produk</label>
                 <input type="text" name="search" class="filter-input"
-                       placeholder="Cari nama obat, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan..."
+                       placeholder="Cari nama obat, deskripsi, indikasi, komposisi, sediaan (sirup/tablet), dosis, golongan..."
                        value="<?php echo e($search); ?>">
             </div>
             <div class="filter-group">
@@ -587,6 +612,70 @@
 
         </form>
 
+        <?php if($promoProducts->isNotEmpty()): ?>
+            <section class="pbf-promo-section" aria-labelledby="pbfPromoHeading">
+                <h2 class="pbf-promo-heading" id="pbfPromoHeading">
+                    <i class="fa-solid fa-tags" aria-hidden="true"></i> Produk Promo B2B
+                </h2>
+                <div class="medicines-grid home-b2c-grid-4x5">
+                    <?php $__currentLoopData = $promoProducts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $medicine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php
+                            $promoPercent = $medicine->getPromoPercent('b2b');
+                            $promoPrice = $medicine->getChannelPromoPrice('b2b');
+                            $promoStockUnits = (int) $medicine->available_stock_units;
+                            $promoStock = $promoStockUnits / max(1, $medicine->units_per_box);
+                        ?>
+                        <article class="prod-card pbf-promo-card">
+                            <div class="medicine-card-brand">Apotek Medix</div>
+                            <div class="prod-img">
+                                <?php echo $__env->make('partials.product-gallery-image', ['medicine' => $medicine, 'detailOrigin' => 'b2b'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                                <?php echo $__env->make('partials.product-logo-marker', ['medicine' => $medicine], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                                <span class="pbf-promo-badge product-discount-badge">PROMO B2B -<?php echo e($promoPercent); ?>%</span>
+                            </div>
+                            <div class="prod-body">
+                                <div class="medicine-card-principal"><?php echo e($medicine->brand ?: $medicine->kategori); ?></div>
+                                <h3 class="prod-name">
+                                    <a href="<?php echo e(route('medicines.show', ['id' => $medicine->id, 'from' => 'b2b'])); ?>"><?php echo e($medicine->nama_obat); ?></a>
+                                </h3>
+                                <?php echo $__env->make('partials.product-unit-selector', [
+                                    'medicine' => $medicine,
+                                    'unitSelectId' => 'pbf-promo-unit-' . $medicine->id,
+                                    'priceChannel' => 'b2b',
+                                    'showUnitChoices' => false,
+                                ], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                                <span class="product-stock <?php echo e($promoStock <= 0 ? 'empty' : ($promoStock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($medicine->id); ?>" data-stock-unit-factor="<?php echo e(max(1, $medicine->units_per_box)); ?>">
+                                    <i class="fa-solid <?php echo e($promoStock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
+                                    <?php echo e($promoStock > 0 ? 'Stok: ' . rtrim(rtrim(number_format($promoStock, 6, ',', '.'), '0'), ',') : 'Stok habis'); ?>
+
+                                </span>
+                                <div class="medicine-meta medicine-meta-row">
+                                    <span class="medicine-meta-sediaan">
+                                        <?php if($medicine->sediaan_label): ?>
+                                            <i class="fa-solid fa-cube"></i> <span>Sediaan: <?php echo e($medicine->sediaan_label); ?></span>
+                                        <?php endif; ?>
+                                    </span>
+                                    <span class="medicine-sold-badge" data-sold-product-id="<?php echo e($medicine->id); ?>">
+                                        <i class="fa-solid fa-fire-flame-curved"></i> Terjual <?php echo e(number_format((int) $medicine->terjual, 0, ',', '.')); ?>
+
+                                    </span>
+                                </div>
+                                <button class="btn-cart" data-stock-cart data-sales-channel="b2b" <?php if($promoStock <= 0): echo 'disabled'; endif; ?>
+                                        data-product-id="<?php echo e($medicine->id); ?>"
+                                        data-package-unit-label="<?php echo e($medicine->package_unit_label); ?>"
+                                        data-product-name="<?php echo e($medicine->nama_obat); ?>"
+                                        data-product-price="<?php echo e($promoPrice); ?>"
+                                        data-product-image="<?php echo e($medicine->image_url ?: ''); ?>"
+                                        data-product-brand="<?php echo e($medicine->brand ?: $medicine->kategori); ?>"
+                                        onclick="addToCart(<?php echo e($medicine->id); ?>, this.dataset.productName, Number(this.dataset.productPrice), this.dataset.productImage, this.dataset.productBrand, this, 'pbf-promo-unit-<?php echo e($medicine->id); ?>')">
+                                    <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang
+                                </button>
+                            </div>
+                        </article>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </div>
+            </section>
+        <?php endif; ?>
+
         <div class="result-info">
             <p>
                 Menampilkan <strong><?php echo e($medicines->firstItem() ?? 0); ?>–<?php echo e($medicines->lastItem() ?? 0); ?></strong>
@@ -598,17 +687,17 @@
         </div>
 
         <?php if($medicines->count() > 0): ?>
-            <div class="medicines-grid">
+            <div class="medicines-grid home-b2c-grid-4x5">
                 <?php $__currentLoopData = $medicines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $medicine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <div class="medicine-card">
+                    <div class="prod-card">
                         <div class="medicine-card-brand">Apotek Medix</div>
-                        <div class="medicine-image">
-                            <?php echo $__env->make('partials.product-gallery-image', ['medicine' => $medicine], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                        <div class="prod-img">
+                            <?php echo $__env->make('partials.product-gallery-image', ['medicine' => $medicine, 'detailOrigin' => 'b2b'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                             <?php echo $__env->make('partials.product-logo-marker', ['medicine' => $medicine], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                         </div>
-                        <div class="medicine-body">
+                        <div class="prod-body">
                             <div class="medicine-card-principal"><?php echo e($medicine->brand ?: $medicine->kategori); ?></div>
-                            <h3 class="medicine-name"><a href="<?php echo e(route('medicines.show', ['id' => $medicine->id, 'from' => 'b2b'])); ?>"><?php echo e($medicine->nama_obat); ?></a></h3>
+                            <h3 class="prod-name"><a href="<?php echo e(route('medicines.show', ['id' => $medicine->id, 'from' => 'b2b'])); ?>"><?php echo e($medicine->nama_obat); ?></a></h3>
 
                             <?php
                                 $basePrice = $medicine->getChannelBasePrice('b2b');
@@ -616,8 +705,6 @@
                             ?>
                             <div class="medicine-card-details">
                                 <p title="<?php echo e($medicine->komposisi ?: '—'); ?>"><strong>Komposisi:</strong> <?php echo e(\Illuminate\Support\Str::limit($medicine->komposisi ?: '—', 15, '...')); ?></p>
-                                <p title="<?php echo e($medicine->indikasi ?: '—'); ?>"><strong>Indikasi:</strong> <?php echo e(\Illuminate\Support\Str::limit($medicine->indikasi ?: '—', 15, '...')); ?></p>
-                                <p title="<?php echo e($medicine->golongan ?: '—'); ?>"><strong>Golongan:</strong> <?php echo e(\Illuminate\Support\Str::limit($medicine->golongan ?: '—', 15, '...')); ?></p>
                             </div>
                             <?php echo $__env->make('partials.product-unit-selector', [
                                 'medicine' => $medicine,
@@ -630,7 +717,7 @@
                                 $stock = $stockUnits / max(1, $medicine->units_per_box);
                                 $stockDisplay = rtrim(rtrim(number_format($stock, 6, ',', '.'), '0'), ',');
                             ?>
-                            <span class="stock-badge <?php echo e($stock <= 0 ? 'stock-out' : ($stock <= 10 ? 'stock-low' : 'stock-available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($medicine->id); ?>" data-stock-unit-factor="<?php echo e(max(1, $medicine->units_per_box)); ?>">
+                            <span class="product-stock <?php echo e($stock <= 0 ? 'empty' : ($stock <= 10 ? 'low' : 'available')); ?>" data-stock-badge data-stock-product-id="<?php echo e($medicine->id); ?>" data-stock-unit-factor="<?php echo e(max(1, $medicine->units_per_box)); ?>">
                                 <i class="fa-solid <?php echo e($stock <= 0 ? 'fa-circle-xmark' : 'fa-boxes-stacked'); ?>"></i>
                                 <?php echo e($stock > 0 ? 'Stok: ' . $stockDisplay : 'Stok habis'); ?>
 
@@ -647,7 +734,7 @@
                                 </span>
                             </div>
                             <?php if($basePrice > 0): ?>
-                                <button class="btn-cart" data-stock-cart <?php if($stock <= 0): echo 'disabled'; endif; ?>
+                                <button class="btn-cart" data-stock-cart data-sales-channel="b2b" <?php if($stock <= 0): echo 'disabled'; endif; ?>
                                         data-product-id="<?php echo e($medicine->id); ?>"
                                         data-package-unit-label="<?php echo e($medicine->package_unit_label); ?>"
                                         data-product-name="<?php echo e($medicine->nama_obat); ?>"
@@ -658,7 +745,7 @@
                                     <i class="fa-solid fa-cart-plus"></i> Masukkan ke Keranjang
                                 </button>
                             <?php else: ?>
-                                <button class="btn-cart" type="button" disabled style="opacity:.55;cursor:not-allowed;">
+                                <button class="btn-cart" type="button" data-sales-channel="b2b" disabled style="opacity:.55;cursor:not-allowed;">
                                     Harga belum tersedia
                                 </button>
                             <?php endif; ?>
@@ -719,7 +806,8 @@
 <?php $__env->startSection('scripts'); ?>
 <script>
 window.cartSettings = {
-    storageKey: 'apotekmedix_cart_pbf',
+    storageKey: 'apotekmedix_cart_b2b',
+    priceChannel: 'b2b',
     wholesaleOrder: true,
     receiptStoreName: 'Apotek Medix',
     receiptStoreAddress: 'Jl. Pendawa Jl. Sersan Muis No.99, 2 Ilir, Kec. Ilir Tim. II, Kota Palembang\nSumatera Selatan 30118',

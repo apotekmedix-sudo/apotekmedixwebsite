@@ -53,10 +53,12 @@ Route::post('/shopping/access/lock/{channel}', [ShoppingAccessController::class,
     ->where('channel', 'b2b')
     ->name('shopping.access.lock');
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
-Route::get('/products-pbf', [ProductController::class, 'pbf'])->name('products.pbf');
+Route::get('/product-b2b', [ProductController::class, 'pbf'])->name('products.pbf');
+Route::get('/product-b2b/verify', fn () => redirect()->route('products.pbf'));
+Route::post('/product-b2b/verify', [ProductController::class, 'pbfVerify'])->middleware('throttle:60,1')->name('products.pbf.verify');
+Route::post('/product-b2b/logout', [ProductController::class, 'pbfLogout'])->name('products.pbf.logout');
+Route::get('/products-pbf', fn () => redirect()->route('products.pbf'));
 Route::get('/products-pbf/verify', fn () => redirect()->route('products.pbf'));
-Route::post('/products-pbf/verify', [ProductController::class, 'pbfVerify'])->middleware('throttle:60,1')->name('products.pbf.verify');
-Route::post('/products-pbf/logout', [ProductController::class, 'pbfLogout'])->name('products.pbf.logout');
 Route::get('/products-apotek', [ProductController::class, 'apotek'])->name('products.apotek');
 Route::get('/products-apotek/activate', fn () => redirect()->route('products.apotek'));
 Route::post('/products-apotek/activate', [ProductController::class, 'apotekActivate'])

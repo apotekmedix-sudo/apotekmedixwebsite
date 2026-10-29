@@ -66,16 +66,6 @@
                         @endif
                         <strong class="product-unit-price" @if($priceTargetId) id="{{ $priceTargetId }}" @endif>Rp {{ number_format($unitPriceValues[$unit], 0, ',', '.') }}</strong>
                     </button>
-                    <div class="product-unit-quantity">
-                        <button type="button" aria-label="Kurangi {{ $unitLabels[$unit] }}"
-                                onclick="adjustProductCardQty(this, -1)" @disabled(!$isSelected || $availableQuantity < 1)>−</button>
-                        <input type="number" min="0" max="{{ $availableQuantity }}" step="1" value="0"
-                               data-cart-quantity data-stock-unit="{{ $unit }}"
-                               aria-label="Jumlah {{ $unitLabels[$unit] }}"
-                               oninput="updateProductCardQty(this)" @disabled(!$isSelected || $availableQuantity < 1)>
-                        <button type="button" aria-label="Tambah {{ $unitLabels[$unit] }}"
-                                onclick="adjustProductCardQty(this, 1)" @disabled(!$isSelected || $availableQuantity < 1)>+</button>
-                    </div>
                 </div>
             @endforeach
         </div>

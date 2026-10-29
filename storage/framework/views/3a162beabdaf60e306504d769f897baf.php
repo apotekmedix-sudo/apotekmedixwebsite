@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="id">
+<?php
+    $profile = $order->purchase_order_profile ?: 'medix';
+    $identity = $profile === 'medikpedia'
+        ? [
+            'name' => 'APOTEK MEDIKPEDIA',
+            'address' => 'ITC CEMPAKA MAS LT.1 NO.88, KEL. SUMUR BATU, KEC. KEMAYORAN, JAKARTA PUSAT',
+            'phone' => '085890007359',
+            'postal_code' => '10640',
+            'website' => 'medikpedia.com',
+            'logo' => 'LOGO MEDIKPEDIA.png',
+            'sia' => '13042600890450001',
+            'sipa' => '1/b.19/31.71.03.1007.4k-1.b/4/tm.09/e/2026',
+            'signer' => 'Apt. Hendri Setiyono, S Farm',
+            'title' => 'Apoteker',
+            'stamp' => 'stempel apotek.png',
+            'pharmacist_stamp' => 'stempel apoteker.png',
+        ]
+        : [
+            'name' => 'APOTEK MEDIX',
+            'address' => 'Jl. Raya Tajur No. 256 C, Bogor Timur, Kota Bogor, 16146',
+            'phone' => '085890007359',
+            'postal_code' => null,
+            'website' => null,
+            'logo' => 'LOGO APOTEK MEDIX.PNG',
+            'sia' => '13042600890450001',
+            'sipa' => '1/b.19/31.71.03.1007.4k-1.b/4/tm.09/e/2026',
+            'signer' => 'Apt. Hendri Setiyono, S Farm',
+            'title' => 'Apoteker Penanggung Jawab',
+            'stamp' => null,
+            'pharmacist_stamp' => null,
+        ];
+    $type = $order->purchase_order_type ?: 'regular';
+    $title = match ($type) {
+        'precursor' => 'SURAT PESANAN OBAT MENGANDUNG PREKURSOR FARMASI',
+        'oot' => 'SURAT PESANAN OBAT-OBAT TERTENTU',
+        default => 'SURAT PESANAN OBAT',
+    };
+    $subtitle = match ($type) {
+        'precursor' => 'PREKURSOR FARMASI',
+        'oot' => 'OOT',
+        default => 'OBAT REGULER',
+    };
+    $hasRequestedDiscount = $order->items->contains(fn ($item) => (float) $item->requested_discount > 0);
+    $spellNumber = function (int $number) use (&$spellNumber): string {
+        $words = [
+            0 => 'nol', 1 => 'satu', 2 => 'dua', 3 => 'tiga', 4 => 'empat',
+            5 => 'lima', 6 => 'enam', 7 => 'tujuh', 8 => 'delapan', 9 => 'sembilan',
+            10 => 'sepuluh', 11 => 'sebelas',
+        ];
+        if ($number < 12) return $words[$number];
+        if ($number < 20) return $spellNumber($number - 10).' belas';
+        if ($number < 100) return $spellNumber(intdiv($number, 10)).' puluh'.($number % 10 ? ' '.$spellNumber($number % 10) : '');
+        if ($number < 200) return 'seratus'.($number > 100 ? ' '.$spellNumber($number - 100) : '');
+        if ($number < 1000) return $spellNumber(intdiv($number, 100)).' ratus'.($number % 100 ? ' '.$spellNumber($number % 100) : '');
+        if ($number < 2000) return 'seribu'.($number > 1000 ? ' '.$spellNumber($number - 1000) : '');
+        if ($number < 1000000) return $spellNumber(intdiv($number, 1000)).' ribu'.($number % 1000 ? ' '.$spellNumber($number % 1000) : '');
+        return $spellNumber(intdiv($number, 1000000)).' juta'.($number % 1000000 ? ' '.$spellNumber($number % 1000000) : '');
+    };
+?>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SP <?php echo e($order->order_number); ?> - Apotek Medix</title>
+    <style>
+        * { box-sizing:border-box; }
+        body { margin:0; color:#172b3f; background:#edf1f4; font:13px Arial,Helvetica,sans-serif; }
+        .toolbar { width:min(800px,calc(100% - 28px)); margin:18px auto 0; display:flex; justify-content:flex-end; }
+        .toolbar button { padding:10px 16px; border:0; border-radius:7px; background:#0755c8; color:#fff; font-weight:700; cursor:pointer; }
+        .document { width:min(800px,calc(100% - 28px)); min-height:1050px; margin:10px auto 30px; padding:30px 34px 28px; border:1px solid #64748b; background:#fff; box-shadow:0 5px 22px rgba(0,0,0,.12); }
+        .head { display:flex; align-items:center; gap:14px; padding-bottom:8px; border-bottom:3px solid #29445b; }
+        .brand-logo { width:58px; height:58px; object-fit:contain; }
+        .head h2 { margin:0 0 4px; color:#233d54; font-size:20px; text-align:left; }
+        .head .address { color:#334155; font-size:12px; }
+        .head .contact { margin-top:3px; color:#334155; font-size:11px; }
+        h1 { margin:17px 0 2px; text-align:center; font-size:19px; line-height:1.25; }
+        .order-number { margin-bottom:12px; }
+        .subtitle { margin:0 0 10px; text-align:center; font-size:13px; font-weight:700; }
+        .intro { margin-bottom:3px; }
+        .detail-row { display:grid; grid-template-columns:152px 10px 1fr; margin:3px 0; font-size:13px; line-height:1.4; }
+        .section-title { margin:12px 0 6px; font-size:13px; font-weight:700; }
+        .table-wrap { width:100%; overflow-x:auto; }
+        table { width:92%; margin:0 auto; border-collapse:collapse; table-layout:fixed; }
+        th,td { padding:7px 7px; min-height:34px; border:1px solid #718096; text-align:left; vertical-align:top; overflow-wrap:anywhere; }
+        th { background:#e6edf4; color:#27394a; font-size:13px; line-height:1.3; }
+        td { color:#1f2937; font-size:13px; line-height:1.4; }
+        th:first-child,td:first-child { width:4%; text-align:center; }
+        .regular-table th:nth-child(2) { width:23%; }
+        .regular-table th:nth-child(3) { width:20%; }
+        .regular-table th:nth-child(4) { width:8%; }
+        .regular-table th:nth-child(5) { width:8%; }
+        .regular-table th:nth-child(6) { width:17%; }
+        .regular-table th:nth-child(7) { width:19%; }
+        .special-table th:nth-child(2) { width:17%; }
+        .special-table th:nth-child(3) { width:17%; }
+        .special-table th:nth-child(4) { width:18%; }
+        .special-table th:nth-child(5) { width:10%; }
+        .special-table th:nth-child(6) { width:18%; }
+        .special-table th:nth-child(7) { width:15%; }
+        .number { text-align:right; white-space:nowrap; }
+        .order-totals { margin:8px 0 0 auto; width:min(320px,100%); text-align:right; }
+        .order-discount-total { color:#64748b; font-size:12px; line-height:1.4; }
+        .order-grand-total { margin-top:3px; padding-top:5px; border-top:1px solid #cbd5e1; font-size:14px; font-weight:800; }
+        .notes { margin-top:11px; color:#475569; font-size:12px; line-height:1.5; white-space:pre-line; }
+        .signature { width:275px; margin:16px 0 0 auto; text-align:left; line-height:1.8; }
+        .signature-space { position:relative; width:275px; height:105px; }
+        .signature-stamp { position:absolute; top:30%; width:310px; height:160px; object-fit:cover; object-position:center; mix-blend-mode:multiply; transform:translateY(-50%); }
+        .signature-stamp-pharmacist { left:-200px; z-index:1; }
+        .signature-stamp-pharmacy { left:20px; z-index:1; }
+        .signature-name { font-weight:700; }
+        @media print {
+            body { background:#fff; }
+            .toolbar { display:none; }
+            .document { width:100%; min-height:0; margin:0; padding:8mm; border:0; box-shadow:none; }
+            .table-wrap { overflow:visible; }
+            table { width:100%; max-width:none; min-width:0; margin:0; }
+            .regular-table th:nth-child(2) { width:26%; }
+            .regular-table th:nth-child(3) { width:20%; }
+            .regular-table th:nth-child(6) { width:15%; }
+            .regular-table th:nth-child(7) { width:18%; }
+            .order-totals { width:100%; margin:8px 0 0; }
+            th,td { padding:8px 6px; font-size:17px; }
+            th { line-height:1.25; }
+            td { line-height:1.45; }
+            @page { size:A4; margin:10mm; }
+        }
+        @media screen and (max-width:600px) {
+            .document { min-height:0; padding:20px 14px; }
+            h1 { font-size:16px; }
+            .detail-row { grid-template-columns:125px 8px 1fr; }
+            table { min-width:680px; }
+            th,td { padding:6px 5px; font-size:11px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar"><button type="button" onclick="window.print()">Cetak / Simpan PDF</button></div>
+    <main class="document">
+        <header class="head">
+            <img class="brand-logo" src="<?php echo e(asset($identity['logo'])); ?>" alt="Logo <?php echo e($identity['name']); ?>">
+            <div>
+                <h2><?php echo e($identity['name']); ?></h2>
+                <div class="address"><?php echo e($identity['address']); ?></div>
+                <?php if($identity['phone'] || $identity['postal_code'] || $identity['website']): ?>
+                    <div class="contact">
+                        <?php if($identity['phone']): ?> Telepon: <?php echo e($identity['phone']); ?> <?php endif; ?>
+                        <?php if($identity['postal_code']): ?> · Kode Pos: <?php echo e($identity['postal_code']); ?> <?php endif; ?>
+                        <?php if($identity['website']): ?> · Website: <?php echo e($identity['website']); ?> <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </header>
+        <h1><?php echo e($title); ?></h1>
+        <div class="subtitle">(<?php echo e($subtitle); ?>)</div>
+        <div class="order-number">Nomor: <?php echo e($order->order_number); ?></div>
+        <div class="intro">Yang bertanda tangan di bawah ini:</div>
+        <div class="detail-row"><b>Nama Apoteker</b><span>:</span><span><?php echo e($order->requester_name ?: $identity['signer']); ?></span></div>
+        <div class="detail-row"><b>Jabatan</b><span>:</span><span><?php echo e($order->apj ?: $identity['title']); ?></span></div>
+        <div class="detail-row"><b>Nomor SIA</b><span>:</span><span><?php echo e($order->sia ?: $identity['sia']); ?></span></div>
+        <div class="detail-row"><b>Nomor SIPA</b><span>:</span><span><?php echo e($order->sipa ?: $identity['sipa']); ?></span></div>
+        <div class="section-title">Mengajukan pesanan kepada:</div>
+        <div class="detail-row"><b>Nama PBF/Distributor</b><span>:</span><span><?php echo e($order->supplier_name ?: '-'); ?></span></div>
+        <div class="detail-row"><b>Alamat</b><span>:</span><span><?php echo e($order->supplier_address ?: '-'); ?></span></div>
+        <div class="detail-row"><b>Nomor telepon</b><span>:</span><span><?php echo e($order->supplier_phone ?: '-'); ?></span></div>
+        <div class="section-title">
+            <?php if($type === 'precursor'): ?>
+                Obat mengandung Prekursor Farmasi yang dipesan:
+            <?php elseif($type === 'oot'): ?>
+                Obat-Obat Tertentu yang dipesan:
+            <?php else: ?>
+                Dengan rincian obat yang dipesan sebagai berikut:
+            <?php endif; ?>
+        </div>
+        <div class="table-wrap">
+        <table class="<?php echo e($type === 'regular' ? 'regular-table' : 'special-table'); ?>">
+            <thead>
+                <?php if($type === 'precursor'): ?>
+                    <tr><th style="width:5%">No.</th><th>Nama Obat</th><th>Zat Aktif Prekursor</th><th>Bentuk / Kekuatan</th><th>Jumlah</th><th class="number">Harga</th><th class="number">Subtotal</th></tr>
+                <?php elseif($type === 'oot'): ?>
+                    <tr><th style="width:5%">No.</th><th>Nama Obat</th><th>Zat Aktif OOT</th><th>Bentuk / Kekuatan</th><th>Jumlah</th><th class="number">Harga</th><th class="number">Subtotal</th></tr>
+                <?php else: ?>
+                    <tr><th style="width:5%">No.</th><th>Nama Produk</th><th>Bentuk / Kekuatan</th><th>Satuan</th><th>Jumlah</th><th class="number">Harga</th><th class="number">Subtotal</th></tr>
+                <?php endif; ?>
+            </thead>
+            <tbody>
+            <?php $__currentLoopData = $order->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <tr>
+                    <td><?php echo e($index + 1); ?></td>
+                    <td>
+                        <?php echo e($item->product_name); ?>
+
+                    </td>
+                    <?php if(in_array($type, ['oot', 'precursor'], true)): ?>
+                        <td><?php echo e($item->active_ingredient ?: '—'); ?></td>
+                        <td><?php echo e(collect([$item->dosage_form, $item->strength])->filter()->implode(' / ') ?: '—'); ?></td>
+                        <td><?php echo e($type === 'precursor' ? number_format($item->quantity, 0, ',', '.') . ' (' . ucfirst($spellNumber((int) $item->quantity)) . ')' : number_format($item->quantity, 0, ',', '.')); ?> <?php echo e($item->unit_label); ?></td>
+                        <td class="number">Rp <?php echo e(number_format((float) $item->unit_cost, 0, ',', '.')); ?></td>
+                        <td class="number">
+                            Rp <?php echo e(number_format((float) $item->line_total, 0, ',', '.')); ?>
+
+                            <?php if((float) $item->requested_discount > 0): ?>
+                                <br><small>Ajuan potongan: Rp <?php echo e(number_format((float) $item->requested_discount, 0, ',', '.')); ?></small>
+                            <?php endif; ?>
+                        </td>
+                    <?php else: ?>
+                        <td><?php echo e(collect([$item->dosage_form, $item->active_ingredient, $item->strength])->filter()->implode(' / ') ?: '—'); ?></td>
+                        <td><?php echo e($item->unit_label); ?></td>
+                        <td><?php echo e(number_format($item->quantity, 0, ',', '.')); ?></td>
+                        <td class="number">Rp <?php echo e(number_format((float) $item->unit_cost, 0, ',', '.')); ?></td>
+                        <td class="number">
+                            Rp <?php echo e(number_format((float) $item->line_total, 0, ',', '.')); ?>
+
+                            <?php if((float) $item->requested_discount > 0): ?>
+                                <br><small>Ajuan potongan: Rp <?php echo e(number_format((float) $item->requested_discount, 0, ',', '.')); ?></small>
+                            <?php endif; ?>
+                        </td>
+                    <?php endif; ?>
+                </tr>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </tbody>
+        </table>
+        </div>
+        <div class="order-totals">
+            <?php if($hasRequestedDiscount): ?>
+                <div class="order-discount-total">Total ajuan potongan: Rp <?php echo e(number_format((float) $order->items->sum(fn ($item) => (float) $item->requested_discount), 0, ',', '.')); ?></div>
+            <?php endif; ?>
+            <div class="order-grand-total">Total: Rp <?php echo e(number_format((float) $order->items->sum(fn ($item) => (float) $item->line_total), 0, ',', '.')); ?></div>
+        </div>
+        <?php if($hasRequestedDiscount): ?>
+            <div class="notes"><strong>Catatan:</strong> Ajuan potongan dicantumkan per produk dan belum mengurangi subtotal awal; potongan menunggu persetujuan supplier.</div>
+        <?php endif; ?>
+        <?php if($order->notes): ?><div class="notes"><strong>Catatan:</strong><br><?php echo e($order->notes); ?></div><?php endif; ?>
+        <div class="signature">
+            <?php echo e($profile === 'medikpedia' ? 'Jakarta' : 'Bogor'); ?>, <?php echo e($order->ordered_at?->translatedFormat('d F Y')); ?>
+
+            <br>Pemesan,
+            <div class="signature-space">
+                <?php if($identity['pharmacist_stamp']): ?>
+                    <img class="signature-stamp signature-stamp-pharmacist" src="<?php echo e(asset($identity['pharmacist_stamp'])); ?>" alt="Stempel Apoteker">
+                <?php endif; ?>
+                <?php if($identity['stamp']): ?>
+                    <img class="signature-stamp signature-stamp-pharmacy" src="<?php echo e(asset($identity['stamp'])); ?>" alt="Stempel Apotek Medikpedia">
+                <?php endif; ?>
+            </div>
+            <div class="signature-name"><?php echo e($order->requester_name ?: $identity['signer']); ?></div>
+            <?php echo e($order->apj ?: $identity['title']); ?> / No. SIPA <?php echo e($order->sipa ?: '—'); ?>
+
+        </div>
+    </main>
+</body>
+</html>
+<?php /**PATH C:\Users\Ali Attaziri\APOTEK MEDIX\resources\views\admin\supplier-procurement\purchase-order.blade.php ENDPATH**/ ?>

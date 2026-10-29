@@ -189,6 +189,9 @@ class MedicineUnitPackagingTest extends TestCase
             'pbf_access_code_hash' => $b2bCode->code_hash,
         ])->get(route('products.pbf'))
             ->assertOk()
+            ->assertSee('medicines-grid home-b2c-grid-4x5', false)
+            ->assertSee('<div class="prod-card">', false)
+            ->assertSee('<h3 class="prod-name">', false)
             ->assertSee('Rp 1.400')
             ->assertDontSee('Harga Box')
             ->assertDontSee('Box · Rp 1.400', false)

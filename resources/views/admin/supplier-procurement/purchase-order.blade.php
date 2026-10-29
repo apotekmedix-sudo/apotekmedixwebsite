@@ -65,43 +65,44 @@
     <title>SP {{ $order->order_number }} - Apotek Medix</title>
     <style>
         * { box-sizing:border-box; }
-        body { margin:0; color:#172b3f; background:#edf1f4; font:12px Arial,Helvetica,sans-serif; }
+        body { margin:0; color:#172b3f; background:#edf1f4; font:13px Arial,Helvetica,sans-serif; }
         .toolbar { width:min(800px,calc(100% - 28px)); margin:18px auto 0; display:flex; justify-content:flex-end; }
         .toolbar button { padding:10px 16px; border:0; border-radius:7px; background:#0755c8; color:#fff; font-weight:700; cursor:pointer; }
         .document { width:min(800px,calc(100% - 28px)); min-height:1050px; margin:10px auto 30px; padding:30px 34px 28px; border:1px solid #64748b; background:#fff; box-shadow:0 5px 22px rgba(0,0,0,.12); }
         .head { display:flex; align-items:center; gap:14px; padding-bottom:8px; border-bottom:3px solid #29445b; }
         .brand-logo { width:58px; height:58px; object-fit:contain; }
         .head h2 { margin:0 0 4px; color:#233d54; font-size:20px; text-align:left; }
-        .head .address { color:#334155; font-size:11px; }
-        .head .contact { margin-top:3px; color:#334155; font-size:10px; }
+        .head .address { color:#334155; font-size:12px; }
+        .head .contact { margin-top:3px; color:#334155; font-size:11px; }
         h1 { margin:17px 0 2px; text-align:center; font-size:19px; line-height:1.25; }
         .order-number { margin-bottom:12px; }
         .subtitle { margin:0 0 10px; text-align:center; font-size:13px; font-weight:700; }
         .intro { margin-bottom:3px; }
-        .detail-row { display:grid; grid-template-columns:152px 10px 1fr; margin:3px 0; line-height:1.3; }
-        .section-title { margin:12px 0 6px; font-weight:700; }
-        table { width:100%; border-collapse:collapse; table-layout:fixed; }
-        th,td { padding:6px 5px; height:31px; border:1px solid #718096; text-align:left; vertical-align:top; overflow-wrap:anywhere; }
-        th { background:#e6edf4; color:#27394a; font-size:10px; }
-        td { color:#1f2937; font-size:10px; }
-        th:first-child,td:first-child { width:5%; text-align:center; }
-        .regular-table th:nth-child(2) { width:22%; }
-        .regular-table th:nth-child(3) { width:14%; }
-        .regular-table th:nth-child(4) { width:9%; }
-        .regular-table th:nth-child(5) { width:10%; }
-        .regular-table th:nth-child(6) { width:19%; }
-        .regular-table th:nth-child(7) { width:21%; }
-        .special-table th:nth-child(2) { width:20%; }
-        .special-table th:nth-child(3) { width:19%; }
-        .special-table th:nth-child(4) { width:14%; }
-        .special-table th:nth-child(5) { width:11%; }
-        .special-table th:nth-child(6) { width:16%; }
+        .detail-row { display:grid; grid-template-columns:152px 10px 1fr; margin:3px 0; font-size:13px; line-height:1.4; }
+        .section-title { margin:12px 0 6px; font-size:13px; font-weight:700; }
+        .table-wrap { width:100%; overflow-x:auto; }
+        table { width:92%; margin:0 auto; border-collapse:collapse; table-layout:fixed; }
+        th,td { padding:7px 7px; min-height:34px; border:1px solid #718096; text-align:left; vertical-align:top; overflow-wrap:anywhere; }
+        th { background:#e6edf4; color:#27394a; font-size:13px; line-height:1.3; }
+        td { color:#1f2937; font-size:13px; line-height:1.4; }
+        th:first-child,td:first-child { width:4%; text-align:center; }
+        .regular-table th:nth-child(2) { width:23%; }
+        .regular-table th:nth-child(3) { width:20%; }
+        .regular-table th:nth-child(4) { width:8%; }
+        .regular-table th:nth-child(5) { width:8%; }
+        .regular-table th:nth-child(6) { width:17%; }
+        .regular-table th:nth-child(7) { width:19%; }
+        .special-table th:nth-child(2) { width:17%; }
+        .special-table th:nth-child(3) { width:17%; }
+        .special-table th:nth-child(4) { width:18%; }
+        .special-table th:nth-child(5) { width:10%; }
+        .special-table th:nth-child(6) { width:18%; }
         .special-table th:nth-child(7) { width:15%; }
         .number { text-align:right; white-space:nowrap; }
-        .order-totals { margin:8px 0 0 auto; width:min(340px,100%); text-align:right; }
-        .order-discount-total { color:#64748b; font-size:10px; line-height:1.4; }
+        .order-totals { margin:8px 0 0 auto; width:min(320px,100%); text-align:right; }
+        .order-discount-total { color:#64748b; font-size:12px; line-height:1.4; }
         .order-grand-total { margin-top:3px; padding-top:5px; border-top:1px solid #cbd5e1; font-size:14px; font-weight:800; }
-        .notes { margin-top:11px; color:#475569; font-size:10px; line-height:1.45; white-space:pre-line; }
+        .notes { margin-top:11px; color:#475569; font-size:12px; line-height:1.5; white-space:pre-line; }
         .signature { width:275px; margin:16px 0 0 auto; text-align:left; line-height:1.8; }
         .signature-space { position:relative; width:275px; height:105px; }
         .signature-stamp { position:absolute; top:30%; width:310px; height:160px; object-fit:cover; object-position:center; mix-blend-mode:multiply; transform:translateY(-50%); }
@@ -111,14 +112,25 @@
         @media print {
             body { background:#fff; }
             .toolbar { display:none; }
-            .document { width:100%; min-height:0; margin:0; border:1px solid #64748b; box-shadow:none; }
+            .document { width:100%; min-height:0; margin:0; padding:8mm; border:0; box-shadow:none; }
+            .table-wrap { overflow:visible; }
+            table { width:100%; max-width:none; min-width:0; margin:0; }
+            .regular-table th:nth-child(2) { width:26%; }
+            .regular-table th:nth-child(3) { width:20%; }
+            .regular-table th:nth-child(6) { width:15%; }
+            .regular-table th:nth-child(7) { width:18%; }
+            .order-totals { width:100%; margin:8px 0 0; }
+            th,td { padding:8px 6px; font-size:17px; }
+            th { line-height:1.25; }
+            td { line-height:1.45; }
             @page { size:A4; margin:10mm; }
         }
-        @media(max-width:600px) {
+        @media screen and (max-width:600px) {
             .document { min-height:0; padding:20px 14px; }
             h1 { font-size:16px; }
             .detail-row { grid-template-columns:125px 8px 1fr; }
-            th,td { padding:4px 3px; font-size:9px; }
+            table { min-width:680px; }
+            th,td { padding:6px 5px; font-size:11px; }
         }
     </style>
 </head>
@@ -160,6 +172,7 @@
                 Dengan rincian obat yang dipesan sebagai berikut:
             @endif
         </div>
+        <div class="table-wrap">
         <table class="{{ $type === 'regular' ? 'regular-table' : 'special-table' }}">
             <thead>
                 @if($type === 'precursor')
@@ -204,6 +217,7 @@
             @endforeach
             </tbody>
         </table>
+        </div>
         <div class="order-totals">
             @if($hasRequestedDiscount)
                 <div class="order-discount-total">Total ajuan potongan: Rp {{ number_format((float) $order->items->sum(fn ($item) => (float) $item->requested_discount), 0, ',', '.') }}</div>

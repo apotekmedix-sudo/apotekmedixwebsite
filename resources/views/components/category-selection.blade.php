@@ -311,15 +311,13 @@
 }
 
 .social-follow-inner {
-    display: grid;
-    grid-template-columns: 40px minmax(0, 460px) 40px;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
+    gap: 1rem;
 }
 
 .social-follow-title {
-    grid-column: 1 / -1;
     color: #fff;
     font-size: 1.15rem;
     font-weight: 800;
@@ -328,23 +326,17 @@
 }
 
 .social-follow-links {
-    position: relative;
-    height: 118px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
     min-width: 0;
-    perspective: 900px;
-    touch-action: pan-y;
-    cursor: grab;
+    gap: 0.75rem;
 }
 
-.social-follow-links.is-dragging { cursor: grabbing; }
-
 .social-follow-link {
-    position: absolute;
-    top: 50%;
-    left: 50%;
     width: 64px;
     height: 64px;
-    margin: -32px 0 0 -32px;
     border-radius: 15px;
     display: inline-flex;
     align-items: center;
@@ -352,11 +344,8 @@
     color: #fff;
     font-size: 1.7rem;
     text-decoration: none;
-    pointer-events: auto;
     cursor: pointer;
-    transform-style: preserve-3d;
-    transition: transform 0.6s ease, opacity 0.6s ease, filter 0.6s ease;
-    will-change: transform;
+    transition: box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 .social-follow-link img {
@@ -371,37 +360,18 @@
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
 }
 
-.social-follow-control {
-    width: 36px;
-    height: 36px;
-    border: 1px solid rgba(255,255,255,0.35);
-    border-radius: 50%;
-    background: rgba(255,255,255,0.14);
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
-}
-
-#socialFollowPrev { grid-column: 1; grid-row: 2; justify-self: end; }
-#socialFollowLinks { grid-column: 2; grid-row: 2; }
-#socialFollowNext { grid-column: 3; grid-row: 2; justify-self: start; }
-
-.social-follow-control:hover { background: rgba(255,255,255,0.28); transform: scale(1.08); }
-
 @media (max-width: 576px) {
     .social-follow-section { padding: 1.5rem 0.75rem; }
-    .social-follow-inner { grid-template-columns: 34px minmax(0, 270px) 34px; gap: 0.25rem; }
-    .social-follow-title { grid-column: 1 / -1; text-align: center; }
-    .social-follow-links { grid-column: 2; height: 92px; }
-    .social-follow-link { width: 52px; height: 52px; margin: -26px 0 0 -26px; font-size: 1.35rem; border-radius: 12px; }
+    .social-follow-inner { gap: 0.75rem; }
+    .social-follow-links { gap: 0.55rem; }
+    .social-follow-link { width: 48px; height: 48px; font-size: 1.25rem; border-radius: 12px; }
 }
 </style>
 
 <div class="social-follow-section">
     <div class="container social-follow-inner">
         <h2 class="social-follow-title"><i class="fa-solid fa-share-nodes"></i> Ikuti Kami</h2>
-        <button type="button" class="social-follow-control" id="socialFollowPrev" title="Sebelumnya" aria-label="Sosial sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
-        <div class="social-follow-links" id="socialFollowLinks">
+        <div class="social-follow-links">
             <a href="https://www.instagram.com/apotekmedix" target="_blank" rel="noopener" class="social-follow-link" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);" title="Instagram" aria-label="Instagram">
                 <i class="fa-brands fa-instagram"></i>
             </a>
@@ -421,79 +391,8 @@
                 <i class="fa-brands fa-tiktok"></i>
             </a>
         </div>
-        <button type="button" class="social-follow-control" id="socialFollowNext" title="Berikutnya" aria-label="Sosial berikutnya"><i class="fa-solid fa-chevron-right"></i></button>
     </div>
 </div>
-
-<script>
-(function () {
-    const orbit = document.getElementById('socialFollowLinks');
-    if (!orbit) return;
-
-    const links = Array.from(orbit.querySelectorAll('.social-follow-link'));
-    const previous = document.getElementById('socialFollowPrev');
-    const next = document.getElementById('socialFollowNext');
-    let offset = 0;
-    let timer;
-    let dragStartX = null;
-    let dragged = false;
-
-    function render() {
-        const count = links.length;
-        const radius = window.innerWidth <= 576 ? 112 : 170;
-        links.forEach((link, index) => {
-            const angle = ((index + offset) / count) * Math.PI * 2 - Math.PI / 2;
-            const depth = Math.sin(angle);
-            const x = Math.cos(angle) * radius;
-            const z = depth * 90;
-            const scale = 0.82 + (depth + 1) * 0.12;
-            link.style.transform = `translate3d(${x}px, ${depth * 12}px, ${z}px) scale(${scale})`;
-            link.style.opacity = String(0.58 + (depth + 1) * 0.21);
-            link.style.filter = `brightness(${0.82 + (depth + 1) * 0.09})`;
-            link.style.zIndex = String(Math.round(100 + z));
-        });
-    }
-
-    function move(step) {
-        offset += step;
-        render();
-    }
-
-    function startAutoOrbit() {
-        clearInterval(timer);
-        timer = setInterval(() => move(-1), 1900);
-    }
-
-    previous.addEventListener('click', () => { move(-1); startAutoOrbit(); });
-    next.addEventListener('click', () => { move(1); startAutoOrbit(); });
-    orbit.addEventListener('pointerdown', event => {
-        dragStartX = event.clientX;
-        dragged = false;
-        orbit.classList.add('is-dragging');
-    });
-    orbit.addEventListener('pointerup', event => {
-        if (dragStartX !== null && Math.abs(event.clientX - dragStartX) > 24) {
-            dragged = true;
-            move(event.clientX > dragStartX ? 1 : -1);
-        }
-        dragStartX = null;
-        orbit.classList.remove('is-dragging');
-        startAutoOrbit();
-    });
-    links.forEach(link => link.addEventListener('click', event => {
-        if (dragged) event.preventDefault();
-        dragged = false;
-    }));
-    orbit.addEventListener('pointercancel', () => {
-        dragStartX = null;
-        orbit.classList.remove('is-dragging');
-        startAutoOrbit();
-    });
-    window.addEventListener('resize', render);
-    render();
-    startAutoOrbit();
-})();
-</script>
 
 @if(false)
 <div class="category-selection-section">

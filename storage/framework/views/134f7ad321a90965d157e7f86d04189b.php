@@ -546,7 +546,8 @@
 // Keranjang disimpan per konteks halaman melalui CART_CONFIG.storageKey.
 const WA = '6285890007359';
 const CART_DEFAULT_SETTINGS = {
-  storageKey: 'apotekmedix_cart',
+  storageKey: 'apotekmedix_cart_b2c',
+  priceChannel: 'b2c',
   receiptStoreName: 'APOTEK MEDIX',
   receiptStoreAddress: 'Jl. Raya Ciawi Prapatan No.256 C, RT.04/RW.04, Sindangsari, Kec. Bogor Timur, Kota Bogor, Jawa Barat 16146',
   receiptFilePrefix: 'struk-apotekmedix',
@@ -554,6 +555,20 @@ const CART_DEFAULT_SETTINGS = {
 };
 const CART_CONFIG = Object.assign({}, CART_DEFAULT_SETTINGS, window.cartSettings || {});
 let cart = JSON.parse(localStorage.getItem(CART_CONFIG.storageKey) || '[]');
+function persistCartContext() {
+  localStorage.setItem('apotekmedix_active_cart_context', JSON.stringify({
+    storageKey: CART_CONFIG.storageKey,
+    priceChannel: CART_CONFIG.priceChannel || (CART_CONFIG.wholesaleOrder ? 'b2b' : (CART_CONFIG.priceMode || 'b2c')),
+    wholesaleOrder: Boolean(CART_CONFIG.wholesaleOrder),
+    adminPbfOrder: Boolean(CART_CONFIG.adminPbfOrder),
+    adminPurchaseOrderBase: CART_CONFIG.adminPurchaseOrderBase || null,
+    receiptStoreName: CART_CONFIG.receiptStoreName,
+    receiptStoreAddress: CART_CONFIG.receiptStoreAddress,
+    receiptFilePrefix: CART_CONFIG.receiptFilePrefix,
+    continueShoppingUrl: CART_CONFIG.continueShoppingUrl
+  }));
+}
+persistCartContext();
 function getCartPackageLabel(item) {
   return String(item.packageUnitLabel || item.unitLabels?.box || (item.saleUnit === 'box' ? item.unitLabel : '') || 'Box').trim() || 'Box';
 }
@@ -581,16 +596,7 @@ function normalizeCartPackageUnits(item) {
 cart = cart.map(normalizeCartPackageUnits);
 function save() {
   localStorage.setItem(CART_CONFIG.storageKey, JSON.stringify(cart));
-  localStorage.setItem('apotekmedix_active_cart_context', JSON.stringify({
-    storageKey: CART_CONFIG.storageKey,
-    wholesaleOrder: Boolean(CART_CONFIG.wholesaleOrder),
-    adminPbfOrder: Boolean(CART_CONFIG.adminPbfOrder),
-    adminPurchaseOrderBase: CART_CONFIG.adminPurchaseOrderBase || null,
-    receiptStoreName: CART_CONFIG.receiptStoreName,
-    receiptStoreAddress: CART_CONFIG.receiptStoreAddress,
-    receiptFilePrefix: CART_CONFIG.receiptFilePrefix,
-    continueShoppingUrl: CART_CONFIG.continueShoppingUrl
-  }));
+  persistCartContext();
   syncBadge();
 }
 
@@ -655,13 +661,6 @@ function selectProductCardUnit(button) {
     const selected = card === selectedCard;
     card.classList.toggle('is-selected', selected);
     card.querySelector('.product-unit-choice')?.setAttribute('aria-pressed', String(selected));
-    const quantityInput = card.querySelector('[data-cart-quantity]');
-    if (!quantityInput) return;
-    if (!selected) quantityInput.value = '0';
-    card.querySelectorAll('.product-unit-quantity button').forEach(control => {
-      control.disabled = !selected || Number(quantityInput.max) < 1;
-    });
-    quantityInput.disabled = !selected || Number(quantityInput.max) < 1;
   });
 
   const productCard = selectedCard.closest('.medicine-card, .prod-card, .discounted-product-card');
@@ -671,13 +670,6 @@ function selectProductCardUnit(button) {
     ? document.getElementById(button.dataset.priceTarget)
     : null;
   if (priceTarget) priceTarget.textContent = rp(button.dataset.unitPrice || 0);
-}
-
-function updateProductCardQty(input, adjustment = 0) {
-  const max = Math.max(0, Number(input.max) || 0);
-  const current = parseInt(input.value, 10) || 0;
-  input.value = Math.min(max, Math.max(0, current + adjustment));
-  input.closest('.product-unit-card')?.classList.toggle('has-quantity', Number(input.value) > 0);
 }
 
 async function refreshAvailableProductStock() {
@@ -721,22 +713,7 @@ async function refreshAvailableProductStock() {
       }
       if (element.matches('.product-unit-data')) {
         element.dataset.stockUnits = String(stock.units);
-        const unitFactors = JSON.parse(element.dataset.unitFactors || '{}');
         const card = element.closest('.medicine-card, .prod-card, .discounted-product-card');
-        card?.querySelectorAll('.product-unit-card').forEach(unitCard => {
-          const input = unitCard.querySelector('[data-cart-quantity]');
-          if (!input) return;
-          const availableQuantity = Math.floor(stock.units / Number(unitFactors[input.dataset.stockUnit] || 1));
-          const unitStockBadge = unitCard.querySelector('[data-unit-stock-badge]');
-          if (unitStockBadge) unitStockBadge.textContent = `Stok: ${availableQuantity.toLocaleString('id-ID')}`;
-          input.max = String(availableQuantity);
-          if (Number(input.value) > availableQuantity) input.value = String(availableQuantity);
-          const selected = unitCard.classList.contains('is-selected');
-          input.disabled = !selected || availableQuantity < 1;
-          unitCard.querySelectorAll('.product-unit-quantity button').forEach(button => {
-            button.disabled = !selected || availableQuantity < 1;
-          });
-        });
         card?.querySelectorAll('[data-stock-cart]').forEach(button => {
           button.disabled = stock.units < 1;
           button.setAttribute('aria-disabled', String(stock.units < 1));
@@ -749,15 +726,6 @@ async function refreshAvailableProductStock() {
       document.querySelectorAll('#btnDetailBuy, #btnDetailCart').forEach(button => {
         button.disabled = outOfStock;
       });
-      const quantityInput = document.getElementById('qtyInput');
-      if (quantityInput) {
-        const factor = Number(window.DETAIL_PRODUCT.unitFactors[window.DETAIL_PRODUCT.selectedUnit] || 1);
-        const availableQuantity = Math.floor(window.DETAIL_PRODUCT.stockUnits / factor);
-        quantityInput.max = String(Math.max(1, availableQuantity));
-        if (availableQuantity > 0 && Number(quantityInput.value) > availableQuantity) {
-          quantityInput.value = String(availableQuantity);
-        }
-      }
       document.querySelectorAll('.detail-unit-pill[data-unit]').forEach(button => {
         const factor = Number(window.DETAIL_PRODUCT.unitFactors[button.dataset.unit] || 1);
         const availableQuantity = Math.floor(window.DETAIL_PRODUCT.stockUnits / factor);
@@ -775,11 +743,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!document.hidden) refreshAvailableProductStock().catch(error => console.error(error));
   }, 5000);
 });
-
-function adjustProductCardQty(button, adjustment) {
-  const input = button.closest('.product-unit-card')?.querySelector('input[data-cart-quantity]');
-  if (input && !input.disabled) updateProductCardQty(input, adjustment);
-}
 
 function openRedLogoModal(productName) {
   const overlay = document.getElementById('redLogoModalOverlay');
@@ -846,14 +809,7 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null, suppli
       return;
     }
 
-    const addition = {
-      unit: selectedCard.dataset.cartUnit,
-      qty: parseInt(selectedCard.querySelector('[data-cart-quantity]')?.value, 10) || 0
-    };
-    if (!addition.qty) {
-      alert('Pilih jumlah produk yang ingin dimasukkan ke keranjang.');
-      return;
-    }
+    const addition = { unit: selectedCard.dataset.cartUnit, qty: 1 };
 
     const unit = addition.unit;
     const unitLabel = unitLabels[unit] || unit.charAt(0).toUpperCase() + unit.slice(1);
@@ -864,14 +820,17 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null, suppli
       return;
     }
 
-    const existing = cart.find(item => item.id === id);
-    cart = cart.filter(item => item.id !== id);
+    const existing = cart.find(item => item.id === id && (item.saleUnit || 'box') === unit);
+    if (existing && existing.qty + addition.qty > availableQty) {
+      alert('Stok untuk satuan ' + unitLabel + ' tidak mencukupi.');
+      return;
+    }
     if (existing) {
       existing.name = name;
       existing.price = Number(unitPrices[unit] || 0);
       existing.supplierOfferId = supplierOfferId;
       existing.minimumQuantity = Number(minimumQuantity) || 1;
-      existing.qty = addition.qty;
+      existing.qty += addition.qty;
       existing.brand = brand;
       existing.img = img;
       existing.discount = 0;
@@ -883,7 +842,6 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null, suppli
       existing.saleUnit = unit;
       existing.availableQty = availableQty;
       existing.stockUnits = stockUnits;
-      cart.push(existing);
     } else {
       cart.push({
         id, name, price: Number(unitPrices[unit] || 0), img, brand: brand || '',
@@ -1593,6 +1551,9 @@ async function submitOrder() {
   const paymentTermDays = Number(document.getElementById('f_payment_term_days')?.value || 0);
   const payload = {
     buyer_type: jenis,
+    price_channel: CART_CONFIG.adminPbfOrder
+      ? null
+      : (CART_CONFIG.priceChannel || (CART_CONFIG.wholesaleOrder ? 'b2b' : (CART_CONFIG.priceMode || 'b2c'))),
     items: cart.map(it => ({ id: it.id, nama_obat: it.name, quantity: it.qty, harga: it.price, sale_unit: it.saleUnit || 'box', catatan: it.note || '', potongan: it.discount || 0 })),
     total: discountedTotal,
     original_total: originalTotal,

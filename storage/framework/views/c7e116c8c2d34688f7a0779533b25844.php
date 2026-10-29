@@ -54,8 +54,7 @@
         <?php echo csrf_field(); ?>
         <input type="hidden" name="redirect_to" value="<?php echo e($accessReturnTo); ?>">
         <input type="hidden" name="access_type" value="b2c">
-        <h2 id="b2cAccessDialogTitle">WARNING B2C SALAH KLIK</h2>
-        <p>INI B2C ANDA SALAH KLIK</p>
+        <h2 id="b2cAccessDialogTitle">B2C FULL AKSES</h2>
         <label for="b2cAccessCode">Kode akses B2C</label>
         <input id="b2cAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" autocomplete="one-time-code" required>
         <?php if($errors->has('kode') && old('redirect_to') === $accessReturnTo && old('access_type') === 'b2c'): ?>
@@ -73,8 +72,7 @@
         <?php echo csrf_field(); ?>
         <input type="hidden" name="redirect_to" value="<?php echo e($accessReturnTo); ?>">
         <input type="hidden" name="access_type" value="internal">
-        <h2 id="internalAccessDialogTitle">WARNING INTERNAL SALAH KLIK</h2>
-        <p>INI INTERNAL ANDA SALAH KLIK</p>
+        <h2 id="internalAccessDialogTitle">TRANSAKSI INTERNAL</h2>
         <label for="internalAccessCode">Kode akses Internal</label>
         <input id="internalAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" autocomplete="one-time-code" required>
         <?php if($errors->has('kode') && old('redirect_to') === $accessReturnTo && old('access_type') === 'internal'): ?>
@@ -82,7 +80,7 @@
         <?php endif; ?>
         <div class="catalog-access-dialog-actions">
             <button type="button" class="catalog-access-dialog-cancel" onclick="this.closest('dialog').close()">Tutup</button>
-            <button type="submit" class="catalog-access-dialog-submit">Aktifkan harga internal</button>
+            <button type="submit" class="catalog-access-dialog-submit">Aktifkan Internal</button>
         </div>
     </form>
 </dialog>

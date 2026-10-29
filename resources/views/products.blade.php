@@ -402,8 +402,6 @@
                             @endphp
                             <div class="medicine-card-details">
                                 <p title="{{ $medicine->komposisi ?: '—' }}"><strong>Komposisi:</strong> {{ \Illuminate\Support\Str::limit($medicine->komposisi ?: '—', 15, '...') }}</p>
-                                <p title="{{ $medicine->indikasi ?: '—' }}"><strong>Indikasi:</strong> {{ \Illuminate\Support\Str::limit($medicine->indikasi ?: '—', 15, '...') }}</p>
-                                <p title="{{ $medicine->golongan ?: '—' }}"><strong>Golongan:</strong> {{ \Illuminate\Support\Str::limit($medicine->golongan ?: '—', 15, '...') }}</p>
                             </div>
                             @include('partials.product-unit-selector', [
                                 'medicine' => $medicine,
@@ -495,6 +493,6 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'apotekmedix_cart_retail' };</script>
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_b2c', priceChannel: 'b2c' };</script>
 @include('partials.cart')
 @endsection

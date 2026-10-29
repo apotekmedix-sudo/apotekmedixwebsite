@@ -66,16 +66,6 @@
                         <?php endif; ?>
                         <strong class="product-unit-price" <?php if($priceTargetId): ?> id="<?php echo e($priceTargetId); ?>" <?php endif; ?>>Rp <?php echo e(number_format($unitPriceValues[$unit], 0, ',', '.')); ?></strong>
                     </button>
-                    <div class="product-unit-quantity">
-                        <button type="button" aria-label="Kurangi <?php echo e($unitLabels[$unit]); ?>"
-                                onclick="adjustProductCardQty(this, -1)" <?php if(!$isSelected || $availableQuantity < 1): echo 'disabled'; endif; ?>>−</button>
-                        <input type="number" min="0" max="<?php echo e($availableQuantity); ?>" step="1" value="0"
-                               data-cart-quantity data-stock-unit="<?php echo e($unit); ?>"
-                               aria-label="Jumlah <?php echo e($unitLabels[$unit]); ?>"
-                               oninput="updateProductCardQty(this)" <?php if(!$isSelected || $availableQuantity < 1): echo 'disabled'; endif; ?>>
-                        <button type="button" aria-label="Tambah <?php echo e($unitLabels[$unit]); ?>"
-                                onclick="adjustProductCardQty(this, 1)" <?php if(!$isSelected || $availableQuantity < 1): echo 'disabled'; endif; ?>>+</button>
-                    </div>
                 </div>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>

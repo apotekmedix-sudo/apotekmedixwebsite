@@ -585,7 +585,7 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: 'apotekmedix_cart_retail' };</script>
+<script>window.cartSettings = { storageKey: 'apotekmedix_cart_b2c', priceChannel: 'b2c' };</script>
 @include('partials.cart')
 @endsection
 

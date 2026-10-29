@@ -24,6 +24,7 @@ class B2cRedLogoAccessTest extends TestCase
             ->assertOk()
             ->assertSee('Produk Logo Hijau')
             ->assertSee('Produk Logo Merah')
+            ->assertSee('storageKey: "apotekmedix_cart_b2c"', false)
             ->assertSee('is-red-logo-locked', false)
             ->assertSee('data-red-logo-locked="1"', false)
             ->assertSee('aria-label="Masukkan kode akses harga internal" aria-haspopup="dialog" onclick="document.getElementById(\'internalAccessDialog\').showModal()"', false)
@@ -189,6 +190,34 @@ class B2cRedLogoAccessTest extends TestCase
             ->assertSee('data-red-logo-locked="1"', false);
     }
 
+    public function test_internal_price_channel_uses_its_own_cart_on_catalog_and_detail_pages(): void
+    {
+        $medicine = $this->createMedicine('Produk Keranjang Internal', 'green');
+        $medicine->update(['harga_internal' => 4500]);
+        $accessCode = $this->createInternalAccessCode();
+        $session = [
+            'internal_access_expires_at' => now()->addDays(20)->timestamp,
+            'internal_access_code_hash' => $accessCode->code_hash,
+        ];
+
+        $this->withSession($session)
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee('storageKey: "apotekmedix_cart_internal"', false)
+            ->assertSee('priceChannel: "internal"', false);
+
+        $this->get(route('products.apotek'))
+            ->assertOk()
+            ->assertSee('storageKey: "apotekmedix_cart_internal"', false)
+            ->assertSee('priceChannel: "internal"', false);
+
+        $this->get(route('medicines.show', $medicine))
+            ->assertOk()
+            ->assertSee('storageKey: "apotekmedix_cart_internal"', false)
+            ->assertSee('priceChannel: "internal"', false)
+            ->assertSee('id="detailUnitPriceDisplay">Rp 4.500</div>', false);
+    }
+
     public function test_internal_checkout_uses_server_price_and_rejects_products_without_internal_price(): void
     {
         $medicine = $this->createMedicine('Produk Harga Internal', 'green');
@@ -201,6 +230,7 @@ class B2cRedLogoAccessTest extends TestCase
         ];
         $orderPayload = [
             'buyer_type' => 'umum',
+            'price_channel' => 'internal',
             'buyer_name' => 'Pelanggan Internal',
             'phone' => '081234567890',
             'address' => 'Jalan Contoh',
@@ -215,6 +245,10 @@ class B2cRedLogoAccessTest extends TestCase
             ],
             'total' => 2,
         ];
+
+        $this->postJson(route('orders.history.store'), $orderPayload)
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Akses harga untuk kanal transaksi ini sudah tidak aktif.');
 
         $response = $this->withSession($internalSession)
             ->postJson(route('orders.history.store'), $orderPayload)

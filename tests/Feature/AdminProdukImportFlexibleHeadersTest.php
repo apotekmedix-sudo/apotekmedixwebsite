@@ -139,6 +139,86 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         }
     }
 
+    public function test_import_accepts_markdown_wrapped_external_photo_links(): void
+    {
+        $imageUrl = 'https://p16-oec-sg.ibyteimg.com/tos-alisg-i-aphluv4xwc-sg/2d76ab2413f342f896e1219aba68edd3~tplv-aphluv4xwc-origin-jpeg.jpeg?dr=15568&from=520841845&height=500&idc=my2&ps=933b5bde&shcp=2c1af732&shp=1f0b6a75&t=555f072d&width=500';
+        $markdownLink = "Foto utama: [{$imageUrl}]({$imageUrl})";
+        $downloader = \Mockery::mock(ProductImageDownloader::class);
+        $downloader->shouldReceive('download')->once()->with($imageUrl)->andReturn('medicines/markdown-product.jpg');
+        $this->app->instance(ProductImageDownloader::class, $downloader);
+
+        $path = tempnam(sys_get_temp_dir(), 'import');
+        file_put_contents($path, "NAMA PRODUK,LINK FOTO\nObat Foto Markdown,\"{$markdownLink}\"\n");
+        $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        try {
+            $response = (new AdminProdukImportController())->import($request);
+            $errors = $response->getSession()->get('errors');
+
+            $this->assertTrue($errors === null || !$errors->any(), $errors ? $errors->first('file') : 'No errors');
+            $this->assertDatabaseHas('medicines', [
+                'nama_obat' => 'Obat Foto Markdown',
+                'gambar' => 'medicines/markdown-product.jpg',
+            ]);
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    public function test_import_keeps_product_and_reports_browser_blob_photo_links_as_unusable(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'import');
+        file_put_contents($path, "NAMA PRODUK,LINK FOTO\nObat Foto Blob,blob:https://web.whatsapp.com/e7a63e67-06e3-4f3e-a4ba-ec502a4e5f58\n");
+        $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        try {
+            $response = (new AdminProdukImportController())->import($request);
+            $warnings = $response->getSession()->get('warning');
+
+            $this->assertNotEmpty($warnings);
+            $this->assertStringContainsString('berformat blob:', $warnings[0]);
+            $this->assertDatabaseHas('medicines', ['nama_obat' => 'Obat Foto Blob', 'gambar' => null]);
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    public function test_import_keeps_product_and_reports_external_photo_http_errors(): void
+    {
+        $imageUrl = 'https://images.example.net/products/blocked.jpg';
+        $downloader = \Mockery::mock(ProductImageDownloader::class);
+        $downloader->shouldReceive('download')
+            ->once()
+            ->with($imageUrl)
+            ->andThrow(new \InvalidArgumentException('Server LINK FOTO mengembalikan HTTP 403.'));
+        $this->app->instance(ProductImageDownloader::class, $downloader);
+
+        $path = tempnam(sys_get_temp_dir(), 'import');
+        file_put_contents($path, "NAMA PRODUK,LINK FOTO\nProduk Foto Terblokir,{$imageUrl}\n");
+        $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
+        $request = new Request();
+        $request->setMethod('POST');
+        $request->files->set('file', $file);
+
+        try {
+            $response = (new AdminProdukImportController())->import($request);
+            $warnings = $response->getSession()->get('warning');
+
+            $this->assertNotEmpty($warnings);
+            $this->assertStringContainsString('Produk Foto Terblokir (LINK FOTO 1)', $warnings[0]);
+            $this->assertStringContainsString('HTTP 403', $warnings[0]);
+            $this->assertDatabaseHas('medicines', ['nama_obat' => 'Produk Foto Terblokir', 'gambar' => null]);
+        } finally {
+            @unlink($path);
+        }
+    }
+
     public function test_import_downloads_second_product_photo_into_gallery(): void
     {
         $imageUrl = 'https://images.example.net/products/medicine-secondary.jpg';

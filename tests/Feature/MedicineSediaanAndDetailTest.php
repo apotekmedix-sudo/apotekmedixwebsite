@@ -118,6 +118,8 @@ class MedicineSediaanAndDetailTest extends TestCase
         $response->assertSee('href="' . route('home') . '"', false);
         $response->assertSee('overflow-wrap: anywhere;', false);
         $response->assertSee(e($longDescription), false);
+        $response->assertSee('id="detailMetaTextDialog"', false);
+        $response->assertSee('Lihat selengkapnya');
     }
 
     public function test_b2b_product_detail_keeps_b2b_price_and_access_until_leaving_the_flow(): void
@@ -143,13 +145,25 @@ class MedicineSediaanAndDetailTest extends TestCase
         ];
 
         $this->withSession($session)
-            ->get(route('medicines.show', ['id' => $medicine->id, 'from' => 'b2b']))
+            ->get(route('products.pbf'))
+            ->assertOk()
+            ->assertSee('href="' . route('medicines.show', ['id' => $medicine->id, 'from' => 'b2b']) . '"', false)
+            ->assertDontSee('navigator.sendBeacon', false);
+
+        $this->get(route('medicines.show', ['id' => $medicine->id, 'from' => 'b2b']))
             ->assertOk()
             ->assertSee('id="detailUnitPriceDisplay">Rp 17.000</div>', false)
             ->assertDontSee('id="detailUnitPriceDisplay">Rp 32.000</div>', false)
+            ->assertSee('storageKey: "apotekmedix_cart_b2b"', false)
+            ->assertSee('priceChannel: "b2b"', false)
+            ->assertSee('wholesaleOrder: true', false)
             ->assertSee('href="' . route('products.pbf') . '">Belanja B2B</a>', false)
             ->assertSee('Kembali ke Belanja B2B')
             ->assertSessionHas('pbf_access_code_hash', $b2bCode->code_hash);
+
+        $this->get(route('products.pbf'))
+            ->assertOk()
+            ->assertSee('Anda masuk sebagai mitra PBF terverifikasi');
 
         $this->get(route('home'))
             ->assertOk()

@@ -677,6 +677,29 @@
     flex-shrink: 0;
     box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05);
   }
+  .co-sum-logo-marker {
+    position: absolute;
+    z-index: 2;
+    top: 4px;
+    left: 4px;
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.3);
+  }
+  .co-sum-logo-marker--green { background: #22a447; }
+  .co-sum-logo-marker--blue { background: #2563eb; }
+  .co-sum-logo-marker--red {
+    background: #dc2626;
+    color: #0f172a;
+    font-size: 0.68rem;
+    font-weight: 900;
+    line-height: 1;
+  }
   .co-sum-thumb img {
     width: 100%;
     height: 100%;
@@ -1139,7 +1162,8 @@
   const CART_CONTEXT_KEY = 'apotekmedix_active_cart_context';
 
   let activeCtx = {
-    storageKey: 'apotekmedix_cart_retail',
+    storageKey: 'apotekmedix_cart_b2c',
+    priceChannel: 'b2c',
     wholesaleOrder: false,
     adminPbfOrder: false,
     adminPurchaseOrderBase: null,
@@ -1154,19 +1178,12 @@
   } catch (e) {}
 
   let checkoutCart = JSON.parse(localStorage.getItem(activeCtx.storageKey) || '[]');
-  if (!checkoutCart.length) {
-    for (const key of ['apotekmedix_cart_retail', 'apotekmedix_cart', 'apotekmedix_cart_apotek', 'apotekmedix_cart_pbf']) {
-      const candidate = JSON.parse(localStorage.getItem(key) || '[]');
-      if (candidate.length) {
-        activeCtx.storageKey = key;
-        checkoutCart = candidate;
-        break;
-      }
-    }
-  }
 
-  if (activeCtx.storageKey === 'apotekmedix_cart_pbf') {
+  if (activeCtx.storageKey === 'apotekmedix_cart_b2b' || activeCtx.storageKey === 'apotekmedix_cart_pbf') {
     activeCtx.wholesaleOrder = true;
+  }
+  if (!activeCtx.priceChannel) {
+    activeCtx.priceChannel = activeCtx.wholesaleOrder ? 'b2b' : 'b2c';
   }
   activeCtx.continueShoppingUrl = activeCtx.adminPbfOrder
     ? @json(route('admin.produk-pbf.index'))
@@ -1231,6 +1248,11 @@
       const prevImg = item.img;
       const imgUrl = resolveProductImage(item);
       if (item.img !== prevImg) updatedCatalogImg = true;
+      const catalogEntry = PRODUCT_CATALOG[item.id] || PRODUCT_CATALOG[String(item.id)];
+      const logoColor = catalogEntry?.logo_color;
+      const logoMarkerHtml = ['green', 'red', 'blue'].includes(logoColor)
+        ? `<span class="co-sum-logo-marker co-sum-logo-marker--${logoColor}" role="img" aria-label="Logo ${logoColor === 'green' ? 'hijau' : (logoColor === 'red' ? 'merah' : 'biru')}">${logoColor === 'red' ? 'K' : ''}</span>`
+        : '';
 
       const qty = Number(item.qty || 1);
       const price = Number(item.price || 0);
@@ -1250,6 +1272,7 @@
           <div class="co-sum-left">
             <div class="co-sum-thumb">
               ${thumbHtml}
+              ${logoMarkerHtml}
               <span class="co-sum-qty-badge">${qty}</span>
             </div>
             <div>
@@ -1464,7 +1487,7 @@
 
     const jenis = activeCtx.adminPbfOrder
       ? 'apotik'
-      : (activeCtx.wholesaleOrder || activeCtx.storageKey === 'apotekmedix_cart_pbf' ? 'pbf' : 'umum');
+      : (activeCtx.wholesaleOrder || activeCtx.priceChannel === 'b2b' ? 'pbf' : 'umum');
     void ((activeCtx.adminPbfOrder || activeCtx.wholesaleOrder
       ? 'apotik'
       : 'umum'));
@@ -1492,6 +1515,7 @@
 
     const payload = {
       buyer_type: jenis,
+      price_channel: activeCtx.priceChannel || (activeCtx.wholesaleOrder ? 'b2b' : 'b2c'),
       items: mappedItems,
       total: discountedTotal,
       original_total: originalTotal,
@@ -1679,7 +1703,7 @@
     configureTempoOption();
     if (activeCtx.adminPbfOrder) {
       document.getElementById('coAdminPbfFields').style.display = 'block';
-    } else if (activeCtx.wholesaleOrder || activeCtx.storageKey === 'apotekmedix_cart_pbf') {
+    } else if (activeCtx.wholesaleOrder || activeCtx.priceChannel === 'b2b') {
       const b2bPermit = document.getElementById('coB2bPermitFields');
       if (b2bPermit) b2bPermit.style.display = 'block';
       const b2bOutlet = document.getElementById('co_b2b_outlet');

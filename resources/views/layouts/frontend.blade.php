@@ -699,6 +699,17 @@
         .footer .container { max-width: 1280px; }
         .footer-content > div { min-width: 0; }
         .footer-content > div:first-child > p { max-width: 34ch; }
+        .footer-social-row { display:flex;flex-wrap:wrap;align-items:center;gap:.75rem; }
+        .footer-social-row > a { flex:0 0 36px; }
+        .footer .catalog-access-controls { align-items:center;gap:.75rem; }
+        .footer .catalog-access-trigger,
+        .footer .catalog-access-exit {
+            width:36px !important;
+            min-width:36px !important;
+            height:36px !important;
+            min-height:36px !important;
+            border-radius:8px;
+        }
         .footer ul { margin: 0; padding: 0; }
         .footer ul li { line-height: 1.6; }
         .footer ul a.footer-contact-link { color:#d1d5db;text-decoration:none;display:flex;align-items:flex-start;gap:.65rem;overflow-wrap:anywhere; }
@@ -1114,7 +1125,7 @@
                 <div>
                     <h3><i class="fa-solid fa-pills" style="color:#10B981;"></i> <span style="color:#0052CC;">Apotek</span><span style="color:#10B981;"> Medix</span></h3>
                     <p style="color:#d1d5db; line-height:1.8; margin-bottom:1.25rem;">Belanja obat dan kebutuhan kesehatan secara online dari Apotek Medix.</p>
-                    <div style="display:flex; gap:0.75rem;">
+                    <div class="footer-social-row">
                         <a href="https://facebook.com/apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#1877f2'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-facebook-f"></i></a>
                         <a href="https://www.instagram.com/apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#e1306c'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-instagram"></i></a>
                         <a href="https://wa.me/6285890007359" aria-label="WhatsApp Apotek Medix" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#25d366'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-whatsapp"></i></a>
@@ -1166,7 +1177,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 Apotek Medix. Semua hak dilindungi.</p>
+                <p>&copy; 2026 Apotek Medix. Semua hak dilindungi.</p>
             </div>
         </div>
     </footer>
@@ -1331,7 +1342,7 @@
             try { savedCtx = JSON.parse(localStorage.getItem('apotekmedix_active_cart_context') || '{}'); } catch (e) {}
             const storageKey = (window.cartSettings && window.cartSettings.storageKey)
                 ? window.cartSettings.storageKey
-                : (savedCtx.storageKey || 'apotekmedix_cart_retail');
+                : (savedCtx.storageKey || 'apotekmedix_cart_b2c');
             const cart = JSON.parse(localStorage.getItem(storageKey) || '[]');
             const total = cart.reduce(function(s, i) { return s + i.qty; }, 0);
             
