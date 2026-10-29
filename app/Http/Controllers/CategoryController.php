@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Medicine;
+use App\Models\ShoppingAccessCode;
+use App\Support\HomepageProductCategories;
 use App\Support\StockAvailability;
 use Illuminate\Http\Request;
 
@@ -25,6 +27,10 @@ class CategoryController extends Controller
 
         // Query produk berdasarkan kategori (non-PBF dan siap jual B2C)
         $query = Medicine::nonPbf()->availableForB2c();
+        if (!ShoppingAccessCode::hasActiveB2cSession()) {
+            $query->withoutRedLogo();
+            HomepageProductCategories::excludeB2cRestricted($query);
+        }
 
         // Filter berdasarkan kategori dan sub-kategori
         $query = $this->filterByCategory($query, $mainCategory, $subCategory);

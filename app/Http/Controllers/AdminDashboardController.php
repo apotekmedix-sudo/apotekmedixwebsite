@@ -79,7 +79,7 @@ class AdminDashboardController extends Controller
 
         if ($tab === 'sales') {
             $ordersQuery = Schema::hasTable('purchase_histories')
-                ? PurchaseHistory::with('cashier')->latest()
+                ? PurchaseHistory::with('cashier')->latest()->orderByDesc('id')
                 : PurchaseHistory::query()->whereRaw('1 = 0');
             if (Schema::hasColumn('purchase_histories', 'is_pbf_purchase_order')) {
                 $ordersQuery->where(fn ($query) => $query->whereNull('is_pbf_purchase_order')->orWhere('is_pbf_purchase_order', false));
@@ -132,6 +132,7 @@ class AdminDashboardController extends Controller
                     'source' => 'supplier',
                     'model' => $order,
                     'date' => $order->ordered_at,
+                    'sort_date' => $order->created_at,
                     'order_number' => $order->order_number,
                     'supplier' => $order->supplier_name,
                     'product_count' => $order->items->count(),
@@ -158,6 +159,7 @@ class AdminDashboardController extends Controller
                         'source' => 'legacy',
                         'model' => $order,
                         'date' => $order->created_at,
+                        'sort_date' => $order->created_at,
                         'order_number' => ($order->purchase_order_profile === 'medikpedia' ? 'MDK' : 'MDX') . '/SP/' . strtoupper($order->purchase_order_type ?: 'regular') . '/'
                             . $order->created_at?->format('Ymd') . '/'
                             . str_pad((string) $order->id, 5, '0', STR_PAD_LEFT),
@@ -195,7 +197,10 @@ class AdminDashboardController extends Controller
                 return empty($filters['purchase_status']) || $row['status'] === $filters['purchase_status'];
             })
             ->sort(function (array $left, array $right) use ($filters): int {
-                $comparison = ($left['date']?->getTimestamp() ?? 0) <=> ($right['date']?->getTimestamp() ?? 0);
+                $comparison = ($left['sort_date']?->getTimestamp() ?? 0) <=> ($right['sort_date']?->getTimestamp() ?? 0);
+                if ($comparison === 0) {
+                    $comparison = ($left['model']->id ?? 0) <=> ($right['model']->id ?? 0);
+                }
                 if ($comparison === 0) {
                     $comparison = strcmp($left['order_number'], $right['order_number']);
                 }
@@ -513,7 +518,7 @@ class AdminDashboardController extends Controller
             return redirect()->route('admin.purchase-history.index')->with('error', 'Tabel purchase_histories tidak tersedia.');
         }
 
-        $ordersQuery = PurchaseHistory::with('cashier')->latest();
+        $ordersQuery = PurchaseHistory::with('cashier')->latest()->orderByDesc('id');
         if (Schema::hasColumn('purchase_histories', 'is_pbf_purchase_order')) {
             $ordersQuery->where(fn ($query) => $query->whereNull('is_pbf_purchase_order')->orWhere('is_pbf_purchase_order', false));
         }

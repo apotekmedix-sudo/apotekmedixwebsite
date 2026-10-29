@@ -30,9 +30,16 @@ class HomeController extends Controller
         $homeHasFilters = $search !== '' || $kategoriPilihan !== '' || $perusahaan !== '' || $sort !== 'terbaru';
         $b2cAccess = ShoppingAccessCode::hasActiveB2cSession();
         $internalAccess = ShoppingAccessCode::hasActiveInternalSession();
-        $redLogoAccess = $b2cAccess || $internalAccess;
-        $b2cCatalogQuery = fn () => Medicine::nonPbf()
-            ->availableForB2c();
+        $redLogoAccess = $b2cAccess;
+        $b2cCatalogQuery = function () use ($b2cAccess) {
+            $query = Medicine::nonPbf()->availableForB2c();
+            if (!$b2cAccess) {
+                $query->withoutRedLogo();
+                HomepageProductCategories::excludeB2cRestricted($query);
+            }
+
+            return $query;
+        };
 
         $featuredQuery = $b2cCatalogQuery()
             ->where('grade', 'A')
@@ -157,7 +164,14 @@ class HomeController extends Controller
         $b2cAccess = ShoppingAccessCode::hasActiveB2cSession();
         $internalAccess = ShoppingAccessCode::hasActiveInternalSession();
         $b2bAccess = $detailOrigin === 'b2b' && ShoppingAccessCode::hasActiveB2bSession();
-        $redLogoAccess = $b2cAccess || $internalAccess;
+        $redLogoAccess = $b2cAccess;
+        if (
+            !$b2cAccess
+            && !$b2bAccess
+            && ($medicine->isRedLogo() || HomepageProductCategories::isB2cRestricted($medicine))
+        ) {
+            abort(404);
+        }
 
         StockAvailability::annotate($medicine->newCollection([$medicine]));
 
@@ -171,6 +185,10 @@ class HomeController extends Controller
             $relatedQuery = $b2bAccess
                 ? Medicine::query()->where('harga_grosir', '>', 0)
                 : Medicine::nonPbf()->availableForB2c();
+            if (!$b2cAccess && !$b2bAccess) {
+                $relatedQuery->withoutRedLogo();
+                HomepageProductCategories::excludeB2cRestricted($relatedQuery);
+            }
             $relatedQuery
                 ->where('id', '!=', $medicine->id)
                 ->where(function ($query) use ($similarityConditions): void {

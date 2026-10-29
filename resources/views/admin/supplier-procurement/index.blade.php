@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Pembelian Supplier - Admin Apotek Medix')
-@section('page-title', 'Pembelian Supplier')
+@section('title', 'Tambah Produk Supplier - Admin Apotek Medix')
+@section('page-title', 'Tambah Produk Supplier')
 
 @section('styles')
 <style>
@@ -51,7 +51,7 @@
     @if($errors->any())<ul class="procurement-errors" role="alert">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>@endif
 
     <section class="procurement-card">
-        <h2>Pembelian Supplier</h2>
+        <h2>Tambah Produk Supplier</h2>
         <p class="procurement-muted">Atur harga modal dan kode produk per supplier di halaman ini. Untuk memilih supplier, memesan barang, dan membuat SP, buka halaman Pesan ke PBF.</p>
         <div class="procurement-actions">
             <a class="procurement-btn" href="{{ route('admin.produk-pbf.index') }}"><i class="fa-solid fa-file-signature"></i> Pesan ke PBF</a>

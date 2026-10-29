@@ -116,6 +116,9 @@ class AdminSupplierProcurementTest extends TestCase
             ->assertSee('7.500')
             ->assertSee('PBF-001')
             ->assertSee((string) $offer->id)
+            ->assertSee('Harga per')
+            ->assertDontSee('Ajuan Potongan Harga')
+            ->assertDontSee('Catatan produk...')
             ->assertDontSee('Produk tanpa harga supplier');
     }
 
@@ -142,7 +145,7 @@ class AdminSupplierProcurementTest extends TestCase
             ->postJson(route('admin.supplier-procurement.orders.store'), [
                 'supplier_id' => $supplier->id,
                 'quantities' => [$offer->id => 2],
-                'requested_discounts' => [$offer->id => 1200],
+                'unit_prices' => [$offer->id => 7000],
                 'purchase_order_type' => 'oot',
                 'purchase_order_profile' => 'medix',
                 'requester_name' => 'Apt. Penguji',
@@ -156,8 +159,9 @@ class AdminSupplierProcurementTest extends TestCase
         $order = SupplierPurchaseOrder::with('items')->findOrFail($response->json('id'));
         $this->assertSame('oot', $order->purchase_order_type);
         $this->assertSame('Apt. Penguji', $order->requester_name);
-        $this->assertSame('6400.00', $order->items->first()->unit_cost);
-        $this->assertSame('1200.00', $order->items->first()->requested_discount);
+        $this->assertSame('7000.00', $order->items->first()->unit_cost);
+        $this->assertSame('0.00', $order->items->first()->requested_discount);
+        $this->assertSame('14000.00', $order->items->first()->line_total);
         $this->assertSame('Bahan aktif', $order->items->first()->active_ingredient);
         $this->assertSame(5, $medicine->fresh()->stok);
 
@@ -171,12 +175,11 @@ class AdminSupplierProcurementTest extends TestCase
             ->assertSee('Subtotal')
             ->assertSee('class="order-totals"', false)
             ->assertDontSee('<tfoot>', false)
-            ->assertSeeInOrder(['</table>', 'Total ajuan potongan: Rp 1.200', 'Total: Rp 12.800'])
+            ->assertSeeInOrder(['</table>', 'Total: Rp 14.000'])
             ->assertDontSee('<th class="number">Ajuan Potongan</th>', false)
-            ->assertSee('Rp 6.400')
-            ->assertSee('Rp 12.800')
-            ->assertSee('Ajuan potongan: Rp 1.200')
-            ->assertSee('potongan menunggu persetujuan supplier');
+            ->assertSee('Rp 7.000')
+            ->assertSee('Rp 14.000')
+            ->assertDontSee('Ajuan potongan');
     }
 
     public function test_supplier_sp_rejects_mixed_product_categories_for_selected_order_type(): void
@@ -430,7 +433,7 @@ class AdminSupplierProcurementTest extends TestCase
                 'offer_search' => 'Nama produk',
             ]))
             ->assertOk()
-            ->assertSee('Pembelian Supplier')
+            ->assertSee('Tambah Produk Supplier')
             ->assertSee('Pesan ke PBF')
             ->assertDontSee('Pesanan &amp; Penerimaan')
             ->assertDontSee('Harga Produk Supplier</a>')
@@ -624,6 +627,18 @@ class AdminSupplierProcurementTest extends TestCase
         ]);
         $olderOrder->forceFill(['created_at' => now()->subDays(2)])->saveQuietly();
         $targetOrder->forceFill(['created_at' => now()->subDay()])->saveQuietly();
+        $supplier = PbfSupplier::create(['name' => 'Supplier Sort Terbaru', 'address' => 'Alamat', 'phone' => '021']);
+        $newestSupplierOrder = SupplierPurchaseOrder::create([
+            'supplier_id' => $supplier->id,
+            'supplier_name' => $supplier->name,
+            'order_number' => 'AAA-LATEST-SUPPLIER',
+            'status' => 'ordered',
+            'ordered_at' => $targetOrder->created_at->toDateString(),
+        ]);
+        $newestSupplierOrder->forceFill([
+            'created_at' => $targetOrder->created_at->copy()->addHour(),
+            'updated_at' => $targetOrder->created_at->copy()->addHour(),
+        ])->saveQuietly();
 
         $olderSp = 'MDX/SP/REGULAR/' . $olderOrder->created_at->format('Ymd') . '/' . str_pad((string) $olderOrder->id, 5, '0', STR_PAD_LEFT);
         $targetSp = 'MDX/SP/REGULAR/' . $targetOrder->created_at->format('Ymd') . '/' . str_pad((string) $targetOrder->id, 5, '0', STR_PAD_LEFT);
@@ -668,11 +683,35 @@ class AdminSupplierProcurementTest extends TestCase
 
         $this->get($baseUrl . '&purchase_sort=oldest')
             ->assertOk()
-            ->assertSeeInOrder([$olderSp, $targetSp]);
+            ->assertSeeInOrder([$olderSp, $targetSp, 'AAA-LATEST-SUPPLIER']);
 
         $this->get($baseUrl . '&purchase_sort=newest')
             ->assertOk()
-            ->assertSeeInOrder([$targetSp, $olderSp]);
+            ->assertSeeInOrder(['AAA-LATEST-SUPPLIER', $targetSp, $olderSp]);
+    }
+
+    public function test_sales_history_shows_newest_transaction_first(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $olderSale = PurchaseHistory::create([
+            'buyer_name' => 'Transaksi Lama',
+            'items' => [],
+            'total' => 10000,
+            'is_pbf_purchase_order' => false,
+        ]);
+        $newerSale = PurchaseHistory::create([
+            'buyer_name' => 'Transaksi Terbaru',
+            'items' => [],
+            'total' => 20000,
+            'is_pbf_purchase_order' => false,
+        ]);
+        $olderSale->forceFill(['created_at' => now()->subDay()])->saveQuietly();
+        $newerSale->forceFill(['created_at' => now()->subHour()])->saveQuietly();
+
+        $this->actingAs($admin)
+            ->get(route('admin.purchase-history.index', ['tab' => 'sales']))
+            ->assertOk()
+            ->assertSeeInOrder(['Transaksi Terbaru', 'Transaksi Lama']);
     }
 
     public function test_deleting_all_sales_keeps_legacy_pbf_purchase_orders(): void

@@ -14,19 +14,18 @@ class B2cRedLogoAccessTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_red_logo_products_are_locked_gray_until_b2c_code_is_activated(): void
+    public function test_red_logo_products_are_hidden_until_b2c_code_is_activated(): void
     {
         $redMedicine = $this->createMedicine('Produk Logo Merah', 'Merah');
+        $redMedicine->update(['promo_b2c_percent' => 20, 'kategori_produk' => 'Obat Oral']);
         $this->createMedicine('Produk Logo Hijau', 'Hijau');
         $accessCode = $this->createB2cAccessCode();
 
         $this->get(route('products.apotek'))
             ->assertOk()
             ->assertSee('Produk Logo Hijau')
-            ->assertSee('Produk Logo Merah')
+            ->assertDontSee('Produk Logo Merah')
             ->assertSee('storageKey: "apotekmedix_cart_b2c"', false)
-            ->assertSee('is-red-logo-locked', false)
-            ->assertSee('data-red-logo-locked="1"', false)
             ->assertSee('aria-label="Masukkan kode akses harga internal" aria-haspopup="dialog" onclick="document.getElementById(\'internalAccessDialog\').showModal()"', false)
             ->assertSee('aria-label="Masukkan kode B2C untuk membuka produk berlogo merah" aria-haspopup="dialog" onclick="document.getElementById(\'b2cAccessDialog\').showModal()">K', false)
             ->assertSee('id="b2cAccessDialog"', false)
@@ -36,8 +35,15 @@ class B2cRedLogoAccessTest extends TestCase
             ->assertSee(route('products.apotek.activate'), false);
 
         $this->get(route('products.show', $redMedicine))
+            ->assertNotFound();
+        $this->get(route('medicines.show', $redMedicine))
+            ->assertNotFound();
+        $this->get(route('home'))
             ->assertOk()
-            ->assertSee('is-red-logo-locked', false);
+            ->assertDontSee('Produk Logo Merah');
+        $this->get(route('category.layer2', ['main' => 'apotik', 'sub' => 'oral']))
+            ->assertOk()
+            ->assertDontSee('Produk Logo Merah');
 
         $this->post(route('products.apotek.activate'), [
             'kode' => '00000',
@@ -58,8 +64,14 @@ class B2cRedLogoAccessTest extends TestCase
         $this->get(route('products.apotek'))
             ->assertOk()
             ->assertSee('Produk Logo Merah')
-            ->assertSee('B2C aktif')
-            ->assertDontSee('data-red-logo-locked="1"', false);
+            ->assertSee('B2C aktif');
+        $homeWithAccess = $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Produk Logo Merah');
+        $this->assertGreaterThanOrEqual(2, substr_count($homeWithAccess->getContent(), 'Produk Logo Merah'));
+        $this->get(route('category.layer2', ['main' => 'apotik', 'sub' => 'oral']))
+            ->assertOk()
+            ->assertSee('Produk Logo Merah');
 
         $this->get(route('products.show', $redMedicine))
             ->assertOk()
@@ -74,7 +86,12 @@ class B2cRedLogoAccessTest extends TestCase
         ])->assertRedirect(route('products.apotek'));
         $this->get(route('products.apotek'))
             ->assertOk()
-            ->assertSee('data-red-logo-locked="1"', false);
+            ->assertDontSee('Produk Logo Merah');
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('Produk Logo Merah');
+        $this->get(route('products.show', $redMedicine))
+            ->assertNotFound();
     }
 
     public function test_red_logo_products_cannot_be_ordered_without_active_b2c_code(): void
@@ -130,7 +147,7 @@ class B2cRedLogoAccessTest extends TestCase
         ]);
     }
 
-    public function test_internal_code_opens_internal_prices_and_red_logo_products_until_logout(): void
+    public function test_b2c_code_opens_red_logo_products_while_internal_code_controls_prices(): void
     {
         $this->createMedicine('Produk Harga Internal', 'red')->update([
             'harga_retail' => 10000,
@@ -181,13 +198,146 @@ class B2cRedLogoAccessTest extends TestCase
         $this->get(route('products.apotek'))
             ->assertOk()
             ->assertSee('Rp 10.000')
-            ->assertDontSee('data-red-logo-locked="1"', false);
+            ->assertSee('Produk Harga Internal');
         $this->post(route('products.apotek.access.logout', 'b2c'), [
             'redirect_to' => 'products.apotek',
         ])->assertRedirect(route('products.apotek'));
         $this->get(route('products.apotek'))
             ->assertOk()
-            ->assertSee('data-red-logo-locked="1"', false);
+            ->assertDontSee('Produk Harga Internal');
+    }
+
+    public function test_internal_code_alone_does_not_show_red_logo_products_in_b2c(): void
+    {
+        $medicine = $this->createMedicine('Produk Merah Akses B2C Saja', 'red');
+        $this->createInternalAccessCode();
+
+        $this->post(route('products.apotek.internal.activate'), [
+            'kode' => '54321',
+            'access_type' => 'internal',
+            'redirect_to' => 'products.apotek',
+        ])->assertRedirect(route('products.apotek'));
+
+        $this->get(route('products.apotek'))
+            ->assertOk()
+            ->assertDontSee('Produk Merah Akses B2C Saja');
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('Produk Merah Akses B2C Saja');
+        $this->get(route('medicines.show', $medicine))
+            ->assertNotFound();
+    }
+
+    public function test_restricted_medicine_categories_are_hidden_until_b2c_code_is_active(): void
+    {
+        $restrictedProducts = [
+            ['Produk Obat Resep Akses', 'obat-resep', true],
+            ['Produk Obat Diabetes Akses', 'obat-diabetes', false],
+            ['Produk Obat Hipertensi Akses', 'obat-hipertensi', false],
+            ['Produk Obat Kolesterol Akses', 'obat-kolesterol', false],
+            ['Produk Injeksi Infus Akses', 'injeksi-infus', false],
+            ['Produk Pil KB Hormonal Akses', 'pil-kb-hormonal', false],
+        ];
+        $products = collect($restrictedProducts)->map(function (array $productData): Medicine {
+            [$name, $category, $prescription] = $productData;
+
+            return Medicine::create([
+                'nama_obat' => $name,
+                'logo' => 'Hijau',
+                'kategori_produk' => $category,
+                'is_resep' => $prescription,
+                'harga' => 10000,
+                'harga_retail' => 10000,
+                'promo_b2c_percent' => 15,
+                'stok' => 10,
+                'deskripsi' => 'Produk untuk uji pembatasan kategori B2C.',
+            ]);
+        });
+        $productNames = array_column($restrictedProducts, 0);
+
+        $this->createInternalAccessCode();
+        $this->post(route('products.apotek.internal.activate'), [
+            'kode' => '54321',
+            'redirect_to' => 'products.apotek',
+        ])->assertRedirect(route('products.apotek'));
+
+        foreach ([route('products.apotek'), route('home')] as $catalogUrl) {
+            $response = $this->get($catalogUrl)->assertOk();
+            foreach ($productNames as $name) {
+                $response->assertDontSee($name);
+            }
+        }
+        foreach ($products as $product) {
+            $this->get(route('products.show', $product))->assertNotFound();
+        }
+
+        $this->createB2cAccessCode();
+        $this->post(route('products.apotek.activate'), [
+            'kode' => '12345',
+            'redirect_to' => 'products.apotek',
+        ])->assertRedirect(route('products.apotek'));
+
+        foreach ([route('products.apotek'), route('home')] as $catalogUrl) {
+            $response = $this->get($catalogUrl)->assertOk();
+            foreach ($productNames as $name) {
+                $response->assertSee($name);
+            }
+        }
+        foreach ($products as $index => $product) {
+            $this->get(route('products.show', $product))
+                ->assertOk()
+                ->assertSee($productNames[$index]);
+        }
+    }
+
+    public function test_non_red_product_in_restricted_category_can_be_ordered_with_active_b2c_access(): void
+    {
+        $medicine = $this->createMedicine('Produk Diabetes Logo Hijau', 'Hijau');
+        $medicine->update(['kategori_produk' => 'obat-diabetes']);
+        $accessCode = $this->createB2cAccessCode();
+        $payload = [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pelanggan B2C',
+            'phone' => '081234567890',
+            'address' => 'Jalan Contoh',
+            'items' => [
+                ['id' => $medicine->id, 'name' => $medicine->nama_obat, 'qty' => 1, 'price' => 10000],
+            ],
+            'total' => 10000,
+        ];
+
+        $response = $this->withSession([
+            'b2c_access_expires_at' => now()->addDays(20)->timestamp,
+            'b2c_access_code_hash' => $accessCode->code_hash,
+        ])->postJson(route('orders.history.store'), $payload)
+            ->assertOk();
+
+        $order = PurchaseHistory::findOrFail($response->json('id'));
+        $this->assertSame('Produk Diabetes Logo Hijau', $order->items[0]['nama_obat']);
+        $this->assertSame(10000, $order->total);
+    }
+
+    public function test_red_logo_inferred_from_obat_keras_is_hidden_without_b2c_code(): void
+    {
+        $medicine = $this->createMedicine('Logo Merah dari Golongan', '');
+        $medicine->update(['golongan' => 'Obat Keras']);
+
+        $this->get(route('products.apotek'))
+            ->assertOk()
+            ->assertDontSee('Logo Merah dari Golongan');
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('Logo Merah dari Golongan');
+
+        $this->createB2cAccessCode();
+        $this->post(route('products.apotek.activate'), [
+            'kode' => '12345',
+            'redirect_to' => 'products.apotek',
+        ])->assertRedirect(route('products.apotek'));
+
+        $this->get(route('products.apotek'))
+            ->assertOk()
+            ->assertSee('Logo Merah dari Golongan');
     }
 
     public function test_internal_price_channel_uses_its_own_cart_on_catalog_and_detail_pages(): void

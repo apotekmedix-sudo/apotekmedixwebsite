@@ -430,8 +430,19 @@ class Medicine extends Model
     public function scopeWithoutRedLogo($query)
     {
         return $query->where(function ($catalogQuery) {
-            $catalogQuery->whereNull('logo')
-                ->orWhereRaw('LOWER(TRIM(logo)) NOT IN (?, ?)', ['merah', 'red']);
+            $catalogQuery->where(function ($logoQuery) {
+                $logoQuery->whereNotNull('logo')
+                    ->whereRaw("TRIM(logo) <> ''")
+                    ->whereRaw('LOWER(TRIM(logo)) NOT IN (?, ?, ?, ?)', ['merah', 'red', 'logo merah', 'k']);
+            })->orWhere(function ($unmarkedQuery) {
+                $unmarkedQuery->where(function ($logoQuery) {
+                    $logoQuery->whereNull('logo')
+                        ->orWhereRaw("TRIM(logo) = ''");
+                })->where(function ($groupQuery) {
+                    $groupQuery->whereNull('golongan')
+                        ->orWhereRaw("LOWER(golongan) NOT LIKE ?", ['%keras%']);
+                });
+            });
         });
     }
 

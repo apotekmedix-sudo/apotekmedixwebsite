@@ -194,6 +194,20 @@ class MedicineSediaanAndDetailTest extends TestCase
 
         $this->get(route('home', ['kategori_pilihan' => 'obat-resep']))
             ->assertOk()
+            ->assertDontSee('Obat Resep Contoh')
+            ->assertDontSee('Obat OTC Contoh');
+
+        $b2cCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2C,
+            'code_hash' => Hash::make('12345'),
+            'code_value' => encrypt('12345'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $this->withSession([
+            'b2c_access_expires_at' => now()->addDays(20)->timestamp,
+            'b2c_access_code_hash' => $b2cCode->code_hash,
+        ])->get(route('home', ['kategori_pilihan' => 'obat-resep']))
+            ->assertOk()
             ->assertSee('Obat Resep Contoh')
             ->assertDontSee('Obat OTC Contoh');
 
@@ -274,6 +288,19 @@ class MedicineSediaanAndDetailTest extends TestCase
         ]);
 
         $this->get(route('home', ['kategori_pilihan' => 'injeksi-infus']))
+            ->assertOk()
+            ->assertDontSee('Cairan Medis Contoh');
+
+        $b2cCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2C,
+            'code_hash' => Hash::make('12345'),
+            'code_value' => encrypt('12345'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $this->withSession([
+            'b2c_access_expires_at' => now()->addDays(20)->timestamp,
+            'b2c_access_code_hash' => $b2cCode->code_hash,
+        ])->get(route('home', ['kategori_pilihan' => 'injeksi-infus']))
             ->assertOk()
             ->assertSee('Cairan Medis Contoh')
             ->assertDontSee('Krim Wajah Contoh')

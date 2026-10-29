@@ -535,7 +535,7 @@ class MedicineUnitPackagingTest extends TestCase
         $this->assertSame(1000, $medicine->fresh()->stock_base_units);
     }
 
-    public function test_admin_pbf_purchase_order_uses_modal_price_and_does_not_reduce_store_stock(): void
+    public function test_admin_pbf_purchase_order_uses_cart_price_without_discounts_or_reducing_store_stock(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $medicine = Medicine::create([
@@ -565,7 +565,7 @@ class MedicineUnitPackagingTest extends TestCase
             'is_pbf_purchase_order' => true,
             'transaction_channel' => 'online',
             'items' => [
-                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 2, 'harga' => 1200, 'potongan' => 200],
+                ['id' => $medicine->id, 'nama_obat' => $medicine->nama_obat, 'quantity' => 2, 'harga' => 700, 'potongan' => 200],
             ],
             'total' => 2400,
         ])->assertOk();
@@ -577,10 +577,10 @@ class MedicineUnitPackagingTest extends TestCase
         $this->assertSame('021-12345678', $order->pbf_phone);
         $this->assertSame('Apotek Medix', $order->buyer_name);
         $this->assertNull($order->customer_id);
-        $this->assertSame(1000, $order->total);
-        $this->assertSame(500, $order->items[0]['harga']);
-        $this->assertSame(500, $order->items[0]['harga_modal']);
-        $this->assertSame(200, $order->items[0]['potongan']);
+        $this->assertSame(1400, $order->total);
+        $this->assertSame(700, $order->items[0]['harga']);
+        $this->assertSame(700, $order->items[0]['harga_modal']);
+        $this->assertSame(0, $order->items[0]['potongan']);
         $this->assertSame('Pabrik Contoh', $order->items[0]['brand']);
         $this->assertDatabaseHas('medicines', [
             'id' => $medicine->id,
@@ -622,11 +622,10 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertSee('Subtotal')
             ->assertSee('class="order-totals"', false)
             ->assertDontSee('<tfoot>', false)
-            ->assertSeeInOrder(['</table>', 'Total ajuan potongan: Rp 200', 'Total: Rp 1.000'])
-            ->assertSee('Rp 500')
+            ->assertSeeInOrder(['</table>', 'Total: Rp 1.400'])
+            ->assertSee('Rp 700')
             ->assertDontSee('<th class="number">Ajuan Potongan</th>', false)
-            ->assertSee('Ajuan potongan: Rp 200')
-            ->assertSee('potongan menunggu persetujuan supplier')
+            ->assertDontSee('Ajuan potongan')
             ->assertDontSee('Rp 900');
     }
 

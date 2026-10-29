@@ -50,6 +50,13 @@ class ProductController extends Controller
     public function show(Request $request, $id)
     {
         $medicine = Medicine::findOrFail($id);
+        $b2cAccess = ShoppingAccessCode::hasActiveB2cSession();
+        if (
+            !$b2cAccess
+            && ($medicine->isRedLogo() || HomepageProductCategories::isB2cRestricted($medicine))
+        ) {
+            abort(404);
+        }
 
         StockAvailability::annotate($medicine->newCollection([$medicine]));
         $similarityConditions = array_filter([
@@ -61,7 +68,12 @@ class ProductController extends Controller
         if ($similarityConditions !== []) {
             $relatedQuery = Medicine::nonPbf()
                 ->availableForB2c()
-                ->where('id', '!=', $medicine->id)
+                ->where('id', '!=', $medicine->id);
+            if (!$b2cAccess) {
+                $relatedQuery->withoutRedLogo();
+                HomepageProductCategories::excludeB2cRestricted($relatedQuery);
+            }
+            $relatedQuery
                 ->where(function ($query) use ($similarityConditions): void {
                     foreach ($similarityConditions as $attribute => $value) {
                         $query->orWhere($attribute, $value);
@@ -72,7 +84,9 @@ class ProductController extends Controller
                 ->get();
         }
         StockAvailability::annotate($relatedMedicines);
-        return view('medicines.detail', compact('medicine', 'relatedMedicines'));
+        $redLogoAccess = $b2cAccess;
+        $internalAccess = ShoppingAccessCode::hasActiveInternalSession();
+        return view('medicines.detail', compact('medicine', 'relatedMedicines', 'b2cAccess', 'redLogoAccess', 'internalAccess'));
     }
 
     /**
@@ -227,7 +241,7 @@ class ProductController extends Controller
     {
         $b2cAccess = $this->hasB2cAccess($request);
         $internalAccess = $this->hasInternalAccess($request);
-        $redLogoAccess = $b2cAccess || $internalAccess;
+        $redLogoAccess = $b2cAccess;
         $search          = $request->get('search', '');
         $kategori_produk = $request->get('kategori_produk', '');
         $perusahaan      = $request->get('perusahaan', '');
@@ -239,6 +253,10 @@ class ProductController extends Controller
         $sort            = $request->get('sort', 'terbaru');
 
         $catalogQuery = Medicine::nonPbf()->availableForB2c();
+        if (!$b2cAccess) {
+            $catalogQuery->withoutRedLogo();
+            HomepageProductCategories::excludeB2cRestricted($catalogQuery);
+        }
         $query = clone $catalogQuery;
 
         if ($search !== '') {

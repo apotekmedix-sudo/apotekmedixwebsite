@@ -247,7 +247,7 @@ class PurchaseHistoryController extends Controller
 
             if ($product) {
                 $price = $isPbfPurchaseOrder
-                    ? (int) round((float) $product->harga_modal)
+                    ? (int) round((float) ($item['harga'] ?? $item['price'] ?? $product->harga_modal))
                     : (int) round($product->getChannelBasePrice($priceChannel, $unit));
                 if ($price <= 0) {
                     return response()->json([
@@ -272,9 +272,7 @@ class PurchaseHistoryController extends Controller
                 ? 0
                 : (int) ($item['potongan'] ?? $item['discount'] ?? 0);
             $discount = min($promoDiscount + $manualDiscount, $subtotal);
-            $requestedDiscount = $isPbfPurchaseOrder
-                ? min(max(0, (int) ($item['potongan'] ?? $item['discount'] ?? 0)), $subtotal)
-                : $discount;
+            $requestedDiscount = $isPbfPurchaseOrder ? 0 : $discount;
             $originalTotal += $subtotal;
             $discountedTotal += max(0, $subtotal - $discount);
 

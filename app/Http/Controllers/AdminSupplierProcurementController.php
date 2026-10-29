@@ -303,8 +303,8 @@ class AdminSupplierProcurementController extends Controller
             'supplier_id' => ['required', 'integer', 'exists:pbf_suppliers,id'],
             'quantities' => ['required', 'array', 'min:1'],
             'quantities.*' => ['nullable', 'integer', 'min:0', 'max:1000000'],
-            'requested_discounts' => ['nullable', 'array'],
-            'requested_discounts.*' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
+            'unit_prices' => ['nullable', 'array'],
+            'unit_prices.*' => ['nullable', 'numeric', 'min:0.01', 'max:999999999999'],
             'purchase_order_type' => ['nullable', 'string', 'in:regular,oot,precursor'],
             'purchase_order_profile' => ['nullable', 'string', 'in:medix,medikpedia'],
             'requester_name' => ['nullable', 'string', 'max:255'],
@@ -323,9 +323,9 @@ class AdminSupplierProcurementController extends Controller
         }
 
         $supplier = PbfSupplier::findOrFail($data['supplier_id']);
-        $requestedDiscounts = $data['requested_discounts'] ?? [];
         $purchaseOrderType = $data['purchase_order_type'] ?? 'regular';
-        $order = DB::transaction(function () use ($selected, $supplier, $data, $requestedDiscounts, $purchaseOrderType): SupplierPurchaseOrder {
+        $unitPrices = $data['unit_prices'] ?? [];
+        $order = DB::transaction(function () use ($selected, $supplier, $data, $unitPrices, $purchaseOrderType): SupplierPurchaseOrder {
             $order = SupplierPurchaseOrder::create([
                 'supplier_id' => $supplier->id,
                 'supplier_name' => $supplier->name,
@@ -370,13 +370,7 @@ class AdminSupplierProcurementController extends Controller
                         'quantities' => "{$offer->medicine->nama_obat}: minimal pembelian {$offer->minimum_quantity} {$offer->medicine->package_unit_label}.",
                     ]);
                 }
-                $lineTotal = round((float) $offer->purchase_price * $quantity, 2);
-                $requestedDiscount = (float) ($requestedDiscounts[$offerId] ?? 0);
-                if ($requestedDiscount > $lineTotal) {
-                    throw ValidationException::withMessages([
-                        'requested_discounts' => "{$offer->medicine->nama_obat}: ajuan potongan tidak boleh melebihi subtotal produk.",
-                    ]);
-                }
+                $unitPrice = (float) ($unitPrices[$offerId] ?? $offer->purchase_price);
                 $order->items()->create([
                     'medicine_id' => $offer->medicine_id,
                     'supplier_product_offer_id' => $offer->id,
@@ -388,9 +382,9 @@ class AdminSupplierProcurementController extends Controller
                     'unit_label' => $offer->medicine->package_unit_label,
                     'quantity' => $quantity,
                     'received_quantity' => 0,
-                    'unit_cost' => $offer->purchase_price,
-                    'line_total' => $lineTotal,
-                    'requested_discount' => $requestedDiscount,
+                    'unit_cost' => $unitPrice,
+                    'line_total' => round($unitPrice * $quantity, 2),
+                    'requested_discount' => 0,
                 ]);
             }
 

@@ -593,7 +593,11 @@ function normalizeCartPackageUnits(item) {
 
   return item;
 }
-cart = cart.map(normalizeCartPackageUnits);
+cart = cart.map(item => {
+  normalizeCartPackageUnits(item);
+  if (CART_CONFIG.adminPbfOrder) item.discount = 0;
+  return item;
+});
 function save() {
   localStorage.setItem(CART_CONFIG.storageKey, JSON.stringify(cart));
   persistCartContext();
@@ -971,6 +975,22 @@ function setDiscount(id, value, unit = 'box') {
   }
 }
 
+function setCartPrice(id, value, unit = 'box') {
+  const item = cart.find(i => i.id === id && (i.saleUnit || 'box') === unit);
+  if (!item) return;
+
+  const raw = String(value).replace(/[^0-9]/g, '');
+  item.price = parseInt(raw, 10) || 0;
+  save();
+
+  const priceLabel = document.querySelector(`[data-cart-price="${id}-${unit}"]`);
+  if (priceLabel) priceLabel.textContent = `${rp(item.price)} / ${item.unitLabel || unit}`;
+
+  const total = cart.reduce((sum, cartItem) => sum + (cartItem.price * cartItem.qty) - (cartItem.discount || 0), 0);
+  const totalLabel = document.getElementById('cartTotalAmt');
+  if (totalLabel) totalLabel.textContent = rp(total);
+}
+
 function clearCart() { cart = []; save(); render(); }
 
 function render() {
@@ -1004,7 +1024,7 @@ function render() {
         <div class="cart-item-name">${it.name}</div>
           ${it.internalPriceUnavailable
             ? '<div class="cart-item-price-unavailable" role="alert">Harga internal produk ini belum diatur.</div>'
-            : `<div class="cart-item-price">${rp(it.price)} / ${unitLabel}</div>`}
+            : `<div class="cart-item-price" data-cart-price="${key}">${rp(it.price)} / ${unitLabel}</div>`}
           ${it.unitPrices ? `<select onchange="changeCartUnit(${it.id}, '${unit}', this.value)" style="width:100%;margin-top:.4rem;padding:.4rem;border:1px solid #cbd5e1;border-radius:8px;">
             ${unitOptions.map(([value, unitPrice]) => `<option value="${value}" ${value === unit ? 'selected' : ''}>${value === 'box' ? packageUnitLabel : (it.unitLabels?.[value] || value.charAt(0).toUpperCase() + value.slice(1))} · ${rp(unitPrice)}</option>`).join('')}
           </select>` : ''}
@@ -1014,8 +1034,23 @@ function render() {
               style="width:4rem;text-align:center;border:1px solid #d1d5db;border-radius:8px;padding:0.4rem;" />
             <button class="qty-btn" onclick="changeQty(${it.id},1,'${unit}')">+</button>
           </div>
+          <?php if (! ($isAdminPbfOrder)): ?>
           <textarea class="cart-note" placeholder="Catatan produk..." onchange="setNote(${it.id}, this.value,'${unit}')"
           style="width:100%;margin-top:0.75rem;padding:0.65rem 0.85rem;border:1px solid #e5e7eb;border-radius:12px;font-size:0.9rem;min-height:72px;resize:vertical;">${it.note || ''}</textarea>
+          <?php endif; ?>
+        <?php if($isAdminPbfOrder): ?>
+          <label style="display:block;margin-top:.6rem;font-size:.78rem;font-weight:700;color:#6b7280;">
+            Harga per ${unitLabel}
+          </label>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-top:.3rem;">
+            <span style="font-size:.82rem;color:#374151;flex-shrink:0;">Rp</span>
+            <input type="text" inputmode="numeric" value="${Math.round(Number(it.price) || 0)}"
+              oninput="setCartPrice(${it.id}, this.value,'${unit}')"
+              aria-label="Harga ${it.name} per ${unitLabel}"
+              style="flex:1;min-width:0;padding:.45rem .7rem;border:1.5px solid #93c5fd;border-radius:10px;font-size:.88rem;outline:none;color:#374151;background:#fff;"
+            />
+          </div>
+        <?php else: ?>
         <div style="${CART_CONFIG.priceMode === 'internal' ? 'display:none;' : 'margin-top:.6rem;'}">
           <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:.3rem;">
             <i class="fa-solid fa-tag" style="color:#ef4444;margin-right:.25rem;"></i>Ajuan Potongan Harga
@@ -1033,6 +1068,7 @@ function render() {
             ${it.discount > 0 ? `<span style="text-decoration:line-through;color:#9ca3af;">${rp(it.price * it.qty)}</span><span style="color:#ef4444;font-weight:700;font-size:.78rem;">-${rp(it.discount)}</span><span style="color:#10b981;font-weight:800;">${rp(it.price * it.qty - it.discount)}</span>` : ''}
           </div>
         </div>
+        <?php endif; ?>
       </div>
       <button class="cart-item-del" onclick="removeItem(${it.id},'${unit}')"><i class="fa-solid fa-trash"></i></button>
     </div>`;
@@ -1415,6 +1451,12 @@ async function submitPbfOrder() {
     errorPanel.style.display = 'block';
     return;
   }
+  const invalidPrice = cart.find(item => !Number.isFinite(Number(item.price)) || Number(item.price) <= 0);
+  if (invalidPrice) {
+    errorPanel.textContent = `Harga ${invalidPrice.name} harus lebih dari Rp 0.`;
+    errorPanel.style.display = 'block';
+    return;
+  }
 
   if (CART_CONFIG.selectedSupplier) {
     const invalidMinimum = cart.find(item =>
@@ -1439,7 +1481,7 @@ async function submitPbfOrder() {
         body: JSON.stringify({
           supplier_id: CART_CONFIG.selectedSupplier.id,
           quantities: Object.fromEntries(cart.map(item => [item.supplierOfferId, item.qty])),
-          requested_discounts: Object.fromEntries(cart.map(item => [item.supplierOfferId, Math.max(0, Number(item.discount) || 0)])),
+          unit_prices: Object.fromEntries(cart.map(item => [item.supplierOfferId, item.price])),
           purchase_order_type: purchaseOrderType,
           purchase_order_profile: document.getElementById('pbfOrderProfile').value,
           requester_name: signer,
@@ -1491,7 +1533,6 @@ async function submitPbfOrder() {
       nama_obat: item.name,
       quantity: item.qty,
       harga: item.price,
-      potongan: Math.max(0, Number(item.discount) || 0),
       sale_unit: item.saleUnit || 'box',
       catatan: item.note || ''
     })),
@@ -1554,7 +1595,15 @@ async function submitOrder() {
     price_channel: CART_CONFIG.adminPbfOrder
       ? null
       : (CART_CONFIG.priceChannel || (CART_CONFIG.wholesaleOrder ? 'b2b' : (CART_CONFIG.priceMode || 'b2c'))),
-    items: cart.map(it => ({ id: it.id, nama_obat: it.name, quantity: it.qty, harga: it.price, sale_unit: it.saleUnit || 'box', catatan: it.note || '', potongan: it.discount || 0 })),
+    items: cart.map(it => ({
+      id: it.id,
+      nama_obat: it.name,
+      quantity: it.qty,
+      harga: it.price,
+      sale_unit: it.saleUnit || 'box',
+      catatan: it.note || '',
+      ...(!CART_CONFIG.adminPbfOrder ? { potongan: it.discount || 0 } : {})
+    })),
     total: discountedTotal,
     original_total: originalTotal,
     discounted_total: discountedTotal,
