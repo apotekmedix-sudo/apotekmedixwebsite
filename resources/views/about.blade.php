@@ -254,10 +254,10 @@
         <div class="container">
             <img src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix" class="about-logo">
             <div class="about-hero-badge">
-                <i class="fa-solid fa-award"></i> Terpercaya Sejak 2016
+                <i class="fa-solid fa-laptop-medical"></i> Digitalisasi Apotek
             </div>
-            <h1>Kesehatan Anda,<br>Prioritas <span class="accent">Apotek Medix</span></h1>
-            <p>Apotek Medix menghadirkan layanan farmasi dan apotek digital yang memudahkan pelanggan mencari produk, melakukan pemesanan, dan bertransaksi secara praktis. Didukung produk berkualitas serta tim profesional, kami berkomitmen menjadi mitra kesehatan tepercaya bagi masyarakat dan praktisi kesehatan Indonesia.</p>
+            <h1>Apotek Digital,<br>Kesehatan Lebih Mudah dalam <span class="accent">Genggaman</span></h1>
+            <p>Inilah digitalisasi apotek bersama Apotek Medix: cari produk kesehatan, lakukan pemesanan, dan hubungi tim kami dengan lebih mudah melalui satu layanan digital. Didukung produk berkualitas dan tenaga profesional, kami menghadirkan pengalaman layanan farmasi yang praktis dan tepercaya.</p>
             <div class="hero-btns">
                 <a href="{{ route('products.index') }}" class="btn-hero-primary">
                     <i class="fa-solid fa-cart-shopping"></i> Lihat Produk Kami
@@ -300,12 +300,12 @@
         <div class="who-grid">
             <div class="who-text">
                 <div class="section-tag"><i class="fa-solid fa-building"></i> Profil Perusahaan</div>
-                <h2 class="section-title">Distributor & Apotik<br>Terpercaya di Indonesia</h2>
+                <h2 class="section-title">Menghubungkan Layanan Apotek<br>dengan Teknologi Digital</h2>
                 <p class="section-lead">
-                    <strong>APOTEK MEDIX</strong> berada di bawah naungan distributor farmasi dan menjembatani kebutuhan masyarakat serta praktisi kesehatan — rumah sakit, apotek, dokter, bidan, dan klinik — dengan produk kesehatan berkualitas.
+                    <strong>APOTEK MEDIX</strong> adalah wujud digitalisasi layanan apotek yang membantu masyarakat dan praktisi kesehatan menemukan produk serta mengakses layanan farmasi dengan lebih praktis.
                 </p>
                 <p class="section-lead" style="margin-top:.75rem;">
-                    Melalui pengadaan langsung dari pabrik, rantai pasok menjadi lebih efisien sehingga kami dapat menawarkan harga yang lebih terjangkau. Sejak 2016, kami juga bekerja sama dengan PBF lokal dan nasional untuk menjaga keamanan serta keaslian produk hingga ke tangan pelanggan.
+                    Berada di bawah naungan distributor farmasi, kami menghubungkan pelanggan dengan produk kesehatan berkualitas dan tim profesional. Teknologi digital membantu membuat perjalanan dari mencari produk hingga melakukan pemesanan menjadi lebih mudah.
                 </p>
                 <div class="who-checks">
                     <div class="who-check"><i class="fa-solid fa-circle-check"></i><span><strong>Distributor Resmi</strong> — izin lengkap BPOM & Kementerian Kesehatan</span></div>

@@ -467,8 +467,9 @@ class ProductController extends Controller
      */
     public function cart(Request $request)
     {
+        $b2cAccess = ShoppingAccessCode::hasActiveB2cSession();
         $productCatalog = Medicine::query()
-            ->get(['id', 'nama_obat', 'kategori', 'brand', 'satuan', 'sediaan', 'gambar', 'gambar_tambahan'])
+            ->get(['id', 'nama_obat', 'kategori', 'brand', 'satuan', 'sediaan', 'gambar', 'gambar_tambahan', 'logo', 'golongan'])
             ->mapWithKeys(fn (Medicine $med) => [
                 $med->id => [
                     'image_url' => $med->image_url,
@@ -476,11 +477,43 @@ class ProductController extends Controller
                     'kategori' => $med->brand ?: $med->kategori,
                     'unit_label' => $med->package_unit_label,
                     'sediaan_label' => $med->sediaan_label,
+                    'has_red_logo' => $med->hasRedLogo(),
                 ],
             ])
             ->all();
 
-        return view('cart', compact('productCatalog'));
+        return view('cart', compact('productCatalog', 'b2cAccess'));
+    }
+
+    public function confirmB2cPrescription(Request $request)
+    {
+        if (!ShoppingAccessCode::hasActiveB2cSession()) {
+            return response()->json([
+                'message' => 'Aktifkan kode akses B2C untuk melanjutkan pesanan produk berlogo merah.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'product_ids' => ['required', 'array', 'min:1', 'max:50'],
+            'product_ids.*' => ['required', 'integer', 'distinct', 'exists:medicines,id'],
+        ]);
+        $products = Medicine::whereIn('id', $validated['product_ids'])->get();
+        $redProducts = $products->filter(fn (Medicine $medicine) => $medicine->hasRedLogo());
+        if ($redProducts->count() !== count($validated['product_ids'])) {
+            return response()->json([
+                'message' => 'Daftar produk resep tidak valid. Muat ulang keranjang lalu coba kembali.',
+            ], 422);
+        }
+
+        $confirmedIds = $redProducts->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+        $request->session()->put('b2c_red_prescription_confirmed_ids', $confirmedIds);
+
+        $confirmationToken = bin2hex(random_bytes(24));
+        $request->session()->put('b2c_red_prescription_confirmation_token', $confirmationToken);
+
+        return response()->json([
+            'checkout_url' => route('checkout.index', ['prescription_confirmation' => $confirmationToken]),
+        ]);
     }
 
     /**
@@ -516,6 +549,14 @@ class ProductController extends Controller
             })
             ->all();
 
-        return view('checkout', compact('defaultShippingAddress', 'productCatalog'));
+        $providedConfirmationToken = (string) $request->query('prescription_confirmation', '');
+        $sessionConfirmationToken = (string) $request->session()->get('b2c_red_prescription_confirmation_token', '');
+        $prescriptionConfirmationToken = $providedConfirmationToken !== ''
+            && $sessionConfirmationToken !== ''
+            && hash_equals($sessionConfirmationToken, $providedConfirmationToken)
+                ? $providedConfirmationToken
+                : null;
+
+        return view('checkout', compact('defaultShippingAddress', 'productCatalog', 'prescriptionConfirmationToken'));
     }
 }

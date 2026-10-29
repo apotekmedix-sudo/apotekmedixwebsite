@@ -18,6 +18,7 @@ class CategoryController extends Controller
         $mainCategory = $request->get('main', 'obat');
         $subCategory = $request->get('sub', '');
         $search = $request->get('search', '');
+        $b2cAccess = ShoppingAccessCode::hasActiveB2cSession();
 
         // Validasi kategori
         $validCategories = $this->getValidCategories();
@@ -27,7 +28,7 @@ class CategoryController extends Controller
 
         // Query produk berdasarkan kategori (non-PBF dan siap jual B2C)
         $query = Medicine::nonPbf()->availableForB2c();
-        if (!ShoppingAccessCode::hasActiveB2cSession()) {
+        if (!$b2cAccess) {
             $query->withoutRedLogo();
             HomepageProductCategories::excludeB2cRestricted($query);
         }
@@ -51,7 +52,8 @@ class CategoryController extends Controller
             'mainCategory',
             'subCategory',
             'medicines',
-            'search'
+            'search',
+            'b2cAccess'
         ));
     }
 

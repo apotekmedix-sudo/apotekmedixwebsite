@@ -139,6 +139,54 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
         }
     }
 
+    public function test_chunked_import_saves_each_product_and_reports_failed_photo_links(): void
+    {
+        $successfulUrl = 'https://images.example.net/products/success.jpg';
+        $failedUrl = 'https://images.example.net/products/missing.jpg';
+        $downloader = \Mockery::mock(ProductImageDownloader::class);
+        $downloader->shouldReceive('download')->once()->with($successfulUrl)
+            ->andReturn('medicines/chunked-success.jpg');
+        $downloader->shouldReceive('download')->once()->with($failedUrl)
+            ->andThrow(new \InvalidArgumentException('Tautan foto tidak dapat diakses.'));
+        $this->app->instance(ProductImageDownloader::class, $downloader);
+
+        $path = tempnam(sys_get_temp_dir(), 'chunked-import');
+        file_put_contents($path, implode("\n", [
+            'NAMA PRODUK,LINK FOTO',
+            "Produk Foto Berhasil,{$successfulUrl}",
+            "Produk Foto Gagal,{$failedUrl}",
+        ]) . "\n");
+        $file = new UploadedFile($path, 'products.csv', 'text/csv', null, true);
+
+        try {
+            $startRequest = new Request();
+            $startRequest->setMethod('POST');
+            $startRequest->files->set('file', $file);
+            $startRequest->merge(['chunked' => '1']);
+            $controller = new AdminProdukImportController();
+            $started = $controller->import($startRequest)->getData(true);
+
+            $this->assertSame(2, $started['total']);
+
+            $firstBatch = new Request(['token' => $started['token']]);
+            $firstResult = $controller->importBatch($firstBatch)->getData(true);
+            $this->assertFalse($firstResult['complete']);
+            $this->assertDatabaseHas('medicines', [
+                'nama_obat' => 'Produk Foto Berhasil',
+                'gambar' => 'medicines/chunked-success.jpg',
+            ]);
+
+            $lastBatch = new Request(['token' => $started['token']]);
+            $finalResult = $controller->importBatch($lastBatch)->getData(true);
+            $this->assertTrue($finalResult['complete']);
+            $this->assertDatabaseHas('medicines', ['nama_obat' => 'Produk Foto Gagal']);
+            $this->assertStringContainsString('Produk Foto Gagal', session()->get('warning')[0]);
+            $this->assertStringContainsString($failedUrl, session()->get('warning')[0]);
+        } finally {
+            @unlink($path);
+        }
+    }
+
     public function test_import_accepts_markdown_wrapped_external_photo_links(): void
     {
         $imageUrl = 'https://p16-oec-sg.ibyteimg.com/tos-alisg-i-aphluv4xwc-sg/2d76ab2413f342f896e1219aba68edd3~tplv-aphluv4xwc-origin-jpeg.jpeg?dr=15568&from=520841845&height=500&idc=my2&ps=933b5bde&shcp=2c1af732&shp=1f0b6a75&t=555f072d&width=500';
@@ -211,7 +259,8 @@ class AdminProdukImportFlexibleHeadersTest extends TestCase
             $warnings = $response->getSession()->get('warning');
 
             $this->assertNotEmpty($warnings);
-            $this->assertStringContainsString('Produk Foto Terblokir (LINK FOTO 1)', $warnings[0]);
+            $this->assertStringContainsString('Produk Foto Terblokir (LINK FOTO 1:', $warnings[0]);
+            $this->assertStringContainsString($imageUrl, $warnings[0]);
             $this->assertStringContainsString('HTTP 403', $warnings[0]);
             $this->assertDatabaseHas('medicines', ['nama_obat' => 'Produk Foto Terblokir', 'gambar' => null]);
         } finally {

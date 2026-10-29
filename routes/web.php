@@ -73,6 +73,7 @@ Route::post('/products-apotek/access/logout/{channel}', [ProductController::clas
 Route::get('/keranjang', [ProductController::class, 'cart'])->name('cart.index');
 Route::get('/cart', [ProductController::class, 'cart'])->name('cart.page');
 Route::get('/checkout', [ProductController::class, 'checkout'])->name('checkout.index');
+Route::post('/checkout/confirm-prescription', [ProductController::class, 'confirmB2cPrescription'])->name('checkout.confirm-prescription');
 Route::post('/checkout/validate-discount', [PurchaseHistoryController::class, 'validateDiscountCode'])->name('checkout.validate-discount');
 Route::post('/orders/history', [PurchaseHistoryController::class, 'store'])->name('orders.history.store');
 Route::post('/invoice/{order}/permit', [PurchaseHistoryController::class, 'updatePermit'])->name('orders.invoice.permit');
@@ -205,6 +206,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('produk/{produk}/update-inline', [AdminProdukController::class, 'updateInline'])->name('produk.update-inline');
     Route::get('produk-import', [AdminProdukImportController::class, 'showImportForm'])->name('produk.import');
     Route::post('produk-import', [AdminProdukImportController::class, 'import'])->name('produk.import.process');
+    Route::post('produk-import/batch', [AdminProdukImportController::class, 'importBatch'])->name('produk.import.batch');
     Route::get('produk-import/template', [AdminProdukImportController::class, 'downloadTemplate'])->name('produk.import.template');
 
     // Channel-specific medicine discounts

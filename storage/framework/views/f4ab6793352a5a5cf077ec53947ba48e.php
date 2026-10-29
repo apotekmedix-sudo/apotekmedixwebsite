@@ -1121,8 +1121,8 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 <section class="home-brand-hero" aria-labelledby="homeHeroTitle">
     <div class="home-brand-hero-copy">
         <span class="home-brand-hero-label"><i class="fa-solid fa-heart-pulse"></i> Apotek Medix</span>
-        <h1 id="homeHeroTitle">Solusi Kesehatan Terpercaya</h1>
-        <p>Beli obat, suplemen, dan produk kesehatan dengan mudah. Tim Apotek Medix siap membantu Anda.</p>
+        <h1 id="homeHeroTitle">Solusi Kesehatan Digital, Lebih Mudah dalam Genggaman.</h1>
+        <p>Apotek Medix hadir untuk menghadirkan pengalaman layanan kefarmasian yang lebih mudah, praktis, dan terintegrasi melalui pemanfaatan teknologi digital.</p>
         <div class="home-hero-chat-actions" aria-label="Pilihan konsultasi">
             <button type="button" class="home-hero-chat-button">
                 <i class="fa-solid fa-user-doctor" aria-hidden="true"></i>
@@ -2598,7 +2598,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('scripts'); ?>
-<script>window.cartSettings = { storageKey: <?php echo json_encode($internalAccess ? 'apotekmedix_cart_internal' : 'apotekmedix_cart_b2c', 15, 512) ?>, priceChannel: <?php echo json_encode($internalAccess ? 'internal' : 'b2c', 15, 512) ?>, syncProductPrices: true, priceMode: <?php echo json_encode($internalAccess ? 'internal' : 'b2c', 15, 512) ?> };</script>
+<script>window.cartSettings = { storageKey: <?php echo json_encode($internalAccess ? 'apotekmedix_cart_internal' : 'apotekmedix_cart_b2c', 15, 512) ?>, priceChannel: <?php echo json_encode($internalAccess ? 'internal' : 'b2c', 15, 512) ?>, syncProductPrices: true, priceMode: <?php echo json_encode($internalAccess ? 'internal' : 'b2c', 15, 512) ?>, b2cFullAccess: <?php echo json_encode($b2cAccess, 15, 512) ?> };</script>
 <?php echo $__env->make('partials.cart', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 <script>
 (() => {

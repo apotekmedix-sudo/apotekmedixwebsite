@@ -1007,7 +1007,8 @@ window.cartSettings = {
     storageKey: @json($detailCartStorageKey),
     priceChannel: @json($priceChannel),
     wholesaleOrder: @json($priceChannel === 'b2b'),
-    priceMode: @json($priceChannel)
+    priceMode: @json($priceChannel),
+    b2cFullAccess: @json($b2cAccess)
 };
 </script>
 @include('partials.cart')

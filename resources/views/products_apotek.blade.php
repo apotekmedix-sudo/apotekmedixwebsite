@@ -515,6 +515,6 @@
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: @json($internalAccess ? 'apotekmedix_cart_internal' : 'apotekmedix_cart_b2c'), priceChannel: @json($internalAccess ? 'internal' : 'b2c'), wholesaleOrder: false, syncProductPrices: true, priceMode: @json($internalAccess ? 'internal' : 'b2c') };</script>
+<script>window.cartSettings = { storageKey: @json($internalAccess ? 'apotekmedix_cart_internal' : 'apotekmedix_cart_b2c'), priceChannel: @json($internalAccess ? 'internal' : 'b2c'), wholesaleOrder: false, syncProductPrices: true, priceMode: @json($internalAccess ? 'internal' : 'b2c'), b2cFullAccess: @json($b2cAccess) };</script>
 @include('partials.cart', ['cartWholesaleOrder' => false])
 @endsection

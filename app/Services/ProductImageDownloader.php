@@ -9,6 +9,7 @@ class ProductImageDownloader
 {
     private const MAX_BYTES = 5242880;
     private const MAX_REDIRECTS = 5;
+    private const MAX_DOWNLOAD_SECONDS = 12;
 
     public function download(string $url): string
     {
@@ -20,7 +21,12 @@ class ProductImageDownloader
         $status = 0;
         $contents = '';
         $downloadedBytes = 0;
+        $deadline = microtime(true) + self::MAX_DOWNLOAD_SECONDS;
         do {
+            $remainingMilliseconds = (int) floor(($deadline - microtime(true)) * 1000);
+            if ($remainingMilliseconds <= 0) {
+                throw new \InvalidArgumentException('Unduhan foto melewati batas waktu 12 detik.');
+            }
             [$host, $port, $resolveEntry] = $this->resolvePublicHttpsHost($url);
             $redirectLocation = null;
             $responseStatus = 0;
@@ -29,6 +35,10 @@ class ProductImageDownloader
             $downloaded = false;
 
             for ($attempt = 1; $attempt <= 3; $attempt++) {
+                $remainingMilliseconds = (int) floor(($deadline - microtime(true)) * 1000);
+                if ($remainingMilliseconds <= 0) {
+                    throw new \InvalidArgumentException('Unduhan foto melewati batas waktu 12 detik.');
+                }
                 $contents = '';
                 $downloadedBytes = 0;
                 $redirectLocation = null;
@@ -40,8 +50,8 @@ class ProductImageDownloader
 
                 curl_setopt_array($curl, [
                     CURLOPT_FOLLOWLOCATION => false,
-                    CURLOPT_CONNECTTIMEOUT => 5,
-                    CURLOPT_TIMEOUT => 15,
+                    CURLOPT_CONNECTTIMEOUT_MS => min(5000, $remainingMilliseconds),
+                    CURLOPT_TIMEOUT_MS => $remainingMilliseconds,
                     CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
                     CURLOPT_SSL_VERIFYPEER => true,
                     CURLOPT_SSL_VERIFYHOST => 2,

@@ -541,6 +541,8 @@
 </div>
 <?php endif; ?>
 
+<?php echo $__env->make('partials.red-logo-checkout-confirmation', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+
 
 <script>
 // Keranjang disimpan per konteks halaman melalui CART_CONFIG.storageKey.
@@ -551,6 +553,7 @@ const CART_DEFAULT_SETTINGS = {
   receiptStoreName: 'APOTEK MEDIX',
   receiptStoreAddress: 'Jl. Raya Ciawi Prapatan No.256 C, RT.04/RW.04, Sindangsari, Kec. Bogor Timur, Kota Bogor, Jawa Barat 16146',
   receiptFilePrefix: 'struk-apotekmedix',
+  b2cFullAccess: false,
   continueShoppingUrl: <?php echo json_encode(route('home'), 15, 512) ?>
 };
 const CART_CONFIG = Object.assign({}, CART_DEFAULT_SETTINGS, window.cartSettings || {});
@@ -793,6 +796,9 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null, suppli
   const isRedLogoLocked = unitSelect?.dataset.redLogoLocked !== undefined
     ? unitSelect.dataset.redLogoLocked === '1'
     : (btn?.classList.contains('is-red-logo-locked') || unitSelect?.dataset.redLogo === '1' || btn?.dataset.redLogo === '1');
+  const requiresPrescription = unitSelect?.dataset.redLogo === '1'
+    || btn?.dataset.requiresPrescription === '1'
+    || btn?.dataset.redLogo === '1';
 
   if (isB2CChannel && isRedLogoLocked) {
     openRedLogoModal(name || btn?.dataset.productName);
@@ -837,6 +843,7 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null, suppli
       existing.qty += addition.qty;
       existing.brand = brand;
       existing.img = img;
+      existing.requiresPrescription = requiresPrescription;
       existing.discount = 0;
       existing.unitLabels = unitLabels;
       existing.unitLabel = unitLabel;
@@ -851,6 +858,7 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null, suppli
         id, name, price: Number(unitPrices[unit] || 0), img, brand: brand || '',
         qty: addition.qty, note: '', discount: 0, saleUnit: unit, unitLabel,
         unitLabels, unitPrices, unitFactors, availableQty, stockUnits,
+        requiresPrescription,
         packageUnitLabel: unitLabels.box || fallbackUnitLabel,
         supplierOfferId, minimumQuantity: Number(minimumQuantity) || 1
       });
@@ -884,6 +892,7 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null, suppli
   if (ex) {
     ex.qty++;
     ex.brand = brand;
+    ex.requiresPrescription = requiresPrescription;
     ex.supplierOfferId = supplierOfferId;
     ex.minimumQuantity = Number(minimumQuantity) || 1;
     ex.internalPriceUnavailable = CART_CONFIG.priceMode === 'internal' && unitPrice <= 0;
@@ -894,6 +903,7 @@ function addToCart(id, name, price, img, brand, btn, unitSelectId = null, suppli
     id, name, price: unitPrice, img, brand: brand || '', qty: 1, note: '', discount: 0,
     saleUnit, unitLabel, unitLabels, unitPrices, unitFactors, availableQty, packageUnitLabel,
     stockUnits: unitSelect ? Number(unitSelect.dataset.stockUnits || 0) : null,
+    requiresPrescription,
     supplierOfferId, minimumQuantity: Number(minimumQuantity) || 1,
     internalPriceUnavailable: CART_CONFIG.priceMode === 'internal' && unitPrice <= 0
   });
@@ -1156,6 +1166,12 @@ function openOrder() {
     openPbfCheckout();
     return;
   }
+  if (window.confirmRedLogoCheckout(cart, {
+    storageKey: CART_CONFIG.storageKey,
+    priceChannel: CART_CONFIG.priceChannel || 'b2c',
+    b2cFullAccess: CART_CONFIG.b2cFullAccess,
+    wholesaleOrder: CART_CONFIG.wholesaleOrder
+  })) return;
   window.location.href = '<?php echo e(route("checkout.index")); ?>';
 }
 

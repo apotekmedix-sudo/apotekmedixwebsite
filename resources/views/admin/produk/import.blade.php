@@ -60,7 +60,7 @@
         <li>Isi jumlah stok sesuai satuan pada kolom <strong>SATUAN</strong> di <strong>STOK SATUAN</strong>, misalnya stok 5 botol diisi <strong>5</strong>.</li>
         <li>Isi satu harga B2C untuk satuan kemasan produk pada kolom <strong>HARGA JUAL B2C</strong>. Template ini tidak lagi meminta harga atau rasio per strip/tablet.</li>
         <li>Isi kolom <strong>DESKRIPSI</strong>, <strong>KOMPOSISI</strong>, dan <strong>INDIKASI</strong> secara terpisah sesuai informasi produk.</li>
-        <li>Isi <strong>LINK FOTO 1</strong> dan <strong>LINK FOTO 2</strong> dengan URL HTTPS langsung ke file gambar publik. Foto akan diunduh dan disimpan di website saat import; ukuran maksimal 5 MB per foto.</li>
+        <li>Isi <strong>LINK FOTO 1</strong> dan <strong>LINK FOTO 2</strong> dengan URL HTTPS langsung ke file gambar publik. Foto akan diunduh dan disimpan di website saat import; ukuran maksimal 5 MB per foto. Import diproses satu produk per langkah agar progres produk yang sudah selesai tetap tersimpan jika koneksi terputus. Foto yang gagal akan dilaporkan beserta nama produk dan tautannya.</li>
         <li>Kolom opsional boleh dikosongkan; baris tanpa nama produk akan dilewati.</li>
         <li>Upload file <strong>.csv</strong>, <strong>.xls</strong>, atau <strong>.xlsx</strong></li>
         <li>Mode tambah/lengkapi mencocokkan nama produk: data yang kosong dilengkapi tanpa menimpa data yang sudah terisi; nama yang belum ada menjadi produk baru</li>
@@ -249,6 +249,7 @@ function updateFileLabel(input) {
     const btn   = document.getElementById('submitBtn');
     const zone  = document.getElementById('dropZone');
     if (input.files && input.files[0]) {
+        btn.onclick = submitForm;
         label.textContent = '✅ ' + input.files[0].name;
         label.style.color = '#059669';
         zone.style.borderColor = '#059669';
@@ -414,81 +415,107 @@ function submitForm() {
     progress.setAttribute('aria-hidden', 'false');
     setProgress(0, 'Menganalisis file...');
 
+    const sendRequest = (url, data, onUploadProgress = null) => new Promise((resolve, reject) => {
+        const request = new XMLHttpRequest();
+        request.open('POST', url);
+        request.timeout = 45000;
+        request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        request.setRequestHeader('Accept', 'application/json');
+        if (onUploadProgress) {
+            request.upload.addEventListener('progress', event => {
+                if (event.lengthComputable) onUploadProgress(event.loaded / event.total * 100);
+            });
+        }
+        request.addEventListener('load', () => {
+            let response = {};
+            try {
+                response = JSON.parse(request.responseText);
+            } catch (error) {
+                reject(new Error(`Respons server tidak dapat dibaca (HTTP ${request.status}).`));
+                return;
+            }
+            if (request.status < 200 || request.status >= 300) {
+                reject(new Error(response.message || `Server mengembalikan HTTP ${request.status}.`));
+                return;
+            }
+            resolve(response);
+        });
+        request.addEventListener('error', () => reject(new Error('Koneksi terputus saat menghubungi server.')));
+        request.addEventListener('timeout', () => reject(new Error('Server terlalu lama merespons. Progres yang sudah selesai tetap tersimpan.')));
+        request.addEventListener('abort', () => reject(new Error('Permintaan import dibatalkan.')));
+        request.send(data);
+    });
+
     estimateWorkload(file).catch(error => ({
         products: Math.max(1, Math.round(file.size / 250)),
         photos: Math.max(0, Math.round(file.size / 250 * 0.35)),
         fallbackReason: error.message
-    })).then(workload => {
-        const estimatedSeconds = Math.max(20, workload.products * 0.025 + workload.photos * 0.45);
+    })).then(async workload => {
         const formData = new FormData(form);
         formData.set('file', file);
-        const request = new XMLHttpRequest();
-        let uploadComplete = false;
-        let importStartedAt = null;
-        let progressTimer = null;
+        formData.set('chunked', '1');
 
         progressWorkload.textContent = `${workload.products} produk · ${workload.photos} foto`;
-        progressEta.textContent = `Estimasi awal: ${formatDuration(estimatedSeconds)}`;
+        progressEta.textContent = 'Menyiapkan import bertahap...';
         if (workload.fallbackReason) {
             progressNote.textContent = `Browser tidak dapat membaca isi file untuk menghitung jumlah produk dan foto (${workload.fallbackReason}). Estimasi berikut dihitung kasar dari ukuran file; progres unggah tetap akurat.`;
         }
         setProgress(0, 'Mengunggah file...');
 
-        request.upload.addEventListener('progress', event => {
-            if (!event.lengthComputable) return;
-            const uploadPercent = Math.min(100, event.loaded / event.total * 100);
-            setProgress(uploadPercent * 0.2, `Mengunggah file... ${Math.round(uploadPercent)}%`);
-        });
-        request.upload.addEventListener('load', () => {
-            uploadComplete = true;
-            importStartedAt = Date.now();
-            setProgress(20, `Memproses ${workload.products} produk dan ${workload.photos} foto...`);
-            progressTimer = window.setInterval(() => {
-                const elapsedSeconds = (Date.now() - importStartedAt) / 1000;
-                const processPercent = Math.min(75, elapsedSeconds / estimatedSeconds * 75);
-                setProgress(20 + processPercent, 'Server sedang memproses produk dan mengunduh foto...');
-                progressEta.textContent = elapsedSeconds >= estimatedSeconds
-                    ? `Estimasi terlewati · waktu berjalan ${formatDuration(elapsedSeconds)}`
-                    : `Perkiraan sisa: ${formatDuration(estimatedSeconds - elapsedSeconds)}`;
-            }, 1000);
-        });
-        request.addEventListener('load', () => {
-            if (progressTimer) window.clearInterval(progressTimer);
-            if (request.status >= 400) {
-                let errorMessage = `Server mengembalikan HTTP ${request.status}.`;
-                try {
-                    const response = JSON.parse(request.responseText);
-                    if (response.errors) errorMessage = Object.values(response.errors).flat().join(' ');
-                    else if (response.message) errorMessage = response.message;
-                } catch (error) {
-                    errorMessage += ' Respons import tidak dapat dibaca.';
+        let initialized = null;
+        let next = 0;
+        let total = 0;
+        const startedAt = Date.now();
+        const processBatches = async () => {
+            while (next < total) {
+                setProgress(20 + (next / Math.max(total, 1)) * 75, `Memproses produk ${next + 1} dari ${total} dan mengunduh fotonya...`);
+                const batch = new FormData();
+                batch.append('_token', form.querySelector('[name="_token"]').value);
+                batch.append('token', initialized.token);
+                const result = await sendRequest(@json(route('admin.produk.import.batch')), batch);
+                if (result.complete) {
+                    setProgress(100, 'Import selesai. Membuka hasil...');
+                    progressEta.textContent = `Waktu proses: ${formatDuration((Date.now() - startedAt) / 1000)}`;
+                    window.location.assign(result.redirect_url);
+                    return;
                 }
-                progressNote.textContent = `${errorMessage} Periksa file dan status produk sebelum mencoba kembali.`;
-                setProgress(95, 'Server melaporkan import belum berhasil.');
-                return;
+
+                next = result.next;
+                const elapsedSeconds = (Date.now() - startedAt) / 1000;
+                const secondsPerProduct = elapsedSeconds / Math.max(next, 1);
+                progressEta.textContent = `Perkiraan sisa: ${formatDuration(secondsPerProduct * (total - next))}`;
             }
-            if (request.responseURL && new URL(request.responseURL).origin === window.location.origin) {
-                window.location.assign(request.responseURL);
-                return;
+        };
+
+        try {
+            initialized = await sendRequest(form.action, formData, percent => {
+                setProgress(percent * 0.2, `Mengunggah file... ${Math.round(percent)}%`);
+            });
+            total = initialized.total;
+            progressWorkload.textContent = `${total} produk · ${workload.photos} foto`;
+            await processBatches();
+        } catch (error) {
+            progressNote.textContent = `${error.message} Produk yang sudah selesai diproses tetap tersimpan.`;
+            setProgress(95, 'Import terhenti sebelum seluruh produk selesai.');
+            button.disabled = false;
+            if (initialized) {
+                button.onclick = async () => {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Melanjutkan...';
+                    try {
+                        await processBatches();
+                    } catch (resumeError) {
+                        progressNote.textContent = `${resumeError.message} Produk yang sudah selesai diproses tetap tersimpan. Anda dapat mencoba melanjutkan lagi.`;
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Lanjutkan Import';
+                    }
+                };
+                button.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Lanjutkan Import';
+            } else {
+                button.onclick = submitForm;
+                button.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Coba Import Kembali';
             }
-            setProgress(100, 'Import selesai. Memuat hasil...');
-            window.location.reload();
-        });
-        request.addEventListener('error', () => {
-            if (progressTimer) window.clearInterval(progressTimer);
-            progressNote.textContent = uploadComplete
-                ? 'Koneksi terputus saat server memproses import. Periksa daftar produk sebelum mencoba ulang agar produk tidak terduplikasi.'
-                : 'Unggah gagal karena koneksi terputus. Silakan coba kembali.';
-            setProgress(uploadComplete ? 95 : 0, 'Import belum menerima konfirmasi dari server.');
-        });
-        request.addEventListener('abort', () => {
-            if (progressTimer) window.clearInterval(progressTimer);
-            progressNote.textContent = 'Import dibatalkan sebelum server mengonfirmasi hasilnya.';
-            setProgress(0, 'Import dibatalkan.');
-        });
-        request.open('POST', form.action);
-        request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-        request.send(formData);
+        }
     });
 }
 function updateImportMode() {

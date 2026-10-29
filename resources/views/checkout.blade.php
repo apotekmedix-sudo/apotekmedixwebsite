@@ -1516,6 +1516,7 @@
     const payload = {
       buyer_type: jenis,
       price_channel: activeCtx.priceChannel || (activeCtx.wholesaleOrder ? 'b2b' : 'b2c'),
+      prescription_confirmation_token: @json($prescriptionConfirmationToken),
       items: mappedItems,
       total: discountedTotal,
       original_total: originalTotal,

@@ -136,7 +136,11 @@ class B2cRedLogoAccessTest extends TestCase
         $this->withSession([
             'b2c_access_expires_at' => now()->addDays(20)->timestamp,
             'b2c_access_code_hash' => $accessCode->code_hash,
-        ])->postJson(route('orders.history.store'), $payload)
+            'b2c_red_prescription_confirmed_ids' => [$medicine->id],
+            'b2c_red_prescription_confirmation_token' => str_repeat('a', 48),
+        ])->postJson(route('orders.history.store'), array_merge($payload, [
+            'prescription_confirmation_token' => str_repeat('a', 48),
+        ]))
             ->assertOk();
 
         $history = PurchaseHistory::latest('id')->firstOrFail();
@@ -145,6 +149,65 @@ class B2cRedLogoAccessTest extends TestCase
             'buyer_name' => 'Pelanggan B2C',
             'payment_method' => null,
         ]);
+        $this->assertTrue($history->items[0]['prescription_confirmed']);
+    }
+
+    public function test_b2c_red_logo_checkout_requires_prescription_confirmation(): void
+    {
+        $medicine = $this->createMedicine('Produk Merah Perlu Resep', 'Merah');
+        $accessCode = $this->createB2cAccessCode();
+        $payload = [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pelanggan B2C',
+            'items' => [
+                ['id' => $medicine->id, 'name' => $medicine->nama_obat, 'qty' => 1, 'price' => 10000],
+            ],
+            'total' => 10000,
+        ];
+        $session = [
+            'b2c_access_expires_at' => now()->addDays(20)->timestamp,
+            'b2c_access_code_hash' => $accessCode->code_hash,
+        ];
+
+        $this->withSession($session)
+            ->postJson(route('orders.history.store'), $payload)
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Konfirmasikan kepemilikan resep dokter untuk produk berlogo merah di keranjang sebelum melanjutkan checkout.');
+        $this->assertSame(0, PurchaseHistory::count());
+
+        $confirmation = $this->withSession($session)
+            ->postJson(route('checkout.confirm-prescription'), ['product_ids' => [$medicine->id]])
+            ->assertOk();
+        $checkoutUrl = $confirmation->json('checkout_url');
+        parse_str((string) parse_url($checkoutUrl, PHP_URL_QUERY), $checkoutQuery);
+        $payload['prescription_confirmation_token'] = $checkoutQuery['prescription_confirmation'] ?? null;
+        $this->assertNotNull($payload['prescription_confirmation_token']);
+
+        $this->get($checkoutUrl)
+            ->assertOk()
+            ->assertSee($payload['prescription_confirmation_token'], false);
+        $this->postJson(route('orders.history.store'), array_merge($payload, [
+            'prescription_confirmation_token' => str_repeat('b', 48),
+        ]))->assertUnprocessable();
+
+        $response = $this->postJson(route('orders.history.store'), $payload)->assertOk();
+        $order = PurchaseHistory::findOrFail($response->json('id'));
+        $this->assertTrue($order->items[0]['prescription_confirmed']);
+    }
+
+    public function test_cart_shows_red_logo_checkout_confirmation_for_full_b2c_access(): void
+    {
+        $accessCode = $this->createB2cAccessCode();
+        $this->withSession([
+            'b2c_access_expires_at' => now()->addDays(20)->timestamp,
+            'b2c_access_code_hash' => $accessCode->code_hash,
+        ])->get(route('cart.index'))
+            ->assertOk()
+            ->assertSee('Produk yang Anda pilih memerlukan resep dokter')
+            ->assertSee('Ada, lanjut checkout')
+            ->assertSee('Tidak, hapus produk')
+            ->assertSee('Chat Dokter')
+            ->assertSee('B2C_FULL_ACCESS = true', false);
     }
 
     public function test_b2c_code_opens_red_logo_products_while_internal_code_controls_prices(): void

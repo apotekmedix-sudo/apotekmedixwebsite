@@ -1125,8 +1125,8 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 <section class="home-brand-hero" aria-labelledby="homeHeroTitle">
     <div class="home-brand-hero-copy">
         <span class="home-brand-hero-label"><i class="fa-solid fa-heart-pulse"></i> Apotek Medix</span>
-        <h1 id="homeHeroTitle">Solusi Kesehatan Terpercaya</h1>
-        <p>Beli obat, suplemen, dan produk kesehatan dengan mudah. Tim Apotek Medix siap membantu Anda.</p>
+        <h1 id="homeHeroTitle">Solusi Kesehatan Digital, Lebih Mudah dalam Genggaman.</h1>
+        <p>Apotek Medix hadir untuk menghadirkan pengalaman layanan kefarmasian yang lebih mudah, praktis, dan terintegrasi melalui pemanfaatan teknologi digital.</p>
         <div class="home-hero-chat-actions" aria-label="Pilihan konsultasi">
             <button type="button" class="home-hero-chat-button">
                 <i class="fa-solid fa-user-doctor" aria-hidden="true"></i>
@@ -2596,7 +2596,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 @endsection
 
 @section('scripts')
-<script>window.cartSettings = { storageKey: @json($internalAccess ? 'apotekmedix_cart_internal' : 'apotekmedix_cart_b2c'), priceChannel: @json($internalAccess ? 'internal' : 'b2c'), syncProductPrices: true, priceMode: @json($internalAccess ? 'internal' : 'b2c') };</script>
+<script>window.cartSettings = { storageKey: @json($internalAccess ? 'apotekmedix_cart_internal' : 'apotekmedix_cart_b2c'), priceChannel: @json($internalAccess ? 'internal' : 'b2c'), syncProductPrices: true, priceMode: @json($internalAccess ? 'internal' : 'b2c'), b2cFullAccess: @json($b2cAccess) };</script>
 @include('partials.cart')
 <script>
 (() => {

@@ -687,11 +687,13 @@
     <iframe id="pbfInvoiceFrame" title="Surat Pesanan Apotek Medix"></iframe>
   </div>
 </div>
+@include('partials.red-logo-checkout-confirmation')
 @endsection
 
 @section('scripts')
 <script>
 const PRODUCT_CATALOG = @json($productCatalog ?? []);
+const B2C_FULL_ACCESS = @json($b2cAccess);
 const FALLBACK_LOGO_URL = '{{ asset("LOGO APOTEK MEDIX.PNG") }}';
 const CART_CONTEXT_KEY = 'apotekmedix_active_cart_context';
 
@@ -710,7 +712,12 @@ try {
   }
 } catch (e) {}
 
-let cartItems = JSON.parse(localStorage.getItem(activeCtx.storageKey) || '[]');
+let cartItems = JSON.parse(localStorage.getItem(activeCtx.storageKey) || '[]').map(item => ({
+  ...item,
+  requiresPrescription: item.requiresPrescription === true
+    || PRODUCT_CATALOG[item.id]?.has_red_logo === true
+    || PRODUCT_CATALOG[String(item.id)]?.has_red_logo === true
+}));
 
 function getCartPackageLabel(item) {
   return String(item.packageUnitLabel || item.unitLabels?.box || (item.saleUnit === 'box' ? item.unitLabel : '') || 'Box').trim() || 'Box';
@@ -1001,6 +1008,13 @@ function goToCheckoutPage() {
     openPbfPurchaseOrderPopup();
     return;
   }
+  if (window.confirmRedLogoCheckout(cartItems, {
+    storageKey: activeCtx.storageKey,
+    priceChannel: activeCtx.priceChannel || 'b2c',
+    b2cFullAccess: B2C_FULL_ACCESS,
+    wholesaleOrder: activeCtx.wholesaleOrder,
+    catalog: PRODUCT_CATALOG
+  })) return;
   window.location.href = '{{ route("checkout.index") }}';
 }
 

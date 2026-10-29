@@ -31,6 +31,18 @@ class AdminProdukImportController extends Controller
         $extension = strtolower($file->getClientOriginalExtension());
         $mode = $request->input('mode', 'legacy');
 
+        if ($request->boolean('chunked')) {
+            $rows = $extension === 'xlsx'
+                ? $this->importXlsx($file, $mode, true)
+                : $this->importCsv($file, $mode, true);
+
+            if ($rows instanceof \Illuminate\Http\RedirectResponse) {
+                return response()->json(['message' => 'File tidak dapat dibaca. Silakan periksa file lalu coba kembali.'], 422);
+            }
+
+            return $this->startChunkedImport($request, $rows, $mode);
+        }
+
         if ($extension === 'xlsx') {
             return $this->importXlsx($file, $mode);
         }
@@ -60,20 +72,20 @@ class AdminProdukImportController extends Controller
 
     // ─── XLSX Parser (pure PHP, no ZipArchive needed) ────────────────────────
 
-    private function importXlsx($file, string $mode)
+    private function importXlsx($file, string $mode, bool $returnRows = false)
     {
         $path = $file->getRealPath();
 
         // XLSX adalah ZIP — coba ZipArchive dulu, fallback ke manual binary extract
         if (class_exists('ZipArchive')) {
-            return $this->importXlsxViaZip($path, $mode);
+            return $this->importXlsxViaZip($path, $mode, $returnRows);
         }
 
         // Fallback: extract ZIP secara manual menggunakan PharData (built-in PHP)
-        return $this->importXlsxViaPhar($path, $mode);
+        return $this->importXlsxViaPhar($path, $mode, $returnRows);
     }
 
-    private function importXlsxViaZip(string $path, string $mode)
+    private function importXlsxViaZip(string $path, string $mode, bool $returnRows = false)
     {
         $zip = new \ZipArchive();
         if ($zip->open($path) !== true) {
@@ -88,10 +100,12 @@ class AdminProdukImportController extends Controller
             return back()->withErrors(['file' => 'Sheet tidak ditemukan dalam file XLSX.']);
         }
 
-        return $this->processRows($this->parseSheetXml($sheetXml, $sharedStrings), $mode);
+        $rows = $this->parseSheetXml($sheetXml, $sharedStrings);
+
+        return $returnRows ? $rows : $this->processRows($rows, $mode);
     }
 
-    private function importXlsxViaPhar(string $path, string $mode)
+    private function importXlsxViaPhar(string $path, string $mode, bool $returnRows = false)
     {
         // Salin ke file .zip sementara agar PharData bisa baca
         $tmpZip = sys_get_temp_dir() . '/' . uniqid('xlsx_') . '.zip';
@@ -112,7 +126,9 @@ class AdminProdukImportController extends Controller
             $sheetXml      = file_get_contents($phar['xl/worksheets/sheet1.xml']->getPathname());
             $sharedStrings = $this->parseSharedStrings($ssContent);
 
-            return $this->processRows($this->parseSheetXml($sheetXml, $sharedStrings), $mode);
+            $rows = $this->parseSheetXml($sheetXml, $sharedStrings);
+
+            return $returnRows ? $rows : $this->processRows($rows, $mode);
         } catch (\Exception $e) {
             return back()->withErrors(['file' => 'Gagal membaca XLSX: ' . $e->getMessage()
                 . ' — Coba simpan ulang file sebagai CSV dari Excel.']);
@@ -193,7 +209,7 @@ class AdminProdukImportController extends Controller
 
     // ─── CSV / XLS (text-based) Parser ───────────────────────────────────────
 
-    private function importCsv($file, string $mode)
+    private function importCsv($file, string $mode, bool $returnRows = false)
     {
         $content = file_get_contents($file->getRealPath());
 
@@ -227,12 +243,192 @@ class AdminProdukImportController extends Controller
             $rows[] = $row;
         }
 
-        return $this->processRows($rows, $mode);
+        return $returnRows ? $rows : $this->processRows($rows, $mode);
     }
 
     // ─── Shared processing logic ──────────────────────────────────────────────
 
-    private function processRows(array $rows, string $mode = 'legacy')
+    private function startChunkedImport(Request $request, array $rows, string $mode)
+    {
+        if (count($rows) < 2) {
+            return response()->json(['message' => 'File kosong atau tidak valid.'], 422);
+        }
+
+        $headerIdx = 0;
+        foreach ($rows as $index => $row) {
+            $normalized = array_map(fn ($header) => $this->normalizeHeader($header), $row);
+            if (in_array('NAMAPRODUK', $normalized, true)
+                || in_array('NAMA', $normalized, true)
+                || in_array('PRODUK', $normalized, true)) {
+                $headerIdx = $index;
+                break;
+            }
+        }
+
+        $headerKeys = array_map(fn ($header) => $this->resolveHeaderKey($header), $rows[$headerIdx] ?? []);
+        $availableKeys = array_filter($headerKeys);
+        if (!in_array('NAMA_PRODUK', $availableKeys, true)) {
+            return response()->json([
+                'message' => 'Header tidak cocok. Kolom nama produk wajib ada (contoh: Nama Produk, Nama, Produk).',
+            ], 422);
+        }
+        if ($mode === 'bulk_edit'
+            && (!in_array('ROW_NO', $headerKeys, true) || !in_array('LINK_FOTO', $headerKeys, true))) {
+            return response()->json([
+                'message' => 'Mode edit massal hanya menerima file Export Produk dengan kolom NO dan LINK FOTO.',
+            ], 422);
+        }
+
+        $token = bin2hex(random_bytes(24));
+        $directory = storage_path('app/private/product-imports');
+        if (!is_dir($directory) && !mkdir($directory, 0700, true) && !is_dir($directory)) {
+            return response()->json(['message' => 'Folder sementara import tidak dapat dibuat di server.'], 500);
+        }
+
+        $state = [
+            'user_id' => $request->user()?->getAuthIdentifier(),
+            'mode' => $mode,
+            'rows' => $rows,
+            'header_index' => $headerIdx,
+            'next_index' => 0,
+            'total' => count($rows) - $headerIdx - 1,
+            'imported' => 0,
+            'skipped' => 0,
+            'warnings' => [],
+        ];
+        try {
+            $written = file_put_contents(
+                $directory . DIRECTORY_SEPARATOR . $token . '.json',
+                json_encode($state, JSON_THROW_ON_ERROR),
+                LOCK_EX
+            );
+        } catch (\JsonException $exception) {
+            return response()->json(['message' => 'Data file import tidak dapat disiapkan.'], 500);
+        }
+        if ($written === false) {
+            return response()->json(['message' => 'Data sementara import tidak dapat disimpan di server.'], 500);
+        }
+
+        return response()->json([
+            'token' => $token,
+            'total' => $state['total'],
+        ]);
+    }
+
+    public function importBatch(Request $request)
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'regex:/^[a-f0-9]{48}$/'],
+        ]);
+        set_time_limit(40);
+        $token = $validated['token'];
+        $statePath = storage_path('app/private/product-imports/' . $token . '.json');
+        if (!is_file($statePath)) {
+            return response()->json(['message' => 'Sesi import tidak ditemukan atau sudah selesai.'], 404);
+        }
+        $lockPath = $statePath . '.lock';
+        $lockHandle = fopen($lockPath, 'c');
+        if ($lockHandle === false) {
+            return response()->json(['message' => 'Lock sesi import tidak dapat dibuka.'], 500);
+        }
+        if (!flock($lockHandle, LOCK_EX | LOCK_NB)) {
+            fclose($lockHandle);
+            return response()->json(['message' => 'Produk sebelumnya masih diproses. Tunggu sebentar lalu lanjutkan kembali.'], 409);
+        }
+
+        try {
+            return $this->processChunkedImport($request, $statePath);
+        } finally {
+            flock($lockHandle, LOCK_UN);
+            fclose($lockHandle);
+            if (!is_file($statePath) && is_file($lockPath)) {
+                unlink($lockPath);
+            }
+        }
+    }
+
+    private function processChunkedImport(Request $request, string $statePath)
+    {
+        if (!is_file($statePath)) {
+            return response()->json(['message' => 'Sesi import tidak ditemukan atau sudah selesai.'], 404);
+        }
+
+        try {
+            $state = json_decode((string) file_get_contents($statePath), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            return response()->json(['message' => 'Data sementara import rusak dan tidak dapat dibaca.'], 500);
+        }
+        if (!is_array($state) || !array_key_exists('rows', $state) || !array_key_exists('user_id', $state)) {
+            return response()->json(['message' => 'Data sementara import tidak lengkap.'], 500);
+        }
+
+        $ownerId = $request->user()?->getAuthIdentifier();
+        if ((string) ($state['user_id'] ?? '') !== (string) ($ownerId ?? '')) {
+            return response()->json(['message' => 'Sesi import ini bukan milik pengguna yang sedang masuk.'], 403);
+        }
+
+        if ($state['next_index'] >= $state['total']) {
+            return $this->finishChunkedImport($state, $statePath);
+        }
+
+        $result = $this->processRows(
+            $state['rows'],
+            $state['mode'],
+            (int) $state['next_index'],
+            true
+        );
+        if ($result instanceof \Illuminate\Http\RedirectResponse) {
+            $errorBag = $result->getSession()->get('errors');
+            return response()->json([
+                'message' => $errorBag ? $errorBag->first('file') : 'Produk gagal disimpan.',
+            ], 422);
+        }
+
+        $state['next_index']++;
+        $state['imported'] += $result['imported'];
+        $state['skipped'] += $result['skipped'];
+        $state['warnings'] = array_merge($state['warnings'], $result['warnings']);
+
+        try {
+            $written = file_put_contents($statePath, json_encode($state, JSON_THROW_ON_ERROR), LOCK_EX);
+        } catch (\JsonException $exception) {
+            return response()->json(['message' => 'Progres import tidak dapat disimpan.'], 500);
+        }
+        if ($written === false) {
+            return response()->json(['message' => 'Progres import tidak dapat disimpan.'], 500);
+        }
+
+        if ($state['next_index'] >= $state['total']) {
+            return $this->finishChunkedImport($state, $statePath);
+        }
+
+        return response()->json([
+            'complete' => false,
+            'next' => $state['next_index'],
+            'total' => $state['total'],
+        ]);
+    }
+
+    private function finishChunkedImport(array $state, string $statePath)
+    {
+        $message = $state['mode'] === 'complete'
+            ? "Import selesai: {$state['imported']} produk ditambahkan/dilengkapi, {$state['skipped']} baris dilewati."
+            : "Import berhasil: {$state['imported']} produk diperbarui, {$state['skipped']} baris dilewati.";
+        session()->flash('success', $message);
+        if ($state['warnings'] !== []) {
+            session()->flash('warning', $state['warnings']);
+        }
+        if (!unlink($statePath)) {
+            return response()->json(['message' => 'Import selesai, tetapi file sementara tidak dapat dibersihkan.'], 500);
+        }
+
+        return response()->json([
+            'complete' => true,
+            'redirect_url' => route('admin.produk.index'),
+        ]);
+    }
+
+    private function processRows(array $rows, string $mode = 'legacy', ?int $rowOffset = null, bool $batchMode = false)
     {
         if (count($rows) < 2) {
             return back()->withErrors(['file' => 'File kosong atau tidak valid.']);
@@ -282,7 +478,10 @@ class AdminProdukImportController extends Controller
 
         DB::beginTransaction();
         try {
-            foreach (array_slice($rows, $headerIdx + 1) as $row) {
+            $rowsToProcess = $rowOffset === null
+                ? array_slice($rows, $headerIdx + 1)
+                : array_slice($rows, $headerIdx + 1 + $rowOffset, 1);
+            foreach ($rowsToProcess as $row) {
                 $row  = array_pad($row, $headerCount, '');
                 $row  = array_slice($row, 0, $headerCount);
                 $data = [];
@@ -492,8 +691,9 @@ class AdminProdukImportController extends Controller
                     if (trim((string) ($data['LINK_FOTO'] ?? '')) !== '') {
                         try {
                             $attributes['gambar'] = $this->parseProductImageLink($data['LINK_FOTO'], $downloadedImages);
-                        } catch (\InvalidArgumentException $exception) {
-                            $imageImportWarnings[] = "{$namaProduk} (LINK FOTO 1): {$exception->getMessage()}";
+                        } catch (\InvalidArgumentException|\RuntimeException $exception) {
+                            unset($attributes['gambar']);
+                            $imageImportWarnings[] = "{$namaProduk} (LINK FOTO 1: {$data['LINK_FOTO']}): {$exception->getMessage()}";
                         }
                     }
                 }
@@ -502,8 +702,9 @@ class AdminProdukImportController extends Controller
                         $attributes['gambar_tambahan'] = [
                             $this->parseProductImageLink($data['LINK_FOTO_2'], $downloadedImages),
                         ];
-                    } catch (\InvalidArgumentException $exception) {
-                        $imageImportWarnings[] = "{$namaProduk} (LINK FOTO 2): {$exception->getMessage()}";
+                    } catch (\InvalidArgumentException|\RuntimeException $exception) {
+                        unset($attributes['gambar_tambahan']);
+                        $imageImportWarnings[] = "{$namaProduk} (LINK FOTO 2: {$data['LINK_FOTO_2']}): {$exception->getMessage()}";
                     }
                 }
                 foreach ([
@@ -585,6 +786,14 @@ class AdminProdukImportController extends Controller
                 ImageHelper::deleteProductImage($imagePath);
             }
             return back()->withErrors(['file' => 'Error saat menyimpan data: ' . $e->getMessage()]);
+        }
+
+        if ($batchMode) {
+            return [
+                'imported' => $imported,
+                'skipped' => $skipped,
+                'warnings' => $imageImportWarnings,
+            ];
         }
 
         $message = $mode === 'complete'

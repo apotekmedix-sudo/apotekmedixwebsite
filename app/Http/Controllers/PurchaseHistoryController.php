@@ -64,6 +64,7 @@ class PurchaseHistoryController extends Controller
             'payment_term_days' => ['nullable', 'integer', 'min:1'],
             'transaction_channel' => ['nullable', 'string', 'in:online'],
             'price_channel'   => ['nullable', 'string', 'in:b2c,internal,b2b'],
+            'prescription_confirmation_token' => ['nullable', 'string', 'size:48'],
             'is_pbf_purchase_order' => ['nullable', 'boolean'],
             'discount_code'   => ['nullable', 'string', 'max:64'],
         ]);
@@ -166,6 +167,51 @@ class PurchaseHistoryController extends Controller
                 $request->session()->get('pbf_access_code_hash')
             );
         $requestedPriceChannel = $data['price_channel'] ?? null;
+        $requiresRedLogoConfirmation = !$isPbfPurchaseOrder
+            && $channel === 'online'
+            && $data['buyer_type'] === 'umum'
+            && $hasB2cAccess
+            && !in_array($requestedPriceChannel, ['internal', 'b2b'], true);
+        $redLogoProductIds = $requiresRedLogoConfirmation
+            ? Medicine::whereIn(
+                'id',
+                collect($items)->pluck('id')->filter()->map(fn ($id) => (int) $id)->unique()
+            )->get()
+                ->filter(fn (Medicine $medicine) => $medicine->hasRedLogo())
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->sort()
+                ->values()
+                ->all()
+            : [];
+        if ($redLogoProductIds !== []) {
+            $confirmedIds = collect($request->session()->get('b2c_red_prescription_confirmed_ids', []))
+                ->map(fn ($id) => (int) $id)
+                ->sort()
+                ->values()
+                ->all();
+            $sessionConfirmationToken = (string) $request->session()->get('b2c_red_prescription_confirmation_token', '');
+            $providedConfirmationToken = (string) ($data['prescription_confirmation_token'] ?? '');
+            if (
+                $confirmedIds !== $redLogoProductIds
+                || $sessionConfirmationToken === ''
+                || $providedConfirmationToken === ''
+                || !hash_equals($sessionConfirmationToken, $providedConfirmationToken)
+            ) {
+                $redNames = Medicine::whereIn('id', $redLogoProductIds)->orderBy('nama_obat')->pluck('nama_obat');
+
+                return response()->json([
+                    'message' => 'Konfirmasikan kepemilikan resep dokter untuk produk berlogo merah di keranjang sebelum melanjutkan checkout.',
+                    'errors' => ['items' => ['Memerlukan resep dokter: ' . $redNames->implode(', ')]],
+                ], 422);
+            }
+
+            foreach ($items as $index => $item) {
+                if (in_array((int) ($item['id'] ?? 0), $redLogoProductIds, true)) {
+                    $items[$index]['prescription_confirmed'] = true;
+                }
+            }
+        }
 
         if (
             ($requestedPriceChannel === 'internal' && !$hasInternalAccess)
@@ -397,6 +443,13 @@ class PurchaseHistoryController extends Controller
                 'message' => $history['error'],
                 'errors' => ['items' => [$history['error']]],
             ], 422);
+        }
+
+        if ($redLogoProductIds !== []) {
+            $request->session()->forget([
+                'b2c_red_prescription_confirmed_ids',
+                'b2c_red_prescription_confirmation_token',
+            ]);
         }
 
         return response()->json([
