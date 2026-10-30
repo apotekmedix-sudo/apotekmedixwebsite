@@ -698,12 +698,16 @@ class AdminSupplierProcurementTest extends TestCase
             'items' => [],
             'total' => 10000,
             'is_pbf_purchase_order' => false,
+            'receipt_status' => 'verified',
+            'approval_status' => 'approved',
         ]);
         $newerSale = PurchaseHistory::create([
             'buyer_name' => 'Transaksi Terbaru',
             'items' => [],
             'total' => 20000,
             'is_pbf_purchase_order' => false,
+            'receipt_status' => 'verified',
+            'approval_status' => 'approved',
         ]);
         $olderSale->forceFill(['created_at' => now()->subDay()])->saveQuietly();
         $newerSale->forceFill(['created_at' => now()->subHour()])->saveQuietly();
@@ -712,6 +716,175 @@ class AdminSupplierProcurementTest extends TestCase
             ->get(route('admin.purchase-history.index', ['tab' => 'sales']))
             ->assertOk()
             ->assertSeeInOrder(['Transaksi Terbaru', 'Transaksi Lama']);
+    }
+
+    public function test_sales_history_separates_b2c_orders_by_transaction_channel(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        PurchaseHistory::create([
+            'buyer_name' => 'Pelanggan Kirim',
+            'buyer_type' => 'umum',
+            'transaction_channel' => 'online',
+            'items' => [],
+            'total' => 10000,
+            'receipt_status' => 'verified',
+            'approval_status' => 'approved',
+        ]);
+        PurchaseHistory::create([
+            'buyer_name' => 'Pelanggan Ambil',
+            'buyer_type' => 'umum',
+            'transaction_channel' => 'offline',
+            'items' => [],
+            'total' => 15000,
+            'receipt_status' => 'verified',
+            'approval_status' => 'approved',
+        ]);
+        PurchaseHistory::create([
+            'buyer_name' => 'Apotek B2B',
+            'buyer_type' => 'apotik',
+            'transaction_channel' => 'online',
+            'items' => [],
+            'total' => 20000,
+            'receipt_status' => 'verified',
+            'approval_status' => 'approved',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.purchase-history.index', ['tab' => 'sales', 'fulfillment' => 'online']))
+            ->assertOk()
+            ->assertSee('Pelanggan Kirim')
+            ->assertSee('Transaksi Online')
+            ->assertDontSee('Pelanggan Ambil')
+            ->assertDontSee('Apotek B2B')
+            ->assertDontSee('<th>Pengiriman</th>', false);
+
+        $this->actingAs($admin)
+            ->get(route('admin.purchase-history.index', ['tab' => 'sales', 'fulfillment' => 'offline']))
+            ->assertOk()
+            ->assertSee('Pelanggan Ambil')
+            ->assertSee('Transaksi Offline')
+            ->assertDontSee('Pelanggan Kirim')
+            ->assertDontSee('Apotek B2B')
+            ->assertSee('Offline');
+    }
+
+    public function test_sales_history_has_five_tabs_and_filters_internal_and_b2b_separately(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        PurchaseHistory::create([
+            'buyer_name' => 'Transaksi Internal',
+            'buyer_type' => 'umum',
+            'price_channel' => 'internal',
+            'transaction_channel' => 'online',
+            'items' => [],
+            'total' => 10000,
+            'receipt_status' => 'verified',
+            'approval_status' => 'approved',
+        ]);
+        PurchaseHistory::create([
+            'buyer_name' => 'Transaksi B2B',
+            'buyer_type' => 'apotik',
+            'price_channel' => 'b2b',
+            'transaction_channel' => 'online',
+            'items' => [],
+            'total' => 20000,
+            'receipt_status' => 'verified',
+            'approval_status' => 'approved',
+        ]);
+        PurchaseHistory::create([
+            'buyer_name' => 'Transaksi B2C Online',
+            'buyer_type' => 'umum',
+            'price_channel' => 'b2c',
+            'transaction_channel' => 'online',
+            'items' => [],
+            'total' => 30000,
+            'receipt_status' => 'verified',
+            'approval_status' => 'approved',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.purchase-history.index', ['tab' => 'sales']))
+            ->assertOk()
+            ->assertSee('Semua Transaksi')
+            ->assertSee('>Internal</a>', false)
+            ->assertSee('>B2B</a>', false)
+            ->assertSee('>Offline</a>', false)
+            ->assertSee('>Online</a>', false);
+
+        $this->get(route('admin.purchase-history.index', ['tab' => 'sales', 'fulfillment' => 'internal']))
+            ->assertOk()
+            ->assertSee('Transaksi Internal')
+            ->assertDontSee('Transaksi B2B')
+            ->assertDontSee('Transaksi B2C Online');
+
+        $this->get(route('admin.purchase-history.index', ['tab' => 'sales', 'fulfillment' => 'b2b']))
+            ->assertOk()
+            ->assertSee('Transaksi B2B')
+            ->assertDontSee('Transaksi Internal')
+            ->assertDontSee('Transaksi B2C Online');
+    }
+
+    public function test_sales_history_view_action_opens_the_customer_invoice(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = PurchaseHistory::create([
+            'buyer_name' => 'Pelanggan Invoice',
+            'buyer_type' => 'umum',
+            'transaction_channel' => 'online',
+            'items' => [['nama_obat' => 'Vitamin C', 'quantity' => 1, 'harga' => 10000]],
+            'total' => 10000,
+            'receipt_status' => 'verified',
+            'approval_status' => 'approved',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.purchase-history.index', ['tab' => 'sales']))
+            ->assertOk();
+
+        $this->assertSame(
+            1,
+            preg_match('/href="([^"]*\/invoice\/' . $order->id . '\?[^"]+)"/', $response->getContent(), $matches),
+            'The Lihat action should link to a signed invoice URL.'
+        );
+
+        $invoiceUrl = html_entity_decode($matches[1], ENT_QUOTES);
+        $this->get($invoiceUrl)
+            ->assertOk()
+            ->assertSee('STRUK PENJUALAN')
+            ->assertSee('Pelanggan Invoice')
+            ->assertSee('Vitamin C');
+    }
+
+    public function test_sales_history_only_shows_cashier_confirmed_non_cancelled_orders_as_completed(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        foreach ([
+            ['buyer_name' => 'Pesanan Terverifikasi', 'receipt_status' => 'verified'],
+            ['buyer_name' => 'Pesanan Struk Dicetak', 'receipt_status' => 'printed'],
+            ['buyer_name' => 'Pesanan Menunggu Kasir', 'receipt_status' => 'pending'],
+            ['buyer_name' => 'Pesanan Dibatalkan', 'receipt_status' => 'cancelled'],
+            ['buyer_name' => 'Pesanan Ditolak Admin', 'receipt_status' => 'verified', 'approval_status' => 'rejected'],
+            ['buyer_name' => 'Pesanan Belum Disetujui Admin', 'receipt_status' => 'verified', 'approval_status' => 'pending'],
+        ] as $orderData) {
+            PurchaseHistory::create(array_merge([
+                'buyer_type' => 'umum',
+                'transaction_channel' => 'online',
+                'items' => [],
+                'total' => 10000,
+                'approval_status' => 'approved',
+            ], $orderData));
+        }
+
+        $this->actingAs($admin)
+            ->get(route('admin.purchase-history.index', ['tab' => 'sales']))
+            ->assertOk()
+            ->assertSee('Pesanan Terverifikasi')
+            ->assertSee('Pesanan Struk Dicetak')
+            ->assertSee('Selesai')
+            ->assertDontSee('Pesanan Menunggu Kasir')
+            ->assertDontSee('Pesanan Dibatalkan')
+            ->assertDontSee('Pesanan Ditolak Admin')
+            ->assertDontSee('Pesanan Belum Disetujui Admin');
     }
 
     public function test_deleting_all_sales_keeps_legacy_pbf_purchase_orders(): void

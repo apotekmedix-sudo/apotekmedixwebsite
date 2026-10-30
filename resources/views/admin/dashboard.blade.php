@@ -17,6 +17,12 @@
     <div class="stat-card" style="border-top-color:#f59e0b;">
         <div class="stat-label">Stok Rendah (&lt;5)</div>
         <div class="stat-value" style="color:#f59e0b;" id="stat-lowstok">{{ $lowStok }}</div>
+        <a href="{{ route('admin.inventory.index', ['sort' => 'lowest_stock']) }}" style="display:inline-block;margin-top:.4rem;font-size:.75rem;color:#0052cc;text-decoration:none;">Lihat laporan stok →</a>
+    </div>
+    <div class="stat-card" style="border-top-color:#dc2626;">
+        <div class="stat-label">Konsultasi Menunggu</div>
+        <div class="stat-value" style="color:#dc2626;" id="stat-pending-consultations">{{ $pendingConsultations }}</div>
+        <a href="{{ route('admin.consultations.index', ['tab' => 'transactions']) }}" style="display:inline-block;margin-top:.4rem;font-size:.75rem;color:#0052cc;text-decoration:none;">Buka antrean dokter →</a>
     </div>
     <div class="stat-card" style="border-top-color:#8b5cf6;">
         <div class="stat-label">Total Omzet</div>
@@ -158,6 +164,15 @@ async function fetchStats() {
         const data = await res.json();
         document.getElementById('stat-total').textContent   = data.total;
         document.getElementById('stat-lowstok').textContent = data.lowStok;
+        document.getElementById('stat-pending-consultations').textContent = data.pendingConsultations;
+        const lowStockIndicator = document.getElementById('sidebar-low-stock-count');
+        lowStockIndicator.textContent = data.lowStok > 99 ? '99+' : data.lowStok;
+        lowStockIndicator.setAttribute('aria-label', `${data.lowStok} produk stok rendah`);
+        lowStockIndicator.style.display = data.lowStok > 0 ? 'inline-flex' : 'none';
+        const consultationIndicator = document.getElementById('sidebar-pending-consultation-count');
+        consultationIndicator.textContent = data.pendingConsultations > 99 ? '99+' : data.pendingConsultations;
+        consultationIndicator.setAttribute('aria-label', `${data.pendingConsultations} konsultasi menunggu`);
+        consultationIndicator.style.display = data.pendingConsultations > 0 ? 'inline-flex' : 'none';
         document.getElementById('realtime-status').textContent = 'Realtime aktif';
         document.getElementById('realtime-dot').style.background = '#10b981';
         const now = new Date();

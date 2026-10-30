@@ -238,12 +238,23 @@
     </div>
 </div>
 
+<nav class="transaction-tabs fulfillment-tabs" aria-label="Pemisahan transaksi berdasarkan saluran">
+    <a href="<?php echo e(route('admin.purchase-history.index', ['tab' => 'sales', 'fulfillment' => 'all'])); ?>" class="<?php echo e($fulfillment === 'all' ? 'active' : ''); ?>">Semua Transaksi</a>
+    <a href="<?php echo e(route('admin.purchase-history.index', ['tab' => 'sales', 'fulfillment' => 'internal'])); ?>" class="<?php echo e($fulfillment === 'internal' ? 'active' : ''); ?>">Internal</a>
+    <a href="<?php echo e(route('admin.purchase-history.index', ['tab' => 'sales', 'fulfillment' => 'b2b'])); ?>" class="<?php echo e($fulfillment === 'b2b' ? 'active' : ''); ?>">B2B</a>
+    <a href="<?php echo e(route('admin.purchase-history.index', ['tab' => 'sales', 'fulfillment' => 'offline'])); ?>" class="<?php echo e($fulfillment === 'offline' ? 'active' : ''); ?>"><i class="fa-solid fa-location-dot"></i> Offline</a>
+    <a href="<?php echo e(route('admin.purchase-history.index', ['tab' => 'sales', 'fulfillment' => 'online'])); ?>" class="<?php echo e($fulfillment === 'online' ? 'active' : ''); ?>"><i class="fa-solid fa-truck-fast"></i> Online</a>
+</nav>
+
 
 <div class="card">
     <div class="transaction-toolbar">
-        <div class="transaction-heading">Semua Transaksi</div>
+        <div class="transaction-heading">
+            <?php echo e(match ($fulfillment) { 'internal' => 'Transaksi Internal', 'b2b' => 'Transaksi B2B', 'online' => 'Transaksi Online', 'offline' => 'Transaksi Offline', default => 'Semua Transaksi' }); ?>
+
+        </div>
         <div class="transaction-toolbar-actions">
-            <a href="<?php echo e(route('admin.purchase-history.export')); ?>" class="btn btn-primary btn-sm" title="Download sebagai Excel/CSV">
+            <a href="<?php echo e(route('admin.purchase-history.export', array_merge(request()->query(), ['tab' => 'sales']))); ?>" class="btn btn-primary btn-sm" title="Download sebagai Excel/CSV">
                 <i class="fa-solid fa-download"></i> Download
             </a>
             <form id="deleteAllForm" method="POST" action="<?php echo e(route('admin.purchase-history.destroyAll')); ?>" onsubmit="return confirm('Yakin ingin menghapus SEMUA riwayat penjualan? Pesanan pembelian supplier tidak akan dihapus.');">
@@ -287,7 +298,7 @@
                         </td>
                         <td>
                             <span class="badge <?php echo e($order->transaction_channel === 'offline' ? 'badge-primary' : 'badge-secondary'); ?>">
-                                <?php echo e($order->transaction_channel === 'offline' ? 'Offline / Kios' : 'Online'); ?>
+                                <?php echo e($order->transaction_channel === 'offline' ? 'Offline' : 'Online'); ?>
 
                             </span>
                         </td>
@@ -312,27 +323,9 @@
                         </td>
                         <td>
                             <?php
-                                $isCancelled = $order->receipt_status === 'cancelled' || $order->payment_status === 'cancelled' || $order->approval_status === 'rejected';
-                                $isPrinted = !$isCancelled && $order->receipt_status === 'printed';
-                                $isVerified = !$isCancelled && !$isPrinted && ($order->receipt_status === 'verified' || $order->payment_status === 'paid' || $order->approval_status === 'approved');
-
-                                if ($isCancelled) {
-                                    $statusLabel = 'Dibatalkan';
-                                    $statusColor = '#dc2626';
-                                    $statusBg = '#fee2e2';
-                                } elseif ($isPrinted) {
-                                    $statusLabel = 'Selesai (Struk Dicetak)';
-                                    $statusColor = '#166534';
-                                    $statusBg = '#dcfce7';
-                                } elseif ($isVerified) {
-                                    $statusLabel = 'Diverifikasi Kasir';
-                                    $statusColor = '#166534';
-                                    $statusBg = '#dcfce7';
-                                } else {
-                                    $statusLabel = 'Menunggu Kasir';
-                                    $statusColor = '#92400e';
-                                    $statusBg = '#fef3c7';
-                                }
+                                $statusLabel = 'Selesai';
+                                $statusColor = '#166534';
+                                $statusBg = '#dcfce7';
                             ?>
                             <div style="display:flex;flex-direction:column;gap:0.3rem;align-items:flex-start;">
                                 <span style="display:inline-block;padding:0.25rem 0.65rem;border-radius:999px;font-size:0.75rem;font-weight:700;color:<?php echo e($statusColor); ?>;background:<?php echo e($statusBg); ?>;">
@@ -374,9 +367,9 @@
                             <?php endif; ?>
                         </td>
                         <td style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                            <button class="btn btn-secondary btn-sm" data-order-id="<?php echo e($order->id); ?>" onclick="fetchAndShowDetailModal(<?php echo e($order->id); ?>)">
+                            <a class="btn btn-secondary btn-sm" href="<?php echo e(URL::temporarySignedRoute('orders.invoice', now()->addDays(30), ['order' => $order->id])); ?>" target="_blank" rel="noopener">
                                 <i class="fa-solid fa-eye"></i> Lihat
-                            </button>
+                            </a>
                             <form method="POST" action="<?php echo e(route('admin.purchase-history.destroy', $order->id)); ?>" onsubmit="return confirmDeleteOne(event, '<?php echo e(addslashes($order->buyer_name)); ?>')">
                                 <?php echo csrf_field(); ?>
                                 <?php echo method_field('DELETE'); ?>
@@ -458,6 +451,7 @@
 .transaction-tabs { display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1.25rem; }
 .transaction-tabs a { display:inline-flex;align-items:center;gap:.45rem;padding:.7rem 1rem;border:1px solid #dbe3ec;border-radius:.6rem;background:#fff;color:#334155;font-weight:700;text-decoration:none; }
 .transaction-tabs a.active { border-color:#1d4ed8;background:#eff6ff;color:#1d4ed8; }
+.fulfillment-tabs { margin: 0 0 1.25rem; }
 .transaction-toolbar {
     display: flex;
     align-items: center;
@@ -719,12 +713,9 @@
             }).join('')
             : '<tr><td colspan="5" style="text-align:center;color:#9ca3af;">Tidak ada data item</td></tr>';
 
-        const isCancelled = order.receipt_status === 'cancelled' || order.payment_status === 'cancelled' || order.approval_status === 'rejected';
-        const isPrinted = !isCancelled && order.receipt_status === 'printed';
-        const isVerified = !isCancelled && !isPrinted && (order.receipt_status === 'verified' || order.payment_status === 'paid' || order.approval_status === 'approved');
-        const statusText = isCancelled ? 'Dibatalkan' : (isPrinted ? 'Selesai (Struk Dicetak)' : (isVerified ? 'Diverifikasi Kasir' : 'Menunggu Kasir'));
-        const statusColor = isCancelled ? '#dc2626' : ((isPrinted || isVerified) ? '#166534' : '#92400e');
-        const statusBg = isCancelled ? '#fee2e2' : ((isPrinted || isVerified) ? '#dcfce7' : '#fef3c7');
+        const statusText = 'Selesai';
+        const statusColor = '#166534';
+        const statusBg = '#dcfce7';
 
         let detailHtml = `
             <div class="detail-grid">

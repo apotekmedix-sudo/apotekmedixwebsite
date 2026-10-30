@@ -307,6 +307,8 @@ class AdminBusinessDataExportTest extends TestCase
                 'buyer_type' => 'umum',
                 'items' => [],
                 'total' => 1000,
+                'receipt_status' => 'verified',
+                'approval_status' => 'approved',
             ]);
         }
 

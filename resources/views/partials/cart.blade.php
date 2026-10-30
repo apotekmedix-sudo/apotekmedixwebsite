@@ -328,10 +328,10 @@
         Silakan hubungi Dokter atau Apoteker kami untuk konsultasi dan pemesanan resep.
       </div>
       <div class="red-logo-btn-grid">
-        <a id="btnHubungiDokter" href="https://wa.me/6285890007359" target="_blank" rel="noopener" class="red-logo-action-btn red-logo-btn-doctor">
+        <a id="btnHubungiDokter" href="{{ route('consultations.intake') }}" class="red-logo-action-btn red-logo-btn-doctor">
           <i class="fa-solid fa-user-doctor"></i> Hubungi Dokter
         </a>
-        <a id="btnHubungiApoteker" href="https://wa.me/6285890007359" target="_blank" rel="noopener" class="red-logo-action-btn red-logo-btn-pharmacist">
+        <a id="btnHubungiApoteker" href="https://wa.me/{{ config('contacts.pharmacist.whatsapp') }}" target="_blank" rel="noopener" class="red-logo-action-btn red-logo-btn-pharmacist">
           <i class="fa-solid fa-prescription-bottle-medical"></i> Hubungi Apoteker
         </a>
       </div>
@@ -552,7 +552,8 @@
 {{-- ===== CART JAVASCRIPT ===== --}}
 <script>
 // Keranjang disimpan per konteks halaman melalui CART_CONFIG.storageKey.
-const WA = '6285890007359';
+const WA = @json(config('contacts.customer_service.whatsapp'));
+const PHARMACIST_WA = @json(config('contacts.pharmacist.whatsapp'));
 const CART_DEFAULT_SETTINGS = {
   storageKey: 'apotekmedix_cart_b2c',
   priceChannel: 'b2c',
@@ -764,16 +765,10 @@ function openRedLogoModal(productName) {
   const nameEl = document.getElementById('redLogoProductName');
   if (nameEl) nameEl.textContent = nameLabel;
 
-  const doctorBtn = document.getElementById('btnHubungiDokter');
-  if (doctorBtn) {
-    const doctorMsg = `Halo Dokter Apotek Medix, saya ingin berkonsultasi mengenai resep dokter untuk obat: ${nameLabel}`;
-    doctorBtn.href = `https://wa.me/${WA}?text=${encodeURIComponent(doctorMsg)}`;
-  }
-
   const pharmacistBtn = document.getElementById('btnHubungiApoteker');
   if (pharmacistBtn) {
     const pharmacistMsg = `Halo Apoteker Apotek Medix, saya ingin berkonsultasi / menebus resep dokter untuk obat: ${nameLabel}`;
-    pharmacistBtn.href = `https://wa.me/${WA}?text=${encodeURIComponent(pharmacistMsg)}`;
+    pharmacistBtn.href = `https://wa.me/${PHARMACIST_WA}?text=${encodeURIComponent(pharmacistMsg)}`;
   }
 
   overlay.classList.add('open');

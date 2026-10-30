@@ -41,7 +41,51 @@
     .procurement-total { color:#0755c8; font-weight:800; white-space:nowrap; }
     .procurement-badge { display:inline-flex; padding:.25rem .55rem; border-radius:999px; background:#eff6ff; color:#1d4ed8; font-size:.75rem; font-weight:800; }
     .procurement-empty { padding:1.5rem; border:1px dashed #cbd5e1; border-radius:.65rem; color:#64748b; text-align:center; }
+    .supplier-management-actions { display:flex; flex-wrap:wrap; gap:.55rem; margin-top:.85rem; }
+    .supplier-form-panel { display:none; margin-top:1rem; padding:1rem; border:1px solid #cbd5e1; border-radius:.75rem; background:#fff; }
+    .supplier-form-panel.open { display:block; }
+    .supplier-form-panel h3 { margin:0 0 .8rem; color:#1f2937; font-size:.95rem; }
+    .supplier-form { display:grid; grid-template-columns:minmax(180px,.8fr) minmax(250px,1.4fr) minmax(150px,.7fr) auto; gap:.65rem; align-items:end; }
+    .supplier-form label,.supplier-edit-form label { display:block; margin-bottom:.3rem; color:#475569; font-size:.75rem; font-weight:700; }
+    .supplier-form input,.supplier-form textarea,.supplier-edit-form input,.supplier-edit-form textarea { width:100%; padding:.65rem .75rem; border:1px solid #cbd5e1; border-radius:.5rem; font:inherit; font-size:.85rem; }
+    .supplier-form button,.supplier-edit-actions button { border:0; border-radius:.5rem; padding:.68rem .95rem; background:#1e88e5; color:#fff; font-weight:700; cursor:pointer; white-space:nowrap; }
+    .supplier-modal-backdrop { display:none; position:fixed; inset:0; z-index:5000; align-items:center; justify-content:center; padding:20px; background:rgba(15,23,42,.65); }
+    .supplier-modal-backdrop.open { display:flex; }
+    .supplier-modal { display:flex; flex-direction:column; width:min(760px,100%); max-height:90vh; overflow:hidden; border:1px solid #dbeafe; border-radius:16px; background:#fff; box-shadow:0 24px 70px rgba(15,23,42,.3); }
+    .supplier-modal-head { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1rem 1.2rem; border-bottom:1px solid #dbeafe; background:linear-gradient(135deg,#eff6ff,#fff); }
+    .supplier-modal-head h3 { margin:0; color:#1e3a8a; font-size:1rem; }
+    .supplier-modal-head p { margin:.25rem 0 0; color:#64748b; font-size:.78rem; }
+    .supplier-modal-close { width:34px; height:34px; border:0; border-radius:50%; background:#dbeafe; color:#1d4ed8; cursor:pointer; }
+    .supplier-modal-body { flex:1; min-height:0; overflow-y:auto; padding:1rem 1.2rem; }
+    .supplier-manager-search { position:sticky; top:-1rem; z-index:2; display:flex; align-items:center; gap:.55rem; margin:-1rem -1.2rem .85rem; padding:.85rem 1.2rem; border-bottom:1px solid #e2e8f0; background:rgba(255,255,255,.96); }
+    .supplier-manager-search i { color:#64748b; }
+    .supplier-manager-search input { flex:1; min-width:0; padding:.65rem .8rem; border:1px solid #cbd5e1; border-radius:.55rem; color:#1e293b; font:inherit; font-size:.85rem; }
+    .supplier-manager-count { flex:0 0 auto; color:#64748b; font-size:.75rem; }
+    .supplier-data-tools { display:flex; flex-wrap:wrap; align-items:center; gap:.55rem; margin:0 0 .85rem; padding:.75rem; border:1px solid #e2e8f0; border-radius:.65rem; background:#f8fafc; }
+    .supplier-data-tools a,.supplier-data-tools button { display:inline-flex; align-items:center; justify-content:center; gap:.35rem; min-height:36px; padding:.5rem .7rem; border:1px solid #bfdbfe; border-radius:.45rem; background:#eff6ff; color:#1d4ed8; font-size:.75rem; font-weight:700; text-decoration:none; cursor:pointer; }
+    .supplier-data-tools button { border-color:#1e88e5; background:#1e88e5; color:#fff; }
+    .supplier-data-tools input[type=file] { min-width:160px; max-width:220px; color:#475569; font-size:.72rem; }
+    .supplier-import-errors { flex:1 0 100%; margin:0; padding:.65rem .65rem .65rem 1.8rem; border-radius:.45rem; background:#fee2e2; color:#991b1b; font-size:.75rem; }
+    .supplier-import-hint { margin:.6rem 0; color:#64748b; font-size:.78rem; }
+    .supplier-list { display:grid; gap:.7rem; }
+    .supplier-row { padding:.85rem; border:1px solid #e2e8f0; border-radius:10px; background:#fff; }
+    .supplier-row-main { display:flex; justify-content:space-between; gap:1rem; align-items:center; }
+    .supplier-row-name { margin:0; color:#1e293b; font-size:.88rem; font-weight:800; }
+    .supplier-row-address { margin:.25rem 0 0; color:#64748b; font-size:.78rem; line-height:1.45; white-space:pre-line; }
+    .supplier-row-phone { margin:.25rem 0 0; color:#475569; font-size:.78rem; }
+    .supplier-row-actions,.supplier-row-actions form { display:flex; flex:0 0 auto; gap:.4rem; }
+    .supplier-row-actions button { padding:.45rem .65rem; border:1px solid #bfdbfe; border-radius:7px; background:#eff6ff; color:#1d4ed8; font-size:.76rem; font-weight:700; cursor:pointer; }
+    .supplier-row-actions .supplier-delete-button { border-color:#fecaca; background:#fef2f2; color:#b91c1c; }
+    .supplier-edit-form { display:none; margin-top:.8rem; padding-top:.8rem; border-top:1px solid #e2e8f0; }
+    .supplier-edit-form.open { display:block; }
+    .supplier-edit-form label { margin:.55rem 0 .25rem; }
+    .supplier-edit-actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:.7rem; }
+    .supplier-edit-actions button[type=button] { background:#e2e8f0; color:#334155; }
+    .supplier-list-empty,.supplier-search-empty { padding:2rem 1rem; color:#64748b; text-align:center; }
+    .supplier-search-empty { display:none; }
     @media(max-width:680px) { .procurement-form-grid { grid-template-columns:1fr; } .procurement-card { padding:.9rem; } }
+    @media(max-width:760px) { .supplier-form { grid-template-columns:1fr; } .supplier-form button { width:100%; } }
+    @media(max-width:520px) { .supplier-modal-backdrop { padding:0; } .supplier-modal { width:100%; height:100%; max-height:100dvh; border-radius:0; } .supplier-row-main { align-items:flex-start; flex-direction:column; } }
 </style>
 <?php $__env->stopSection(); ?>
 
@@ -51,11 +95,9 @@
     <?php if($errors->any()): ?><ul class="procurement-errors" role="alert"><?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><li><?php echo e($error); ?></li><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?></ul><?php endif; ?>
 
     <section class="procurement-card">
-        <h2>Tambah Produk Supplier</h2>
-        <p class="procurement-muted">Atur harga modal dan kode produk per supplier di halaman ini. Untuk memilih supplier, memesan barang, dan membuat SP, buka halaman Pesan ke PBF.</p>
-        <div class="procurement-actions">
-            <a class="procurement-btn" href="<?php echo e(route('admin.produk-pbf.index')); ?>"><i class="fa-solid fa-file-signature"></i> Pesan ke PBF</a>
-        </div>
+        <h2>Tambah Supplier</h2>
+        <p class="procurement-muted">Tambahkan dan kelola data supplier/PBF di sini. Supplier yang tersimpan akan tersedia saat mengatur harga produk dan membuat pesanan.</p>
+        <?php echo $__env->make('admin.partials.pbf-supplier-management', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
     </section>
 
         <section class="procurement-card">
@@ -182,6 +224,46 @@
 
 <?php $__env->startSection('scripts'); ?>
 <script>
+    function toggleSupplierForm() {
+        document.getElementById('supplierFormPanel').classList.toggle('open');
+    }
+
+    function openSupplierManager() {
+        document.getElementById('supplierManagerBackdrop').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSupplierManager(event) {
+        if (event && event.target !== event.currentTarget) return;
+        document.getElementById('supplierManagerBackdrop').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    function toggleSupplierEdit(id) {
+        document.getElementById('supplierEdit' + id).classList.toggle('open');
+    }
+
+    const supplierManagerSearch = document.getElementById('supplierManagerSearch');
+    if (supplierManagerSearch) {
+        supplierManagerSearch.addEventListener('input', () => {
+            const query = supplierManagerSearch.value.trim().toLocaleLowerCase();
+            const rows = Array.from(document.querySelectorAll('.supplier-row'));
+            let visibleCount = 0;
+            rows.forEach((row) => {
+                const matches = row.dataset.supplierSearch.includes(query);
+                row.hidden = !matches;
+                if (matches) visibleCount++;
+            });
+            document.getElementById('supplierManagerCount').textContent = `${visibleCount} supplier`;
+            const emptyMessage = document.getElementById('supplierSearchEmpty');
+            if (emptyMessage) emptyMessage.style.display = visibleCount ? 'none' : 'block';
+        });
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeSupplierManager();
+    });
+
     const productSearch = document.getElementById('offerMedicineSearch');
     if (productSearch) {
         const supplierSelect = document.getElementById('offerSupplier');

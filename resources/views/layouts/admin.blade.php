@@ -97,6 +97,22 @@
             font-size: 1.25rem;
         }
 
+        .sidebar-menu .sidebar-indicator {
+            display:inline-flex;
+            min-width:1.35rem;
+            height:1.35rem;
+            align-items:center;
+            justify-content:center;
+            margin-left:auto;
+            padding:0 .35rem;
+            border-radius:999px;
+            background:#dc2626;
+            color:#fff;
+            font-size:.72rem;
+            font-weight:800;
+            line-height:1;
+        }
+
         /* Main Content */
         .main-content {
             flex: 1;
@@ -606,6 +622,15 @@
 </head>
 <body>
     @php
+        $lowStockAlertCount = \Illuminate\Support\Facades\Schema::hasTable('medicines')
+            ? \App\Models\Medicine::where('stok', '<', 5)->count()
+            : 0;
+        $pendingConsultationCount = \Illuminate\Support\Facades\Schema::hasTable('doctor_consultations')
+            ? \App\Models\DoctorConsultation::where('status', 'awaiting_payment')
+                ->where('payment_status', 'pending')
+                ->where('payment_due_at', '>', now())
+                ->count()
+            : 0;
         $tempoUnpaidOrders = \Illuminate\Support\Facades\Schema::hasTable('purchase_histories')
             ? \App\Models\PurchaseHistory::whereRaw('LOWER(TRIM(COALESCE(payment_method, ""))) = ?', ['tempo'])
                 ->where(fn ($q) => $q->whereNull('payment_status')->orWhere('payment_status', '!=', 'paid'))
@@ -643,6 +668,7 @@
                     <a href="{{ route('admin.inventory.index') }}" class="@if(str_starts_with(Route::current()->getName() ?? '', 'admin.inventory')) active @endif">
                         <i class="fa-solid fa-boxes-stacked"></i>
                         <span>Laporan Stok</span>
+                        <span class="sidebar-indicator" id="sidebar-low-stock-count" aria-label="{{ $lowStockAlertCount }} produk stok rendah" style="{{ $lowStockAlertCount > 0 ? '' : 'display:none;' }}">{{ $lowStockAlertCount > 99 ? '99+' : $lowStockAlertCount }}</span>
                     </a>
                 </li>
                 <li>
@@ -661,6 +687,13 @@
                     <a href="{{ route('admin.purchase-history.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.purchase-history')) active @endif">
                         <i class="fa-solid fa-receipt"></i>
                         <span>Transaksi</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.consultations.index') }}" class="@if(str_contains(Route::current()->getName() ?? '', 'admin.consultations')) active @endif">
+                        <i class="fa-solid fa-user-doctor"></i>
+                        <span>Admin Dokter</span>
+                        <span class="sidebar-indicator" id="sidebar-pending-consultation-count" aria-label="{{ $pendingConsultationCount }} konsultasi menunggu" style="{{ $pendingConsultationCount > 0 ? '' : 'display:none;' }}">{{ $pendingConsultationCount > 99 ? '99+' : $pendingConsultationCount }}</span>
                     </a>
                 </li>
                 <li>

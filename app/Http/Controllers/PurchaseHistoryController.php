@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\PurchaseHistory;
+use App\Models\PurchasePaymentSetting;
 use App\Models\Medicine;
 use App\Models\Customer;
 use App\Models\SupplierPurchaseOrder;
 use App\Models\SupplierPurchaseOrderItem;
 use App\Models\ShoppingAccessCode;
+use App\Models\DoctorConsultation;
 use App\Models\DiscountCode;
 use App\Models\PurchaseStockReservation;
 use App\Services\MedicineStockLedger;
@@ -37,6 +39,7 @@ class PurchaseHistoryController extends Controller
             'purchase_order_profile' => ['nullable', 'string', 'in:medix,medikpedia'],
             'phone'           => ['nullable', 'string', 'max:255'],
             'address'         => ['nullable', 'string'],
+            'delivery_method' => ['nullable', 'string', 'in:delivery,pickup'],
             'kecamatan'       => ['nullable', 'string', 'max:255'],
             'kota'            => ['nullable', 'string', 'max:255'],
             'sia'             => ['nullable', 'string', 'max:255'],
@@ -65,11 +68,11 @@ class PurchaseHistoryController extends Controller
             'transaction_channel' => ['nullable', 'string', 'in:online'],
             'price_channel'   => ['nullable', 'string', 'in:b2c,internal,b2b'],
             'prescription_confirmation_token' => ['nullable', 'string', 'size:48'],
+            'consultation_prescription_number' => ['nullable', 'string', 'size:16', 'regex:/^RSP-[A-Z0-9]{12}$/'],
             'is_pbf_purchase_order' => ['nullable', 'boolean'],
             'discount_code'   => ['nullable', 'string', 'max:64'],
         ]);
 
-        $channel = $data['transaction_channel'] ?? 'online';
         if ($isPbfPurchaseOrder && (
             $data['buyer_type'] !== 'apotik'
             || empty($data['pbf_name'])
@@ -116,15 +119,25 @@ class PurchaseHistoryController extends Controller
             }
         }
 
+        $requestedPriceChannel = $data['price_channel'] ?? null;
         if ($isPbfPurchaseOrder) {
             $data['buyer_name'] = 'Apotek Medix';
             $data['purchase_order_profile'] = $data['purchase_order_profile'] ?? 'medix';
+            $requestedPriceChannel = 'b2b';
+            $deliveryMethod = null;
         } else {
             $data['purchase_order_type'] = 'regular';
             $data['purchase_order_profile'] = 'medix';
             $data['pbf_phone'] = null;
+            $deliveryMethod = $data['delivery_method']
+                ?? (str_starts_with(strtolower((string) ($data['address'] ?? '')), 'ambil di apotek medix') ? 'pickup' : 'delivery');
+            unset($data['delivery_method']);
         }
 
+        $channel = $data['transaction_channel'] ?? 'online';
+        if (!$isPbfPurchaseOrder && $data['buyer_type'] === 'umum' && $deliveryMethod === 'pickup') {
+            $channel = 'offline';
+        }
         if (!$isPbfPurchaseOrder && in_array($data['buyer_type'], ['apotik', 'dokter'], true)) {
             $data['buyer_name'] = $data['requester_name'] ?? ($data['buyer_name'] ?? null);
         }
@@ -132,14 +145,46 @@ class PurchaseHistoryController extends Controller
         $paymentMethod = trim((string) ($data['payment_method'] ?? ''));
         $paymentTermDays = (int) ($data['payment_term_days'] ?? 0);
         if (
-            $channel === 'online'
-            && $data['buyer_type'] === 'umum'
+            $data['buyer_type'] === 'umum'
             && $paymentMethod === 'Tempo'
         ) {
             return response()->json([
                 'message' => 'Metode pembayaran Tempo tidak tersedia untuk transaksi B2C.',
                 'errors' => ['payment_method' => ['Pilih QRIS, Transfer, atau Cash untuk transaksi B2C.']],
             ], 422);
+        }
+
+        $paymentSettings = PurchasePaymentSetting::query()->first();
+        $normalizedPaymentMethod = strtolower($paymentMethod);
+        if (
+            !$isPbfPurchaseOrder
+            && $normalizedPaymentMethod === 'qris'
+            && !$paymentSettings?->hasQris()
+        ) {
+            return response()->json([
+                'message' => 'Pembayaran QRIS belum tersedia. Silakan pilih metode lain atau hubungi admin.',
+                'errors' => ['payment_method' => ['QRIS belum dikonfigurasi.']],
+            ], 422);
+        }
+        if (
+            !$isPbfPurchaseOrder
+            && $normalizedPaymentMethod === 'transfer'
+            && !$paymentSettings?->hasBankTransfer()
+        ) {
+            return response()->json([
+                'message' => 'Pembayaran transfer belum tersedia. Silakan pilih metode lain atau hubungi admin.',
+                'errors' => ['payment_method' => ['Rekening transfer belum dikonfigurasi.']],
+            ], 422);
+        }
+
+        if ($normalizedPaymentMethod === 'qris' && $paymentSettings) {
+            $data['payment_qris_image_path'] = $paymentSettings->qris_image_path;
+            $data['payment_instructions'] = $paymentSettings->payment_instructions;
+        } elseif ($normalizedPaymentMethod === 'transfer' && $paymentSettings) {
+            $data['payment_bank_name'] = $paymentSettings->bank_name;
+            $data['payment_account_number'] = $paymentSettings->account_number;
+            $data['payment_account_holder'] = $paymentSettings->account_holder;
+            $data['payment_instructions'] = $paymentSettings->payment_instructions;
         }
 
         if ($paymentMethod === 'Tempo' && $paymentTermDays < 1) {
@@ -157,8 +202,7 @@ class PurchaseHistoryController extends Controller
         $originalTotal = 0;
         $discountedTotal = 0;
         $hasB2cAccess = ShoppingAccessCode::hasActiveB2cSession();
-        $hasInternalAccess = $channel === 'online'
-            && !$isPbfPurchaseOrder
+        $hasInternalAccess = !$isPbfPurchaseOrder
             && ShoppingAccessCode::hasActiveInternalSession();
         $hasB2bAccess = $request->hasSession()
             && ((int) $request->session()->get('pbf_access_expires_at', 0)) > now()->timestamp
@@ -166,9 +210,41 @@ class PurchaseHistoryController extends Controller
                 ShoppingAccessCode::CHANNEL_B2B,
                 $request->session()->get('pbf_access_code_hash')
             );
-        $requestedPriceChannel = $data['price_channel'] ?? null;
+        $consultationPrescriptionNumber = $data['consultation_prescription_number'] ?? null;
+        $consultationPrescription = $consultationPrescriptionNumber
+            ? DoctorConsultation::query()
+                ->where('prescription_number', $consultationPrescriptionNumber)
+                ->first()
+            : null;
+        $prescriptionError = $consultationPrescriptionNumber
+            ? $this->consultationPrescriptionError(
+                $consultationPrescription,
+                $items,
+                $requestedPriceChannel,
+                $data['buyer_type'],
+                $isPbfPurchaseOrder
+            )
+            : null;
+        if ($prescriptionError !== null) {
+            return response()->json([
+                'message' => $prescriptionError,
+                'errors' => ['consultation_prescription_number' => [$prescriptionError]],
+            ], 422);
+        }
+        $data['consultation_prescription_number'] = $consultationPrescriptionNumber;
+        $approvedPrescriptionIds = collect($consultationPrescription?->prescribed_items ?? [])
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+        $approvedPrescriptionItems = collect($consultationPrescription?->prescribed_items ?? [])
+            ->keyBy(fn (array $item): int => (int) $item['id']);
+        foreach ($items as $index => $item) {
+            $approvedItem = $approvedPrescriptionItems->get((int) ($item['id'] ?? 0));
+            if ($approvedItem) {
+                $items[$index]['catatan'] = $approvedItem['instructions'];
+            }
+        }
         $requiresRedLogoConfirmation = !$isPbfPurchaseOrder
-            && $channel === 'online'
             && $data['buyer_type'] === 'umum'
             && $hasB2cAccess
             && !in_array($requestedPriceChannel, ['internal', 'b2b'], true);
@@ -179,6 +255,7 @@ class PurchaseHistoryController extends Controller
             )->get()
                 ->filter(fn (Medicine $medicine) => $medicine->hasRedLogo())
                 ->pluck('id')
+                ->reject(fn ($id) => in_array((int) $id, $approvedPrescriptionIds, true))
                 ->map(fn ($id) => (int) $id)
                 ->sort()
                 ->values()
@@ -213,10 +290,10 @@ class PurchaseHistoryController extends Controller
             }
         }
 
-        if (
+        if (!$isPbfPurchaseOrder && (
             ($requestedPriceChannel === 'internal' && !$hasInternalAccess)
             || ($requestedPriceChannel === 'b2b' && !$hasB2bAccess)
-        ) {
+        )) {
             return response()->json([
                 'message' => 'Akses harga untuk kanal transaksi ini sudah tidak aktif.',
                 'errors' => ['price_channel' => ['Aktifkan kembali kode akses untuk kanal harga yang dipilih.']],
@@ -264,7 +341,13 @@ class PurchaseHistoryController extends Controller
                 ], 422);
             }
 
-            if ($product?->hasRedLogo() && $promoChannel === 'b2c' && !$hasB2bAccess && !in_array($data['buyer_type'], ['pbf', 'apotik', 'dokter'], true)) {
+            if (
+                $product?->hasRedLogo()
+                && $promoChannel === 'b2c'
+                && !$hasB2bAccess
+                && !in_array((int) $product->id, $approvedPrescriptionIds, true)
+                && !in_array($data['buyer_type'], ['pbf', 'apotik', 'dokter'], true)
+            ) {
                 if (!$hasB2cAccess && !$hasInternalAccess) {
                     return response()->json([
                         'message' => 'Aktifkan kode akses B2C atau Internal untuk memesan produk berlogo merah.',
@@ -339,15 +422,42 @@ class PurchaseHistoryController extends Controller
         $data['total'] = $discountedTotal;
         $data['approval_status'] = $data['approval_status'] ?? 'pending';
         $data['transaction_channel'] = $channel;
+        $data['price_channel'] = $requestedPriceChannel
+            ?? (in_array($data['buyer_type'], ['apotik', 'dokter', 'pbf'], true) ? 'b2b' : 'b2c');
         $data['is_pbf_purchase_order'] = $isPbfPurchaseOrder;
-        $data['user_id'] = Auth::check() && Auth::user()->isUser() && $channel === 'online'
+        $data['user_id'] = Auth::check() && Auth::user()->isUser() && !$isPbfPurchaseOrder
             ? Auth::id()
             : null;
         $data['payment_status'] = 'pending';
         $data['cashier_id'] = null;
         $data['paid_at'] = null;
 
-        $history = DB::transaction(function () use ($data, $items, $isPbfPurchaseOrder) {
+        $history = DB::transaction(function () use (
+            $data,
+            $items,
+            $isPbfPurchaseOrder,
+            $consultationPrescriptionNumber,
+            $requestedPriceChannel,
+            $approvedPrescriptionIds
+        ) {
+            $lockedPrescription = null;
+            if ($consultationPrescriptionNumber) {
+                $lockedPrescription = DoctorConsultation::query()
+                    ->where('prescription_number', $consultationPrescriptionNumber)
+                    ->lockForUpdate()
+                    ->first();
+                $prescriptionError = $this->consultationPrescriptionError(
+                    $lockedPrescription,
+                    $items,
+                    $requestedPriceChannel,
+                    $data['buyer_type'],
+                    $isPbfPurchaseOrder
+                );
+                if ($prescriptionError !== null) {
+                    return ['error' => $prescriptionError];
+                }
+            }
+
             $productIds = collect($items)->pluck('id')->filter()->map(fn ($id) => (int) $id)->unique()->sort()->values();
             $products = Medicine::whereIn('id', $productIds)
                 ->orderBy('id')
@@ -366,6 +476,16 @@ class PurchaseHistoryController extends Controller
                 $unitFactor = $product?->getSaleUnitFactor($item['sale_unit'] ?? 'box') ?? 0;
                 if (!$product || $unitFactor < 1) {
                     return ['error' => 'Produk atau satuan yang dipilih sudah tidak tersedia. Silakan muat ulang katalog.'];
+                }
+                if (
+                    $lockedPrescription
+                    && in_array($productId, $approvedPrescriptionIds, true)
+                    && (
+                        $product->kelompok === 'PBF'
+                        || $product->getChannelBasePrice('b2c') <= 0
+                    )
+                ) {
+                    return ['error' => 'Produk resep sudah tidak tersedia di katalog B2C. Hubungi dokter untuk konsultasi ulang.'];
                 }
                 $requiredUnits[$productId] = ($requiredUnits[$productId] ?? 0) + ((int) $item['quantity'] * $unitFactor);
                 $saleQuantities[$productId] = ($saleQuantities[$productId] ?? 0) + (int) $item['quantity'];
@@ -434,6 +554,9 @@ class PurchaseHistoryController extends Controller
                 $customer = Customer::syncFromOrder($history);
                 $history->update(['customer_id' => $customer->id]);
             }
+            if ($lockedPrescription) {
+                $lockedPrescription->update(['prescription_used_at' => now()]);
+            }
 
             return ['history' => $history];
         });
@@ -461,6 +584,61 @@ class PurchaseHistoryController extends Controller
                 ['order' => $history['history']->id]
             ),
         ]);
+    }
+
+    private function consultationPrescriptionError(
+        ?DoctorConsultation $consultation,
+        array $items,
+        ?string $priceChannel,
+        string $buyerType,
+        bool $isPbfPurchaseOrder
+    ): ?string {
+        if (!$consultation) {
+            return 'Nomor resep konsultasi tidak ditemukan.';
+        }
+        if (
+            $isPbfPurchaseOrder
+            || $buyerType !== 'umum'
+            || $priceChannel !== 'b2c'
+            || $consultation->payment_channel !== 'online'
+            || $consultation->payment_status !== 'paid'
+            || !in_array($consultation->status, ['active', 'completed'], true)
+            || $consultation->prescription_approved_at === null
+        ) {
+            return 'Nomor resep ini tidak berlaku untuk transaksi B2C Online.';
+        }
+        if ($consultation->prescription_used_at !== null) {
+            return 'Nomor resep ini sudah pernah digunakan.';
+        }
+
+        $approvedItems = collect($consultation->prescribed_items ?? [])
+            ->mapWithKeys(fn (array $item): array => [
+                (int) $item['id'] => [
+                    'quantity' => (int) $item['quantity'],
+                    'sale_unit' => $item['sale_unit'] ?? 'box',
+                ],
+            ])
+            ->sortKeys()
+            ->all();
+        $requestedItems = collect($items)
+            ->groupBy(fn (array $item): int => (int) ($item['id'] ?? 0))
+            ->map(fn ($productItems): array => [
+                'quantity' => $productItems->sum(fn (array $item): int => (int) ($item['quantity'] ?? $item['qty'] ?? 0)),
+                'sale_unit' => $productItems->first()['sale_unit'] ?? 'box',
+            ])
+            ->sortKeys()
+            ->all();
+
+        if ($approvedItems === [] || collect($items)->pluck('id')->unique()->count() !== count($items)) {
+            return 'Produk resep tidak valid. Muat ulang keranjang lalu coba kembali.';
+        }
+        foreach ($approvedItems as $productId => $approvedItem) {
+            if (($requestedItems[$productId] ?? null) !== $approvedItem) {
+                return 'Produk resep dan jumlah yang disetujui dokter harus tetap ada di keranjang.';
+            }
+        }
+
+        return null;
     }
 
     public function validateDiscountCode(Request $request)
@@ -532,7 +710,7 @@ class PurchaseHistoryController extends Controller
             return $item;
         }, $items);
 
-        if ($order->buyer_type === 'umum' && $order->transaction_channel !== 'offline') {
+        if ($order->buyer_type === 'umum') {
             return view('orders.b2c-receipt', compact('order', 'items'));
         }
 

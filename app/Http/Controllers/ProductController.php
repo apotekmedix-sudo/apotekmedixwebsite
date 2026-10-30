@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Medicine;
 use App\Models\ShoppingAccessCode;
+use App\Models\PurchasePaymentSetting;
 use App\Constants\Companies;
 use App\Support\HomepageProductCategories;
 use App\Support\StockAvailability;
@@ -557,6 +558,17 @@ class ProductController extends Controller
                 ? $providedConfirmationToken
                 : null;
 
-        return view('checkout', compact('defaultShippingAddress', 'productCatalog', 'prescriptionConfirmationToken'));
+        $paymentSettings = PurchasePaymentSetting::query()->first();
+        $defaultCheckoutPaymentMethod = $paymentSettings?->hasQris()
+            ? 'QRIS'
+            : ($paymentSettings?->hasBankTransfer() ? 'Transfer' : 'Cash');
+
+        return view('checkout', compact(
+            'defaultShippingAddress',
+            'productCatalog',
+            'prescriptionConfirmationToken',
+            'paymentSettings',
+            'defaultCheckoutPaymentMethod'
+        ));
     }
 }

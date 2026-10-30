@@ -50,7 +50,7 @@
         <i class="fa-solid fa-trash"></i> Tidak, hapus produk
       </button>
     </div>
-    <a class="red-rx-checkout-chat" id="redRxCheckoutChat" href="https://wa.me/6285890007359" target="_blank" rel="noopener">
+    <a class="red-rx-checkout-chat" id="redRxCheckoutChat" href="{{ route('consultations.intake') }}">
       <i class="fa-solid fa-user-doctor"></i> Chat Dokter
     </a>
     <button class="red-rx-checkout-close" type="button" onclick="document.getElementById('redRxCheckoutDialog').close()">Tutup</button>
@@ -82,9 +82,6 @@
       </div>`;
     }).join('');
 
-    const names = redItems.map(item => item.name || catalog[item.id]?.nama_obat || 'Produk').join(', ');
-    document.getElementById('redRxCheckoutChat').href =
-      `https://wa.me/6285890007359?text=${encodeURIComponent(`Halo Dokter Apotek Medix, saya ingin konsultasi mengenai produk yang memerlukan resep: ${names}`)}`;
     document.getElementById('redRxCheckoutError').style.display = 'none';
     dialog.showModal();
     return true;

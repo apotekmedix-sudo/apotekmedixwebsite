@@ -26,7 +26,7 @@
             <img class="logo" src="{{ asset('LOGO APOTEK MEDIX.PNG') }}" alt="Logo Apotek Medix">
             <div class="store">APOTEK MEDIX</div>
             <div class="muted">ITC Cempaka Mas LT.1 No. 88, Jakarta Pusat</div>
-            <div class="muted">WhatsApp: 085890007359</div>
+            <div class="muted">WhatsApp: {{ config('contacts.customer_service.display_phone') }}</div>
         </header>
         <div class="rule"></div>
         <div class="row"><span>No. Pesanan</span><strong>#{{ $order->id }}</strong></div>

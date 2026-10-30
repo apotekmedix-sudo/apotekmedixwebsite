@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Medicine;
+use App\Models\PurchasePaymentSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Tests\TestCase;
@@ -91,6 +92,11 @@ class PurchaseHistoryTest extends TestCase
 
     public function test_b2c_invoice_uses_the_medix_receipt_format(): void
     {
+        PurchasePaymentSetting::create([
+            'qris_image_path' => 'purchase-payment-settings/qris.png',
+            'payment_instructions' => 'Cantumkan nomor pesanan.',
+        ]);
+
         $response = $this->postJson('/orders/history', [
             'buyer_type' => 'umum',
             'buyer_name' => 'Budi',
@@ -105,6 +111,7 @@ class PurchaseHistoryTest extends TestCase
         $order = \App\Models\PurchaseHistory::findOrFail($response->json('id'));
         $this->assertSame('umum', $order->buyer_type);
         $this->assertSame('online', $order->transaction_channel);
+        $this->assertSame('purchase-payment-settings/qris.png', $order->payment_qris_image_path);
 
         $this->withMiddleware()->get($response->json('invoice_url'))
             ->assertOk()
@@ -113,6 +120,8 @@ class PurchaseHistoryTest extends TestCase
             ->assertSee('APJ: Apt. Safwan Nugraha, S. Farm')
             ->assertSee('Vitamin C')
             ->assertSee('QRIS')
+            ->assertSee('Cantumkan nomor pesanan.')
+            ->assertSee('QRIS pembayaran Apotek Medix')
             ->assertSee('Rp 45.000')
             ->assertSee('Semoga lekas sembuh')
             ->assertSee('Sehat Bersama Medix')
@@ -120,6 +129,84 @@ class PurchaseHistoryTest extends TestCase
             ->assertSee('class="home-button" href="' . route('home') . '">Kembali ke Beranda', false)
             ->assertDontSee('Uang diterima')
             ->assertDontSee('Kembalian');
+    }
+
+    public function test_transfer_orders_keep_the_custom_bank_details_for_the_invoice(): void
+    {
+        PurchasePaymentSetting::create([
+            'bank_name' => 'Bank Contoh',
+            'account_number' => '1234567890',
+            'account_holder' => 'Apotek Medix',
+            'payment_instructions' => 'Cantumkan ID transaksi.',
+        ]);
+
+        $response = $this->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Siti',
+            'phone' => '081234567890',
+            'payment_method' => 'Transfer',
+            'items' => [],
+            'total' => 0,
+        ])->assertOk();
+
+        $order = \App\Models\PurchaseHistory::findOrFail($response->json('id'));
+        $this->assertSame('Bank Contoh', $order->payment_bank_name);
+        $this->assertSame('1234567890', $order->payment_account_number);
+        $this->assertSame('Apotek Medix', $order->payment_account_holder);
+
+        $this->withMiddleware()->get($response->json('invoice_url'))
+            ->assertOk()
+            ->assertSee('Bank Contoh')
+            ->assertSee('1234567890')
+            ->assertSee('Apotek Medix')
+            ->assertSee('Cantumkan ID transaksi.');
+    }
+
+    public function test_checkout_rejects_qris_when_no_qris_payment_setting_exists(): void
+    {
+        $this->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Budi',
+            'payment_method' => 'QRIS',
+            'items' => [],
+            'total' => 0,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('payment_method');
+    }
+
+    public function test_checkout_persists_b2c_delivery_or_pickup_selection(): void
+    {
+        $response = $this->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Budi',
+            'phone' => '081234567890',
+            'address' => 'Ambil di Apotek Medix',
+            'delivery_method' => 'pickup',
+            'items' => [],
+            'total' => 0,
+        ])->assertOk();
+        $deliveryResponse = $this->postJson('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Siti',
+            'phone' => '081234567891',
+            'address' => 'Jl. Contoh No. 2',
+            'delivery_method' => 'delivery',
+            'items' => [],
+            'total' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('purchase_histories', [
+            'id' => $response->json('id'),
+            'buyer_type' => 'umum',
+            'transaction_channel' => 'offline',
+        ]);
+        $this->assertDatabaseHas('purchase_histories', [
+            'id' => $deliveryResponse->json('id'),
+            'buyer_type' => 'umum',
+            'transaction_channel' => 'online',
+        ]);
+        $this->assertFalse(\Illuminate\Support\Facades\Schema::hasColumn('purchase_histories', 'delivery_method'));
     }
 
     public function test_purchase_history_keeps_item_price_and_calculates_discount(): void

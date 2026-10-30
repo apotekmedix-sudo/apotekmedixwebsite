@@ -3,7 +3,7 @@
 @section('title', 'Checkout & Pembayaran - Apotek Medix')
 
 @php
-  $fullName = trim((string) ($defaultShippingAddress?->name ?? (auth()->check() ? auth()->user()->name : '')));
+  $fullName = trim((string) ($defaultShippingAddress?->name ?? (auth()->check() && auth()->user()->isUser() ? auth()->user()->name : '')));
   $nameParts = $fullName !== '' ? preg_split('/\s+/', $fullName, 2) : [];
   $defaultFirstName = count($nameParts) > 1 ? $nameParts[0] : '';
   $defaultLastName = count($nameParts) > 1 ? $nameParts[1] : ($nameParts[0] ?? '');
@@ -513,7 +513,7 @@
   .co-payment-detail[hidden] {
     display: none;
   }
-  .co-qris-dummy {
+  .co-qris-image {
     width: 150px;
     height: 150px;
     margin: 0 auto 0.6rem;
@@ -953,7 +953,7 @@
 
             <div class="co-field">
               <input type="text" id="co_b2b_outlet" class="co-input" placeholder="Nama outlet *" style="display:none;margin-bottom:0.75rem;">
-              <input type="text" id="co_full_name" class="co-input" placeholder="Nama lengkap" value="{{ $fullName }}">
+              <input type="text" id="co_full_name" class="co-input" placeholder="Nama" value="{{ $fullName }}">
               <input type="tel" id="co_phone" class="co-input" placeholder="No. Telp / WhatsApp" value="{{ $defaultShippingAddress?->phone }}" style="margin-top:0.75rem;">
             </div>
 
@@ -1063,6 +1063,7 @@
         </div>
 
         <div id="coSummaryItems"></div>
+        <div id="consultationPrescriptionNotice" role="status" style="display:none;margin:.75rem 0;padding:.7rem .8rem;border:1px solid #bbf7d0;border-radius:9px;background:#f0fdf4;color:#166534;font-size:.84rem;"></div>
 
         <div id="coDiscountInputRow" class="co-disc-row" style="margin-bottom:0.5rem;">
           <input type="text" id="coDiscountCodeInput" class="co-disc-inp" placeholder="Masukkan kode diskon" style="text-transform:uppercase;">
@@ -1098,18 +1099,22 @@
           </div>
           <p class="co-right-pay-sub">Pilih metode pembayaran pesanan Anda:</p>
 
-          <input type="hidden" id="co_payment_method" value="QRIS">
+          <input type="hidden" id="co_payment_method" value="{{ $defaultCheckoutPaymentMethod }}">
 
           <div class="co-pay-grid" id="coPayOptionsGrid">
-            <button type="button" class="co-pay-opt active" data-pay-method="QRIS" onclick="selectPaymentMethod('QRIS')">
-              <i class="fa-solid fa-qrcode"></i>
-              <span>QRIS</span>
-            </button>
-            <button type="button" class="co-pay-opt" data-pay-method="Transfer" onclick="selectPaymentMethod('Transfer')">
-              <i class="fa-solid fa-building-columns"></i>
-              <span>Transfer</span>
-            </button>
-            <button type="button" class="co-pay-opt" data-pay-method="Cash" onclick="selectPaymentMethod('Cash')">
+            @if($paymentSettings?->hasQris())
+              <button type="button" class="co-pay-opt {{ $defaultCheckoutPaymentMethod === 'QRIS' ? 'active' : '' }}" data-pay-method="QRIS" onclick="selectPaymentMethod('QRIS')">
+                <i class="fa-solid fa-qrcode"></i>
+                <span>QRIS</span>
+              </button>
+            @endif
+            @if($paymentSettings?->hasBankTransfer())
+              <button type="button" class="co-pay-opt {{ $defaultCheckoutPaymentMethod === 'Transfer' ? 'active' : '' }}" data-pay-method="Transfer" onclick="selectPaymentMethod('Transfer')">
+                <i class="fa-solid fa-building-columns"></i>
+                <span>Transfer</span>
+              </button>
+            @endif
+            <button type="button" class="co-pay-opt {{ $defaultCheckoutPaymentMethod === 'Cash' ? 'active' : '' }}" data-pay-method="Cash" onclick="selectPaymentMethod('Cash')">
               <i class="fa-solid fa-money-bill-wave"></i>
               <span>Cash</span>
             </button>
@@ -1119,18 +1124,22 @@
             </button>
           </div>
 
-          <div id="coQrisDetails" class="co-payment-detail" aria-live="polite">
-            <svg class="co-qris-dummy" viewBox="0 0 21 21" role="img" aria-label="Ilustrasi QRIS dummy, bukan kode pembayaran aktif">
-              <rect width="21" height="21" fill="#fff"/>
-              <path fill="#0f172a" d="M1 1h7v7H1zm1 1v5h5V2zm2 1h2v2H4zM13 1h7v7h-7zm1 1v5h5V2zm2 1h2v2h-2zM1 13h7v7H1zm1 1v5h5v-5zm2 1h2v2H4zM10 1h1v2h-1zm0 4h2v1h-2zm-1 3h2v2H9zm4 0h1v3h-1zm2 0h2v1h-2zm3 0h2v2h-2zm-8 3h2v2h-2zm3 1h2v1h-2zm3-1h1v3h-1zm3 1h1v2h-1zm-9 2h2v2h-2zm3 2h2v1h-2zm3 0h1v3h-1zm2 1h2v2h-2zm-9 1h2v1h-2z"/>
-            </svg>
-            <span class="co-payment-detail-title">QRIS Dummy</span>
-            <p class="co-payment-detail-note">Contoh tampilan saja. QRIS ini belum dapat digunakan untuk pembayaran.</p>
-          </div>
+          @if($paymentSettings?->hasQris())
+            <div id="coQrisDetails" class="co-payment-detail" aria-live="polite" @if($defaultCheckoutPaymentMethod !== 'QRIS') hidden @endif>
+              <img class="co-qris-image" src="{{ $paymentSettings->qris_image_url }}" alt="QRIS pembayaran Apotek Medix">
+              <span class="co-payment-detail-title">Scan QRIS Apotek Medix</span>
+              @if($paymentSettings->payment_instructions)<p class="co-payment-detail-note">{{ $paymentSettings->payment_instructions }}</p>@endif
+            </div>
+          @else
+            <div id="coQrisDetails" class="co-payment-detail" aria-live="polite" hidden></div>
+          @endif
           <div id="coTransferDetails" class="co-payment-detail" aria-live="polite" hidden>
-            <span class="co-payment-detail-title">Transfer Bank BCA</span>
-            <span class="co-transfer-number">6540126787</span>
-            <p class="co-payment-detail-note">Atas nama Ruly Haykal</p>
+            @if($paymentSettings?->hasBankTransfer())
+              <span class="co-payment-detail-title">Transfer {{ $paymentSettings->bank_name }}</span>
+              <span class="co-transfer-number">{{ $paymentSettings->account_number }}</span>
+              <p class="co-payment-detail-note">Atas nama {{ $paymentSettings->account_holder }}</p>
+              @if($paymentSettings->payment_instructions)<p class="co-payment-detail-note">{{ $paymentSettings->payment_instructions }}</p>@endif
+            @endif
           </div>
           <div id="coCashDetails" class="co-payment-detail" aria-live="polite" hidden>
             <span class="co-payment-detail-title">Nominal pembayaran</span>
@@ -1158,7 +1167,7 @@
 <script>
   const PRODUCT_CATALOG = @json($productCatalog ?? []);
   const FALLBACK_LOGO_URL = '{{ asset("LOGO APOTEK MEDIX.PNG") }}';
-  const WA_NUMBER = '6285890007359';
+  const WA_NUMBER = @json(config('contacts.customer_service.whatsapp'));
   const CART_CONTEXT_KEY = 'apotekmedix_active_cart_context';
 
   let activeCtx = {
@@ -1462,7 +1471,7 @@
       disabledLabel.style.display = available ? 'none' : 'block';
     }
     if (!available && document.getElementById('co_payment_method')?.value === 'Tempo') {
-      selectPaymentMethod('QRIS');
+      selectPaymentMethod(@json($defaultCheckoutPaymentMethod));
     }
   }
 
@@ -1512,11 +1521,14 @@
       catatan: it.note || '',
       potongan: Number(it.discount || 0)
     }));
+    const consultationPrescriptionNumber = checkoutCart
+      .find(it => it.consultationPrescriptionNumber)?.consultationPrescriptionNumber || null;
 
     const payload = {
       buyer_type: jenis,
       price_channel: activeCtx.priceChannel || (activeCtx.wholesaleOrder ? 'b2b' : 'b2c'),
       prescription_confirmation_token: @json($prescriptionConfirmationToken),
+      consultation_prescription_number: consultationPrescriptionNumber,
       items: mappedItems,
       total: discountedTotal,
       original_total: originalTotal,
@@ -1526,6 +1538,7 @@
       payment_method: paymentMethod,
       payment_term_days: paymentMethod === 'Tempo' ? paymentTermDays : null,
       transaction_channel: 'online',
+      delivery_method: deliveryMode === 'pickup' ? 'pickup' : 'delivery',
       is_pbf_purchase_order: Boolean(activeCtx.adminPbfOrder)
     };
 
@@ -1701,6 +1714,13 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    const consultationPrescriptionNumber = checkoutCart
+      .find(item => item.consultationPrescriptionNumber)?.consultationPrescriptionNumber;
+    if (consultationPrescriptionNumber) {
+      const notice = document.getElementById('consultationPrescriptionNotice');
+      notice.textContent = `Resep dokter terlampir · Nomor resep: ${consultationPrescriptionNumber}`;
+      notice.style.display = 'block';
+    }
     configureTempoOption();
     if (activeCtx.adminPbfOrder) {
       document.getElementById('coAdminPbfFields').style.display = 'block';
@@ -1712,7 +1732,6 @@
       const fullNameInp = document.getElementById('co_full_name');
       if (fullNameInp) {
         fullNameInp.placeholder = 'Nama Apoteker / Dokter *';
-        if (fullNameInp.value === 'Admin Apotek Medix') fullNameInp.value = '';
       }
       const phoneInp = document.getElementById('co_phone');
       if (phoneInp) phoneInp.placeholder = 'No. Telp *';

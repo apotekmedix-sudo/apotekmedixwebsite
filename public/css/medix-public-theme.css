@@ -3495,3 +3495,63 @@ body.public-theme main :is(
         padding-left: .9rem !important;
     }
 }
+
+body.public-theme main .home-brand-hero .home-hero-chat-actions a.home-hero-chat-button,
+body.public-theme main .home-brand-hero .home-hero-chat-actions a.home-hero-chat-button:link,
+body.public-theme main .home-brand-hero .home-hero-chat-actions a.home-hero-chat-button:visited {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background: linear-gradient(135deg, #0870df, #0755c8) !important;
+    border-color: #5cc8ff !important;
+}
+
+body.public-theme main .home-brand-hero .home-hero-chat-actions a.home-hero-chat-button *,
+body.public-theme main .home-brand-hero .home-hero-chat-actions a.home-hero-chat-button:visited * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+body.public-theme main .home-brand-hero .home-hero-chat-actions a.home-hero-chat-button i,
+body.public-theme main .home-brand-hero .home-hero-chat-actions a.home-hero-chat-button:visited i {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+body.public-theme main .home-brand-hero .home-hero-chat-actions a.home-hero-chat-button:hover,
+body.public-theme main .home-brand-hero .home-hero-chat-actions a.home-hero-chat-button:hover * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background: linear-gradient(135deg, #0755c8, #063583) !important;
+}
+
+body.public-theme main .home-brand-hero .home-hero-chat-actions a.home-hero-chat-button:hover i {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+body.public-theme main.consult-page .doctor-grid .doctor-card .doctor-actions a.consult-primary,
+body.public-theme main.consult-page .doctor-grid .doctor-card .doctor-actions a.consult-primary:link,
+body.public-theme main.consult-page .doctor-grid .doctor-card .doctor-actions a.consult-primary:visited,
+body.public-theme main.consult-page .doctor-grid .doctor-card .doctor-actions button.consult-primary {
+    background: #0755c8 !important;
+    background-color: #0755c8 !important;
+    border: 1px solid #0755c8 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+body.public-theme main.consult-page .doctor-grid .doctor-card .doctor-actions a.consult-primary *,
+body.public-theme main.consult-page .doctor-grid .doctor-card .doctor-actions a.consult-primary:visited *,
+body.public-theme main.consult-page .doctor-grid .doctor-card .doctor-actions button.consult-primary * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+body.public-theme main.consult-page .doctor-grid .doctor-card .doctor-actions a.consult-primary:hover,
+body.public-theme main.consult-page .doctor-grid .doctor-card .doctor-actions a.consult-primary:focus-visible {
+    background: #063583 !important;
+    background-color: #063583 !important;
+    border-color: #063583 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}

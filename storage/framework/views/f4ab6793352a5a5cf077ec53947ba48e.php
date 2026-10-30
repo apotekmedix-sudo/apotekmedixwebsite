@@ -73,27 +73,65 @@
     line-height: 1.5;
 }
 .home-hero-chat-actions {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(180px, 240px));
+    align-items: center;
     gap: .75rem;
     margin-top: 1rem;
 }
+.home-hero-doctor-caption {
+    grid-column: 1 / -1;
+    justify-self: center;
+    margin-bottom: 0;
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 800;
+    line-height: 1.3;
+    text-align: center;
+    text-shadow: 0 1px 3px rgba(0, 24, 72, .85);
+}
+.home-hero-chat-label {
+    display: none;
+}
 .home-hero-chat-button {
     display: inline-flex;
+    width: 100%;
     align-items: center;
     justify-content: center;
     gap: .55rem;
     min-height: 46px;
+    height: 46px;
     padding: .7rem 1.1rem;
-    border: 1px solid rgba(255,255,255,.9);
-    border-radius: 12px;
-    background: #fff;
-    color: #0755c8;
+    border: 2px solid #5cc8ff;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #0870df, #0755c8);
+    color: #fff;
     font: inherit;
     font-weight: 800;
-    box-shadow: 0 6px 16px rgba(0,24,89,.2);
+    box-shadow: 0 6px 16px rgba(0,24,89,.3);
 }
-.home-hero-chat-button--pharmacist { color: #08734f; }
+body.public-theme main .home-brand-hero a.home-hero-chat-button,
+body.public-theme main .home-brand-hero a.home-hero-chat-button:visited,
+body.public-theme main .home-brand-hero a.home-hero-chat-button *,
+body.public-theme main .home-brand-hero a.home-hero-chat-button:visited * {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
+body.public-theme main .home-brand-hero a.home-hero-chat-button i,
+body.public-theme main .home-brand-hero a.home-hero-chat-button:visited i {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
+body.public-theme main .home-brand-hero a.home-hero-chat-button:hover,
+body.public-theme main .home-brand-hero a.home-hero-chat-button:hover * {
+    background: linear-gradient(135deg, #0755c8, #063583) !important;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
+body.public-theme main .home-brand-hero a.home-hero-chat-button:hover i {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
 .home-product-search {
     display: grid;
     grid-template-columns: minmax(250px, 2fr) repeat(3, minmax(160px, 1fr)) auto;
@@ -855,7 +893,8 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
     .home-brand-hero h1 { max-width:290px;padding-right:2rem;font-size:1.78rem; }
     .home-brand-hero p { max-width:330px;font-size:.9rem; }
     .home-hero-chat-actions { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin-top:.85rem; }
-    .home-hero-chat-button { min-width:0;padding:.65rem .45rem;font-size:.82rem; }
+    .home-hero-doctor-caption { font-size:.78rem; }
+    .home-hero-chat-button { min-width:0;height:44px;min-height:44px;padding:.55rem .3rem;font-size:.78rem; }
     .home-hero-search { gap:.25rem;margin:.95rem 0;padding:.3rem .32rem .3rem .65rem; }
     .home-hero-search input { padding:.65rem .25rem;font-size:.83rem; }
     .home-hero-search button { gap:.35rem;padding:.68rem .75rem;font-size:.8rem; }
@@ -1122,16 +1161,17 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
     <div class="home-brand-hero-copy">
         <span class="home-brand-hero-label"><i class="fa-solid fa-heart-pulse"></i> Apotek Medix</span>
         <h1 id="homeHeroTitle">Solusi Kesehatan Digital, Lebih Mudah dalam Genggaman.</h1>
-        <p>Apotek Medix hadir untuk menghadirkan pengalaman layanan kefarmasian yang lebih mudah, praktis, dan terintegrasi melalui pemanfaatan teknologi digital.</p>
+        <p>Apotek Medix Memberikan layanan Kefarmasian yang lebih mudah dan praktis bagi Masyarakat. Serta terintegrasi secara digital di berbagai Platform.</p>
         <div class="home-hero-chat-actions" aria-label="Pilihan konsultasi">
-            <button type="button" class="home-hero-chat-button">
+            <span class="home-hero-doctor-caption">Butuh Obat Resep?<br>Hubungi:</span>
+            <a href="<?php echo e(route('consultations.intake')); ?>" class="home-hero-chat-button" style="text-decoration:none">
                 <i class="fa-solid fa-user-doctor" aria-hidden="true"></i>
                 Chat Dokter
-            </button>
-            <button type="button" class="home-hero-chat-button home-hero-chat-button--pharmacist">
+            </a>
+            <a href="https://wa.me/<?php echo e(config('contacts.pharmacist.whatsapp')); ?>?text=<?php echo e(rawurlencode('Halo Apoteker Apotek Medix, saya ingin berkonsultasi.')); ?>" class="home-hero-chat-button home-hero-chat-button--pharmacist" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
                 <i class="fa-solid fa-user-nurse" aria-hidden="true"></i>
                 Chat Apoteker
-            </button>
+            </a>
         </div>
     </div>
     <div class="home-brand-hero-mark" aria-hidden="true">
@@ -2068,7 +2108,7 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
         </div>
         <div class="home-service-item">
             <span class="home-trust-icon"><i class="fa-solid fa-user-doctor" aria-hidden="true"></i></span>
-            <div><strong>Hubungi Customer Services</strong><a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20perlu%20bantuan." target="_blank" rel="noopener">Hubungi CS <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></div>
+            <div><strong>Hubungi Customer Services</strong><a href="https://wa.me/<?php echo e(config('contacts.customer_service.whatsapp')); ?>?text=Halo%20Apotek%20Medix%2C%20saya%20perlu%20bantuan." target="_blank" rel="noopener">Hubungi CS <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></div>
         </div>
     </div>
 </section>

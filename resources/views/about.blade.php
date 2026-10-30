@@ -324,7 +324,7 @@
                     <div>
                         <i class="fa-solid fa-phone" aria-hidden="true"></i>
                         <strong>Telepon:</strong>
-                        <a href="tel:085890007359">085890007359</a>
+                        <a href="tel:{{ config('contacts.customer_service.phone_e164') }}">085890007359</a>
                     </div>
                 </div>
             </div>
@@ -435,7 +435,7 @@
             <h2>Ada Pertanyaan?<br>Hubungi Kami Sekarang</h2>
             <p>Tim kami siap membantu Anda menemukan produk yang tepat dan menjawab setiap pertanyaan Anda kapan saja.</p>
             <div>
-                <a href="https://wa.me/6285890007359" target="_blank" rel="noopener" class="btn-cta-wa">
+                <a href="https://wa.me/{{ config('contacts.customer_service.whatsapp') }}" target="_blank" rel="noopener" class="btn-cta-wa">
                     <i class="fa-brands fa-whatsapp" style="font-size:1.2rem;"></i> Chat via WhatsApp
                 </a>
                 <a href="{{ route('contact') }}" class="btn-cta-produk">

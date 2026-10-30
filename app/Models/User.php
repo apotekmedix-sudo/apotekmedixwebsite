@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable
 {
@@ -68,12 +69,25 @@ class User extends Authenticatable
 
     public function isUser()
     {
-        return $this->role === 'user' && !$this->is_cashier;
+        return $this->role === 'user' && !$this->is_cashier && !$this->isDoctor();
     }
 
     public function isCashier(): bool
     {
         return $this->role === 'user' && $this->is_cashier;
+    }
+
+    public function doctorProfile(): HasOne
+    {
+        return $this->hasOne(DoctorProfile::class);
+    }
+
+    public function isDoctor(): bool
+    {
+        return $this->doctorProfile()
+            ->where('is_active', true)
+            ->where('str_verified', true)
+            ->exists();
     }
 
     public function purchaseHistories(): HasMany

@@ -5,10 +5,13 @@ namespace Tests\Feature;
 use App\Models\Medicine;
 use App\Models\Customer;
 use App\Models\PurchaseHistory;
+use App\Models\PurchasePaymentSetting;
 use App\Models\ShoppingAccessCode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CashierWorkflowTest extends TestCase
@@ -310,6 +313,12 @@ class CashierWorkflowTest extends TestCase
         $this->get(route('cashier.dashboard'))
             ->assertOk()
             ->assertSee('Pembeli')
+            ->assertSee('id="cashier-order-notification"', false)
+            ->assertSee('class="cashier-order-notification-count" id="cashier-order-notification-count">1</span>', false)
+            ->assertSee('id="pending-queue-link"', false)
+            ->assertSee('1 pesanan menunggu verifikasi')
+            ->assertSee('id="pending-tab-count"', false)
+            ->assertSee('aria-live="polite"', false)
             ->assertSee('Verifikasi & Cetak')
             ->assertDontSee('href="' . route('admin.dashboard') . '"', false);
         $this->get(route('cashier.updates'))
@@ -382,6 +391,51 @@ class CashierWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee('📊 Dashboard')
             ->assertDontSee('ðŸ');
+    }
+
+    public function test_cashier_can_set_purchase_qris_and_bank_details_for_checkout(): void
+    {
+        $cashier = User::factory()->create(['role' => 'user', 'is_cashier' => true]);
+        Storage::fake('public');
+
+        $this->actingAs($cashier)
+            ->get(route('cashier.dashboard'))
+            ->assertOk()
+            ->assertSee('Pengaturan QRIS & rekening pembayaran')
+            ->assertSee(route('cashier.payment-settings.update'), false);
+
+        $this->put(route('cashier.payment-settings.update'), [
+            'qris_image' => UploadedFile::fake()->image('qris.png'),
+            'bank_name' => 'Bank Contoh',
+            'account_number' => '1234567890',
+            'account_holder' => 'Apotek Medix',
+            'payment_instructions' => 'Cantumkan nomor pesanan.',
+        ])->assertRedirect(route('cashier.dashboard') . '#purchase-payment-settings');
+
+        $settings = PurchasePaymentSetting::firstOrFail();
+        Storage::disk('public')->assertExists($settings->qris_image_path);
+        $this->get('/storage/' . $settings->qris_image_path)->assertOk();
+
+        $this->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee($settings->qris_image_url, false)
+            ->assertSee('Bank Contoh')
+            ->assertSee('1234567890')
+            ->assertSee('Apotek Medix')
+            ->assertSee('Cantumkan nomor pesanan.')
+            ->assertDontSee('QRIS Dummy')
+            ->assertDontSee('6540126787');
+    }
+
+    public function test_checkout_does_not_prefill_an_admin_name_in_the_customer_name_field(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'name' => 'Admin Apotek Medix']);
+
+        $this->actingAs($admin)
+            ->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee('placeholder="Nama" value=""', false)
+            ->assertDontSee('value="Admin Apotek Medix"', false);
     }
 
     public function test_login_forms_can_reveal_password_and_keep_it_after_failed_login(): void

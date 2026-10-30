@@ -9,6 +9,40 @@ use Illuminate\Support\Collection;
 
 class StockAvailability
 {
+    public static function prioritizeLowestAvailableStock(Builder $query): Builder
+    {
+        return $query
+            ->orderByRaw("
+                CASE
+                    WHEN (
+                        CASE
+                            WHEN COALESCE(medicines.unit_packaging_enabled, 0) = 1
+                                THEN COALESCE(medicines.stock_base_units, medicines.stok)
+                            ELSE medicines.stok
+                        END
+                        - COALESCE((
+                            SELECT SUM(purchase_stock_reservations.quantity_units)
+                            FROM purchase_stock_reservations
+                            WHERE purchase_stock_reservations.medicine_id = medicines.id
+                        ), 0)
+                    ) > 0 THEN (
+                        CASE
+                            WHEN COALESCE(medicines.unit_packaging_enabled, 0) = 1
+                                THEN COALESCE(medicines.stock_base_units, medicines.stok)
+                            ELSE medicines.stok
+                        END
+                        - COALESCE((
+                            SELECT SUM(purchase_stock_reservations.quantity_units)
+                            FROM purchase_stock_reservations
+                            WHERE purchase_stock_reservations.medicine_id = medicines.id
+                        ), 0)
+                    )
+                    ELSE 0
+                END
+            ")
+            ->orderBy('nama_obat');
+    }
+
     public static function prioritizeAvailableStock(Builder $query): Builder
     {
         return $query->orderByRaw("

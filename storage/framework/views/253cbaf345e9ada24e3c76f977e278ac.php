@@ -97,6 +97,22 @@
             font-size: 1.25rem;
         }
 
+        .sidebar-menu .sidebar-indicator {
+            display:inline-flex;
+            min-width:1.35rem;
+            height:1.35rem;
+            align-items:center;
+            justify-content:center;
+            margin-left:auto;
+            padding:0 .35rem;
+            border-radius:999px;
+            background:#dc2626;
+            color:#fff;
+            font-size:.72rem;
+            font-weight:800;
+            line-height:1;
+        }
+
         /* Main Content */
         .main-content {
             flex: 1;
@@ -606,6 +622,15 @@
 </head>
 <body>
     <?php
+        $lowStockAlertCount = \Illuminate\Support\Facades\Schema::hasTable('medicines')
+            ? \App\Models\Medicine::where('stok', '<', 5)->count()
+            : 0;
+        $pendingConsultationCount = \Illuminate\Support\Facades\Schema::hasTable('doctor_consultations')
+            ? \App\Models\DoctorConsultation::where('status', 'awaiting_payment')
+                ->where('payment_status', 'pending')
+                ->where('payment_due_at', '>', now())
+                ->count()
+            : 0;
         $tempoUnpaidOrders = \Illuminate\Support\Facades\Schema::hasTable('purchase_histories')
             ? \App\Models\PurchaseHistory::whereRaw('LOWER(TRIM(COALESCE(payment_method, ""))) = ?', ['tempo'])
                 ->where(fn ($q) => $q->whereNull('payment_status')->orWhere('payment_status', '!=', 'paid'))
@@ -643,6 +668,7 @@
                     <a href="<?php echo e(route('admin.inventory.index')); ?>" class="<?php if(str_starts_with(Route::current()->getName() ?? '', 'admin.inventory')): ?> active <?php endif; ?>">
                         <i class="fa-solid fa-boxes-stacked"></i>
                         <span>Laporan Stok</span>
+                        <span class="sidebar-indicator" id="sidebar-low-stock-count" aria-label="<?php echo e($lowStockAlertCount); ?> produk stok rendah" style="<?php echo e($lowStockAlertCount > 0 ? '' : 'display:none;'); ?>"><?php echo e($lowStockAlertCount > 99 ? '99+' : $lowStockAlertCount); ?></span>
                     </a>
                 </li>
                 <li>
@@ -661,6 +687,13 @@
                     <a href="<?php echo e(route('admin.purchase-history.index')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'admin.purchase-history')): ?> active <?php endif; ?>">
                         <i class="fa-solid fa-receipt"></i>
                         <span>Transaksi</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?php echo e(route('admin.consultations.index')); ?>" class="<?php if(str_contains(Route::current()->getName() ?? '', 'admin.consultations')): ?> active <?php endif; ?>">
+                        <i class="fa-solid fa-user-doctor"></i>
+                        <span>Admin Dokter</span>
+                        <span class="sidebar-indicator" id="sidebar-pending-consultation-count" aria-label="<?php echo e($pendingConsultationCount); ?> konsultasi menunggu" style="<?php echo e($pendingConsultationCount > 0 ? '' : 'display:none;'); ?>"><?php echo e($pendingConsultationCount > 99 ? '99+' : $pendingConsultationCount); ?></span>
                     </a>
                 </li>
                 <li>

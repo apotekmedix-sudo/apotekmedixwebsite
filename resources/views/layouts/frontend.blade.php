@@ -1128,7 +1128,7 @@
                     <div class="footer-social-row">
                         <a href="https://facebook.com/apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#1877f2'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-facebook-f"></i></a>
                         <a href="https://www.instagram.com/apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#e1306c'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="https://wa.me/6285890007359" aria-label="WhatsApp Apotek Medix" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#25d366'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-whatsapp"></i></a>
+                        <a href="https://wa.me/{{ config('contacts.customer_service.whatsapp') }}" aria-label="WhatsApp Apotek Medix" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#25d366'" onmouseout="this.style.background='rgba(255,255,255,0.1)'"><i class="fa-brands fa-whatsapp"></i></a>
                         <a href="https://pin.it/69pbGoR2f" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#e60023'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" title="Pinterest"><i class="fa-brands fa-pinterest-p"></i></a>
                         <a href="https://www.youtube.com/@apotekmedix" target="_blank" rel="noopener" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#ff0000'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
                         @if(request()->routeIs('home', 'products.apotek'))
@@ -1149,6 +1149,7 @@
                     <ul>
                         <li><a href="{{ route('contact') }}"><i class="fa-solid fa-headset fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Bantuan & Kontak</a></li>
                         <li><a href="{{ route('about') }}"><i class="fa-solid fa-circle-info fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Tentang Kami</a></li>
+                        <li><a href="{{ route('kunjungan.access.form') }}"><i class="fa-solid fa-folder-open fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Akses File KUNJUNGAN</a></li>
                         <li class="footer-legal-note"><i class="fa-solid fa-shield-halved fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Periksa nomor izin edar pada kemasan atau detail produk. Hubungi kami bila perlu bantuan verifikasi.</li>
                     </ul>
                 </div>
@@ -1156,9 +1157,9 @@
                     <h3>Kontak</h3>
                     <ul>
                         <li style="margin-bottom:0.75rem;">
-                            <a href="tel:+6285890007359" class="footer-contact-link">
+                            <a href="tel:{{ config('contacts.customer_service.phone_e164') }}" class="footer-contact-link">
                                 <i class="fa-solid fa-phone"></i>
-                                <span>0858 9000 7359</span>
+                                <span>{{ config('contacts.customer_service.display_phone') }}</span>
                             </a>
                         </li>
                         <li style="margin-bottom:0.75rem;">
@@ -1201,7 +1202,7 @@
     </style>
 
     <div class="float-wrap">
-        <a href="https://wa.me/6285890007359?text=Halo%20Apotek%20Medix%2C%20saya%20ingin%20bertanya%20tentang%20produk%20obat."
+        <a href="https://wa.me/{{ config('contacts.customer_service.whatsapp') }}?text=Halo%20Apotek%20Medix%2C%20saya%20ingin%20bertanya%20tentang%20produk%20obat."
            target="_blank" rel="noopener" class="float-btn-wa" aria-label="Chat WhatsApp Apotek Medix">
             <i class="fa-brands fa-whatsapp"></i>
         </a>

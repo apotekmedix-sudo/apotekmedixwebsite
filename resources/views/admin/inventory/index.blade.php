@@ -7,8 +7,9 @@
 <style>
     .inventory-intro{margin:-.7rem 0 1rem;color:#64748b;line-height:1.6}
     .inventory-notice{margin-bottom:1rem;padding:12px 14px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1e40af;font-size:.85rem;line-height:1.55}
-    .inventory-search{display:flex;gap:.6rem;margin:1rem 0}
+    .inventory-search{display:flex;gap:.6rem;margin:1rem 0;align-items:center}
     .inventory-search input{flex:1;min-width:0;padding:.65rem .8rem;border:1px solid #cbd5e1;border-radius:8px}
+    .inventory-search select{min-width:220px;padding:.65rem .8rem;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#334155}
     .inventory-search button{padding:.65rem 1rem;border:0;border-radius:8px;background:#0052cc;color:#fff;font-weight:700}
     .inventory-table-wrap{overflow-x:auto;margin-bottom:1.25rem}
     .inventory-table{width:100%;min-width:850px;border-collapse:collapse;background:#fff}
@@ -16,6 +17,8 @@
     .inventory-table th{background:#f8fafc;color:#334155;font-size:.76rem}
     .inventory-table td{color:#475569;font-size:.82rem}
     .inventory-table strong{color:#0f172a}
+    .inventory-product-name{display:inline-flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+    .inventory-empty-badge{display:inline-flex;align-items:center;padding:.15rem .45rem;border-radius:999px;background:#fee2e2;color:#b91c1c;font-size:.65rem;font-weight:800;line-height:1.3;white-space:nowrap}
     .inventory-muted{display:block;margin-top:.25rem;color:#64748b;font-size:.73rem}
     .inventory-quantity{white-space:nowrap;font-weight:700}
     .inventory-negative{color:#b91c1c!important}
@@ -28,12 +31,17 @@
     .inventory-page-link:hover{border-color:#94a3b8;background:#f8fafc}
     .inventory-page-link.is-current{border-color:#0f172a;background:#0f172a;color:#fff}
     .inventory-page-link.is-disabled{color:#94a3b8;background:#f8fafc}
+    @media(max-width:700px){.inventory-search{flex-wrap:wrap}.inventory-search input,.inventory-search select,.inventory-search button{width:100%}.inventory-search select{min-width:0}}
     @media(max-width:600px){.inventory-pagination{align-items:flex-start;flex-direction:column}.inventory-pagination-nav{width:100%}}
 </style>
 
 <p class="inventory-intro">Semua jumlah ditampilkan dalam satuan utama produk. Stok fisik adalah jumlah stok saat ini, dipesan adalah stok yang ditahan untuk pesanan belum selesai, dan stok tersedia adalah stok fisik dikurangi stok yang dipesan.</p>
 <form class="inventory-search" method="GET" action="{{ route('admin.inventory.index') }}">
-    <input name="search" value="{{ $search }}" placeholder="Cari nama produk">
+    <input type="search" name="search" value="{{ $search }}" placeholder="Cari nama, SKU, komposisi, indikasi, atau kategori produk">
+    <select name="sort" aria-label="Urutkan stok produk">
+        <option value="name" @selected($sort === 'name')>Urutkan: Nama produk</option>
+        <option value="lowest_stock" @selected($sort === 'lowest_stock')>Stok tersedia: Terendah</option>
+    </select>
     <button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
 </form>
 
@@ -55,7 +63,7 @@
                 };
             @endphp
             <tr>
-                <td><strong>{{ $product->nama_obat }}</strong><span class="inventory-muted">ID {{ $product->id }}</span></td>
+                <td><span class="inventory-product-name"><strong>{{ $product->nama_obat }}</strong>@if($physical <= 0)<span class="inventory-empty-badge">STOK KOSONG</span>@endif</span><span class="inventory-muted">ID {{ $product->id }}</span></td>
                 <td>{{ $product->package_unit_label }}</td>
                 <td><span class="inventory-quantity">{{ $formatMainUnitQuantity($physical) }}</span></td>
                 <td><span class="inventory-quantity">{{ $formatMainUnitQuantity($reserved) }}</span></td>

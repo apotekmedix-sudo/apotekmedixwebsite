@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Medicine;
 use App\Models\PurchaseHistory;
 use App\Models\PurchaseStockReservation;
+use App\Models\DoctorConsultation;
 use App\Services\MedicineStockLedger;
 use Illuminate\Support\Facades\DB;
 use App\Constants\Companies;
@@ -33,11 +34,12 @@ class AdminDashboardController extends Controller
         $totalOmzet    = Schema::hasTable('purchase_histories')
             ? $this->revenueOrders()->get()->sum(fn ($order) => $order->effective_total)
             : 0;
+        $pendingConsultations = $this->pendingConsultationCount();
         $recentOrders  = Schema::hasTable('purchase_histories') ? PurchaseHistory::latest()->limit(5)->get() : collect();
 
         return view('admin.dashboard', compact(
             'totalProduk', 'totalStok', 'lowStok', 'latestProduk',
-            'perKategori', 'totalOmzet', 'recentOrders'
+            'perKategori', 'totalOmzet', 'recentOrders', 'pendingConsultations'
         ));
     }
 
@@ -63,8 +65,22 @@ class AdminDashboardController extends Controller
         return response()->json([
             'total'         => Medicine::count(),
             'lowStok'       => Medicine::where('stok', '<', 5)->count(),
+            'pendingConsultations' => $this->pendingConsultationCount(),
             'latestProduk'  => $latestProduk,
         ]);
+    }
+
+    private function pendingConsultationCount(): int
+    {
+        if (!Schema::hasTable('doctor_consultations')) {
+            return 0;
+        }
+
+        return DoctorConsultation::query()
+            ->where('status', 'awaiting_payment')
+            ->where('payment_status', 'pending')
+            ->where('payment_due_at', '>', now())
+            ->count();
     }
 
     public function purchaseHistory(Request $request)
@@ -76,14 +92,20 @@ class AdminDashboardController extends Controller
         $supplierNames = collect();
         $total_omzet = 0;
         $total_pembelian = 0;
+        $fulfillment = 'all';
 
         if ($tab === 'sales') {
+            $fulfillment = $request->validate([
+                'fulfillment' => ['nullable', 'in:all,internal,b2b,offline,online'],
+            ])['fulfillment'] ?? 'all';
             $ordersQuery = Schema::hasTable('purchase_histories')
                 ? PurchaseHistory::with('cashier')->latest()->orderByDesc('id')
                 : PurchaseHistory::query()->whereRaw('1 = 0');
             if (Schema::hasColumn('purchase_histories', 'is_pbf_purchase_order')) {
                 $ordersQuery->where(fn ($query) => $query->whereNull('is_pbf_purchase_order')->orWhere('is_pbf_purchase_order', false));
             }
+            $this->applyConfirmedSalesFilter($ordersQuery);
+            $this->applySalesFulfillmentFilter($ordersQuery, $fulfillment);
             $orders = $ordersQuery->paginate(20)->withQueryString();
             $total_omzet = $this->revenueOrders()->get()->sum(fn ($order) => $order->effective_total);
         } else {
@@ -109,7 +131,7 @@ class AdminDashboardController extends Controller
                 ->sum('total');
         }
 
-        return view('admin.purchase-history', compact('tab', 'orders', 'supplierOrders', 'legacyPbfOrders', 'supplierNames', 'total_omzet', 'total_pembelian'));
+        return view('admin.purchase-history', compact('tab', 'orders', 'supplierOrders', 'legacyPbfOrders', 'supplierNames', 'total_omzet', 'total_pembelian', 'fulfillment'));
     }
 
     private function supplierPurchaseHistoryRows(Request $request): array
@@ -518,10 +540,15 @@ class AdminDashboardController extends Controller
             return redirect()->route('admin.purchase-history.index')->with('error', 'Tabel purchase_histories tidak tersedia.');
         }
 
+        $fulfillment = $request->validate([
+            'fulfillment' => ['nullable', 'in:all,internal,b2b,offline,online'],
+        ])['fulfillment'] ?? 'all';
         $ordersQuery = PurchaseHistory::with('cashier')->latest()->orderByDesc('id');
         if (Schema::hasColumn('purchase_histories', 'is_pbf_purchase_order')) {
             $ordersQuery->where(fn ($query) => $query->whereNull('is_pbf_purchase_order')->orWhere('is_pbf_purchase_order', false));
         }
+        $this->applyConfirmedSalesFilter($ordersQuery);
+        $this->applySalesFulfillmentFilter($ordersQuery, $fulfillment);
         $orders = $ordersQuery->get();
 
         $headers = [
@@ -568,7 +595,7 @@ class AdminDashboardController extends Controller
                         $index === 0 ? $order->created_at->format('d/m/Y H:i')                : '',
                         $index === 0 ? ($order->buyer_name ?? '')                             : '',
                         $index === 0 ? (match ($order->buyer_type) { 'apotik' => 'Apotik', 'dokter' => 'Dokter / Klinik', 'pbf' => 'B2B / PBF', default => 'Umum' }) : '',
-                        $index === 0 ? ($order->transaction_channel === 'offline' ? 'Offline / Kios' : 'Online') : '',
+                        $index === 0 ? ($order->transaction_channel === 'offline' ? 'Offline' : 'Online') : '',
                         $index === 0 ? (match ($order->payment_status) { 'paid' => 'Lunas', 'cancelled' => 'Dibatalkan', default => 'Menunggu pembayaran' }) : '',
                         $index === 0 ? ($order->cashier?->name ?? '') : '',
                         $index === 0 ? ($order->paid_at?->format('d/m/Y H:i') ?? '') : '',
@@ -592,7 +619,7 @@ class AdminDashboardController extends Controller
                     $order->created_at->format('d/m/Y H:i'),
                     $order->buyer_name ?? '',
                     match ($order->buyer_type) { 'apotik' => 'Apotik', 'dokter' => 'Dokter / Klinik', 'pbf' => 'B2B / PBF', default => 'Umum' },
-                    $order->transaction_channel === 'offline' ? 'Offline / Kios' : 'Online',
+                    $order->transaction_channel === 'offline' ? 'Offline' : 'Online',
                     match ($order->payment_status) { 'paid' => 'Lunas', 'cancelled' => 'Dibatalkan', default => 'Menunggu pembayaran' },
                     $order->cashier?->name ?? '',
                     $order->paid_at?->format('d/m/Y H:i') ?? '',
@@ -632,6 +659,56 @@ class AdminDashboardController extends Controller
         return \App\Helpers\XlsxWriter::download($filename, $headers, $rows, $widths);
     }
 
+    private function applySalesFulfillmentFilter(\Illuminate\Database\Eloquent\Builder $query, string $fulfillment): void
+    {
+        if ($fulfillment === 'all') {
+            return;
+        }
+
+        if ($fulfillment === 'internal') {
+            $query->where('price_channel', 'internal');
+            return;
+        }
+
+        if ($fulfillment === 'b2b') {
+            $query->where(function ($builder) {
+                $builder->whereIn('buyer_type', ['apotik', 'dokter', 'pbf'])
+                    ->orWhere('price_channel', 'b2b');
+            });
+            return;
+        }
+
+        if ($fulfillment === 'online') {
+            $query->where('buyer_type', 'umum')
+                ->where('price_channel', 'b2c')
+                ->where('transaction_channel', 'online');
+            return;
+        }
+
+        if ($fulfillment === 'offline') {
+            $query->where('buyer_type', 'umum')
+                ->where('price_channel', 'b2c')
+                ->where('transaction_channel', 'offline');
+        }
+    }
+
+    private function applyConfirmedSalesFilter(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        if (!Schema::hasColumn('purchase_histories', 'receipt_status')) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereIn('receipt_status', ['verified', 'printed']);
+
+        if (Schema::hasColumn('purchase_histories', 'payment_status')) {
+            $query->where(fn ($orders) => $orders->whereNull('payment_status')->orWhere('payment_status', '!=', 'cancelled'));
+        }
+        if (Schema::hasColumn('purchase_histories', 'approval_status')) {
+            $query->where('approval_status', 'approved');
+        }
+    }
+
     private function revenueOrders()
     {
         $query = PurchaseHistory::query();
@@ -641,31 +718,7 @@ class AdminDashboardController extends Controller
                     ->orWhere('is_pbf_purchase_order', false);
             });
         }
-        if (Schema::hasColumn('purchase_histories', 'receipt_status')) {
-            $query->where(function ($q) {
-                $q->whereNull('receipt_status')
-                    ->orWhere('receipt_status', '!=', 'cancelled');
-            });
-        }
-        if (Schema::hasColumn('purchase_histories', 'approval_status')) {
-            $query->where(function ($q) {
-                $q->whereNull('approval_status')
-                    ->orWhere('approval_status', '!=', 'rejected');
-            });
-        }
-        if (Schema::hasColumn('purchase_histories', 'payment_status')) {
-            $query->where(function ($q) {
-                $q->whereNull('payment_status')
-                    ->orWhere('payment_status', '!=', 'cancelled');
-            });
-        }
-        if (Schema::hasColumn('purchase_histories', 'transaction_channel')
-            && Schema::hasColumn('purchase_histories', 'payment_status')) {
-            $query->where(function ($orders) {
-                $orders->where('transaction_channel', 'online')
-                    ->orWhere('payment_status', 'paid');
-            });
-        }
+        $this->applyConfirmedSalesFilter($query);
 
         return $query;
     }

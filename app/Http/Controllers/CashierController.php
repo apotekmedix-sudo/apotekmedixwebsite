@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PurchaseHistory;
+use App\Models\PurchasePaymentSetting;
 use App\Models\PurchaseStockReservation;
 use App\Services\MedicineStockLedger;
 use App\Models\Medicine;
@@ -10,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -59,15 +61,15 @@ class CashierController extends Controller
             'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
 
-        $query = $this->salesOrdersQuery();
+        $query = $this->salesOrdersQuery()
+            ->where(fn ($orders) => $orders->whereNull('receipt_status')->orWhere('receipt_status', '!=', 'printed'));
         if (!empty($filters['channel']) && $filters['channel'] !== 'all') {
             match ($filters['channel']) {
                 'offline' => $query->where('transaction_channel', 'offline'),
                 'b2b' => $query->where('transaction_channel', 'online')
                     ->where(fn ($orders) => $orders->whereIn('buyer_type', ['apotik', 'dokter', 'pbf'])
                         ->orWhere(fn ($namedPbf) => $namedPbf->whereNotNull('pbf_name')->where('pbf_name', '!=', ''))),
-                'b2c' => $query->where('transaction_channel', 'online')
-                    ->where('buyer_type', 'umum')
+                'b2c' => $query->where('buyer_type', 'umum')
                     ->where(fn ($orders) => $orders->whereNull('pbf_name')->orWhere('pbf_name', '')),
             };
         }
@@ -91,6 +93,7 @@ class CashierController extends Controller
         }
 
         $orders = $query->latest()->paginate(20)->withQueryString();
+        $paymentSettings = PurchasePaymentSetting::current();
         $metrics = [
             'total' => $this->salesOrdersQuery()->count(),
             'pending' => $this->salesOrdersQuery()->where('receipt_status', 'pending')->count(),
@@ -106,7 +109,52 @@ class CashierController extends Controller
             ->orderBy('payment_method')
             ->pluck('payment_method');
 
-        return view('cashier.dashboard', compact('orders', 'filters', 'metrics', 'paymentMethods'));
+        return view('cashier.dashboard', compact('orders', 'filters', 'metrics', 'paymentMethods', 'paymentSettings'));
+    }
+
+    public function updatePaymentSettings(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'qris_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
+            'bank_name' => ['nullable', 'string', 'max:100'],
+            'account_number' => ['nullable', 'string', 'max:50'],
+            'account_holder' => ['nullable', 'string', 'max:150'],
+            'payment_instructions' => ['nullable', 'string', 'max:1500'],
+            'remove_qris' => ['nullable', 'boolean'],
+        ]);
+
+        $settings = PurchasePaymentSetting::current();
+        $previousImage = $settings->qris_image_path;
+        $imagePath = $previousImage;
+        if ($request->hasFile('qris_image')) {
+            $imagePath = Storage::disk('public')->putFile('purchase-payment-settings', $request->file('qris_image'));
+            if (!$imagePath) {
+                throw new \RuntimeException('QRIS gagal disimpan. Pengaturan pembayaran belum diperbarui.');
+            }
+        } elseif ($request->boolean('remove_qris')) {
+            $imagePath = null;
+        }
+
+        $settings->fill([
+            'qris_image_path' => $imagePath,
+            'bank_name' => $validated['bank_name'] ?? null,
+            'account_number' => $validated['account_number'] ?? null,
+            'account_holder' => $validated['account_holder'] ?? null,
+            'payment_instructions' => $validated['payment_instructions'] ?? null,
+        ])->save();
+
+        if (
+            $previousImage
+            && $previousImage !== $imagePath
+            && !PurchaseHistory::where('payment_qris_image_path', $previousImage)->exists()
+            && !Storage::disk('public')->delete($previousImage)
+        ) {
+            throw new \RuntimeException('Pengaturan pembayaran tersimpan, tetapi file QRIS lama gagal dihapus.');
+        }
+
+        return redirect()
+            ->to(route('cashier.dashboard') . '#purchase-payment-settings')
+            ->with('success', 'Pengaturan pembayaran QRIS dan rekening berhasil disimpan.');
     }
 
     public function updates(): \Illuminate\Http\JsonResponse

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
@@ -27,6 +28,9 @@ use App\Http\Controllers\AdminMedicinePromotionController;
 use App\Http\Controllers\AdminDiscountCodeController;
 use App\Http\Controllers\PurchaseHistoryController;
 use App\Http\Controllers\GassRoomController;
+use App\Http\Controllers\KunjunganFileController;
+use App\Http\Controllers\DoctorConsultationController;
+use App\Http\Controllers\AdminDoctorConsultationController;
 
 // Public routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -36,15 +40,17 @@ Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
 // Serve uploaded images langsung dari storage/ (banners, promos & medicines)
 // Dipakai saat symlink tidak tersedia di hosting
 Route::get('/storage/{folder}/{filename}', function (string $folder, string $filename) {
-    $allowed = ['banners', 'medicines', 'promos'];
-    if (!in_array($folder, $allowed)) abort(404);
+    $allowed = ['banners', 'medicines', 'promos', 'doctors', 'consultation-payments', 'purchase-payment-settings'];
+    if (!in_array($folder, $allowed) || basename($filename) !== $filename) abort(404);
 
-    $path = storage_path($folder . '/' . $filename);
+    $path = $folder === 'purchase-payment-settings'
+        ? Storage::disk('public')->path($folder . '/' . $filename)
+        : storage_path($folder . '/' . $filename);
     if (!file_exists($path)) abort(404);
 
     $mime = mime_content_type($path) ?: 'application/octet-stream';
     return response()->file($path, ['Content-Type' => $mime]);
-})->where(['folder' => 'banners|medicines|promos', 'filename' => '.+'])->name('storage.image');
+})->where(['folder' => 'banners|medicines|promos|doctors|consultation-payments|purchase-payment-settings', 'filename' => '.+'])->name('storage.image');
 
 // Products routes
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
@@ -81,6 +87,30 @@ Route::get('/invoice/{order}', [PurchaseHistoryController::class, 'invoice'])
     ->middleware('signed')
     ->name('orders.invoice');
 
+Route::prefix('chat-dokter')->name('consultations.')->group(function () {
+    Route::get('/', [DoctorConsultationController::class, 'intake'])->name('intake');
+    Route::post('/pasien', [DoctorConsultationController::class, 'storePatient'])->middleware('throttle:10,1')->name('patient.store');
+    Route::get('/dokter', [DoctorConsultationController::class, 'doctors'])->name('doctors');
+    Route::get('/dokter/{doctor}', [DoctorConsultationController::class, 'doctor'])->name('doctor');
+    Route::get('/dokter/{doctor}/keluhan', [DoctorConsultationController::class, 'intakeDetails'])->name('details');
+    Route::post('/dokter/{doctor}/pasien', [DoctorConsultationController::class, 'selectPatient'])->name('patient.select');
+    Route::get('/dokter/{doctor}/pasien/baru', [DoctorConsultationController::class, 'newPatientProfile'])->name('patient.create');
+    Route::post('/dokter/{doctor}/pasien/baru', [DoctorConsultationController::class, 'storePatientProfile'])->middleware('throttle:10,1')->name('patient.profile.store');
+    Route::get('/dokter/{doctor}/pembayaran', [DoctorConsultationController::class, 'paymentSummary'])->name('payment');
+    Route::post('/dokter/{doctor}/konsultasi', [DoctorConsultationController::class, 'store'])->middleware('throttle:10,1')->name('store');
+    Route::get('/konsultasi/{token}', [DoctorConsultationController::class, 'patientShow'])->name('patient.show');
+    Route::get('/konsultasi/{token}/updates', [DoctorConsultationController::class, 'patientUpdates'])->middleware('throttle:60,1')->name('patient.updates');
+    Route::post('/konsultasi/{token}/messages', [DoctorConsultationController::class, 'patientMessage'])->middleware('throttle:30,1')->name('patient.messages.store');
+    Route::get('/masuk/{token}', [DoctorConsultationController::class, 'roomJoin'])->middleware('throttle:30,1')->name('room.join');
+    Route::post('/masuk/{token}', [DoctorConsultationController::class, 'redeemRoomLink'])->middleware('throttle:10,1')->name('room.redeem');
+    Route::get('/room/{consultation}', [DoctorConsultationController::class, 'room'])->name('room');
+    Route::get('/room/{consultation}/updates', [DoctorConsultationController::class, 'roomUpdates'])->middleware('throttle:60,1')->name('room.updates');
+    Route::post('/room/{consultation}/messages', [DoctorConsultationController::class, 'roomMessage'])->middleware('throttle:30,1')->name('room.messages.store');
+    Route::get('/room/{consultation}/products', [DoctorConsultationController::class, 'doctorProducts'])->middleware('throttle:30,1')->name('room.products');
+    Route::post('/room/{consultation}/prescriptions', [DoctorConsultationController::class, 'issuePrescription'])->middleware('throttle:10,1')->name('room.prescriptions.store');
+    Route::post('/room/{consultation}/end', [DoctorConsultationController::class, 'endRoomSession'])->name('room.end');
+});
+
 // Category routes (Layer 2 & 3)
 Route::get('/category/{main}/{sub}', [CategoryController::class, 'layer2'])->name('category.layer2');
 
@@ -105,6 +135,7 @@ Route::post('/cashier/logout', [CashierController::class, 'logout'])->middleware
 
 Route::middleware(['auth', 'staff'])->prefix('cashier')->name('cashier.')->group(function () {
     Route::get('/dashboard', [CashierController::class, 'dashboard'])->name('dashboard');
+    Route::put('/payment-settings', [CashierController::class, 'updatePaymentSettings'])->name('payment-settings.update');
     Route::get('/updates', [CashierController::class, 'updates'])->name('updates');
     Route::get('/orders/{order}/receipt', [CashierController::class, 'receipt'])->name('orders.receipt');
     Route::post('/orders/{order}/verify', [CashierController::class, 'verifyAndPrint'])->name('orders.verify');
@@ -128,6 +159,17 @@ Route::get('/gass/room/files/{file}/content', [GassRoomController::class, 'fileC
 Route::delete('/gass/room/files/{file}', [GassRoomController::class, 'destroy'])->name('gass.files.destroy');
 Route::get('/gass/room/files/{file}', [GassRoomController::class, 'download'])->name('gass.files.download');
 Route::post('/gass/leave', [GassRoomController::class, 'leave'])->name('gass.leave');
+Route::get('/kunjungan/access', [KunjunganFileController::class, 'accessForm'])->name('kunjungan.access.form');
+Route::post('/kunjungan/access', [KunjunganFileController::class, 'access'])
+    ->middleware('throttle:5,1')
+    ->name('kunjungan.access');
+Route::get('/kunjungan/files', [KunjunganFileController::class, 'index'])->name('kunjungan.room');
+Route::post('/kunjungan/files', [KunjunganFileController::class, 'upload'])
+    ->middleware('throttle:10,1')
+    ->name('kunjungan.files.upload');
+Route::get('/kunjungan/files/{file}/download', [KunjunganFileController::class, 'download'])
+    ->name('kunjungan.files.download');
+Route::post('/kunjungan/leave', [KunjunganFileController::class, 'leave'])->name('kunjungan.leave');
 
 // Admin routes
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -135,6 +177,22 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/notifications', [AdminDashboardController::class, 'notifications'])->name('notifications.index');
     Route::post('/notifications/{order}/mark-paid', [AdminDashboardController::class, 'markTempoPaid'])->name('notifications.mark-paid');
     Route::get('/dashboard/stats', [AdminDashboardController::class, 'stats'])->name('dashboard.stats');
+    Route::get('/consultations', [AdminDoctorConsultationController::class, 'index'])->name('consultations.index');
+    Route::get('/consultations/doctors/create', [AdminDoctorConsultationController::class, 'createDoctor'])->name('consultations.doctors.create');
+    Route::post('/consultations/doctors', [AdminDoctorConsultationController::class, 'storeDoctor'])->name('consultations.doctors.store');
+    Route::get('/consultations/doctors/{doctor}/edit', [AdminDoctorConsultationController::class, 'editDoctor'])->name('consultations.doctors.edit');
+    Route::put('/consultations/doctors/{doctor}', [AdminDoctorConsultationController::class, 'updateDoctor'])->name('consultations.doctors.update');
+    Route::delete('/consultations/doctors/{doctor}', [AdminDoctorConsultationController::class, 'deactivateDoctor'])->name('consultations.doctors.deactivate');
+    Route::put('/consultations/payment-settings', [AdminDoctorConsultationController::class, 'updatePaymentSettings'])->name('consultations.payment-settings.update');
+    Route::get('/consultations/patients/export', [AdminDoctorConsultationController::class, 'exportPatients'])->name('consultations.patients.export');
+    Route::get('/consultations/{consultation}/payment-proof', [AdminDoctorConsultationController::class, 'viewPaymentProof'])->name('consultations.payment-proof');
+    Route::get('/consultations/{consultation}/chat', [AdminDoctorConsultationController::class, 'chatHistory'])->name('consultations.chat');
+    Route::delete('/consultations/{consultation}', [AdminDoctorConsultationController::class, 'deleteCompletedSession'])->name('consultations.delete');
+    Route::post('/consultations/{consultation}/mark-paid', [AdminDoctorConsultationController::class, 'markPaid'])->name('consultations.mark-paid');
+    Route::post('/consultations/{consultation}/reject-payment', [AdminDoctorConsultationController::class, 'rejectPayment'])->name('consultations.reject-payment');
+    Route::post('/consultations/{consultation}/end-session', [AdminDoctorConsultationController::class, 'endSession'])->name('consultations.end-session');
+    Route::post('/consultations/{consultation}/room-invitations', [AdminDoctorConsultationController::class, 'resendRoomInvitations'])->name('consultations.room-invitations');
+    Route::post('/consultations/{consultation}/cancel', [AdminDoctorConsultationController::class, 'cancel'])->name('consultations.cancel');
     Route::get('/purchase-history', [AdminDashboardController::class, 'purchaseHistory'])->name('purchase-history.index');
     Route::get('/supplier-procurement', [AdminSupplierProcurementController::class, 'index'])->name('supplier-procurement.index');
     Route::get('/supplier-procurement/medicines/search', [AdminSupplierProcurementController::class, 'searchMedicines'])->name('supplier-procurement.medicines.search');

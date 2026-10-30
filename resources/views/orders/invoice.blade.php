@@ -646,6 +646,18 @@
                     @endif
                 </div>
             </section>
+            @if($order->payment_status === 'pending' && in_array(strtolower((string) $order->payment_method), ['qris', 'transfer'], true))
+                <section style="margin:1rem 0;padding:1rem;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1e293b">
+                    <strong>Instruksi pembayaran {{ strtoupper($order->payment_method) }}</strong>
+                    @if(strtolower((string) $order->payment_method) === 'qris' && $order->payment_qris_image_path)
+                        <img src="{{ asset('storage/' . $order->payment_qris_image_path) }}" alt="QRIS pembayaran Apotek Medix" style="display:block;width:180px;max-width:100%;margin:.75rem auto;object-fit:contain">
+                    @elseif(strtolower((string) $order->payment_method) === 'transfer' && $order->payment_bank_name && $order->payment_account_number)
+                        <p style="margin:.5rem 0"><strong>{{ $order->payment_bank_name }}:</strong> {{ $order->payment_account_number }}<br>Atas nama {{ $order->payment_account_holder }}</p>
+                    @endif
+                    @if($order->payment_instructions)<p style="margin:.5rem 0">{{ $order->payment_instructions }}</p>@endif
+                    <p style="margin:.5rem 0">Pesanan menunggu verifikasi pembayaran oleh kasir.</p>
+                </section>
+            @endif
 
             <!-- 3. CUSTOMER & SIA/SIPA INFO BOXES (READ-ONLY) -->
             <section class="info-boxes-row">
@@ -737,6 +749,9 @@
             <section class="bottom-grid">
                 <div>
                     <div class="notes-box">
+                        @if($order->consultation_prescription_number)
+                            <p><strong>Nomor resep dokter:</strong> {{ $order->consultation_prescription_number }}</p>
+                        @endif
                         <h3>KETERANGAN :</h3>
                         <ol>
                             <li>Barang yang sudah dibeli tidak dapat ditukar/dikembalikan, kecuali terdapat kesalahan dari pihak apotek.</li>

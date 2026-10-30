@@ -144,42 +144,47 @@ class AdminProdukController extends Controller
 
     public function storePbfSupplier(Request $request)
     {
-        $data = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255', 'unique:pbf_suppliers,name'],
             'address' => ['required', 'string', 'max:2000'],
             'phone' => ['required', 'string', 'max:50'],
         ]);
+        if ($validator->fails()) {
+            return $this->supplierManagementRedirect($request, false)
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-        PbfSupplier::create($data);
+        PbfSupplier::create($validator->validated());
 
-        return redirect()
-            ->route('admin.produk-pbf.index', array_filter([
-                'search' => $request->input('search'),
-            ]))
+        return $this->supplierManagementRedirect($request, false)
             ->with('status', 'Supplier berhasil ditambahkan.');
     }
 
     public function updatePbfSupplier(Request $request, PbfSupplier $supplier)
     {
-        $data = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255', 'unique:pbf_suppliers,name,' . $supplier->id],
             'address' => ['required', 'string', 'max:2000'],
             'phone' => ['required', 'string', 'max:50'],
         ]);
+        if ($validator->fails()) {
+            return $this->supplierManagementRedirect($request)
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-        $supplier->update($data);
+        $supplier->update($validator->validated());
 
-        return redirect()
-            ->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+        return $this->supplierManagementRedirect($request)
             ->with('status', 'Supplier berhasil diperbarui.');
     }
 
-    public function destroyPbfSupplier(PbfSupplier $supplier)
+    public function destroyPbfSupplier(Request $request, PbfSupplier $supplier)
     {
         $supplier->delete();
 
-        return redirect()
-            ->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+        return $this->supplierManagementRedirect($request)
             ->with('status', 'Supplier berhasil dihapus.');
     }
 
@@ -207,23 +212,23 @@ class AdminProdukController extends Controller
             'file' => ['required', 'file', 'mimes:csv,txt,xlsx', 'max:10240'],
         ]);
         if ($fileValidator->fails()) {
-            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+            return $this->supplierManagementRedirect($request)
                 ->withErrors($fileValidator, 'supplierImport');
         }
 
         try {
             [$headers, $rows] = \App\Support\SpreadsheetReader::read($request->file('file'));
         } catch (RuntimeException $exception) {
-            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+            return $this->supplierManagementRedirect($request)
                 ->withErrors(['file' => $exception->getMessage()], 'supplierImport');
         }
 
         if (!in_array('nama', $headers, true)) {
-            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+            return $this->supplierManagementRedirect($request)
                 ->withErrors(['file' => 'Format file supplier tidak sesuai. Kolom wajib: NAMA.'], 'supplierImport');
         }
         if (count($rows) > 5000) {
-            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+            return $this->supplierManagementRedirect($request)
                 ->withErrors(['file' => 'Maksimal 5.000 data supplier per impor.'], 'supplierImport');
         }
 
@@ -298,11 +303,11 @@ class AdminProdukController extends Controller
         }
 
         if ($errors) {
-            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+            return $this->supplierManagementRedirect($request)
                 ->withErrors(['file' => $errors], 'supplierImport');
         }
         if (! $prepared) {
-            return redirect()->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+            return $this->supplierManagementRedirect($request)
                 ->withErrors(['file' => 'File CSV tidak berisi data supplier untuk diimpor.'], 'supplierImport');
         }
 
@@ -314,9 +319,20 @@ class AdminProdukController extends Controller
             }
         });
 
-        return redirect()
-            ->route('admin.produk-pbf.index', ['manage_suppliers' => 1])
+        return $this->supplierManagementRedirect($request)
             ->with('status', count($prepared).' data supplier berhasil diimpor atau diperbarui.');
+    }
+
+    private function supplierManagementRedirect(Request $request, bool $openManager = true)
+    {
+        if ($request->input('supplier_return_to') === 'procurement') {
+            return redirect()->route('admin.supplier-procurement.index', $openManager ? ['manage_suppliers' => 1] : []);
+        }
+
+        return redirect()->route('admin.produk-pbf.index', array_filter([
+            'manage_suppliers' => $openManager ? 1 : null,
+            'search' => $request->input('search'),
+        ]));
     }
 
     public function export(Request $request)

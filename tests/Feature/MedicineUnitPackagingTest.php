@@ -453,6 +453,35 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertDontSee('unit dasar');
     }
 
+    public function test_inventory_report_marks_products_with_zero_physical_stock(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        Medicine::create([
+            'nama_obat' => 'Produk Stok Kosong',
+            'satuan' => 'Box',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 1000,
+            'stok' => 0,
+            'stock_base_units' => 0,
+            'deskripsi' => 'Produk untuk menguji indikator stok kosong.',
+        ]);
+        Medicine::create([
+            'nama_obat' => 'Produk Stok Tersedia',
+            'satuan' => 'Box',
+            'kategori' => 'Pabrik Contoh',
+            'harga' => 1000,
+            'stok' => 3,
+            'stock_base_units' => 3,
+            'deskripsi' => 'Produk untuk memastikan indikator tidak tampil pada stok tersedia.',
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.inventory.index'))
+            ->assertOk()
+            ->assertSee('Produk Stok Kosong')
+            ->assertSee('class="inventory-empty-badge">STOK KOSONG</span>', false)
+            ->assertSee('Produk Stok Tersedia');
+    }
+
     public function test_inventory_report_uses_compact_pagination_controls(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -474,6 +503,58 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertSee('class="inventory-page-link is-disabled"', false)
             ->assertSee('products_page=2')
             ->assertDontSee('relative inline-flex');
+    }
+
+    public function test_inventory_report_can_search_and_sort_by_lowest_available_stock(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        foreach ([
+            'Produk Stok Banyak' => 15,
+            'Produk Stok Sedang' => 7,
+            'Produk Stok Rendah' => 2,
+        ] as $name => $stock) {
+            Medicine::create([
+                'nama_obat' => $name,
+                'kategori' => 'Pabrik Contoh',
+                'harga' => 1000,
+                'stok' => $stock,
+                'stock_base_units' => $stock,
+                'deskripsi' => 'Produk untuk menguji pencarian dan urutan stok terendah.',
+            ]);
+        }
+
+        $response = $this->actingAs($admin)->get(route('admin.inventory.index', [
+            'search' => 'Produk Stok',
+            'sort' => 'lowest_stock',
+        ]));
+
+        $response->assertOk()
+            ->assertSee('name="search" value="Produk Stok"', false)
+            ->assertSee('Stok tersedia: Terendah')
+            ->assertSee('value="lowest_stock" selected', false)
+            ->assertSee('Produk Stok Rendah')
+            ->assertSee('Produk Stok Sedang')
+            ->assertSee('Produk Stok Banyak');
+
+        $content = $response->getContent();
+        $lowStockPosition = strpos($content, 'Produk Stok Rendah');
+        $mediumStockPosition = strpos($content, 'Produk Stok Sedang');
+        $highStockPosition = strpos($content, 'Produk Stok Banyak');
+
+        $this->assertNotFalse($lowStockPosition);
+        $this->assertNotFalse($mediumStockPosition);
+        $this->assertNotFalse($highStockPosition);
+        $this->assertTrue($lowStockPosition < $mediumStockPosition);
+        $this->assertTrue($mediumStockPosition < $highStockPosition);
+
+        $this->get(route('admin.inventory.index', [
+            'search' => 'Produk Stok Rendah',
+            'sort' => 'lowest_stock',
+        ]))->assertOk()
+            ->assertSee('Produk Stok Rendah')
+            ->assertDontSee('Produk Stok Sedang')
+            ->assertDontSee('Produk Stok Banyak');
     }
 
     public function test_customer_cannot_order_more_packages_than_remain_in_stock(): void
@@ -862,8 +943,9 @@ class MedicineUnitPackagingTest extends TestCase
                 'name' => 'PT Supplier Obat Sehat',
                 'address' => 'Jl. Distributor No. 10, Jakarta',
                 'phone' => '021-12345678',
+                'supplier_return_to' => 'procurement',
             ])
-            ->assertRedirect(route('admin.produk-pbf.index'))
+            ->assertRedirect(route('admin.supplier-procurement.index'))
             ->assertSessionHas('status', 'Supplier berhasil ditambahkan.');
 
         $this->assertDatabaseHas('pbf_suppliers', [
@@ -872,7 +954,7 @@ class MedicineUnitPackagingTest extends TestCase
             'phone' => '021-12345678',
         ]);
 
-        $this->get(route('admin.produk-pbf.index'))
+        $this->get(route('admin.supplier-procurement.index'))
             ->assertOk()
             ->assertSee('Tambah Supplier')
             ->assertSee('Kelola Supplier')
@@ -881,6 +963,14 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertSee('data-supplier-search="pt supplier obat sehat jl. distributor no. 10, jakarta 021-12345678"', false)
             ->assertSee('supplierManagerSearch.addEventListener(\'input\'', false)
             ->assertSee('.supplier-modal-body { flex:1; min-height:0; overflow-y:auto;', false)
+            ->assertSee('supplier_return_to" value="procurement"', false)
+            ->assertSee(route('admin.produk-pbf.suppliers.update', 1), false)
+            ->assertSee(route('admin.produk-pbf.suppliers.destroy', 1), false);
+
+        $this->get(route('admin.produk-pbf.index'))
+            ->assertOk()
+            ->assertDontSee('Tambah Supplier')
+            ->assertDontSee('Kelola Supplier')
             ->assertSee('id="pbfOrderDistributor"', false)
             ->assertSee('id="pbfOrderPhone"', false)
             ->assertSee('id="pbfSupplierMenu" role="listbox"', false)
@@ -889,8 +979,6 @@ class MedicineUnitPackagingTest extends TestCase
             ->assertSee('supplierAddress.value = selected.address', false)
             ->assertSee('supplierPhone.value = selected.phone ||', false)
             ->assertSee('class="pbf-supplier-option${index === activeSupplierIndex', false)
-            ->assertSee(route('admin.produk-pbf.suppliers.update', 1), false)
-            ->assertSee(route('admin.produk-pbf.suppliers.destroy', 1), false)
             ->assertDontSee('<datalist', false);
     }
 
@@ -908,8 +996,9 @@ class MedicineUnitPackagingTest extends TestCase
                 'name' => 'Supplier Baru',
                 'address' => 'Alamat Baru',
                 'phone' => '021-22222222',
+                'supplier_return_to' => 'procurement',
             ])
-            ->assertRedirect(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
+            ->assertRedirect(route('admin.supplier-procurement.index', ['manage_suppliers' => 1]))
             ->assertSessionHas('status', 'Supplier berhasil diperbarui.');
 
         $this->assertDatabaseHas('pbf_suppliers', [
@@ -919,8 +1008,10 @@ class MedicineUnitPackagingTest extends TestCase
             'phone' => '021-22222222',
         ]);
 
-        $this->delete(route('admin.produk-pbf.suppliers.destroy', $supplier))
-            ->assertRedirect(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
+        $this->delete(route('admin.produk-pbf.suppliers.destroy', $supplier), [
+            'supplier_return_to' => 'procurement',
+        ])
+            ->assertRedirect(route('admin.supplier-procurement.index', ['manage_suppliers' => 1]))
             ->assertSessionHas('status', 'Supplier berhasil dihapus.');
 
         $this->assertDatabaseMissing('pbf_suppliers', ['id' => $supplier->id]);
@@ -931,13 +1022,14 @@ class MedicineUnitPackagingTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)
-            ->from(route('admin.produk-pbf.index'))
+            ->from(route('admin.supplier-procurement.index'))
             ->post(route('admin.produk-pbf.suppliers.store'), [
                 'name' => '',
                 'address' => '',
                 'phone' => '',
+                'supplier_return_to' => 'procurement',
             ])
-            ->assertRedirect(route('admin.produk-pbf.index'))
+            ->assertRedirect(route('admin.supplier-procurement.index'))
             ->assertSessionHasErrors(['name', 'address', 'phone']);
 
         $this->assertDatabaseCount('pbf_suppliers', 0);
@@ -953,7 +1045,7 @@ class MedicineUnitPackagingTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
+            ->get(route('admin.supplier-procurement.index', ['manage_suppliers' => 1]))
             ->assertOk()
             ->assertSee('Export Supplier')
             ->assertSee('Template Excel')
@@ -975,8 +1067,11 @@ class MedicineUnitPackagingTest extends TestCase
 
         $csv = "ID,NAMA,ALAMAT,TELEPON\n{$supplier->id},Supplier Baru,\"Alamat Baru, Bogor\",021-12345678\n,PT Supplier Baru,Jakarta,021-87654321\n,PT Supplier Tanpa Alamat,,\n";
         $file = UploadedFile::fake()->createWithContent('suppliers.csv', $csv);
-        $this->post(route('admin.produk-pbf.suppliers.import'), ['file' => $file])
-            ->assertRedirect(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
+        $this->post(route('admin.produk-pbf.suppliers.import'), [
+            'file' => $file,
+            'supplier_return_to' => 'procurement',
+        ])
+            ->assertRedirect(route('admin.supplier-procurement.index', ['manage_suppliers' => 1]))
             ->assertSessionHas('status', '3 data supplier berhasil diimpor atau diperbarui.');
 
         $this->assertDatabaseHas('pbf_suppliers', [
@@ -999,8 +1094,11 @@ class MedicineUnitPackagingTest extends TestCase
 
         $legacyCsv = "ID,NAMA,ALAMAT\n{$supplier->id},Supplier Impor Lama,Alamat Impor Lama\n";
         $legacyFile = UploadedFile::fake()->createWithContent('legacy-suppliers.csv', $legacyCsv);
-        $this->post(route('admin.produk-pbf.suppliers.import'), ['file' => $legacyFile])
-            ->assertRedirect(route('admin.produk-pbf.index', ['manage_suppliers' => 1]));
+        $this->post(route('admin.produk-pbf.suppliers.import'), [
+            'file' => $legacyFile,
+            'supplier_return_to' => 'procurement',
+        ])
+            ->assertRedirect(route('admin.supplier-procurement.index', ['manage_suppliers' => 1]));
         $this->assertDatabaseHas('pbf_suppliers', [
             'id' => $supplier->id,
             'name' => 'Supplier Impor Lama',
@@ -1026,8 +1124,11 @@ class MedicineUnitPackagingTest extends TestCase
 
         try {
             $this->actingAs($admin)
-                ->post(route('admin.produk-pbf.suppliers.import'), ['file' => $file])
-                ->assertRedirect(route('admin.produk-pbf.index', ['manage_suppliers' => 1]))
+                ->post(route('admin.produk-pbf.suppliers.import'), [
+                    'file' => $file,
+                    'supplier_return_to' => 'procurement',
+                ])
+                ->assertRedirect(route('admin.supplier-procurement.index', ['manage_suppliers' => 1]))
                 ->assertSessionHas('status', '1 data supplier berhasil diimpor atau diperbarui.');
         } finally {
             @unlink($path);
