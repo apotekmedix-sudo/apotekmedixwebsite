@@ -39,7 +39,7 @@
         <header class="doctor-cover">
             @if($doctor->photo_url)<img class="doctor-photo" src="{{ $doctor->photo_url }}" alt="Foto {{ $doctor->display_name }}">@else<div class="doctor-photo"></div>@endif
             <div>
-                <span class="verified-badge"><i class="fa-solid fa-circle-check"></i> STR diverifikasi admin</span>
+                <span class="verified-badge"><i class="fa-solid fa-circle-check"></i> STR terverifikasi</span>
                 <h1>{{ $doctor->display_name }}</h1>
                 <p class="doctor-specialty">{{ $doctor->specialty }} · {{ $doctor->experience_years }} tahun pengalaman</p>
             </div>
@@ -48,7 +48,7 @@
         <section class="doctor-detail">
             <h2>Profil dokter</h2>
             @if($doctor->bio)<div class="doctor-row">{{ $doctor->bio }}</div>@endif
-            @if($doctor->education)<div class="doctor-row"><strong>Pendidikan</strong><br>{{ $doctor->education }}</div>@endif
+            @if($doctor->education)<div class="doctor-row"><strong>Alumnus</strong><br>{{ $doctor->education }}</div>@endif
             @if($doctor->practice_place || $doctor->practice_city)<div class="doctor-row"><strong>Tempat praktik</strong><br>{{ collect([$doctor->practice_place, $doctor->practice_city])->filter()->join(', ') }}</div>@endif
             <div class="doctor-row"><strong>Nomor STR</strong><br>{{ $doctor->str_number }}</div>
             <p class="consult-muted">Pembayaran diperiksa admin. Timer {{ $doctor->session_duration_minutes }} menit mulai berjalan saat dokter masuk ke room chat.</p>

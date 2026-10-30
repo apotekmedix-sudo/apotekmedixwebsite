@@ -39,19 +39,19 @@
         <header class="doctor-cover">
             <?php if($doctor->photo_url): ?><img class="doctor-photo" src="<?php echo e($doctor->photo_url); ?>" alt="Foto <?php echo e($doctor->display_name); ?>"><?php else: ?><div class="doctor-photo"></div><?php endif; ?>
             <div>
-                <span class="verified-badge"><i class="fa-solid fa-circle-check"></i> STR diverifikasi admin</span>
+                <span class="verified-badge"><i class="fa-solid fa-circle-check"></i> STR terverifikasi</span>
                 <h1><?php echo e($doctor->display_name); ?></h1>
                 <p class="doctor-specialty"><?php echo e($doctor->specialty); ?> · <?php echo e($doctor->experience_years); ?> tahun pengalaman</p>
             </div>
         </header>
-        <div class="doctor-price">Rp <?php echo e(number_format($doctor->consultation_price, 0, ',', '.')); ?> <small style="font-size:.8rem;font-weight:500">untuk sesi chat 15 menit</small></div>
+        <div class="doctor-price">Rp <?php echo e(number_format($doctor->consultation_price, 0, ',', '.')); ?> <small style="font-size:.8rem;font-weight:500">untuk sesi chat <?php echo e($doctor->session_duration_minutes); ?> menit</small></div>
         <section class="doctor-detail">
             <h2>Profil dokter</h2>
             <?php if($doctor->bio): ?><div class="doctor-row"><?php echo e($doctor->bio); ?></div><?php endif; ?>
-            <?php if($doctor->education): ?><div class="doctor-row"><strong>Pendidikan</strong><br><?php echo e($doctor->education); ?></div><?php endif; ?>
+            <?php if($doctor->education): ?><div class="doctor-row"><strong>Alumnus</strong><br><?php echo e($doctor->education); ?></div><?php endif; ?>
             <?php if($doctor->practice_place || $doctor->practice_city): ?><div class="doctor-row"><strong>Tempat praktik</strong><br><?php echo e(collect([$doctor->practice_place, $doctor->practice_city])->filter()->join(', ')); ?></div><?php endif; ?>
             <div class="doctor-row"><strong>Nomor STR</strong><br><?php echo e($doctor->str_number); ?></div>
-            <p class="consult-muted">Pembayaran diperiksa admin. Sesi dimulai setelah pembayaran terverifikasi; durasi sesi dihitung 15 menit sejak dimulai.</p>
+            <p class="consult-muted">Pembayaran diperiksa admin. Timer <?php echo e($doctor->session_duration_minutes); ?> menit mulai berjalan saat dokter masuk ke room chat.</p>
         </section>
         <div class="consult-actions">
             <?php if($doctorAvailable): ?>
