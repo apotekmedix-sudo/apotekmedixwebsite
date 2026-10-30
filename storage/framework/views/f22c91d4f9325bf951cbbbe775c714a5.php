@@ -723,8 +723,17 @@
         }
         @media (max-width: 560px) {
             .footer { padding:2.25rem 0 1.5rem; }
-            .footer-content { grid-template-columns:1fr 1fr;gap:1.5rem 1rem;margin-bottom:1.5rem; }
-            .footer-content > div:first-child { grid-column:1 / -1; }
+            .footer-content {
+                grid-template-columns:1fr 1fr;
+                grid-template-areas:"brand brand" "categories contact" "info contact";
+                align-items:start;
+                gap:1rem;
+                margin-bottom:1.5rem;
+            }
+            .footer-content > div:first-child { grid-area:brand; }
+            .footer-content > div:nth-child(2) { grid-area:categories; }
+            .footer-content > div:nth-child(3) { grid-area:info; }
+            .footer-content > div:nth-child(4) { grid-area:contact; }
             .footer-content > div:first-child > p { max-width:42ch; }
             .footer .footer-content h3 { margin-bottom:.75rem;font-size:1rem; }
             .footer ul li { font-size:.88rem; }
@@ -732,7 +741,10 @@
             .footer-bottom { padding-top:1rem;font-size:.85rem; }
         }
         @media (max-width: 360px) {
-            .footer-content { grid-template-columns:1fr; }
+            .footer-content {
+                grid-template-columns:1fr;
+                grid-template-areas:"brand" "categories" "contact" "info";
+            }
             .footer-content > div:first-child { grid-column:auto; }
         }
 
@@ -1151,8 +1163,8 @@
                     <ul>
                         <li><a href="<?php echo e(route('contact')); ?>"><i class="fa-solid fa-headset fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Bantuan & Kontak</a></li>
                         <li><a href="<?php echo e(route('about')); ?>"><i class="fa-solid fa-circle-info fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Tentang Kami</a></li>
-                        <li><a href="<?php echo e(route('kunjungan.access.form')); ?>"><i class="fa-solid fa-folder-open fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Akses File KUNJUNGAN</a></li>
                         <li class="footer-legal-note"><i class="fa-solid fa-shield-halved fa-fw" style="margin-right:0.5rem;color:#10B981;"></i>Periksa nomor izin edar pada kemasan atau detail produk. Hubungi kami bila perlu bantuan verifikasi.</li>
+                        <li><a href="<?php echo e(route('kunjungan.access.form')); ?>" aria-label="Akses File KUNJUNGAN" title="Akses File KUNJUNGAN"><i class="fa-solid fa-folder-open fa-fw" style="color:#10B981;" aria-hidden="true"></i></a></li>
                     </ul>
                 </div>
                 <div>

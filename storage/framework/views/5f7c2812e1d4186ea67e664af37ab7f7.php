@@ -267,7 +267,7 @@
                         <div class="info-icon icon-green"><i class="fa-brands fa-whatsapp"></i></div>
                         <div class="info-text">
                             <h4>WhatsApp</h4>
-                            <a href="https://wa.me/<?php echo e(config('contacts.customer_service.whatsapp')); ?>" target="_blank" rel="noopener"><?php echo e(config('contacts.customer_service.phone')); ?></a>
+                            <a href="https://wa.me/<?php echo e(config('contacts.customer_service.whatsapp')); ?>" target="_blank" rel="noopener"><?php echo e(config('contacts.customer_service.display_phone')); ?></a>
                             <p style="margin-top:0.2rem;font-size:0.8rem;">Klik untuk chat langsung</p>
                         </div>
                     </div>
@@ -275,7 +275,7 @@
                         <div class="info-icon icon-orange"><i class="fa-solid fa-phone"></i></div>
                         <div class="info-text">
                             <h4>Telepon</h4>
-                            <a href="tel:<?php echo e(config('contacts.customer_service.phone_e164')); ?>"><?php echo e(config('contacts.customer_service.phone')); ?></a>
+                            <a href="tel:<?php echo e(config('contacts.customer_service.phone_e164')); ?>"><?php echo e(config('contacts.customer_service.display_phone')); ?></a>
                         </div>
                     </div>
                     <div class="info-item">
