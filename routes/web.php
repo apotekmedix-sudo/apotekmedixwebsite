@@ -167,6 +167,8 @@ Route::get('/kunjungan/files', [KunjunganFileController::class, 'index'])->name(
 Route::post('/kunjungan/files', [KunjunganFileController::class, 'upload'])
     ->middleware('throttle:10,1')
     ->name('kunjungan.files.upload');
+Route::get('/kunjungan/files/{file}/preview', [KunjunganFileController::class, 'preview'])
+    ->name('kunjungan.files.preview');
 Route::get('/kunjungan/files/{file}/download', [KunjunganFileController::class, 'download'])
     ->name('kunjungan.files.download');
 Route::post('/kunjungan/leave', [KunjunganFileController::class, 'leave'])->name('kunjungan.leave');
@@ -225,6 +227,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/access-codes/{accessCode}', [AdminShoppingAccessCodeController::class, 'update'])
         ->middleware('throttle:10,1')
         ->name('access-codes.update');
+    Route::put('/access-codes/{accessCode}/validity', [AdminShoppingAccessCodeController::class, 'updateValidity'])
+        ->middleware('throttle:10,1')
+        ->name('access-codes.validity');
     Route::delete('/access-codes/{accessCode}', [AdminShoppingAccessCodeController::class, 'destroy'])
         ->name('access-codes.destroy');
 

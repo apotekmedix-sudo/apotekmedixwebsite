@@ -124,6 +124,19 @@ class KunjunganFileController extends Controller
         ]);
     }
 
+    public function preview(Request $request, KunjunganFile $file)
+    {
+        $this->ensureRoomAccess($request);
+        abort_unless($this->isPdf($file), 404);
+        abort_unless(Storage::disk('local')->exists($file->path), 404);
+
+        return Storage::disk('local')->response($file->path, $file->original_name, [
+            'Content-Type' => 'application/pdf',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ], 'inline');
+    }
+
     public function leave(Request $request): RedirectResponse
     {
         $request->session()->forget('kunjungan_room_access');
@@ -134,5 +147,11 @@ class KunjunganFileController extends Controller
     private function ensureRoomAccess(Request $request): void
     {
         abort_unless($request->session()->get('kunjungan_room_access'), 403);
+    }
+
+    private function isPdf(KunjunganFile $file): bool
+    {
+        return strtolower(pathinfo($file->original_name, PATHINFO_EXTENSION)) === 'pdf'
+            && strtolower((string) $file->mime_type) === 'application/pdf';
     }
 }

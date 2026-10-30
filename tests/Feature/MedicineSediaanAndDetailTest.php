@@ -114,6 +114,8 @@ class MedicineSediaanAndDetailTest extends TestCase
         $response->assertOk();
         $response->assertSee('Sediaan');
         $response->assertSee('Box');
+        $response->assertSee('data-product-share', false)
+            ->assertSee('data-share-url="' . route('medicines.show', $medicine->id) . '"', false);
         $response->assertSee('Kembali ke Beranda');
         $response->assertSee('href="' . route('home') . '"', false);
         $response->assertSee('overflow-wrap: anywhere;', false);
@@ -157,6 +159,7 @@ class MedicineSediaanAndDetailTest extends TestCase
             ->assertSee('storageKey: "apotekmedix_cart_b2b"', false)
             ->assertSee('priceChannel: "b2b"', false)
             ->assertSee('wholesaleOrder: true', false)
+            ->assertDontSee('data-product-share', false)
             ->assertSee('href="' . route('products.pbf') . '">Belanja B2B</a>', false)
             ->assertSee('Kembali ke Belanja B2B')
             ->assertSessionHas('pbf_access_code_hash', $b2bCode->code_hash);

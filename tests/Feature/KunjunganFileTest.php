@@ -56,6 +56,34 @@ class KunjunganFileTest extends TestCase
             ->assertDownload('laporan.pdf');
     }
 
+    public function test_pdf_can_be_previewed_inline_only_with_room_access(): void
+    {
+        Storage::fake('local');
+        $file = KunjunganFile::query()->create([
+            'original_name' => 'laporan.pdf',
+            'path' => 'kunjungan-room/laporan.pdf',
+            'size_bytes' => 13,
+            'mime_type' => 'application/pdf',
+        ]);
+        Storage::disk('local')->put($file->path, '%PDF-1.4 test');
+
+        $this->get(route('kunjungan.files.preview', $file))
+            ->assertForbidden();
+
+        $response = $this->withSession(['kunjungan_room_access' => true])
+            ->get(route('kunjungan.files.preview', $file));
+
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('inline', $response->headers->get('Content-Disposition'));
+
+        $this->withSession(['kunjungan_room_access' => true])
+            ->get(route('kunjungan.room'))
+            ->assertOk()
+            ->assertSee('Lihat PDF')
+            ->assertSee(route('kunjungan.files.preview', $file), false);
+    }
+
     public function test_search_and_sort_support_recent_old_and_alphabetical_orders(): void
     {
         foreach ([

@@ -21,10 +21,12 @@ class ShoppingAccessCode extends Model
         'code_value',
         'generated_by',
         'expires_at',
+        'validity_days',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
+        'validity_days' => 'integer',
     ];
 
     public function verify(string $code): bool
@@ -67,14 +69,24 @@ class ShoppingAccessCode extends Model
         }
     }
 
-    public function replaceCode(string $code): void
+    public function replaceCode(string $code, ?int $validityDays = null): void
     {
         $normalizedCode = strtoupper(trim($code));
+        $validityDays ??= (int) config('internal.code_validity_days', 30);
         $this->forceFill([
             'code_hash' => Hash::make($normalizedCode),
             'code_value' => Crypt::encryptString($normalizedCode),
-            'expires_at' => now()->addDays((int) config('internal.code_validity_days', 30)),
+            'expires_at' => now()->addDays($validityDays),
+            'validity_days' => $validityDays,
             'generated_by' => auth()->id(),
+        ])->save();
+    }
+
+    public function updateValidity(int $validityDays): void
+    {
+        $this->forceFill([
+            'validity_days' => $validityDays,
+            'expires_at' => now()->addDays($validityDays),
         ])->save();
     }
 
@@ -127,7 +139,7 @@ class ShoppingAccessCode extends Model
             && hash_equals((string) $accessCode->code_hash, $sessionHash);
     }
 
-    public static function generate(string $channel): string
+    public static function generate(string $channel, ?int $validityDays = null): string
     {
         do {
             $code = (string) random_int(10000, 99999);
@@ -137,7 +149,7 @@ class ShoppingAccessCode extends Model
         } while ($isDuplicate);
 
         $accessCode = self::firstOrNew(['channel' => $channel]);
-        $accessCode->replaceCode($code);
+        $accessCode->replaceCode($code, $validityDays);
 
         return $code;
     }

@@ -14,6 +14,8 @@
     .activation-status{display:inline-block;margin:4px 0 14px;padding:5px 9px;border-radius:999px;background:#fff7ed;color:#c2410c;font-size:11px;font-weight:700}
     .activation-status.active{background:#dcfce7;color:#15803d}
     .activation-expiry{display:block;margin:-8px 0 14px;color:#64748b;font-size:12px}
+    .validity-field{display:grid;gap:5px;margin:12px 0;color:#475569;font-size:12px;font-weight:700}
+    .validity-field input{width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:7px;font:inherit}
     .activation-card button{border:0;border-radius:8px;padding:10px 13px;background:#0052cc;color:#fff;font-weight:700;cursor:pointer}
     .code-table{width:100%;border-collapse:collapse;margin-top:20px}
     .code-table th,.code-table td{padding:12px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:middle}
@@ -21,9 +23,12 @@
     .code-value{font:700 16px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em;color:#0f172a}
     .code-edit{display:flex;align-items:center;gap:6px;min-width:220px}
     .code-edit input{width:100px;padding:7px;border:1px solid #cbd5e1;border-radius:6px;letter-spacing:.1em}
-    .code-edit button,.code-delete{border:0;border-radius:7px;padding:8px 10px;font-weight:700;cursor:pointer}
+    .validity-edit{display:flex;align-items:center;gap:5px}
+    .validity-edit input{width:70px;padding:7px;border:1px solid #cbd5e1;border-radius:6px}
+    .code-edit button,.validity-edit button,.code-delete{border:0;border-radius:7px;padding:8px 10px;font-weight:700;cursor:pointer;white-space:nowrap}
     .code-edit button{background:#eaf2ff;color:#0052cc}.code-delete{background:#fff1f2;color:#be123c}
-    .code-actions form{margin:0}.code-actions{display:flex;gap:6px}
+    .validity-edit button{background:#ecfdf5;color:#047857}
+    .code-actions form{margin:0}.code-actions{display:grid;gap:8px}
     .code-empty{text-align:center;padding:16px;color:#64748b}
     .activation-warning{margin-top:16px;padding:12px 14px;border-radius:9px;background:#fffbeb;color:#92400e;font-size:13px;line-height:1.5}
     .activation-success{margin-bottom:16px;padding:12px 14px;border-radius:9px;background:#dcfce7;color:#166534}
@@ -33,7 +38,7 @@
 
 <div class="card">
     <div class="card-title">Aktivasi kode akses</div>
-    <p class="activation-intro">Buat kode angka 5 digit untuk akses katalog B2B, produk khusus B2C, dan harga internal. Kode berlaku 30 hari sejak dibuat dan kode baru langsung menggantikan kode sebelumnya.</p>
+    <p class="activation-intro">Buat kode angka 5 digit untuk akses katalog B2B, produk khusus B2C, dan harga internal. Masa berlaku setiap kode dapat diatur dalam hari.</p>
 
     @if(session('success'))<div class="activation-success">{{ session('success') }}</div>@endif
     @if($errors->any())
@@ -66,8 +71,12 @@
                 @if($codeIsActive)
                     <span class="activation-expiry">Berlaku sampai {{ $codes[$channel]->expires_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') }} WIB</span>
                 @endif
-                <form action="{{ route('admin.access-codes.generate', $channel) }}" method="POST" onsubmit="return confirm('{{ $codeIsActive ? 'Kode lama langsung tidak berlaku. Buat kode baru 5 digit dengan masa berlaku 30 hari?' : 'Buat kode aktivasi 5 digit yang berlaku 30 hari?' }}')">
+                <form action="{{ route('admin.access-codes.generate', $channel) }}" method="POST" onsubmit="return confirm('Buat kode baru? Kode lama langsung tidak berlaku.')">
                     @csrf
+                    <label class="validity-field" for="validity-{{ $channel }}">
+                        Masa berlaku kode (hari)
+                        <input id="validity-{{ $channel }}" name="validity_days" type="number" min="1" max="3650" value="{{ $channelCode?->validity_days ?: config('internal.code_validity_days', 30) }}" required>
+                    </label>
                     <button type="submit">{{ isset($codes[$channel]) ? 'Buat Ulang Kode 5 Digit' : 'Buat Kode 5 Digit' }}</button>
                 </form>
             </article>
@@ -75,10 +84,10 @@
     </div>
 
     <div class="card-title" style="margin-top:24px;">Daftar Kode Akses</div>
-    <p style="color:#64748b;">Kode aktif selalu tampil di tabel ini. Edit kode memperbarui masa berlakunya selama 30 hari; hapus atau ubah kode langsung membatalkan sesi lama.</p>
+    <p style="color:#64748b;">Atur masa berlaku kode yang sudah ada dari tabel. Perubahan masa berlaku dihitung sejak sekarang; pengguna yang sedang masuk perlu mengaktifkan ulang kode jika ingin menggunakan waktu baru.</p>
     <div class="code-table-wrap">
         <table class="code-table">
-            <thead><tr><th>Kanal</th><th>Kode</th><th>Status</th><th>Berlaku sampai</th><th>Terakhir diperbarui</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>Kanal</th><th>Kode</th><th>Status</th><th>Masa berlaku</th><th>Berlaku sampai</th><th>Terakhir diperbarui</th><th>Aksi</th></tr></thead>
             <tbody>
                 @forelse($codes as $code)
                     @php
@@ -90,10 +99,18 @@
                         <td><strong>{{ ['b2b' => 'Belanja B2B', 'b2c' => 'Produk Khusus B2C', 'internal' => 'Harga Internal'][$code->channel] ?? 'Belanja' }}</strong></td>
                         <td><code class="code-value">{{ $readableCode ?: 'Tidak dapat ditampilkan — buat ulang' }}</code></td>
                         <td><span class="activation-status {{ $codeIsActive ? 'active' : '' }}">{{ $codeIsActive ? 'Aktif' : ($isUnreadableCode ? 'Tidak dapat dibaca — buat ulang' : 'Kedaluwarsa') }}</span></td>
+                        <td>{{ $code->validity_days ?? config('internal.code_validity_days', 30) }} hari</td>
                         <td>{{ $code->expires_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') ? $code->expires_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') . ' WIB' : '-' }}</td>
                         <td>{{ $code->updated_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') ? $code->updated_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s') . ' WIB' : '-' }}</td>
                         <td>
                             <div class="code-actions">
+                                <form class="validity-edit" action="{{ route('admin.access-codes.validity', $code) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+                                    <label class="sr-only" for="validity-code-{{ $code->id }}">Masa berlaku kode {{ $code->channel }} dalam hari</label>
+                                    <input id="validity-code-{{ $code->id }}" name="validity_days" type="number" min="1" max="3650" value="{{ $code->validity_days ?? config('internal.code_validity_days', 30) }}" required>
+                                    <button type="submit">Atur masa</button>
+                                </form>
                                 <form class="code-edit" action="{{ route('admin.access-codes.update', $code) }}" method="POST">
                                     @csrf
                                     @method('PUT')
@@ -110,14 +127,14 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td class="code-empty" colspan="6">Belum ada kode akses. Buat kode melalui tombol di atas.</td></tr>
+                    <tr><td class="code-empty" colspan="7">Belum ada kode akses. Buat kode melalui tombol di atas.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 
     <div class="activation-warning">
-        <strong>Catatan keamanan:</strong> kode ditampilkan untuk administrator dan disimpan terenkripsi di database. Gunakan hanya untuk kanal yang berwenang. Kode dan sesi akses berlaku sampai 30 hari sejak kode dibuat.
+        <strong>Catatan keamanan:</strong> kode ditampilkan untuk administrator dan disimpan terenkripsi di database. Gunakan hanya untuk kanal yang berwenang. Masa berlaku dapat diatur 1–3650 hari; akses pengguna berhenti saat kode kedaluwarsa.
     </div>
 </div>
 @endsection

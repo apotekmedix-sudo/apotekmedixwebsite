@@ -615,6 +615,30 @@
         background: #f0f9ff !important;
     }
 
+    .detail-share-button {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        padding: .45rem .75rem;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font: inherit;
+        font-size: .82rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .detail-share-button:hover {
+        background: #dbeafe;
+    }
+
+    .detail-share-status {
+        color: #166534;
+        font-size: .78rem;
+    }
+
     /* Related Products */
     .related-section {
         background: #ffffff !important;
@@ -881,6 +905,16 @@
             <div class="detail-info">
                 <div class="detail-heading-row" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.85rem;">
                     <span class="detail-manufacturer">Pabrik / Brand: {{ $medicine->kategori ?: ($medicine->brand ?: '—') }}</span>
+                    @if(!in_array($detailOrigin, ['b2b', 'apotek'], true))
+                        <button type="button"
+                                class="detail-share-button"
+                                data-product-share
+                                data-share-url="{{ route('medicines.show', $medicine->id) }}">
+                            <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+                            Bagikan
+                        </button>
+                        <span class="detail-share-status" data-share-status aria-live="polite"></span>
+                    @endif
                 </div>
                 <h1 class="detail-product-name">{{ $medicine->nama_obat }}</h1>
 
@@ -1021,6 +1055,55 @@ document.querySelectorAll('.detail-gallery-thumb').forEach(button => {
         document.querySelectorAll('.detail-gallery-thumb').forEach(thumb => thumb.classList.toggle('active', thumb === button));
     });
 });
+
+(() => {
+    const button = document.querySelector('[data-product-share]');
+    const status = document.querySelector('[data-share-status]');
+    if (!button || !status) return;
+
+    const copyText = async text => {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return;
+        }
+
+        const input = document.createElement('textarea');
+        input.value = text;
+        input.setAttribute('readonly', '');
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.append(input);
+        input.select();
+        const copied = document.execCommand('copy');
+        input.remove();
+        if (!copied) throw new Error('Clipboard copy was rejected.');
+    };
+
+    button.addEventListener('click', async () => {
+        const url = button.dataset.shareUrl;
+        if (!url) {
+            status.textContent = 'Link produk tidak tersedia.';
+            return;
+        }
+
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: document.title,
+                    url
+                });
+                status.textContent = 'Link produk berhasil dibagikan.';
+                return;
+            }
+
+            await copyText(url);
+            status.textContent = 'Link produk berhasil disalin.';
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            status.textContent = 'Gagal membagikan link. Salin URL dari bilah alamat browser.';
+        }
+    });
+})();
 
 (() => {
     const dialog = document.getElementById('detailMetaTextDialog');

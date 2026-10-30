@@ -24,6 +24,7 @@
     .kunjungan-files{display:grid;gap:.6rem}
     .kunjungan-file{padding:.75rem;border:1px solid #e2e8f0;border-radius:10px}
     .kunjungan-file-info{min-width:0}
+    .kunjungan-file-actions{display:flex;flex-wrap:wrap;gap:.5rem}
     .kunjungan-file-name{display:block;overflow-wrap:anywhere;font-weight:750;color:#10243e}
     .kunjungan-file-meta{display:block;margin-top:.2rem;color:#64748b;font-size:.82rem}
     .kunjungan-empty{padding:1.25rem;border:1px dashed #cbd5e1;border-radius:10px;color:#64748b;text-align:center}
@@ -38,7 +39,7 @@
         <header class="kunjungan-header">
             <div>
                 <h1>Arsip File KUNJUNGAN</h1>
-                <p>Unggah, cari, urutkan, dan unduh file.</p>
+                <p>Unggah, cari, urutkan, lihat, dan unduh file.</p>
             </div>
             <form method="POST" action="{{ route('kunjungan.leave') }}">
                 @csrf
@@ -85,7 +86,12 @@
                             · {{ $file->created_at->timezone(config('kunjungan.timezone'))->format('d-m-Y H:i') }}
                         </span>
                     </div>
-                    <a class="kunjungan-button" href="{{ route('kunjungan.files.download', $file) }}"><i class="fa-solid fa-download"></i> Download</a>
+                    <div class="kunjungan-file-actions">
+                        @if(strtolower(pathinfo($file->original_name, PATHINFO_EXTENSION)) === 'pdf' && strtolower((string) $file->mime_type) === 'application/pdf')
+                            <a class="kunjungan-button kunjungan-button-secondary" href="{{ route('kunjungan.files.preview', $file) }}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-eye"></i> Lihat PDF</a>
+                        @endif
+                        <a class="kunjungan-button" href="{{ route('kunjungan.files.download', $file) }}"><i class="fa-solid fa-download"></i> Download</a>
+                    </div>
                 </article>
             @empty
                 <p class="kunjungan-empty">Belum ada file{{ $search !== '' ? ' yang cocok dengan pencarian ini' : '' }}.</p>

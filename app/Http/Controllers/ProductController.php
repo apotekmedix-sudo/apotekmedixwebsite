@@ -205,13 +205,9 @@ class ProductController extends Controller
 
         if ($accessCode && $accessCode->verify($validated['kode'])) {
             $request->session()->regenerate();
-            $sessionExpiresAt = now()->addDays((int) config('internal.code_validity_days', 30));
-            if ($accessCode->expires_at->lt($sessionExpiresAt)) {
-                $sessionExpiresAt = $accessCode->expires_at;
-            }
             $request->session()->put(
                 'pbf_access_expires_at',
-                $sessionExpiresAt->timestamp
+                $accessCode->expires_at->timestamp
             );
             $request->session()->put('pbf_access_code_hash', $accessCode->code_hash);
 
@@ -325,11 +321,7 @@ class ProductController extends Controller
             $b2bCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2B)->first();
             if ($b2bCode && $b2bCode->verify($validated['kode'])) {
                 $request->session()->regenerate();
-                $sessionExpiresAt = now()->addDays((int) config('internal.code_validity_days', 30));
-                if ($b2bCode->expires_at->lt($sessionExpiresAt)) {
-                    $sessionExpiresAt = $b2bCode->expires_at;
-                }
-                $request->session()->put('pbf_access_expires_at', $sessionExpiresAt->timestamp);
+                $request->session()->put('pbf_access_expires_at', $b2bCode->expires_at->timestamp);
                 $request->session()->put('pbf_access_code_hash', $b2bCode->code_hash);
 
                 return redirect()->route('products.pbf')
@@ -344,11 +336,7 @@ class ProductController extends Controller
         }
 
         $request->session()->regenerate();
-        $sessionExpiresAt = now()->addDays((int) config('internal.code_validity_days', 30));
-        if ($accessCode->expires_at->lt($sessionExpiresAt)) {
-            $sessionExpiresAt = $accessCode->expires_at;
-        }
-        $request->session()->put('b2c_access_expires_at', $sessionExpiresAt->timestamp);
+        $request->session()->put('b2c_access_expires_at', $accessCode->expires_at->timestamp);
         $request->session()->put('b2c_access_code_hash', $accessCode->code_hash);
 
         return redirect()->route($this->catalogReturnRoute($validated['redirect_to'] ?? null))
@@ -372,11 +360,7 @@ class ProductController extends Controller
         }
 
         $request->session()->regenerate();
-        $sessionExpiresAt = now()->addDays((int) config('internal.code_validity_days', 30));
-        if ($accessCode->expires_at->lt($sessionExpiresAt)) {
-            $sessionExpiresAt = $accessCode->expires_at;
-        }
-        $request->session()->put('internal_access_expires_at', $sessionExpiresAt->timestamp);
+        $request->session()->put('internal_access_expires_at', $accessCode->expires_at->timestamp);
         $request->session()->put('internal_access_code_hash', $accessCode->code_hash);
 
         return redirect()->route($this->catalogReturnRoute($validated['redirect_to'] ?? null))

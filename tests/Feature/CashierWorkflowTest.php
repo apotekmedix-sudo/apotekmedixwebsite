@@ -725,6 +725,37 @@ class CashierWorkflowTest extends TestCase
         $this->assertTrue(ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2B)->firstOrFail()->verify($replacementCode));
     }
 
+    public function test_admin_can_set_and_update_access_code_validity(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.access-codes.generate', ShoppingAccessCode::CHANNEL_B2B), [
+                'validity_days' => 7,
+            ])
+            ->assertRedirect(route('admin.access-codes.index'));
+
+        $accessCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2B)->firstOrFail();
+        $this->assertSame(7, $accessCode->validity_days);
+        $this->assertTrue($accessCode->expires_at->between(now()->addDays(6), now()->addDays(7)->addMinute()));
+        $originalCode = $accessCode->readCode();
+
+        $this->actingAs($admin)
+            ->put(route('admin.access-codes.validity', $accessCode), [
+                'validity_days' => 45,
+            ])
+            ->assertRedirect(route('admin.access-codes.index'));
+
+        $accessCode->refresh();
+        $this->assertSame(45, $accessCode->validity_days);
+        $this->assertTrue($accessCode->expires_at->between(now()->addDays(44), now()->addDays(45)->addMinute()));
+        $this->assertSame($originalCode, $accessCode->readCode());
+
+        $this->post(route('products.pbf.verify'), ['kode' => $originalCode])
+            ->assertRedirect(route('products.pbf'));
+        $this->assertSame($accessCode->expires_at->timestamp, session('pbf_access_expires_at'));
+    }
+
     public function test_admin_access_code_page_handles_codes_encrypted_with_an_old_key(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
