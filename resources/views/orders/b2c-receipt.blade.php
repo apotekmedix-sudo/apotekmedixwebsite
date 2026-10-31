@@ -68,7 +68,7 @@
             <h1>APOTEK MEDIX</h1>
             <p>Jl. Raya Ciawi Ruko No. 256C, Sindangsari</p>
             <p>Bogor Timur, Kota Bogor, Jawa Barat 16146</p>
-            <p>HP 0858 9000 7359 · apotekmedix.com</p>
+            <p>HP 08159111911 · apotekmedix.com</p>
             <p class="pharmacists">APJ: Apt. Safwan Nugraha, S. Farm<br>Apt. M. Syaiful Hidayat, S. Farm</p>
         </header>
 

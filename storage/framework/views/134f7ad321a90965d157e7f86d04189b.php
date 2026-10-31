@@ -1435,7 +1435,7 @@ function buildReceiptPdf(orderData) {
   }
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
   line('Terima kasih telah berbelanja!', { align: 'center', spacing: 11 });
-  line('Hubungi kami via WhatsApp: 085890007359', { align: 'center', spacing: 11 });
+  line('Hubungi kami via WhatsApp: 08159111911', { align: 'center', spacing: 11 });
   return doc.output('bloburl');
 }
 
@@ -1532,7 +1532,7 @@ async function submitPbfOrder() {
     apj: title,
     sia,
     sipa,
-    phone: '085890007359',
+    phone: '08159111911',
     address: 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat',
     pbf_name: distributor,
     pbf_address: address,
@@ -1635,7 +1635,7 @@ async function submitOrder() {
 
   if (CART_CONFIG.adminPbfOrder) {
     payload.buyer_name = 'Apotek Medix';
-    payload.phone = '085890007359';
+    payload.phone = '08159111911';
     payload.address = 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat';
     payload.requester_name = document.getElementById('f_signer_name').value.trim();
     payload.apj = document.getElementById('f_signer_title').value.trim();

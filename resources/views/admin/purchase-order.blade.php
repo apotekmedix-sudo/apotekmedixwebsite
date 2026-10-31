@@ -5,7 +5,7 @@
         ? [
             'name' => 'APOTEK MEDIKPEDIA',
             'address' => 'ITC CEMPAKA MAS LT.1 NO.88, KEL. SUMUR BATU, KEC. KEMAYORAN, JAKARTA PUSAT',
-            'phone' => '085890007359',
+            'phone' => '08159111911',
             'postal_code' => '10640',
             'website' => 'medikpedia.com',
             'logo' => 'LOGO MEDIKPEDIA.png',

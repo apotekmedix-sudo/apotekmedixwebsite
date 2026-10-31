@@ -6,7 +6,7 @@
         ? [
             'name' => 'APOTEK MEDIKPEDIA',
             'address' => 'ITC CEMPAKA MAS LT.1 NO.88, KEL. SUMUR BATU, KEC. KEMAYORAN, JAKARTA PUSAT',
-            'phone' => '085890007359',
+            'phone' => '08159111911',
             'postal_code' => '10640',
             'website' => 'medikpedia.com',
             'logo' => 'LOGO MEDIKPEDIA.png',
@@ -20,7 +20,7 @@
         : [
             'name' => 'APOTEK MEDIX',
             'address' => 'Jl. Raya Tajur No. 256 C, Bogor Timur, Kota Bogor, 16146',
-            'phone' => '085890007359',
+            'phone' => '08159111911',
             'postal_code' => null,
             'website' => null,
             'logo' => 'LOGO APOTEK MEDIX.PNG',

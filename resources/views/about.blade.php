@@ -324,7 +324,7 @@
                     <div>
                         <i class="fa-solid fa-phone" aria-hidden="true"></i>
                         <strong>Telepon:</strong>
-                        <a href="tel:{{ config('contacts.customer_service.phone_e164') }}">085890007359</a>
+                        <a href="tel:{{ config('contacts.customer_service.phone_e164') }}">{{ config('contacts.customer_service.display_phone') }}</a>
                     </div>
                 </div>
             </div>

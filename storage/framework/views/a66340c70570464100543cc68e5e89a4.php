@@ -36,14 +36,16 @@
         <p class="session-muted"><?php echo e($consultation->doctorProfile->specialty); ?> · Sesi konsultasi <?php echo e($consultation->session_duration_minutes); ?> menit</p>
         <?php if($consultation->status === 'awaiting_payment'): ?>
             <div id="pendingPayment" class="session-payment">
-                <h2 style="margin-top:0;color:#10243e">Selesaikan pembayaran</h2>
+                <h2 style="margin-top:0;color:#10243e"><?php echo e($consultation->payment_proof_path ? 'Menunggu verifikasi pembayaran' : 'Selesaikan pembayaran'); ?></h2>
                 <p>Total: <strong>Rp <?php echo e(number_format($consultation->amount, 0, ',', '.')); ?></strong></p>
                 <p>Metode: <strong><?php echo e($consultation->payment_method === 'qris' ? 'QRIS' : 'Transfer'); ?></strong></p>
                 <p>Cara pembayaran: <strong><?php echo e($consultation->payment_channel === 'online' ? 'Online' : 'Offline di kasir'); ?></strong></p>
-                <?php if($consultation->payment_method === 'qris' && $settings?->qris_image_path): ?>
-                    <img class="session-qris" src="<?php echo e($settings->qris_image_url); ?>" alt="QRIS pembayaran">
-                <?php elseif($consultation->payment_method === 'transfer'): ?>
-                    <p><strong><?php echo e($settings?->bank_name); ?>:</strong> <?php echo e($settings?->account_number); ?><br>Atas nama <?php echo e($settings?->account_holder); ?></p>
+                <?php if(!$consultation->payment_proof_path): ?>
+                    <?php if($consultation->payment_method === 'qris' && $settings?->qris_image_path): ?>
+                        <img class="session-qris" src="<?php echo e($settings->qris_image_url); ?>" alt="QRIS pembayaran">
+                    <?php elseif($consultation->payment_method === 'transfer'): ?>
+                        <p><strong><?php echo e($settings?->bank_name); ?>:</strong> <?php echo e($settings?->account_number); ?><br>Atas nama <?php echo e($settings?->account_holder); ?></p>
+                    <?php endif; ?>
                 <?php endif; ?>
                 <?php if($consultation->payment_channel === 'offline'): ?>
                     <p class="session-muted">Tunjukkan bukti pembayaran kepada kasir. Konsultasi tetap menunggu verifikasi admin.</p>
@@ -70,19 +72,20 @@
                 <p class="session-warning">Pembayaran sudah dikonfirmasi. Segarkan halaman ini untuk membuka percakapan pasien.</p>
             <?php else: ?>
             <div class="session-warning">Sisa waktu: <strong id="consultationTimer"><?php if($consultation->ends_at): ?><?php echo e(sprintf('%02d:00', $consultation->session_duration_minutes)); ?><?php else: ?> Menunggu dokter bergabung <?php endif; ?></strong>. <span id="consultationTimerHint"><?php echo e($consultation->ends_at ? 'Sesi berakhir otomatis setelah ' . $consultation->session_duration_minutes . ' menit.' : 'Timer dimulai saat dokter masuk ke room.'); ?></span></div>
-            <?php if($consultation->payment_channel === 'online'): ?>
-            <section class="session-prescription" id="issuedPrescription" hidden aria-live="polite">
-                <h2>Resep dari dokter</h2>
-                <p style="margin:.2rem 0">Nomor resep: <strong id="prescriptionNumber"></strong></p>
-                <ul id="prescriptionItems"></ul>
-                <p id="prescriptionStatus" style="margin:.5rem 0"></p>
-                <button id="addPrescriptionToCart" type="button">Masukkan produk ke keranjang</button>
-                <p id="prescriptionCartError" role="alert" style="margin:.5rem 0 0;color:#991b1b" hidden></p>
-            </section>
-            <?php endif; ?>
             <div class="session-chat">
                 <div class="session-chat-head">Chat dokter · <span id="sessionState"><?php echo e($consultation->status === 'active' ? ($consultation->starts_at ? 'Sesi aktif' : 'Menunggu dokter') : 'Sesi selesai'); ?></span></div>
-                <div id="sessionMessages" class="session-messages" aria-live="polite"></div>
+                <div id="sessionMessages" class="session-messages" aria-live="polite">
+                    <?php if($consultation->payment_channel === 'online'): ?>
+                    <section class="session-prescription" id="issuedPrescription" hidden aria-live="polite">
+                        <h2>Resep dari dokter</h2>
+                        <p style="margin:.2rem 0">Nomor resep: <strong id="prescriptionNumber"></strong></p>
+                        <ul id="prescriptionItems"></ul>
+                        <p id="prescriptionStatus" style="margin:.5rem 0"></p>
+                        <button id="addPrescriptionToCart" type="button">Masukkan produk ke keranjang</button>
+                        <p id="prescriptionCartError" role="alert" style="margin:.5rem 0 0;color:#991b1b" hidden></p>
+                    </section>
+                    <?php endif; ?>
+                </div>
                 <p id="chatError" role="alert" style="display:none;margin:0;padding:.6rem .8rem;background:#fef2f2;color:#991b1b;font-size:.85rem"></p>
                 <form id="patientMessageForm" class="session-compose">
                     <textarea id="patientMessageText" maxlength="2000" placeholder="Tulis pesan..." <?php if(!$consultation->isActive()): echo 'disabled'; endif; ?>></textarea>

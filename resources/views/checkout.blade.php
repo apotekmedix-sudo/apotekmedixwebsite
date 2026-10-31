@@ -1549,7 +1549,7 @@
       payload.purchase_order_type = document.getElementById('co_pbf_order_type').value;
       payload.purchase_order_profile = document.getElementById('co_pbf_profile').value;
       payload.buyer_name = 'Apotek Medix';
-      payload.phone = '085890007359';
+      payload.phone = '08159111911';
       payload.address = 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat';
       payload.requester_name = document.getElementById('co_signer_name').value.trim();
       payload.apj = document.getElementById('co_signer_title').value.trim();

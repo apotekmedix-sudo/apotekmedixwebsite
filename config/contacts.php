@@ -5,7 +5,7 @@ return [
         'phone' => '08159111911',
         'phone_e164' => '+628159111911',
         'whatsapp' => '628159111911',
-        'display_phone' => '0858 9000 7359',
+        'display_phone' => '08159111911',
     ],
     'pharmacist' => [
         'phone' => '081615551555',

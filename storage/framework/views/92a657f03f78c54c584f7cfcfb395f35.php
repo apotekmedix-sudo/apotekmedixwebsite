@@ -324,7 +324,7 @@
                     <div>
                         <i class="fa-solid fa-phone" aria-hidden="true"></i>
                         <strong>Telepon:</strong>
-                        <a href="tel:<?php echo e(config('contacts.customer_service.phone')); ?>"><?php echo e(config('contacts.customer_service.phone')); ?></a>
+                        <a href="tel:<?php echo e(config('contacts.customer_service.phone_e164')); ?>"><?php echo e(config('contacts.customer_service.display_phone')); ?></a>
                     </div>
                 </div>
             </div>

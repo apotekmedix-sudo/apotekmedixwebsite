@@ -36,14 +36,16 @@
         <p class="session-muted">{{ $consultation->doctorProfile->specialty }} · Sesi konsultasi {{ $consultation->session_duration_minutes }} menit</p>
         @if($consultation->status === 'awaiting_payment')
             <div id="pendingPayment" class="session-payment">
-                <h2 style="margin-top:0;color:#10243e">Selesaikan pembayaran</h2>
+                <h2 style="margin-top:0;color:#10243e">{{ $consultation->payment_proof_path ? 'Menunggu verifikasi pembayaran' : 'Selesaikan pembayaran' }}</h2>
                 <p>Total: <strong>Rp {{ number_format($consultation->amount, 0, ',', '.') }}</strong></p>
                 <p>Metode: <strong>{{ $consultation->payment_method === 'qris' ? 'QRIS' : 'Transfer' }}</strong></p>
                 <p>Cara pembayaran: <strong>{{ $consultation->payment_channel === 'online' ? 'Online' : 'Offline di kasir' }}</strong></p>
-                @if($consultation->payment_method === 'qris' && $settings?->qris_image_path)
-                    <img class="session-qris" src="{{ $settings->qris_image_url }}" alt="QRIS pembayaran">
-                @elseif($consultation->payment_method === 'transfer')
-                    <p><strong>{{ $settings?->bank_name }}:</strong> {{ $settings?->account_number }}<br>Atas nama {{ $settings?->account_holder }}</p>
+                @if(!$consultation->payment_proof_path)
+                    @if($consultation->payment_method === 'qris' && $settings?->qris_image_path)
+                        <img class="session-qris" src="{{ $settings->qris_image_url }}" alt="QRIS pembayaran">
+                    @elseif($consultation->payment_method === 'transfer')
+                        <p><strong>{{ $settings?->bank_name }}:</strong> {{ $settings?->account_number }}<br>Atas nama {{ $settings?->account_holder }}</p>
+                    @endif
                 @endif
                 @if($consultation->payment_channel === 'offline')
                     <p class="session-muted">Tunjukkan bukti pembayaran kepada kasir. Konsultasi tetap menunggu verifikasi admin.</p>
@@ -70,19 +72,20 @@
                 <p class="session-warning">Pembayaran sudah dikonfirmasi. Segarkan halaman ini untuk membuka percakapan pasien.</p>
             @else
             <div class="session-warning">Sisa waktu: <strong id="consultationTimer">@if($consultation->ends_at){{ sprintf('%02d:00', $consultation->session_duration_minutes) }}@else Menunggu dokter bergabung @endif</strong>. <span id="consultationTimerHint">{{ $consultation->ends_at ? 'Sesi berakhir otomatis setelah ' . $consultation->session_duration_minutes . ' menit.' : 'Timer dimulai saat dokter masuk ke room.' }}</span></div>
-            @if($consultation->payment_channel === 'online')
-            <section class="session-prescription" id="issuedPrescription" hidden aria-live="polite">
-                <h2>Resep dari dokter</h2>
-                <p style="margin:.2rem 0">Nomor resep: <strong id="prescriptionNumber"></strong></p>
-                <ul id="prescriptionItems"></ul>
-                <p id="prescriptionStatus" style="margin:.5rem 0"></p>
-                <button id="addPrescriptionToCart" type="button">Masukkan produk ke keranjang</button>
-                <p id="prescriptionCartError" role="alert" style="margin:.5rem 0 0;color:#991b1b" hidden></p>
-            </section>
-            @endif
             <div class="session-chat">
                 <div class="session-chat-head">Chat dokter · <span id="sessionState">{{ $consultation->status === 'active' ? ($consultation->starts_at ? 'Sesi aktif' : 'Menunggu dokter') : 'Sesi selesai' }}</span></div>
-                <div id="sessionMessages" class="session-messages" aria-live="polite"></div>
+                <div id="sessionMessages" class="session-messages" aria-live="polite">
+                    @if($consultation->payment_channel === 'online')
+                    <section class="session-prescription" id="issuedPrescription" hidden aria-live="polite">
+                        <h2>Resep dari dokter</h2>
+                        <p style="margin:.2rem 0">Nomor resep: <strong id="prescriptionNumber"></strong></p>
+                        <ul id="prescriptionItems"></ul>
+                        <p id="prescriptionStatus" style="margin:.5rem 0"></p>
+                        <button id="addPrescriptionToCart" type="button">Masukkan produk ke keranjang</button>
+                        <p id="prescriptionCartError" role="alert" style="margin:.5rem 0 0;color:#991b1b" hidden></p>
+                    </section>
+                    @endif
+                </div>
                 <p id="chatError" role="alert" style="display:none;margin:0;padding:.6rem .8rem;background:#fef2f2;color:#991b1b;font-size:.85rem"></p>
                 <form id="patientMessageForm" class="session-compose">
                     <textarea id="patientMessageText" maxlength="2000" placeholder="Tulis pesan..." @disabled(!$consultation->isActive())></textarea>

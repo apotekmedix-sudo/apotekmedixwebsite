@@ -282,7 +282,7 @@
                         <div class="info-icon icon-orange"><i class="fa-solid fa-clock"></i></div>
                         <div class="info-text">
                             <h4>Jam Operasional</h4>
-                            <p>Senin–Sabtu: 08.00–20.00<br>Minggu: Tutup</p>
+                            <p>Senin–Sabtu: 09.00–21.00<br>Minggu: Tutup</p>
                         </div>
                     </div>
                     <div class="info-item">
