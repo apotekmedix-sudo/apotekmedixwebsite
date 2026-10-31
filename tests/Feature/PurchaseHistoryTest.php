@@ -6,6 +6,8 @@ use App\Models\Medicine;
 use App\Models\PurchasePaymentSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PurchaseHistoryTest extends TestCase
@@ -22,7 +24,7 @@ class PurchaseHistoryTest extends TestCase
             'deskripsi' => 'Pereda demam dan nyeri',
         ]);
 
-        $response = $this->postJson('/orders/history', [
+        $response = $this->post('/orders/history', [
             'buyer_type' => 'umum',
             'buyer_name' => 'Budi',
             'phone' => '081234567890',
@@ -92,16 +94,20 @@ class PurchaseHistoryTest extends TestCase
 
     public function test_b2c_invoice_uses_the_medix_receipt_format(): void
     {
+        Storage::fake('local');
         PurchasePaymentSetting::create([
             'qris_image_path' => 'purchase-payment-settings/qris.png',
             'payment_instructions' => 'Cantumkan nomor pesanan.',
         ]);
 
-        $response = $this->postJson('/orders/history', [
+        $response = $this->post('/orders/history', [
             'buyer_type' => 'umum',
             'buyer_name' => 'Budi',
             'phone' => '081234567890',
+            'address' => 'Jl. Contoh No. 1',
+            'delivery_method' => 'delivery',
             'payment_method' => 'QRIS',
+            'payment_proof' => UploadedFile::fake()->image('bukti.png'),
             'items' => [
                 ['nama_obat' => 'Vitamin C', 'quantity' => 2, 'harga' => 25000, 'potongan' => 5000],
             ],
@@ -112,6 +118,9 @@ class PurchaseHistoryTest extends TestCase
         $this->assertSame('umum', $order->buyer_type);
         $this->assertSame('online', $order->transaction_channel);
         $this->assertSame('purchase-payment-settings/qris.png', $order->payment_qris_image_path);
+        $this->assertNotNull($order->payment_proof_path);
+        Storage::disk('local')->assertExists($order->payment_proof_path);
+        $this->assertArrayHasKey('payment_proof_url', $response->json());
 
         $this->withMiddleware()->get($response->json('invoice_url'))
             ->assertOk()
@@ -120,19 +129,21 @@ class PurchaseHistoryTest extends TestCase
             ->assertSee('APJ: Apt. Safwan Nugraha, S. Farm')
             ->assertSee('Vitamin C')
             ->assertSee('QRIS')
-            ->assertSee('Cantumkan nomor pesanan.')
-            ->assertSee('QRIS pembayaran Apotek Medix')
             ->assertSee('Rp 45.000')
             ->assertSee('Semoga lekas sembuh')
             ->assertSee('Sehat Bersama Medix')
-            ->assertSee('Menunggu pembayaran')
             ->assertSee('class="home-button" href="' . route('home') . '">Kembali ke Beranda', false)
+            ->assertDontSee('Status')
+            ->assertDontSee('Instruksi pembayaran')
+            ->assertDontSee('Cantumkan nomor pesanan.')
+            ->assertDontSee('Menunggu pembayaran')
             ->assertDontSee('Uang diterima')
             ->assertDontSee('Kembalian');
     }
 
-    public function test_transfer_orders_keep_the_custom_bank_details_for_the_invoice(): void
+    public function test_transfer_invoice_does_not_show_payment_instructions_or_bank_details(): void
     {
+        Storage::fake('local');
         PurchasePaymentSetting::create([
             'bank_name' => 'Bank Contoh',
             'account_number' => '1234567890',
@@ -140,11 +151,14 @@ class PurchaseHistoryTest extends TestCase
             'payment_instructions' => 'Cantumkan ID transaksi.',
         ]);
 
-        $response = $this->postJson('/orders/history', [
+        $response = $this->post('/orders/history', [
             'buyer_type' => 'umum',
             'buyer_name' => 'Siti',
             'phone' => '081234567890',
+            'address' => 'Ambil di Apotek Medix',
+            'delivery_method' => 'pickup',
             'payment_method' => 'Transfer',
+            'payment_proof' => UploadedFile::fake()->image('bukti-transfer.jpg'),
             'items' => [],
             'total' => 0,
         ])->assertOk();
@@ -153,13 +167,44 @@ class PurchaseHistoryTest extends TestCase
         $this->assertSame('Bank Contoh', $order->payment_bank_name);
         $this->assertSame('1234567890', $order->payment_account_number);
         $this->assertSame('Apotek Medix', $order->payment_account_holder);
+        $this->assertNotNull($order->payment_proof_path);
+        Storage::disk('local')->assertExists($order->payment_proof_path);
 
-        $this->withMiddleware()->get($response->json('invoice_url'))
+        $invoiceOrder = \App\Models\PurchaseHistory::create([
+            'buyer_type' => 'pbf',
+            'buyer_name' => 'Mitra B2B',
+            'phone' => '081234567890',
+            'address' => 'Alamat mitra',
+            'kecamatan' => 'Ilir Timur II',
+            'kota' => 'Palembang',
+            'sia' => 'SIA-001',
+            'sipa' => 'SIPA-001',
+            'items' => [],
+            'total' => 0,
+            'original_total' => 0,
+            'discounted_total' => 0,
+            'payment_method' => 'Transfer',
+            'payment_bank_name' => $order->payment_bank_name,
+            'payment_account_number' => $order->payment_account_number,
+            'payment_account_holder' => $order->payment_account_holder,
+            'payment_instructions' => $order->payment_instructions,
+            'payment_status' => 'pending',
+        ]);
+        $invoiceUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'orders.invoice',
+            now()->addMinutes(30),
+            ['order' => $invoiceOrder->id]
+        );
+
+        $this->withMiddleware()->get($invoiceUrl)
             ->assertOk()
-            ->assertSee('Bank Contoh')
-            ->assertSee('1234567890')
-            ->assertSee('Apotek Medix')
-            ->assertSee('Cantumkan ID transaksi.');
+            ->assertSee('FAKTUR PENJUALAN')
+            ->assertDontSee('Instruksi pembayaran')
+            ->assertDontSee('Bank Contoh')
+            ->assertDontSee('1234567890')
+            ->assertDontSee('Cantumkan ID transaksi.')
+            ->assertDontSee('menunggu verifikasi pembayaran oleh kasir')
+            ->assertDontSee('QRIS pembayaran Apotek Medix');
     }
 
     public function test_checkout_rejects_qris_when_no_qris_payment_setting_exists(): void
@@ -173,6 +218,62 @@ class PurchaseHistoryTest extends TestCase
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('payment_method');
+    }
+
+    public function test_qris_payment_requires_a_valid_payment_proof_for_delivery_and_pickup(): void
+    {
+        PurchasePaymentSetting::create([
+            'qris_image_path' => 'purchase-payment-settings/qris.png',
+        ]);
+
+        $payload = [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Budi',
+            'phone' => '081234567890',
+            'address' => 'Jl. Contoh No. 1',
+            'payment_method' => 'QRIS',
+            'items' => [],
+            'total' => 0,
+        ];
+
+        $this->postJson('/orders/history', array_merge($payload, ['delivery_method' => 'delivery']))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('payment_proof');
+
+        $this->postJson('/orders/history', array_merge($payload, [
+            'address' => 'Ambil di Apotek Medix',
+            'delivery_method' => 'pickup',
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('payment_proof');
+    }
+
+    public function test_payment_proof_is_only_available_through_its_signed_order_url(): void
+    {
+        Storage::fake('local');
+        PurchasePaymentSetting::create([
+            'bank_name' => 'Bank Contoh',
+            'account_number' => '1234567890',
+            'account_holder' => 'Apotek Medix',
+        ]);
+
+        $response = $this->post('/orders/history', [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Budi',
+            'phone' => '081234567890',
+            'address' => 'Jl. Contoh No. 1',
+            'delivery_method' => 'delivery',
+            'payment_method' => 'Transfer',
+            'payment_proof' => UploadedFile::fake()->image('bukti.jpg'),
+            'items' => [],
+            'total' => 0,
+        ])->assertOk();
+
+        $order = \App\Models\PurchaseHistory::findOrFail($response->json('id'));
+        Storage::disk('local')->assertExists($order->payment_proof_path);
+        $this->withMiddleware()->get($response->json('payment_proof_url'))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/jpeg');
     }
 
     public function test_checkout_persists_b2c_delivery_or_pickup_selection(): void

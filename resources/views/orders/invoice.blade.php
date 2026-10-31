@@ -549,6 +549,145 @@
             }
         }
 
+        @media (max-width: 600px) {
+            body {
+                padding: 10px 8px 24px;
+                font-size: 12px;
+            }
+            .toolbar {
+                align-items: stretch;
+                margin-bottom: 10px;
+            }
+            .toolbar-actions {
+                width: 100%;
+            }
+            .toolbar button,
+            .toolbar a {
+                flex: 1;
+                justify-content: center;
+                padding: 10px 8px;
+                font-size: 12px;
+            }
+            .invoice-sheet {
+                padding: 18px 14px 22px;
+                border-radius: 8px;
+            }
+            .top-header {
+                gap: 12px;
+                padding-bottom: 12px;
+            }
+            .brand-logo-wrap {
+                justify-content: center;
+            }
+            .brand-logo-wrap img {
+                width: 64px;
+                height: 64px;
+            }
+            .brand-wordmark-top {
+                font-size: 16px;
+            }
+            .brand-wordmark-main {
+                font-size: 36px;
+            }
+            .header-contact {
+                font-size: 11px;
+            }
+            .apj-header {
+                font-size: 10.5px;
+            }
+            .apj-list {
+                font-size: 11px;
+            }
+            .banner-meta-row {
+                gap: 10px;
+                margin: 12px 0;
+            }
+            .invoice-pill-banner {
+                flex-direction: column;
+            }
+            .invoice-pill-left {
+                min-height: 76px;
+                padding: 12px;
+                border-radius: 12px 12px 0 0;
+                font-size: 30px;
+                letter-spacing: 1px;
+            }
+            .invoice-pill-right {
+                align-items: center;
+                padding: 11px 8px 12px;
+                text-align: center;
+            }
+            .invoice-pill-right h2 {
+                font-size: 17px;
+            }
+            .invoice-pill-right span {
+                font-size: 11px;
+                letter-spacing: 1.5px;
+            }
+            .invoice-meta-card {
+                padding: 11px 12px;
+            }
+            .meta-line {
+                grid-template-columns: 88px 8px minmax(0, 1fr);
+                font-size: 11px;
+                overflow-wrap: anywhere;
+            }
+            .info-box {
+                padding: 10px 11px;
+            }
+            .info-line {
+                grid-template-columns: 94px 8px minmax(0, 1fr);
+                font-size: 11px;
+                overflow-wrap: anywhere;
+            }
+            .items-table-wrap {
+                border-radius: 6px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            table.items-table {
+                min-width: 680px;
+            }
+            table.items-table thead th,
+            table.items-table tbody td {
+                padding: 7px 6px;
+                font-size: 11px;
+            }
+            .bottom-grid {
+                gap: 12px;
+            }
+            .notes-box {
+                padding: 10px 12px;
+            }
+            .notes-box ol {
+                padding-left: 16px;
+                font-size: 11px;
+            }
+            .slogan-banner {
+                padding: 12px;
+            }
+            .slogan-text {
+                font-size: 32px;
+            }
+            table.totals-table td {
+                padding: 8px 10px;
+                font-size: 11.5px;
+            }
+            table.totals-table tr.row-grand td {
+                font-size: 13px;
+            }
+            .signatures-grid {
+                gap: 8px;
+            }
+            .sig-spacer {
+                height: 52px;
+            }
+            .sig-line {
+                font-size: 9px;
+                letter-spacing: 0;
+            }
+        }
+
         @media print {
             @page {
                 size: A4 landscape;
@@ -646,19 +785,6 @@
                     @endif
                 </div>
             </section>
-            @if($order->payment_status === 'pending' && in_array(strtolower((string) $order->payment_method), ['qris', 'transfer'], true))
-                <section style="margin:1rem 0;padding:1rem;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1e293b">
-                    <strong>Instruksi pembayaran {{ strtoupper($order->payment_method) }}</strong>
-                    @if(strtolower((string) $order->payment_method) === 'qris' && $order->payment_qris_image_path)
-                        <img src="{{ asset('storage/' . $order->payment_qris_image_path) }}" alt="QRIS pembayaran Apotek Medix" style="display:block;width:180px;max-width:100%;margin:.75rem auto;object-fit:contain">
-                    @elseif(strtolower((string) $order->payment_method) === 'transfer' && $order->payment_bank_name && $order->payment_account_number)
-                        <p style="margin:.5rem 0"><strong>{{ $order->payment_bank_name }}:</strong> {{ $order->payment_account_number }}<br>Atas nama {{ $order->payment_account_holder }}</p>
-                    @endif
-                    @if($order->payment_instructions)<p style="margin:.5rem 0">{{ $order->payment_instructions }}</p>@endif
-                    <p style="margin:.5rem 0">Pesanan menunggu verifikasi pembayaran oleh kasir.</p>
-                </section>
-            @endif
-
             <!-- 3. CUSTOMER & SIA/SIPA INFO BOXES (READ-ONLY) -->
             <section class="info-boxes-row">
                 <div class="info-box">

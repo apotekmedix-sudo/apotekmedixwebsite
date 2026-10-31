@@ -6,15 +6,26 @@
 <style>
     body.public-theme main.payment-page{max-width:820px;margin:1.25rem auto;padding:1rem 1rem 3rem;color:#172b4d;background:#f8fafc!important}
     body.public-theme main.payment-page h1,body.public-theme main.payment-page h2{color:#10243e!important}
-    body.public-theme main.payment-page .payment-back{display:inline-flex;align-items:center;gap:.45rem;margin-bottom:1rem;color:#0755c8!important;font-weight:700;text-decoration:none}
-    body.public-theme main.payment-page .payment-back:hover{text-decoration:underline}
-    body.public-theme main.payment-page .payment-patient{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.75rem 0;border-bottom:1px solid #dbe4f0;color:#334155}
-    body.public-theme main.payment-page .payment-patient a{color:#0755c8!important;font-size:.85rem;font-weight:700;text-decoration:none}
-    body.public-theme main.payment-page .payment-panel{margin:.75rem 0;padding:1rem;border:1px solid #dbe4f0!important;border-radius:8px;background:#fff!important;color:#172b4d!important;box-shadow:0 2px 6px #0f172a0a}
-    body.public-theme main.payment-page .payment-doctor{display:flex;align-items:center;gap:.9rem}
-    body.public-theme main.payment-page .payment-doctor img{width:68px;height:76px;object-fit:cover;border:1px solid #dbe4f0;border-radius:6px}
+    body.public-theme main.payment-page .payment-back,
+    body.public-theme main.payment-page .payment-back:visited{display:inline-flex;align-items:center;gap:.45rem;margin-bottom:.9rem;padding:.55rem .8rem;border:1px solid #0755c8;border-radius:8px;background:#0755c8!important;color:#fff!important;-webkit-text-fill-color:#fff;font-weight:700;text-decoration:none}
+    body.public-theme main.payment-page .payment-back i{color:#fff!important}
+    body.public-theme main.payment-page .payment-back:hover,
+    body.public-theme main.payment-page .payment-back:focus-visible{border-color:#063583;background:#063583!important;color:#fff!important;-webkit-text-fill-color:#fff;text-decoration:none}
+    body.public-theme main.payment-page .payment-patient{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:.25rem 0 .75rem;padding:.8rem 1rem;border:1px solid #cbd5e1;border-radius:12px;background:#fff;color:#334155}
+    body.public-theme main.payment-page .payment-patient>div{display:grid;gap:.2rem;min-width:0}
+    body.public-theme main.payment-page .payment-eyebrow{color:#475569!important;-webkit-text-fill-color:#475569;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+    body.public-theme main.payment-page .payment-patient strong{overflow-wrap:anywhere;color:#10243e!important;-webkit-text-fill-color:#10243e}
+    body.public-theme main.payment-page .payment-panel{margin:.75rem 0;padding:1rem;border:1px solid #cbd5e1!important;border-radius:12px;background:#fff!important;color:#172b4d!important;box-shadow:0 4px 14px #0f172a12}
+    body.public-theme main.payment-page .payment-doctor{display:flex;align-items:flex-start;gap:1rem;padding:1rem}
+    body.public-theme main.payment-page .payment-doctor img{width:76px;height:88px;flex:none;object-fit:cover;object-position:center top;border:1px solid #dbe4f0;border-radius:10px;background:#f1f5f9}
+    body.public-theme main.payment-page .payment-doctor-info{min-width:0}
+    body.public-theme main.payment-page .payment-doctor-label{display:block;margin-bottom:.2rem;color:#475569!important;-webkit-text-fill-color:#475569;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
     body.public-theme main.payment-page .payment-doctor strong{color:#172b4d!important}
-    body.public-theme main.payment-page .payment-doctor p{margin:.2rem 0 0;color:#52657e!important}
+    body.public-theme main.payment-page .payment-doctor-name{display:block;font-size:1.05rem;line-height:1.35;overflow-wrap:anywhere}
+    body.public-theme main.payment-page .payment-specialty{display:inline-flex;margin:.35rem 0 .55rem;padding:.2rem .55rem;border:1px solid #bfdbfe;border-radius:999px;background:#eff6ff;color:#1e40af!important;-webkit-text-fill-color:#1e40af;font-size:.78rem;font-weight:700}
+    body.public-theme main.payment-page .payment-doctor-meta{display:grid;gap:.35rem}
+    body.public-theme main.payment-page .payment-doctor-meta p{display:flex;align-items:flex-start;gap:.45rem;margin:0;color:#334155!important;-webkit-text-fill-color:#334155;font-size:.84rem;line-height:1.45;overflow-wrap:anywhere}
+    body.public-theme main.payment-page .payment-doctor-meta i{width:14px;flex:none;margin-top:.18rem;color:#475569!important}
     body.public-theme main.payment-page .payment-line{display:flex;justify-content:space-between;gap:1rem;padding:.3rem 0;color:#475569!important}
     body.public-theme main.payment-page .payment-line strong{color:#334155!important}
     body.public-theme main.payment-page .payment-total{margin-top:.3rem;padding-top:.6rem;border-top:1px solid #e2e8f0;color:#10243e!important;font-size:1.05rem;font-weight:800}
@@ -25,12 +36,39 @@
     body.public-theme main.payment-page .consult-field input,body.public-theme main.payment-page .consult-field textarea{width:100%;min-height:44px;padding:.65rem .75rem;border:1px solid #b8c5d6;border-radius:8px;background:#fff;color:#172b4d;font:inherit}
     body.public-theme main.payment-page .consult-field textarea{min-height:95px;resize:vertical}
     body.public-theme main.payment-page .payment-methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin:.75rem 0}
-    body.public-theme main.payment-page .payment-channels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin:.75rem 0}
+    body.public-theme main.payment-page .payment-method-choices{display:flex;flex-direction:column;gap:.5rem;margin:.75rem 0}
+    body.public-theme main.payment-page .payment-method-card{width:100%;transition:transform .18s ease}
+    body.public-theme main.payment-page .payment-method-card:hover{transform:translateY(-1px)}
+    body.public-theme main.payment-page .payment-method-reveal{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .28s ease,opacity .2s ease}
+    body.public-theme main.payment-page .payment-method-card.is-selected .payment-method-reveal{grid-template-rows:1fr;opacity:1}
+    body.public-theme main.payment-page .payment-method-reveal-inner{min-height:0;overflow:hidden}
+    body.public-theme main.payment-page .payment-or{align-self:center;color:#64748b;font-size:.82rem;font-weight:700;line-height:1}
+    body.public-theme main.payment-page .payment-or[hidden]{display:none!important}
     body.public-theme main.payment-page .payment-option{display:flex;align-items:center;gap:.55rem;min-height:50px;padding:.7rem;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#243b53;font-weight:700}
+    body.public-theme main.payment-page [data-cash-option][hidden]{display:none!important}
     body.public-theme main.payment-page .payment-option input{accent-color:#0755c8}
-    body.public-theme main.payment-page .qris-preview{display:block;width:min(220px,100%);height:auto;margin:.75rem auto;border:1px solid #dbe4f0;border-radius:8px;background:#fff}
-    body.public-theme main.payment-page .payment-method-panel[hidden]{display:none!important}
+    body.public-theme main.payment-page .payment-method-details{display:grid;gap:.45rem;width:100%;margin:.65rem 0;padding:.9rem 1rem;border:1px solid #dbe4f0;border-radius:10px;background:#f8fafc;color:#334155}
+    body.public-theme main.payment-page .payment-account-holder{display:grid;gap:.12rem;padding-bottom:.55rem;border-bottom:1px solid #e2e8f0}
+    body.public-theme main.payment-page .payment-detail-label{color:#64748b;font-size:.74rem;font-weight:600}
+    body.public-theme main.payment-page .payment-detail-value{color:#10243e!important;font-size:.95rem;font-weight:800;overflow-wrap:anywhere}
+    body.public-theme main.payment-page .payment-bank-name{margin-top:.1rem;color:#1e40af;font-size:.84rem;font-weight:800}
+    body.public-theme main.payment-page .payment-account-number{color:#10243e!important;font-size:1.15rem;font-weight:800;letter-spacing:.045em;line-height:1.4;overflow-wrap:anywhere}
+    body.public-theme main.payment-page .payment-utility-button{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:38px;padding:.5rem .75rem;border:1px solid #0755c8;border-radius:7px;background:#fff;color:#0755c8!important;font:inherit;font-size:.82rem;font-weight:700;text-decoration:none;cursor:pointer}
+    body.public-theme main.payment-page .payment-utility-button:hover{background:#eff6ff;color:#063583!important}
+    body.public-theme main.payment-page .payment-copy-button{justify-self:start}
+    body.public-theme main.payment-page .payment-qris-download{justify-self:center}
+    body.public-theme main.payment-page .payment-copy-status{min-height:1.1rem;color:#166534;font-size:.78rem}
+    body.public-theme main.payment-page .qris-preview{display:block;width:min(220px,100%);height:auto;margin:.25rem auto 0;border:1px solid #dbe4f0;border-radius:8px;background:#fff}
     body.public-theme main.payment-page .payment-verification{text-align:center}
+    body.public-theme main.payment-page .payment-reminder{position:fixed;top:50%;left:50%;width:min(440px,calc(100% - 2rem));max-height:calc(100dvh - 2rem);margin:0;overflow-y:auto;padding:1.5rem;border:0;border-radius:16px;background:#fff;color:#172b4d;box-shadow:0 24px 70px #0f172a40;transform:translate(-50%,-50%)}
+    body.public-theme main.payment-page .payment-reminder::backdrop{background:#0f172a80}
+    body.public-theme main.payment-page .payment-reminder h2{margin:0 2rem .65rem 0;color:#10243e!important;font-size:1.2rem}
+    body.public-theme main.payment-page .payment-reminder p{margin:0 0 1.25rem;color:#475569;line-height:1.55}
+    body.public-theme main.payment-page .payment-reminder-actions{display:flex;justify-content:flex-end;gap:.65rem}
+    body.public-theme main.payment-page .payment-reminder-close{position:absolute;top:.7rem;right:.7rem;display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:#475569;font-size:1.4rem;cursor:pointer}
+    body.public-theme main.payment-page .payment-reminder-close:hover{background:#f1f5f9;color:#10243e}
+    body.public-theme main.payment-page .payment-reminder-ok{min-height:42px;padding:.65rem 1rem;border:1px solid #0755c8;border-radius:8px;background:#0755c8;color:#fff;font:inherit;font-weight:800;cursor:pointer}
+    body.public-theme main.payment-page .payment-reminder-ok:hover{border-color:#063583;background:#063583}
     body.public-theme main.payment-page .consult-check{display:flex;align-items:flex-start;gap:.6rem;margin:1rem 0;color:#334155!important;line-height:1.5}
     body.public-theme main.payment-page .consult-check span{color:#334155!important}
     body.public-theme main.payment-page .consult-warning{padding:.75rem 1rem;border:1px solid #fdba74!important;border-radius:9px;background:#fff7ed!important;color:#7c2d12!important;line-height:1.55}
@@ -40,7 +78,8 @@
     body.public-theme main.payment-page button.consult-primary:hover{background:#063583!important;border-color:#063583!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
     body.public-theme main.payment-page .consult-errors{padding:.8rem 1rem .8rem 2rem;border:1px solid #fecaca;border-radius:9px;background:#fef2f2;color:#991b1b}
     body.public-theme main.payment-page .consult-warning{padding:.75rem 1rem;border:1px solid #fed7aa;border-radius:9px;background:#fff7ed;color:#9a3412;line-height:1.55}
-    @media(max-width:620px){body.public-theme main.payment-page .consult-grid,body.public-theme main.payment-page .payment-methods,body.public-theme main.payment-page .payment-channels{grid-template-columns:1fr}}
+    @media(prefers-reduced-motion:reduce){body.public-theme main.payment-page .payment-method-card,body.public-theme main.payment-page .payment-method-reveal{transition:none}}
+    @media(max-width:620px){body.public-theme main.payment-page{margin:.65rem auto;padding:.8rem .75rem 2rem}body.public-theme main.payment-page .consult-grid,body.public-theme main.payment-page .payment-methods{grid-template-columns:1fr}body.public-theme main.payment-page .payment-patient{padding:.75rem .85rem}body.public-theme main.payment-page .payment-doctor{gap:.75rem;padding:.85rem}body.public-theme main.payment-page .payment-doctor img{width:66px;height:78px}body.public-theme main.payment-page .payment-doctor-name{font-size:.98rem}body.public-theme main.payment-page .payment-doctor-meta p{font-size:.8rem}}
 </style>
 <?php $__env->stopSection(); ?>
 
@@ -49,98 +88,274 @@
     $patient = session('doctor_consultation.patient');
     $qrisConfigured = filled($settings?->qris_image_path);
     $bankConfigured = filled($settings?->bank_name) && filled($settings?->account_number) && filled($settings?->account_holder);
-    $defaultPaymentMethod = old('payment_method', $qrisConfigured ? 'qris' : 'transfer');
+    $defaultPaymentMethod = old('payment_method');
     if (
-        !in_array($defaultPaymentMethod, ['qris', 'transfer'], true)
+        !in_array($defaultPaymentMethod, ['qris', 'transfer', 'Cash'], true)
         || ($defaultPaymentMethod === 'qris' && !$qrisConfigured)
         || ($defaultPaymentMethod === 'transfer' && !$bankConfigured)
+        || ($defaultPaymentMethod === 'Cash' && old('payment_channel') !== 'offline')
     ) {
-        $defaultPaymentMethod = $qrisConfigured ? 'qris' : ($bankConfigured ? 'transfer' : null);
+        $defaultPaymentMethod = null;
     }
 ?>
 <main class="payment-page">
-    <a class="payment-back" href="<?php echo e(route('consultations.details', $doctor)); ?>"><i class="fa-solid fa-arrow-left"></i> Kembali ke pilih pasien</a>
+    <a class="payment-back" href="<?php echo e(route('consultations.doctors')); ?>"><i class="fa-solid fa-arrow-left"></i> Kembali ke daftar dokter</a>
     <div class="payment-patient">
-        <span>Nama Pasien:</span>
-        <span><strong><?php echo e($patient['name']); ?></strong> <a href="<?php echo e(route('consultations.details', $doctor)); ?>">Ganti</a></span>
+        <div><span class="payment-eyebrow">Pasien konsultasi</span><strong><?php echo e($patient['name']); ?></strong></div>
     </div>
     <section class="payment-panel payment-doctor">
         <?php if($doctor->photo_url): ?><img src="<?php echo e($doctor->photo_url); ?>" alt="Foto <?php echo e($doctor->display_name); ?>"><?php endif; ?>
-        <div><strong><?php echo e($doctor->display_name); ?></strong><p><?php echo e($doctor->specialty); ?></p></div>
+        <div class="payment-doctor-info">
+            <span class="payment-doctor-label">Dokter pilihan</span>
+            <strong class="payment-doctor-name"><?php echo e($doctor->display_name); ?></strong>
+            <span class="payment-specialty"><?php echo e($doctor->specialty); ?></span>
+            <div class="payment-doctor-meta">
+                <?php if($doctor->education): ?><p><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i><span><?php echo e($doctor->education); ?></span></p><?php endif; ?>
+                <?php if($doctor->practice_place || $doctor->practice_city): ?><p><i class="fa-solid fa-location-dot" aria-hidden="true"></i><span><?php echo e(collect([$doctor->practice_place, $doctor->practice_city])->filter()->join(', ')); ?></span></p><?php endif; ?>
+                <p><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span>STR <?php echo e($doctor->str_number); ?> · Terverifikasi</span></p>
+            </div>
+        </div>
     </section>
     <section class="payment-panel" aria-label="Rincian pembayaran">
         <div class="payment-line"><span>Biaya sesi <?php echo e($doctor->session_duration_minutes); ?> menit</span><strong>Rp <?php echo e(number_format($doctor->consultation_price, 0, ',', '.')); ?></strong></div>
         <div class="payment-line payment-total"><span>Pembayaranmu</span><strong>Rp <?php echo e(number_format($doctor->consultation_price, 0, ',', '.')); ?></strong></div>
     </section>
     <?php if($errors->any()): ?><ul class="consult-errors" role="alert"><?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><li><?php echo e($error); ?></li><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?></ul><?php endif; ?>
-    <form method="POST" enctype="multipart/form-data" action="<?php echo e(route('consultations.store', $doctor)); ?>">
+    <form method="POST" action="<?php echo e(route('consultations.store', $doctor)); ?>">
             <?php echo csrf_field(); ?>
             <section class="payment-panel">
-                <h2 style="margin:0 0 .75rem;font-size:1.05rem">Pilih metode pembayaran</h2>
-                <p class="payment-muted">Pembayaran diverifikasi admin. Timer <?php echo e($doctor->session_duration_minutes); ?> menit mulai saat dokter masuk ke room chat.</p>
+                <h2 style="margin:0 0 .75rem;font-size:1.05rem">Pilih jalur pembayaran</h2>
+                <p class="payment-muted">Setelah melanjutkan, WhatsApp admin akan terbuka untuk membantu proses pembayaran.</p>
                 <div class="payment-methods">
+                    <label class="payment-option"><input type="radio" name="payment_channel" value="online" <?php if(old('payment_channel') === 'online'): echo 'checked'; endif; ?> required> Online</label>
+                    <label class="payment-option"><input type="radio" name="payment_channel" value="offline" <?php if(old('payment_channel') === 'offline'): echo 'checked'; endif; ?> required> Offline</label>
+                </div>
+                <div data-payment-method-section <?php if(!in_array(old('payment_channel'), ['online', 'offline'], true)): ?> hidden <?php endif; ?>>
+                    <h3 style="margin:.75rem 0;font-size:.95rem;color:#243b53">Pilih metode pembayaran</h3>
+                    <div class="payment-method-choices">
                     <?php if($qrisConfigured): ?>
-                        <label class="payment-option"><input type="radio" name="payment_method" value="qris" <?php if($defaultPaymentMethod === 'qris'): echo 'checked'; endif; ?> required> QRIS</label>
+                        <div class="payment-method-card <?php if($defaultPaymentMethod === 'qris'): ?> is-selected <?php endif; ?>" data-payment-card>
+                            <label class="payment-option"><input type="radio" name="payment_method" value="qris" <?php if($defaultPaymentMethod === 'qris'): echo 'checked'; endif; ?> <?php if(!in_array(old('payment_channel'), ['online', 'offline'], true)): echo 'disabled'; endif; ?> required> QRIS</label>
+                            <div class="payment-method-reveal">
+                                <div class="payment-method-reveal-inner">
+                                    <div class="payment-method-details">
+                                        <div class="payment-account-holder">
+                                            <span class="payment-detail-label">Atas Nama:</span>
+                                            <strong class="payment-detail-value"><?php echo e($settings?->account_holder ?: 'Apotek Medix'); ?></strong>
+                                        </div>
+                                        <img class="qris-preview" src="<?php echo e($settings->qris_image_url); ?>" alt="QRIS pembayaran konsultasi">
+                                        <a class="payment-utility-button payment-qris-download" href="<?php echo e($settings->qris_image_url); ?>" download="qris-apotek-medix.<?php echo e(pathinfo($settings->qris_image_path, PATHINFO_EXTENSION)); ?>">
+                                            <i class="fa-solid fa-download" aria-hidden="true"></i> Simpan QRIS
+                                        </a>
+                                        <p class="payment-muted payment-verification">Verifikasi pembayaran dilakukan admin melalui WhatsApp.</p>
+                                        <p class="payment-muted">Kirim bukti transaksi QRIS langsung di chat WhatsApp admin.</p>
+                                        <?php if($settings?->payment_instructions): ?><p class="payment-muted"><?php echo e($settings->payment_instructions); ?></p><?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     <?php endif; ?>
                     <?php if($bankConfigured): ?>
-                        <label class="payment-option"><input type="radio" name="payment_method" value="transfer" <?php if($defaultPaymentMethod === 'transfer'): echo 'checked'; endif; ?> required> Transfer bank</label>
+                        <?php if($qrisConfigured): ?><span class="payment-or" aria-hidden="true">atau..</span><?php endif; ?>
+                        <div class="payment-method-card <?php if($defaultPaymentMethod === 'transfer'): ?> is-selected <?php endif; ?>" data-payment-card>
+                            <label class="payment-option"><input type="radio" name="payment_method" value="transfer" <?php if($defaultPaymentMethod === 'transfer'): echo 'checked'; endif; ?> <?php if(!in_array(old('payment_channel'), ['online', 'offline'], true)): echo 'disabled'; endif; ?> required> Transfer bank</label>
+                            <div class="payment-method-reveal">
+                                <div class="payment-method-reveal-inner">
+                                    <div class="payment-method-details">
+                                        <div class="payment-account-holder">
+                                            <span class="payment-detail-label">Atas Nama:</span>
+                                            <strong class="payment-detail-value"><?php echo e($settings->account_holder); ?></strong>
+                                        </div>
+                                        <strong class="payment-bank-name"><?php echo e($settings->bank_name); ?></strong>
+                                        <span class="payment-detail-label">Nomor rekening</span>
+                                        <strong class="payment-account-number"><?php echo e($settings->account_number); ?></strong>
+                                        <button class="payment-utility-button payment-copy-button" type="button" data-copy-account="<?php echo e($settings->account_number); ?>">
+                                            <i class="fa-regular fa-copy" aria-hidden="true"></i> Salin nomor rekening
+                                        </button>
+                                        <span class="payment-copy-status" data-copy-status aria-live="polite"></span>
+                                        <p class="payment-muted payment-verification">Verifikasi pembayaran dilakukan admin melalui WhatsApp.</p>
+                                        <p class="payment-muted">Kirim bukti transfer langsung di chat WhatsApp admin.</p>
+                                        <?php if($settings?->payment_instructions): ?><p class="payment-muted"><?php echo e($settings->payment_instructions); ?></p><?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                    <?php if($qrisConfigured || $bankConfigured): ?>
+                        <span class="payment-or" data-cash-or aria-hidden="true" <?php if(old('payment_channel', 'online') !== 'offline'): ?> hidden <?php endif; ?>>atau..</span>
+                    <?php endif; ?>
+                    <div class="payment-method-card <?php if($defaultPaymentMethod === 'Cash'): ?> is-selected <?php endif; ?>" data-payment-card data-cash-option <?php if(old('payment_channel', 'online') !== 'offline'): ?> hidden <?php endif; ?>>
+                        <label class="payment-option"><input type="radio" name="payment_method" value="Cash" <?php if($defaultPaymentMethod === 'Cash'): echo 'checked'; endif; ?> <?php if(old('payment_channel') !== 'offline'): echo 'disabled'; endif; ?>> Tunai <small>(khusus offline)</small></label>
+                        <div class="payment-method-reveal">
+                            <div class="payment-method-reveal-inner">
+                                <div class="payment-method-details payment-muted">Pembayaran tunai dilakukan langsung di apotek.</div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                    <?php if (! ($qrisConfigured || $bankConfigured)): ?>
+                        <div class="consult-warning">Metode QRIS dan transfer belum dikonfigurasi. Silakan hubungi admin Apotek Medix.</div>
                     <?php endif; ?>
                 </div>
-                <?php if($qrisConfigured): ?>
-                    <div class="payment-method-panel" data-payment-method-panel="qris" <?php if (! ($defaultPaymentMethod === 'qris')): ?> hidden <?php endif; ?>>
-                        <img class="qris-preview" src="<?php echo e($settings->qris_image_url); ?>" alt="QRIS pembayaran konsultasi">
-                    </div>
-                <?php endif; ?>
-                <?php if($bankConfigured): ?>
-                    <div class="payment-method-panel payment-muted" data-payment-method-panel="transfer" <?php if (! ($defaultPaymentMethod === 'transfer')): ?> hidden <?php endif; ?>>
-                        <strong><?php echo e($settings->bank_name); ?>:</strong> <strong><?php echo e($settings->account_number); ?></strong>
-                    </div>
-                <?php endif; ?>
-                <p class="payment-muted payment-verification"><strong>Atas nama <?php echo e($settings?->account_holder ?: 'Apotek Medix'); ?></strong><br>Tunggu Verifikasi Admin</p>
-                <?php if($settings?->payment_instructions): ?><p class="payment-muted"><?php echo e($settings->payment_instructions); ?></p><?php endif; ?>
-                <?php if (! ($qrisConfigured || $bankConfigured)): ?>
-                    <div class="consult-warning">Metode pembayaran belum tersedia. Silakan hubungi admin Apotek Medix.</div>
-                <?php endif; ?>
-                <h2 style="margin:1rem 0 .4rem;font-size:1.05rem">Cara pembayaran</h2>
-                <div class="payment-channels">
-                    <label class="payment-option"><input type="radio" name="payment_channel" value="online" <?php if(old('payment_channel', 'online') === 'online'): echo 'checked'; endif; ?> required> Online</label>
-                    <label class="payment-option"><input type="radio" name="payment_channel" value="offline" <?php if(old('payment_channel') === 'offline'): echo 'checked'; endif; ?> required> Offline di kasir</label>
-                </div>
-                <div class="consult-field">
-                    <label for="payment_proof">Bukti pembayaran (maks. 5 MB) <span id="paymentProofRequirement">(wajib untuk pembayaran online)</span></label>
-                    <input id="payment_proof" name="payment_proof" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" <?php if(old('payment_channel', 'online') === 'online'): echo 'required'; endif; ?>>
-                    <p class="payment-muted" id="paymentProofHelp">Untuk pembayaran online, unggah bukti transfer/QRIS. Jika membayar langsung di apotek, bukti cukup ditunjukkan kepada kasir.</p>
-                </div>
             </section>
-            <div class="consult-warning"><strong>Perhatian:</strong> layanan chat bukan untuk kondisi gawat darurat dan tidak menggantikan pemeriksaan langsung bila diperlukan.</div>
-            <label class="consult-check"><input type="checkbox" name="privacy_consent" value="1" <?php if(old('privacy_consent')): echo 'checked'; endif; ?> required><span>Saya menyatakan informasi yang diberikan benar dan menyetujui data kesehatan diproses untuk konsultasi.</span></label>
-            <button type="submit" class="consult-primary"><i class="fa-solid fa-lock"></i> Konfirmasi Konsultasi</button>
+            <div class="consult-warning"><strong>Perhatian:</strong> konsultasi WhatsApp bukan untuk kondisi gawat darurat dan tidak menggantikan pemeriksaan langsung bila diperlukan.</div>
+            <label class="consult-check"><input type="checkbox" name="privacy_consent" value="1" <?php if(old('privacy_consent')): echo 'checked'; endif; ?> required><span>Saya menyatakan informasi yang diberikan benar dan menyetujui data pribadi serta kesehatan pada formulir dikirim kepada dokter melalui WhatsApp setelah kode akses diverifikasi.</span></label>
+            <button type="submit" class="consult-primary">Konfirmasi Pembayaran</button>
     </form>
+    <dialog class="payment-reminder" id="payment-reminder" aria-labelledby="payment-reminder-title" aria-describedby="payment-reminder-description">
+        <button type="button" class="payment-reminder-close" aria-label="Tutup pengingat" data-reminder-close>&times;</button>
+        <h2 id="payment-reminder-title">Simpan bukti pembayaran</h2>
+        <p id="payment-reminder-description">Jangan lupa simpan bukti pembayaran Anda. Bukti tersebut perlu dikirim melalui WhatsApp.</p>
+        <div class="payment-reminder-actions">
+            <button type="button" class="payment-reminder-ok" data-reminder-confirm>Oke</button>
+        </div>
+    </dialog>
 </main>
 <script>
-    const proofInput = document.getElementById('payment_proof');
-    const proofRequirement = document.getElementById('paymentProofRequirement');
-    const proofHelp = document.getElementById('paymentProofHelp');
-    const updatePaymentChannel = () => {
-        const channel = document.querySelector('input[name="payment_channel"]:checked')?.value;
-        const isOnline = channel === 'online';
-        proofInput.required = isOnline;
-        proofRequirement.textContent = isOnline ? '(wajib untuk pembayaran online)' : '(opsional untuk pembayaran offline)';
-        proofHelp.textContent = isOnline
-            ? 'Untuk pembayaran online, unggah bukti transfer/QRIS. Pembayaran tetap menunggu verifikasi admin.'
-            : 'Jika membayar langsung di apotek, bukti cukup ditunjukkan kepada kasir. Konsultasi tetap menunggu verifikasi admin.';
-    };
-    document.querySelectorAll('input[name="payment_channel"]').forEach((input) => {
-        input.addEventListener('change', updatePaymentChannel);
+    const paymentForm = document.querySelector('.payment-page form');
+    const paymentReminder = document.getElementById('payment-reminder');
+    const paymentSubmitButton = paymentForm?.querySelector('button[type="submit"]');
+    const reminderConfirmButton = paymentReminder?.querySelector('[data-reminder-confirm]');
+    let paymentReminderConfirmed = false;
+    paymentForm?.addEventListener('submit', (event) => {
+        if (paymentReminderConfirmed) return;
+        event.preventDefault();
+        paymentReminder?.showModal();
     });
-    document.querySelectorAll('input[name="payment_method"]').forEach((input) => {
-        input.addEventListener('change', () => {
-            document.querySelectorAll('[data-payment-method-panel]').forEach((panel) => {
-                panel.hidden = panel.dataset.paymentMethodPanel !== input.value;
+    paymentReminder?.querySelector('[data-reminder-close]')?.addEventListener('click', () => {
+        paymentReminder.close();
+    });
+    reminderConfirmButton?.addEventListener('click', () => {
+        paymentReminderConfirmed = true;
+        paymentReminder.close();
+        paymentForm?.requestSubmit(paymentSubmitButton);
+    });
+
+    const channelInputs = document.querySelectorAll('input[name="payment_channel"]');
+    const paymentMethodInputs = document.querySelectorAll('input[name="payment_method"]');
+    const cashInput = document.querySelector('input[name="payment_method"][value="Cash"]');
+    const copyAccountButton = document.querySelector('[data-copy-account]');
+    if (copyAccountButton) {
+        copyAccountButton.addEventListener('click', async () => {
+            const status = document.querySelector('[data-copy-status]');
+            const accountNumber = copyAccountButton.dataset.copyAccount || '';
+            let copied = false;
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(accountNumber);
+                    copied = true;
+                }
+            } catch {
+                copied = false;
+            }
+            if (!copied) {
+                let temporaryInput;
+                try {
+                    temporaryInput = document.createElement('textarea');
+                    temporaryInput.value = accountNumber;
+                    temporaryInput.setAttribute('readonly', '');
+                    temporaryInput.style.position = 'fixed';
+                    temporaryInput.style.opacity = '0';
+                    document.body.appendChild(temporaryInput);
+                    temporaryInput.select();
+                    copied = document.execCommand('copy');
+                } catch {
+                    copied = false;
+                } finally {
+                    temporaryInput?.remove();
+                }
+            }
+            status.textContent = copied
+                ? 'Nomor rekening berhasil disalin.'
+                : 'Nomor rekening gagal disalin. Silakan salin secara manual.';
+        });
+    }
+    const updatePaymentChannel = () => {
+        const selectedChannel = document.querySelector('input[name="payment_channel"]:checked')?.value;
+        const paymentMethodSection = document.querySelector('[data-payment-method-section]');
+        if (paymentMethodSection) paymentMethodSection.hidden = !selectedChannel;
+        const isOffline = selectedChannel === 'offline';
+        const cashOption = document.querySelector('[data-cash-option]');
+        if (cashOption) cashOption.hidden = !isOffline;
+        const cashSeparator = document.querySelector('[data-cash-or]');
+        if (cashSeparator) cashSeparator.hidden = !isOffline;
+        paymentMethodInputs.forEach((input) => {
+            input.disabled = !selectedChannel || (input === cashInput && !isOffline);
+        });
+        if (cashInput) {
+            if (!isOffline && cashInput.checked) {
+                cashInput.checked = false;
+                cashInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+        paymentMethodInputs.forEach((input) => {
+            input.required = !input.disabled;
+        });
+        const selectedPaymentMethod = document.querySelector('input[name="payment_method"]:checked');
+        document.querySelectorAll('[data-payment-card]').forEach((card) => {
+            card.classList.toggle('is-selected', card.querySelector('input[name="payment_method"]') === selectedPaymentMethod);
+        });
+    };
+    const makeRadiosToggleable = (inputs, onChange) => {
+        let selectedInput = [...inputs].find((input) => input.checked) || null;
+        inputs.forEach((input) => {
+            input.addEventListener('click', (event) => {
+                if (selectedInput !== input) {
+                    selectedInput = input;
+                    return;
+                }
+
+                event.preventDefault();
+                selectedInput = null;
+                window.setTimeout(() => {
+                    if (selectedInput === null) {
+                        input.checked = false;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }, 0);
+            });
+            input.addEventListener('change', () => {
+                selectedInput = [...inputs].find((candidate) => candidate.checked) || null;
+                onChange();
             });
         });
+    };
+    const updatePaymentCards = () => {
+        const selectedPaymentMethod = document.querySelector('input[name="payment_method"]:checked');
+        document.querySelectorAll('[data-payment-card]').forEach((card) => {
+            card.classList.toggle('is-selected', card.querySelector('input[name="payment_method"]') === selectedPaymentMethod);
+        });
+    };
+    const scrollIntoViewIfNeeded = (element) => {
+        if (!element) return;
+        const bounds = element.getBoundingClientRect();
+        if (bounds.top >= 0 && bounds.bottom <= window.innerHeight) return;
+        element.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+            block: 'nearest',
+        });
+    };
+    makeRadiosToggleable(channelInputs, () => {
+        updatePaymentChannel();
+        if (document.querySelector('input[name="payment_channel"]:checked')) {
+            window.requestAnimationFrame(() => {
+                scrollIntoViewIfNeeded(document.querySelector('[data-payment-method-section] h3'));
+            });
+        }
+    });
+    makeRadiosToggleable(paymentMethodInputs, () => {
+        updatePaymentCards();
+        const selectedPaymentMethod = document.querySelector('input[name="payment_method"]:checked');
+        if (selectedPaymentMethod) {
+            window.setTimeout(() => {
+                if (selectedPaymentMethod.checked) {
+                    scrollIntoViewIfNeeded(selectedPaymentMethod.closest('[data-payment-card]')?.querySelector('.payment-method-reveal'));
+                }
+            }, 320);
+        }
     });
     updatePaymentChannel();
+    updatePaymentCards();
 </script>
 <?php $__env->stopSection(); ?>
 

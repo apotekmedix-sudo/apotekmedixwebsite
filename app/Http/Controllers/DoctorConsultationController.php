@@ -3,24 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\DoctorConsultation;
+use App\Models\ConsultationAccessCode;
 use App\Models\DoctorConsultationMessage;
 use App\Models\DoctorConsultationPaymentSetting;
 use App\Models\DoctorProfile;
 use App\Models\Medicine;
-use App\Support\DoctorConsultationSpecialties;
 use App\Support\StockAvailability;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Throwable;
 
 class DoctorConsultationController extends Controller
 {
     public function intake()
     {
-        return view('consultations.patient-intake');
+        return view('consultations.patient-intake', ['doctor' => null]);
     }
 
     public function storePatient(Request $request)
@@ -79,19 +78,42 @@ class DoctorConsultationController extends Controller
 
     public function newPatientProfile(Request $request, DoctorProfile $doctor)
     {
-        $this->assertPatientAndDoctorAvailable($request, $doctor);
+        $this->assertDoctorAvailable($doctor);
 
         return view('consultations.patient-intake', [
             'doctor' => $doctor,
-            'isAdditionalProfile' => true,
+            'isNewConsultation' => true,
         ]);
     }
 
     public function storePatientProfile(Request $request, DoctorProfile $doctor)
     {
-        $this->assertPatientAndDoctorAvailable($request, $doctor);
+        if ($request->boolean('doctor_consultation_intake')) {
+            $this->assertDoctorAvailable($doctor);
+            $consultationDetails = $request->validate([
+                'height_cm' => ['nullable', 'integer', 'between:30,250'],
+                'weight_kg' => ['nullable', 'numeric', 'between:2,300'],
+                'complaint' => ['required', 'string', 'min:5', 'max:3000'],
+                'drug_allergies' => ['required', 'string', 'max:2000'],
+            ]);
+        } else {
+            $this->assertPatientAndDoctorAvailable($request, $doctor);
+        }
         $validated = $this->validatePatient($request);
         $patient = $this->patientData($validated);
+
+        if ($request->boolean('doctor_consultation_intake')) {
+            $profileId = bin2hex(random_bytes(8));
+            $profiles = $request->session()->get('doctor_consultation.patient_profiles', []);
+            $profiles[$profileId] = $patient;
+            $request->session()->put('doctor_consultation.patient', $patient);
+            $request->session()->put('doctor_consultation.patient_profiles', $profiles);
+            $request->session()->put('doctor_consultation.patient_profile_id', $profileId);
+            $request->session()->put('doctor_consultation.intake', $consultationDetails);
+
+            return redirect()->route('consultations.payment', $doctor);
+        }
+
         $profileId = bin2hex(random_bytes(8));
         $profiles = $request->session()->get('doctor_consultation.patient_profiles', []);
         $profiles[$profileId] = $patient;
@@ -129,6 +151,7 @@ class DoctorConsultationController extends Controller
                 },
             ],
             'patient_email' => ['required', 'email', 'max:255'],
+            'patient_address' => ['required', 'string', 'max:500'],
             'privacy_consent' => ['required', 'accepted'],
         ]);
     }
@@ -141,6 +164,7 @@ class DoctorConsultationController extends Controller
             'gender' => $validated['patient_gender'],
             'phone' => $this->normalizeIndonesianPhone($validated['patient_phone']),
             'email' => $validated['patient_email'],
+            'address' => $validated['patient_address'],
             'guardian_name' => null,
             'guardian_relationship' => null,
             'guardian_consent_at' => null,
@@ -150,63 +174,54 @@ class DoctorConsultationController extends Controller
 
     public function doctors(Request $request)
     {
-        abort_unless($request->session()->has('doctor_consultation.patient'), 403, 'Lengkapi data pasien terlebih dahulu.');
+        if (
+            !is_array($request->session()->get('doctor_consultation.patient'))
+            || !is_array($request->session()->get('doctor_consultation.intake'))
+        ) {
+            return redirect()->route('consultations.intake');
+        }
 
-        $doctorCounts = $this->doctorDirectoryQuery()
-            ->select('specialty')
-            ->selectRaw('COUNT(*) as doctors_count')
-            ->groupBy('specialty')
-            ->pluck('doctors_count', 'specialty');
-        $specialtyNames = collect(DoctorConsultationSpecialties::all())
-            ->merge($doctorCounts->keys())
-            ->unique()
-            ->values();
-        $specialties = $specialtyNames->map(fn (string $specialty) => (object) [
-            'specialty' => $specialty,
-            'doctors_count' => (int) $doctorCounts->get($specialty, 0),
-        ]);
-        $selectedSpecialty = $request->string('specialty')->toString();
-        $doctors = $selectedSpecialty !== ''
-            ? $this->doctorDirectoryQuery()
-                ->where('specialty', $selectedSpecialty)
-                ->withCount(['consultations as open_consultations_count' => function ($query): void {
-                    $query->where(function ($open): void {
-                        $open->where(function ($active): void {
-                            $active->where('status', 'active')->where(function ($running): void {
-                                $running->whereNull('ends_at')->orWhere('ends_at', '>', now());
-                            });
-                        })->orWhere(function ($awaitingPayment): void {
-                            $awaitingPayment->where('status', 'awaiting_payment')->where('payment_due_at', '>', now());
-                        });
-                    });
-                }])
-                ->orderBy('display_name')
-                ->paginate(12)
-                ->withQueryString()
-            : null;
+        $doctors = $this->doctorDirectoryQuery()
+            ->orderBy('display_name')
+            ->paginate(12)
+            ->withQueryString();
 
-        return view('consultations.doctors', compact('doctors', 'specialties', 'selectedSpecialty'));
+        return view('consultations.doctors', compact('doctors'));
     }
 
     public function doctor(Request $request, DoctorProfile $doctor)
     {
-        abort_unless($request->session()->has('doctor_consultation.patient'), 403, 'Lengkapi data pasien terlebih dahulu.');
         abort_unless($doctor->is_active && $doctor->str_verified && filled($doctor->whatsapp_phone), 404);
-        $doctorAvailable = $doctor->is_online && !$this->doctorHasOpenConsultation($doctor);
+        $hasPatientProfile = is_array($request->session()->get('doctor_consultation.patient'))
+            && is_array($request->session()->get('doctor_consultation.intake'));
 
-        return view('consultations.doctor-profile', compact('doctor', 'doctorAvailable'));
+        return view('consultations.doctor-profile', compact('doctor', 'hasPatientProfile'));
     }
 
     private function assertPatientAndDoctorAvailable(Request $request, DoctorProfile $doctor): void
     {
-        abort_unless($request->session()->has('doctor_consultation.patient'), 403, 'Lengkapi data pasien terlebih dahulu.');
+        abort_unless(
+            is_array($request->session()->get('doctor_consultation.patient'))
+                && is_array($request->session()->get('doctor_consultation.intake')),
+            403,
+            'Lengkapi data pasien dan informasi konsultasi terlebih dahulu.'
+        );
+        $this->assertDoctorAvailable($doctor);
+    }
+
+    private function assertDoctorAvailable(DoctorProfile $doctor): void
+    {
         abort_unless($doctor->is_active && $doctor->str_verified && filled($doctor->whatsapp_phone), 404);
-        abort_unless($doctor->is_online && !$this->doctorHasOpenConsultation($doctor), 409, 'Dokter sedang tidak tersedia.');
     }
 
     public function store(Request $request, DoctorProfile $doctor)
     {
-        abort_unless($request->session()->has('doctor_consultation.patient'), 403, 'Lengkapi data pasien terlebih dahulu.');
+        abort_unless(
+            is_array($request->session()->get('doctor_consultation.patient'))
+                && is_array($request->session()->get('doctor_consultation.intake')),
+            403,
+            'Lengkapi data pasien dan informasi konsultasi terlebih dahulu.'
+        );
         abort_unless($doctor->is_active && $doctor->str_verified, 404);
 
         $consultationRules = [
@@ -222,13 +237,25 @@ class DoctorConsultationController extends Controller
             $consultationDetails = validator($consultationDetails, $consultationRules)->validate();
         }
         $validated = $request->validate([
-            'payment_method' => ['required', 'in:qris,transfer'],
             'payment_channel' => ['required', 'in:online,offline'],
-            'payment_proof' => ['nullable', 'required_if:payment_channel,online', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+            'payment_method' => [
+                'required',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request): void {
+                    $allowedMethods = $request->input('payment_channel') === 'offline'
+                        ? ['qris', 'transfer', 'Cash']
+                        : ['qris', 'transfer'];
+                    if (!in_array($value, $allowedMethods, true)) {
+                        $fail('Metode pembayaran Cash hanya tersedia untuk jalur Offline.');
+                    }
+                },
+            ],
             'privacy_consent' => ['required', 'accepted'],
         ]);
         $settings = DoctorConsultationPaymentSetting::query()->first();
-        if (!$this->paymentMethodConfigured($settings, $validated['payment_method'])) {
+        if (
+            $validated['payment_method'] !== 'Cash'
+            && !$this->paymentMethodConfigured($settings, $validated['payment_method'])
+        ) {
             return back()->withErrors([
                 'payment_method' => 'Metode pembayaran ini belum dikonfigurasi. Hubungi admin Apotek Medix.',
             ])->withInput();
@@ -236,24 +263,14 @@ class DoctorConsultationController extends Controller
 
         $patient = $request->session()->get('doctor_consultation.patient');
         $token = bin2hex(random_bytes(32));
-        $paymentProofPath = null;
 
-        try {
-            $consultation = DB::transaction(function () use ($request, $doctor, $patient, $consultationDetails, $validated, $token, &$paymentProofPath): DoctorConsultation {
+        $consultation = DB::transaction(function () use ($doctor, $patient, $consultationDetails, $validated, $token): DoctorConsultation {
                 $lockedDoctor = DoctorProfile::query()->lockForUpdate()->findOrFail($doctor->id);
                 abort_unless(
-                    $lockedDoctor->is_active && $lockedDoctor->str_verified && $lockedDoctor->is_online && filled($lockedDoctor->whatsapp_phone),
+                    $lockedDoctor->is_active && $lockedDoctor->str_verified && filled($lockedDoctor->whatsapp_phone),
                     409,
-                    'Dokter baru saja menjadi tidak tersedia.'
+                    'Profil dokter berubah dan tidak dapat menerima permintaan baru.'
                 );
-                abort_if($this->doctorHasOpenConsultation($lockedDoctor), 409, 'Slot dokter baru saja terisi. Pilih dokter lain.');
-
-                if ($request->hasFile('payment_proof')) {
-                    $paymentProofPath = $request->file('payment_proof')->store('consultation-payment-proofs', 'local');
-                    if (!$paymentProofPath) {
-                        throw new \RuntimeException('Bukti pembayaran gagal disimpan.');
-                    }
-                }
 
                 return DoctorConsultation::create([
                     'doctor_profile_id' => $lockedDoctor->id,
@@ -263,6 +280,7 @@ class DoctorConsultationController extends Controller
                     'patient_gender' => $patient['gender'],
                     'patient_phone' => $patient['phone'],
                     'patient_email' => $patient['email'],
+                    'patient_address' => $patient['address'] ?? null,
                     'guardian_name' => $patient['guardian_name'],
                     'guardian_relationship' => $patient['guardian_relationship'],
                     'height_cm' => $consultationDetails['height_cm'] ?? null,
@@ -274,7 +292,7 @@ class DoctorConsultationController extends Controller
                     'session_duration_minutes' => $lockedDoctor->session_duration_minutes ?: DoctorConsultation::DURATION_MINUTES,
                     'payment_method' => $validated['payment_method'],
                     'payment_channel' => $validated['payment_channel'],
-                    'payment_proof_path' => $paymentProofPath,
+                    'payment_proof_path' => null,
                     'payment_status' => 'pending',
                     'status' => 'awaiting_payment',
                     'privacy_consent_at' => now(),
@@ -282,13 +300,6 @@ class DoctorConsultationController extends Controller
                     'payment_due_at' => now()->addMinutes(30),
                 ]);
             });
-        } catch (Throwable $exception) {
-            if ($paymentProofPath) {
-                Storage::disk('local')->delete($paymentProofPath);
-            }
-
-            throw $exception;
-        }
 
         return redirect()->route('consultations.patient.show', ['token' => $token]);
     }
@@ -299,20 +310,114 @@ class DoctorConsultationController extends Controller
         $this->expirePaymentIfExpired($consultation);
         $this->completeIfExpired($consultation);
         $consultation->load('doctorProfile');
-        $settings = DoctorConsultationPaymentSetting::query()->first();
         $request->session()->forget('consultation_room_access.' . $consultation->id);
-        $hasRoomAccess = $consultation->payment_status === 'paid'
-            && in_array($consultation->status, ['active', 'completed'], true);
-
+        $adminWhatsappUrl = $consultation->payment_status === 'pending'
+            ? $this->adminPaymentWhatsAppUrl($consultation)
+            : null;
         return response()
-            ->view('consultations.patient-session', compact('consultation', 'settings', 'token', 'hasRoomAccess'))
+            ->view('consultations.patient-access', compact('consultation', 'token', 'adminWhatsappUrl'))
             ->header('Cache-Control', 'private, no-store')
             ->header('Referrer-Policy', 'no-referrer');
+    }
+
+    public function verifyAccessCode(Request $request, string $token): JsonResponse
+    {
+        $validated = $request->validate([
+            'access_code' => ['required', 'regex:/^0[0-9]{4}$/'],
+        ]);
+        $valid = DB::transaction(function () use ($token, $validated): bool {
+            $consultation = DoctorConsultation::query()
+                ->where('patient_access_hash', hash('sha256', $token))
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            return $this->activateAccessCode($consultation, $validated['access_code']);
+        });
+
+        if (!$valid) {
+            return response()->json(['message' => 'Kode akses salah, sudah digunakan, atau sudah kedaluwarsa.'], 422)
+                ->header('Cache-Control', 'no-store');
+        }
+
+        return response()->json([
+            'valid' => true,
+            'message' => 'Kode valid. Pembayaran dikonfirmasi melalui WhatsApp.',
+        ])
+            ->header('Cache-Control', 'no-store');
+    }
+
+    public function startWhatsAppConsultation(Request $request, string $token)
+    {
+        $validated = $request->validate([
+            'access_code' => ['required', 'regex:/^0[0-9]{4}$/'],
+        ]);
+        $result = DB::transaction(function () use ($token, $validated): ?array {
+            $consultation = DoctorConsultation::query()
+                ->where('patient_access_hash', hash('sha256', $token))
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (!$this->activateAccessCode($consultation, $validated['access_code'])) {
+                return null;
+            }
+            $stockCode = ConsultationAccessCode::query()
+                ->where('doctor_consultation_id', $consultation->id)
+                ->where('code_hash', DoctorConsultation::hashAccessCode($validated['access_code']))
+                ->where('status', ConsultationAccessCode::STATUS_ASSIGNED)
+                ->lockForUpdate()
+                ->first();
+
+            $doctor = DoctorProfile::query()->lockForUpdate()->findOrFail($consultation->doctor_profile_id);
+            $startedAt = now();
+            $duration = (int) ($consultation->session_duration_minutes ?: DoctorConsultation::DURATION_MINUTES);
+            $consultation->update([
+                'access_code_used_at' => $startedAt,
+                'status' => 'active',
+                'starts_at' => $startedAt,
+                'ends_at' => $startedAt->copy()->addMinutes($duration),
+            ]);
+            $stockCode?->update([
+                'status' => ConsultationAccessCode::STATUS_USED,
+                'used_at' => $startedAt,
+            ]);
+
+            return [
+                'doctor_phone' => $doctor->whatsapp_phone,
+                'message' => $this->doctorWhatsAppMessage($consultation),
+            ];
+        });
+
+        if (!$result) {
+            return back()->withErrors([
+                'access_code' => 'Kode akses salah, sudah digunakan, atau sudah kedaluwarsa.',
+            ])->withInput();
+        }
+        return redirect()->away(
+            'https://wa.me/' . $result['doctor_phone'] . '?text=' . rawurlencode($result['message'])
+        );
+    }
+
+    public function sharedPaymentProof(DoctorConsultation $consultation)
+    {
+        $path = $consultation->payment_proof_path;
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        $extension = pathinfo($path, PATHINFO_EXTENSION) ?: 'bin';
+        $mimeType = Storage::disk('local')->mimeType($path);
+        abort_unless(in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], true), 404);
+
+        return response()->file(Storage::disk('local')->path($path), [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => "inline; filename=\"bukti-pembayaran-{$consultation->id}.{$extension}\"",
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function patientUpdates(Request $request, string $token): JsonResponse
     {
         $consultation = $this->findByPatientToken($token);
+        abort_if($consultation->access_code_used_at !== null, 404);
         $this->expirePaymentIfExpired($consultation);
         $this->completeIfExpired($consultation);
         if ($consultation->status !== 'awaiting_payment') {
@@ -336,7 +441,8 @@ class DoctorConsultationController extends Controller
     {
         $consultation = $this->findByPatientToken($token);
         abort_unless(
-            $consultation->payment_status === 'paid'
+            $consultation->access_code_used_at === null
+                && $consultation->payment_status === 'paid'
                 && in_array($consultation->status, ['active', 'completed'], true),
             404
         );
@@ -639,19 +745,120 @@ class DoctorConsultationController extends Controller
             ->where('whatsapp_phone', '!=', '');
     }
 
-    private function doctorHasOpenConsultation(DoctorProfile $doctor): bool
+    private function hasValidAccessCode(DoctorConsultation $consultation, string $code): bool
     {
-        return $doctor->consultations()
-            ->where(function ($query): void {
-                $query->where(function ($active): void {
-                    $active->where('status', 'active')->where(function ($running): void {
-                        $running->whereNull('ends_at')->orWhere('ends_at', '>', now());
-                    });
-                })->orWhere(function ($pending): void {
-                    $pending->where('status', 'awaiting_payment')->where('payment_due_at', '>', now());
-                });
-            })
+        $validConsultationCode = $consultation->payment_status === 'paid'
+            && $consultation->status === 'awaiting_whatsapp'
+            && $consultation->access_code_used_at === null
+            && $consultation->access_code_expires_at?->isFuture() === true
+            && $consultation->access_code_hash !== null
+            && hash_equals($consultation->access_code_hash, DoctorConsultation::hashAccessCode($code));
+
+        if (!$validConsultationCode) {
+            return false;
+        }
+
+        $stockCodesExist = ConsultationAccessCode::query()
+            ->where('doctor_consultation_id', $consultation->id)
             ->exists();
+        if (!$stockCodesExist) {
+            return true;
+        }
+
+        $stockCode = ConsultationAccessCode::query()
+            ->where('doctor_consultation_id', $consultation->id)
+            ->where('code_hash', DoctorConsultation::hashAccessCode($code))
+            ->first();
+
+        return $stockCode !== null && (
+            $stockCode->status === ConsultationAccessCode::STATUS_ASSIGNED
+            && $stockCode->expires_at?->isFuture() === true
+        );
+    }
+
+    private function activateAccessCode(DoctorConsultation $consultation, string $code): bool
+    {
+        if ($consultation->status === 'awaiting_payment' && $consultation->payment_status === 'pending') {
+            if ($consultation->payment_due_at?->isPast()) {
+                $consultation->update(['status' => 'cancelled', 'payment_status' => 'expired']);
+
+                return false;
+            }
+            $stockCode = ConsultationAccessCode::query()
+                ->where('code_hash', DoctorConsultation::hashAccessCode($code))
+                ->where('status', ConsultationAccessCode::STATUS_AVAILABLE)
+                ->lockForUpdate()
+                ->first();
+            if (!$stockCode) {
+                return false;
+            }
+
+            $verifiedAt = now();
+            $expiresAt = $verifiedAt->copy()->addHours(24);
+            $stockCode->update([
+                'status' => ConsultationAccessCode::STATUS_ASSIGNED,
+                'doctor_consultation_id' => $consultation->id,
+                'expires_at' => $expiresAt,
+            ]);
+            $consultation->update([
+                'payment_status' => 'paid',
+                'status' => 'awaiting_whatsapp',
+                'paid_at' => $verifiedAt,
+                'payment_verified_at' => $verifiedAt,
+                'access_code_hash' => $stockCode->code_hash,
+                'access_code_expires_at' => $expiresAt,
+                'access_code_used_at' => null,
+            ]);
+            $consultation->refresh();
+        }
+
+        return $this->hasValidAccessCode($consultation, $code);
+    }
+
+    private function doctorWhatsAppMessage(DoctorConsultation $consultation): string
+    {
+        return implode("\n", [
+            'Halo Dokter ' . $consultation->doctorProfile->display_name . ', saya ingin memulai konsultasi.',
+            '',
+            'Data pasien:',
+            'Nama: ' . $consultation->patient_name,
+            'Tanggal lahir: ' . $consultation->patient_birth_date,
+            'Jenis kelamin: ' . $consultation->patient_gender,
+            'Nomor WhatsApp: ' . $consultation->patient_phone,
+            'Email: ' . $consultation->patient_email,
+            'Tinggi badan: ' . ($consultation->height_cm ?: '-'),
+            'Berat badan: ' . ($consultation->weight_kg ?: '-'),
+            '',
+            'Keluhan: ' . $consultation->complaint,
+            'Alergi obat: ' . ($consultation->drug_allergies ?: '-'),
+            'ID konsultasi: #' . $consultation->id,
+        ]);
+    }
+
+    private function adminPaymentWhatsAppUrl(DoctorConsultation $consultation): string
+    {
+        $paymentDetails = strtoupper($consultation->payment_method) . ' (' . ucfirst($consultation->payment_channel) . ')';
+        $paymentMessage = $consultation->payment_method === 'Cash'
+            ? 'Saya akan melakukan pembayaran sejumlah Rp ' . number_format($consultation->amount, 0, ',', '.') . ' secara tunai di apotek.'
+            : 'Saya sudah melakukan pembayaran sejumlah Rp ' . number_format($consultation->amount, 0, ',', '.') . ' melalui ' . $paymentDetails . '.';
+        $message = [
+            'Halo Apotek Medix, saya ingin konfirmasi pembayaran konsultasi.',
+            '',
+            'Nama: ' . $consultation->patient_name,
+            'No. telepon: ' . $consultation->patient_phone,
+            'Alamat: ' . ($consultation->patient_address ?: '-'),
+            '',
+            $paymentMessage,
+        ];
+        if ($consultation->payment_method !== 'Cash') {
+            $message[] = 'Bukti pembayaran saya lampirkan pada chat ini.';
+        }
+        $message[] = '';
+        $message[] = 'Mohon bantu verifikasi pembayaran dan kirimkan kode akses konsultasi setelah pembayaran dikonfirmasi. Terima kasih.';
+        $message = implode("\n", $message);
+        $adminWhatsapp = config('contacts.customer_service.whatsapp');
+
+        return 'https://wa.me/' . $adminWhatsapp . '?text=' . rawurlencode($message);
     }
 
     private function paymentMethodConfigured(?DoctorConsultationPaymentSetting $settings, string $method): bool

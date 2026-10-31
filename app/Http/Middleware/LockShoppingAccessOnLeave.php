@@ -27,6 +27,14 @@ class LockShoppingAccessOnLeave
 
     public function handle(Request $request, Closure $next): Response
     {
+        $fetchDestination = $request->header('Sec-Fetch-Dest');
+        $isDocumentNavigation = $fetchDestination === 'document'
+            || ($fetchDestination === null && $request->acceptsHtml() && !$request->ajax());
+
+        if (!$isDocumentNavigation) {
+            return $next($request);
+        }
+
         $isB2bProductDetail = $request->routeIs('medicines.show')
             && $request->query('from') === 'b2b'
             && ShoppingAccessCode::hasActiveB2bSession();

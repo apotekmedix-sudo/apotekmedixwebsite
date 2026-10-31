@@ -258,6 +258,8 @@ class CashierWorkflowTest extends TestCase
 
     public function test_cashier_can_verify_and_mark_an_order_printed_once(): void
     {
+        Storage::fake('local');
+        $paymentProofPath = UploadedFile::fake()->image('bukti-transfer.jpg')->store('payment-proofs', 'local');
         $cashier = User::factory()->create([
             'role' => 'user',
             'is_cashier' => true,
@@ -295,7 +297,8 @@ class CashierWorkflowTest extends TestCase
             'discounted_total' => 10000,
             'transaction_channel' => 'offline',
             'payment_status' => 'pending',
-            'payment_method' => 'Tunai',
+            'payment_method' => 'Transfer',
+            'payment_proof_path' => $paymentProofPath,
             'stock_committed' => false,
         ]);
         \App\Models\PurchaseStockReservation::create([
@@ -319,6 +322,10 @@ class CashierWorkflowTest extends TestCase
             ->assertSee('1 pesanan menunggu verifikasi')
             ->assertSee('id="pending-tab-count"', false)
             ->assertSee('aria-live="polite"', false)
+            ->assertSee('Lihat bukti pembayaran')
+            ->assertSee('/orders/' . $order->id . '/payment-proof?expires=', false)
+            ->assertSee('id="payment-proof-dialog"', false)
+            ->assertSee('data-proof-type="image"', false)
             ->assertSee('Verifikasi & Cetak')
             ->assertDontSee('href="' . route('admin.dashboard') . '"', false);
         $this->get(route('cashier.updates'))
@@ -402,7 +409,17 @@ class CashierWorkflowTest extends TestCase
             ->get(route('cashier.dashboard'))
             ->assertOk()
             ->assertSee('Pengaturan QRIS & rekening pembayaran')
-            ->assertSee(route('cashier.payment-settings.update'), false);
+            ->assertSee(route('cashier.payment-settings.update'), false)
+            ->assertSee('id="qrisCropDialog"', false)
+            ->assertSee('id="qrisCropCanvas"', false)
+            ->assertSee('id="qrisCropZoom"', false)
+            ->assertSee('id="qrisCropWidth"', false)
+            ->assertSee('id="qrisCropHeight"', false)
+            ->assertSee('bingkai untuk memindahkan area crop', false)
+            ->assertSee('id="qrisCropConfirm"', false)
+            ->assertSee('id="chooseAndCropQris"', false)
+            ->assertSee('Pilih &amp; crop QRIS', false)
+            ->assertSee('dapat dipotong sebelum disimpan');
 
         $this->put(route('cashier.payment-settings.update'), [
             'qris_image' => UploadedFile::fake()->image('qris.png'),

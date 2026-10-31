@@ -42,24 +42,20 @@
                 <span class="verified-badge"><i class="fa-solid fa-circle-check"></i> STR terverifikasi</span>
                 <h1>{{ $doctor->display_name }}</h1>
                 <p class="doctor-specialty">{{ $doctor->specialty }} · {{ $doctor->experience_years }} tahun pengalaman</p>
+                <p class="consult-muted">Status layanan: {{ $doctor->is_online ? 'Online' : 'Offline' }}</p>
             </div>
         </header>
-        <div class="doctor-price">Rp {{ number_format($doctor->consultation_price, 0, ',', '.') }} <small style="font-size:.8rem;font-weight:500">untuk sesi chat {{ $doctor->session_duration_minutes }} menit</small></div>
+        <div class="doctor-price">Rp {{ number_format($doctor->consultation_price, 0, ',', '.') }} <small style="font-size:.8rem;font-weight:500">untuk konsultasi WhatsApp {{ $doctor->session_duration_minutes }} menit</small></div>
         <section class="doctor-detail">
             <h2>Profil dokter</h2>
             @if($doctor->bio)<div class="doctor-row">{{ $doctor->bio }}</div>@endif
             @if($doctor->education)<div class="doctor-row"><strong>Alumnus</strong><br>{{ $doctor->education }}</div>@endif
             @if($doctor->practice_place || $doctor->practice_city)<div class="doctor-row"><strong>Tempat praktik</strong><br>{{ collect([$doctor->practice_place, $doctor->practice_city])->filter()->join(', ') }}</div>@endif
             <div class="doctor-row"><strong>Nomor STR</strong><br>{{ $doctor->str_number }}</div>
-            <p class="consult-muted">Pembayaran diperiksa admin. Timer {{ $doctor->session_duration_minutes }} menit mulai berjalan saat dokter masuk ke room chat.</p>
+            <p class="consult-muted">Konsultasi dilanjutkan melalui WhatsApp. Setelah admin mengirim kode akses melalui chat, masukkan kode tersebut untuk memulai sesi.</p>
         </section>
         <div class="consult-actions">
-            @if($doctorAvailable)
-                <a class="consult-primary" href="{{ route('consultations.details', $doctor) }}"><i class="fa-solid fa-comments"></i> Chat</a>
-            @else
-                <p class="consult-muted">Dokter sedang tidak tersedia untuk sesi baru.</p>
-                <a href="{{ route('consultations.doctors') }}">Kembali ke daftar dokter</a>
-            @endif
+            <a class="consult-primary" href="{{ $hasPatientProfile ? route('consultations.payment', $doctor) : route('consultations.intake') }}"><i class="fa-solid fa-comments"></i> Chat Dokter</a>
         </div>
     </article>
 </main>

@@ -22,6 +22,7 @@ class DoctorConsultation extends Model
         'patient_gender',
         'patient_phone',
         'patient_email',
+        'patient_address',
         'guardian_name',
         'guardian_relationship',
         'height_cm',
@@ -35,6 +36,9 @@ class DoctorConsultation extends Model
         'prescribed_items',
         'prescription_approved_at',
         'prescription_used_at',
+        'access_code_hash',
+        'access_code_expires_at',
+        'access_code_used_at',
         'payment_method',
         'payment_channel',
         'payment_proof_path',
@@ -59,6 +63,7 @@ class DoctorConsultation extends Model
             'patient_gender' => 'encrypted',
             'patient_phone' => 'encrypted',
             'patient_email' => 'encrypted',
+            'patient_address' => 'encrypted',
             'guardian_name' => 'encrypted',
             'guardian_relationship' => 'encrypted',
             'height_cm' => 'encrypted',
@@ -71,6 +76,8 @@ class DoctorConsultation extends Model
             'prescribed_items' => 'encrypted:array',
             'prescription_approved_at' => 'datetime',
             'prescription_used_at' => 'datetime',
+            'access_code_expires_at' => 'datetime',
+            'access_code_used_at' => 'datetime',
             'privacy_consent_at' => 'datetime',
             'guardian_consent_at' => 'datetime',
             'paid_at' => 'datetime',
@@ -103,5 +110,10 @@ class DoctorConsultation extends Model
     {
         return $this->status === 'active'
             && ($this->ends_at === null || $this->ends_at->isFuture());
+    }
+
+    public static function hashAccessCode(string $code): string
+    {
+        return hash_hmac('sha256', $code, (string) config('app.key'));
     }
 }

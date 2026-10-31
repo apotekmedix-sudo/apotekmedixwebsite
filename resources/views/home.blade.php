@@ -1713,11 +1713,13 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
 /* ===== HOME B2C HORIZONTAL PRODUCT CARDS ===== */
 .home-b2c-section { padding: 2.75rem 0; }
 .home-b2c-section--alt { background: #f8fafc; border-block: 1px solid #e2e8f0; }
+.home-transaction-switcher { padding: 1rem 0 1.5rem; }
 .featured-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 1.5rem; flex-wrap: wrap; gap: .75rem;
 }
 .home-b2c-catalog-heading { display:flex; align-items:center; gap:.65rem; flex-wrap:nowrap; }
+.home-transaction-switcher .home-b2c-catalog-heading { justify-content:center; flex-wrap:wrap; }
 .home-b2c-transaction-label,.home-b2b-catalog-link { display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:42px;padding:.55rem .95rem;border:1px solid #bfdbfe;border-radius:999px;background:#fff;color:#0052cc;font-size:.9rem;font-weight:750;line-height:1.2;white-space:nowrap; }
 .home-b2b-catalog-link { text-decoration:none;transition:background-color .2s,border-color .2s; }
 .home-b2b-catalog-link:hover { border-color:#93c5fd;background:#eff6ff; }
@@ -1857,6 +1859,18 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
     .home-product-search input { height: 42px; padding: .5rem .65rem; font-size: .84rem; }
 }
 </style>
+
+<section class="home-transaction-switcher" aria-label="Pilih kanal transaksi">
+  <div class="container">
+    <nav class="home-b2c-catalog-heading">
+      <span class="home-b2c-transaction-label"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Transaksi B2C</span>
+      <a class="home-b2b-catalog-link" href="{{ route('products.pbf') }}" aria-label="Transaksi B2B">
+        <i class="fa-solid fa-box-open" aria-hidden="true"></i> <span class="home-b2b-transaction-text">Transaksi B2B</span>
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      </a>
+    </nav>
+  </div>
+</section>
 
 @if(!$homeHasFilters && isset($discountedProducts) && $discountedProducts->isNotEmpty())
 {{-- 1. PRODUK PROMO (B2C) — kartu horizontal --}}
@@ -2001,13 +2015,6 @@ body.public-theme main .home-service-items .home-service-item > div > a { displa
   <div class="container">
     <div class="featured-header">
       <div class="sec-head-left">
-        <div class="home-b2c-catalog-heading">
-          <span class="home-b2c-transaction-label"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Transaksi B2C</span>
-          <a class="home-b2b-catalog-link" href="{{ route('products.pbf') }}" aria-label="Transaksi B2B">
-            <i class="fa-solid fa-box-open" aria-hidden="true"></i> <span class="home-b2b-transaction-text">Transaksi B2B</span>
-            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-          </a>
-        </div>
         <h2 class="sec-title" style="margin:0;">{{ $homeHasFilters ? 'Hasil Pencarian' : 'Semua Produk' }}</h2>
         <p class="home-product-section-description">
           @if($homeHasFilters)

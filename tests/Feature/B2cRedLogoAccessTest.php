@@ -155,6 +155,7 @@ class B2cRedLogoAccessTest extends TestCase
     public function test_b2c_red_logo_checkout_requires_prescription_confirmation(): void
     {
         $medicine = $this->createMedicine('Produk Merah Perlu Resep', 'Merah');
+        $removedMedicine = $this->createMedicine('Produk Merah Dihapus dari Checkout', 'Merah');
         $accessCode = $this->createB2cAccessCode();
         $payload = [
             'buyer_type' => 'umum',
@@ -176,12 +177,13 @@ class B2cRedLogoAccessTest extends TestCase
         $this->assertSame(0, PurchaseHistory::count());
 
         $confirmation = $this->withSession($session)
-            ->postJson(route('checkout.confirm-prescription'), ['product_ids' => [$medicine->id]])
+            ->postJson(route('checkout.confirm-prescription'), ['product_ids' => [$medicine->id, $removedMedicine->id]])
             ->assertOk();
+        $payload['prescription_confirmation_token'] = $confirmation->json('confirmation_token');
+        $this->assertNotEmpty($payload['prescription_confirmation_token']);
         $checkoutUrl = $confirmation->json('checkout_url');
         parse_str((string) parse_url($checkoutUrl, PHP_URL_QUERY), $checkoutQuery);
-        $payload['prescription_confirmation_token'] = $checkoutQuery['prescription_confirmation'] ?? null;
-        $this->assertNotNull($payload['prescription_confirmation_token']);
+        $this->assertSame($payload['prescription_confirmation_token'], $checkoutQuery['prescription_confirmation'] ?? null);
 
         $this->get($checkoutUrl)
             ->assertOk()

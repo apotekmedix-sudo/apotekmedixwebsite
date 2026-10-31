@@ -27,20 +27,22 @@
 @section('content')
 <main class="consult-page">
     <section class="consult-card">
-        <span class="consult-kicker">{{ ($isAdditionalProfile ?? false) ? 'Konsultasi online · Profil pasien' : 'Konsultasi online · Langkah 1 dari 3' }}</span>
+        <span class="consult-kicker">{{ ($isAdditionalProfile ?? false) ? 'Konsultasi online · Profil pasien' : 'Konsultasi online · Data pasien' }}</span>
         <h1>{{ ($isAdditionalProfile ?? false) ? 'Tambah profil pasien' : 'Data pasien' }}</h1>
-        <p class="consult-muted">{{ ($isAdditionalProfile ?? false) ? 'Tambahkan profil untuk pasien yang akan menjalani konsultasi.' : 'Isi data pasien dan informasi konsultasi sebelum memilih dokter. Informasi kesehatan hanya dapat dilihat oleh dokter yang menangani konsultasi.' }}</p>
+        <p class="consult-muted">{{ ($isAdditionalProfile ?? false) ? 'Tambahkan profil untuk pasien yang akan menjalani konsultasi.' : (($isNewConsultation ?? false) ? 'Lengkapi data pasien dan informasi kesehatan untuk konsultasi dengan ' . $doctor->display_name . '. Anda akan melanjutkan ke pembayaran setelah mengirim formulir.' : 'Lengkapi data diri dan informasi konsultasi terlebih dahulu. Setelah formulir dikirim, Anda dapat memilih dokter yang tersedia.') }}</p>
         @if($errors->any())
             <ul class="consult-errors" role="alert">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
         @endif
-        <form method="POST" action="{{ ($isAdditionalProfile ?? false) ? route('consultations.patient.profile.store', $doctor) : route('consultations.patient.store') }}">
+        <form method="POST" action="{{ ($isAdditionalProfile ?? false) || ($isNewConsultation ?? false) ? route('consultations.patient.profile.store', $doctor) : route('consultations.patient.store') }}">
             @csrf
+            @if($isNewConsultation ?? false)<input type="hidden" name="doctor_consultation_intake" value="1">@endif
             <div class="consult-grid">
                 <div class="consult-field"><label for="patient_name">Nama lengkap *</label><input id="patient_name" name="patient_name" value="{{ old('patient_name') }}" placeholder="Contoh: Budi Santoso" maxlength="150" autocomplete="name" required></div>
                 <div class="consult-field"><label for="patient_birth_date">Tanggal lahir * <small>(contoh: 15 Agustus 1990)</small></label><input id="patient_birth_date" name="patient_birth_date" type="date" value="{{ old('patient_birth_date') }}" max="{{ now()->toDateString() }}" required></div>
                 <div class="consult-field"><label for="patient_gender">Jenis kelamin *</label><select id="patient_gender" name="patient_gender" required><option value="">Pilih jenis kelamin</option><option value="Laki-laki" @selected(old('patient_gender') === 'Laki-laki')>Laki-laki</option><option value="Perempuan" @selected(old('patient_gender') === 'Perempuan')>Perempuan</option></select><small>Contoh: Laki-laki atau Perempuan</small></div>
                 <div class="consult-field"><label for="patient_phone">Nomor ponsel *</label><input id="patient_phone" name="patient_phone" type="tel" value="{{ old('patient_phone') }}" placeholder="Contoh: 081234567890" maxlength="50" autocomplete="tel" required></div>
                 <div class="consult-field"><label for="patient_email">Email *</label><input id="patient_email" name="patient_email" type="email" value="{{ old('patient_email') }}" placeholder="Contoh: nama@email.com" maxlength="255" autocomplete="email" required></div>
+                <div class="consult-field"><label for="patient_address">Alamat lengkap *</label><input id="patient_address" name="patient_address" value="{{ old('patient_address') }}" placeholder="Contoh: Jl. Raya Tajur No. 10, Bogor" maxlength="500" autocomplete="street-address" required></div>
             </div>
             @unless($isAdditionalProfile ?? false)
                 <section style="margin-top:1.25rem;padding:1rem;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc">
@@ -53,15 +55,15 @@
                     </div>
                 </section>
             @endunless
-            <div class="consult-notice"><strong>Jika kondisi darurat</strong>, seperti sesak berat, penurunan kesadaran, atau perdarahan hebat, segera ke IGD atau hubungi layanan darurat. Chat bukan pengganti pertolongan gawat darurat.</div>
-            <label class="consult-check"><input type="checkbox" name="privacy_consent" value="1" @checked(old('privacy_consent')) required><span>Saya menyetujui data pribadi dan kesehatan yang saya berikan digunakan untuk konsultasi ini. Data keluhan, alergi, dan obat yang diinginkan hanya ditampilkan kepada dokter yang menangani konsultasi; data kontak juga digunakan admin untuk verifikasi pembayaran.</span></label>
+            <div class="consult-notice"><strong>Jika kondisi darurat</strong>, seperti sesak berat, penurunan kesadaran, atau perdarahan hebat, segera ke IGD atau hubungi layanan darurat. Konsultasi WhatsApp bukan pengganti pertolongan gawat darurat.</div>
+            <label class="consult-check"><input type="checkbox" name="privacy_consent" value="1" @checked(old('privacy_consent')) required><span>Saya menyetujui data pribadi dan kesehatan yang saya berikan digunakan untuk konsultasi ini. Setelah pembayaran diverifikasi, data formulir termasuk keluhan dan alergi akan dikirim kepada dokter melalui WhatsApp. Nama, nomor telepon, dan alamat digunakan admin untuk verifikasi pembayaran.</span></label>
             @if($isAdditionalProfile ?? false)
                 <div style="display:flex;flex-wrap:wrap;gap:.75rem">
                     <a class="consult-primary" href="{{ route('consultations.details', $doctor) }}" style="background:#475569">Kembali</a>
                     <button type="submit" class="consult-primary"><i class="fa-solid fa-user-plus"></i> Simpan profil pasien</button>
                 </div>
             @else
-                <button type="submit" class="consult-primary"><i class="fa-solid fa-user-doctor"></i> Cari dokter</button>
+                <button type="submit" class="consult-primary"><i class="fa-solid fa-user-doctor"></i> {{ ($isNewConsultation ?? false) ? 'Lanjut ke pembayaran' : 'Lanjut pilih dokter' }}</button>
             @endif
         </form>
     </section>

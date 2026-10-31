@@ -159,6 +159,8 @@ class MedicineSediaanAndDetailTest extends TestCase
             ->assertSee('storageKey: "apotekmedix_cart_b2b"', false)
             ->assertSee('priceChannel: "b2b"', false)
             ->assertSee('wholesaleOrder: true', false)
+            ->assertSee('if (CART_CONFIG.wholesaleOrder) {', false)
+            ->assertSee('goToCheckoutPage();', false)
             ->assertDontSee('data-product-share', false)
             ->assertSee('href="' . route('products.pbf') . '">Belanja B2B</a>', false)
             ->assertSee('Kembali ke Belanja B2B')
@@ -174,6 +176,63 @@ class MedicineSediaanAndDetailTest extends TestCase
         $this->get(route('products.pbf'))
             ->assertOk()
             ->assertSee('Masukkan kode aktivasi terbaru');
+    }
+
+    public function test_b2b_access_remains_active_from_catalog_through_checkout_submission(): void
+    {
+        $b2bCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2B,
+            'code_hash' => Hash::make('54321'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $medicine = Medicine::create([
+            'nama_obat' => 'Produk Checkout B2B',
+            'kategori' => 'PT. Test',
+            'harga' => 32000,
+            'harga_retail' => 32000,
+            'harga_grosir' => 17000,
+            'stok' => 5,
+            'sediaan' => 'box',
+        ]);
+
+        $this->withSession([
+            'pbf_access_expires_at' => now()->addDays(10)->timestamp,
+            'pbf_access_code_hash' => $b2bCode->code_hash,
+        ])
+            ->get(route('products.pbf'))
+            ->assertOk()
+            ->assertSessionHas('pbf_access_code_hash', $b2bCode->code_hash);
+
+        $this->get(route('storage.image', [
+            'folder' => 'medicines',
+            'filename' => 'middleware-regression-test.png',
+        ]), [
+            'Accept' => 'image/png',
+            'Sec-Fetch-Dest' => 'image',
+        ])
+            ->assertNotFound()
+            ->assertSessionHas('pbf_access_code_hash', $b2bCode->code_hash);
+
+        $this->get(route('checkout.index'))
+            ->assertOk()
+            ->assertSee("activeCtx.priceChannel = 'b2b';", false)
+            ->assertSessionHas('pbf_access_code_hash', $b2bCode->code_hash);
+
+        $response = $this->postJson(route('orders.history.store'), [
+            'buyer_type' => 'umum',
+            'price_channel' => 'b2b',
+            'buyer_name' => 'Mitra B2B',
+            'transaction_channel' => 'online',
+            'items' => [
+                ['id' => $medicine->id, 'quantity' => 1, 'harga' => 1],
+            ],
+            'total' => 1,
+        ])->assertOk();
+
+        $order = \App\Models\PurchaseHistory::findOrFail($response->json('id'));
+        $this->assertSame(17000, $order->total);
+        $this->assertSame(17000, $order->items[0]['harga']);
+        $this->assertSame('b2b', $order->price_channel);
     }
 
     public function test_prescription_and_otc_category_choices_filter_products(): void

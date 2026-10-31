@@ -549,6 +549,145 @@
             }
         }
 
+        @media (max-width: 600px) {
+            body {
+                padding: 10px 8px 24px;
+                font-size: 12px;
+            }
+            .toolbar {
+                align-items: stretch;
+                margin-bottom: 10px;
+            }
+            .toolbar-actions {
+                width: 100%;
+            }
+            .toolbar button,
+            .toolbar a {
+                flex: 1;
+                justify-content: center;
+                padding: 10px 8px;
+                font-size: 12px;
+            }
+            .invoice-sheet {
+                padding: 18px 14px 22px;
+                border-radius: 8px;
+            }
+            .top-header {
+                gap: 12px;
+                padding-bottom: 12px;
+            }
+            .brand-logo-wrap {
+                justify-content: center;
+            }
+            .brand-logo-wrap img {
+                width: 64px;
+                height: 64px;
+            }
+            .brand-wordmark-top {
+                font-size: 16px;
+            }
+            .brand-wordmark-main {
+                font-size: 36px;
+            }
+            .header-contact {
+                font-size: 11px;
+            }
+            .apj-header {
+                font-size: 10.5px;
+            }
+            .apj-list {
+                font-size: 11px;
+            }
+            .banner-meta-row {
+                gap: 10px;
+                margin: 12px 0;
+            }
+            .invoice-pill-banner {
+                flex-direction: column;
+            }
+            .invoice-pill-left {
+                min-height: 76px;
+                padding: 12px;
+                border-radius: 12px 12px 0 0;
+                font-size: 30px;
+                letter-spacing: 1px;
+            }
+            .invoice-pill-right {
+                align-items: center;
+                padding: 11px 8px 12px;
+                text-align: center;
+            }
+            .invoice-pill-right h2 {
+                font-size: 17px;
+            }
+            .invoice-pill-right span {
+                font-size: 11px;
+                letter-spacing: 1.5px;
+            }
+            .invoice-meta-card {
+                padding: 11px 12px;
+            }
+            .meta-line {
+                grid-template-columns: 88px 8px minmax(0, 1fr);
+                font-size: 11px;
+                overflow-wrap: anywhere;
+            }
+            .info-box {
+                padding: 10px 11px;
+            }
+            .info-line {
+                grid-template-columns: 94px 8px minmax(0, 1fr);
+                font-size: 11px;
+                overflow-wrap: anywhere;
+            }
+            .items-table-wrap {
+                border-radius: 6px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            table.items-table {
+                min-width: 680px;
+            }
+            table.items-table thead th,
+            table.items-table tbody td {
+                padding: 7px 6px;
+                font-size: 11px;
+            }
+            .bottom-grid {
+                gap: 12px;
+            }
+            .notes-box {
+                padding: 10px 12px;
+            }
+            .notes-box ol {
+                padding-left: 16px;
+                font-size: 11px;
+            }
+            .slogan-banner {
+                padding: 12px;
+            }
+            .slogan-text {
+                font-size: 32px;
+            }
+            table.totals-table td {
+                padding: 8px 10px;
+                font-size: 11.5px;
+            }
+            table.totals-table tr.row-grand td {
+                font-size: 13px;
+            }
+            .signatures-grid {
+                gap: 8px;
+            }
+            .sig-spacer {
+                height: 52px;
+            }
+            .sig-line {
+                font-size: 9px;
+                letter-spacing: 0;
+            }
+        }
+
         @media print {
             @page {
                 size: A4 landscape;
@@ -601,7 +740,7 @@
                     </div>
                     <div class="contact-row">
                         <i class="fa-solid fa-phone"></i>
-                        <span>HP. 0858 9000 7359</span>
+                        <span>HP. 08159111911</span>
                     </div>
                     <div class="contact-row">
                         <i class="fa-solid fa-globe"></i>
@@ -646,7 +785,6 @@
                     <?php endif; ?>
                 </div>
             </section>
-
             <!-- 3. CUSTOMER & SIA/SIPA INFO BOXES (READ-ONLY) -->
             <section class="info-boxes-row">
                 <div class="info-box">
@@ -737,6 +875,9 @@
             <section class="bottom-grid">
                 <div>
                     <div class="notes-box">
+                        <?php if($order->consultation_prescription_number): ?>
+                            <p><strong>Nomor resep dokter:</strong> <?php echo e($order->consultation_prescription_number); ?></p>
+                        <?php endif; ?>
                         <h3>KETERANGAN :</h3>
                         <ol>
                             <li>Barang yang sudah dibeli tidak dapat ditukar/dikembalikan, kecuali terdapat kesalahan dari pihak apotek.</li>

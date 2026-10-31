@@ -1145,7 +1145,26 @@ function openCart() {
     render();
     return;
   }
+  if (CART_CONFIG.wholesaleOrder) {
+    goToCheckoutPage();
+    return;
+  }
   window.location.href = '{{ route("cart.index") }}';
+}
+
+function goToCheckoutPage() {
+  save();
+  if (CART_CONFIG.adminPbfOrder) {
+    openCart();
+    return;
+  }
+  if (window.confirmRedLogoCheckout(cart, {
+    storageKey: CART_CONFIG.storageKey,
+    priceChannel: CART_CONFIG.priceChannel || 'b2c',
+    b2cFullAccess: CART_CONFIG.b2cFullAccess,
+    wholesaleOrder: CART_CONFIG.wholesaleOrder
+  })) return;
+  window.location.href = '{{ route("checkout.index") }}';
 }
 
 function closeCart() {
@@ -1910,7 +1929,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   const navBtn = document.getElementById('cartNavBtn');
-  if (navBtn) navBtn.onclick = () => openCart();
+  if (navBtn) navBtn.onclick = () => goToCheckoutPage();
   // Load jsPDF
   const s = document.createElement('script');
   s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';

@@ -122,7 +122,7 @@ unset($__errorArgs, $__bag); ?>
             'Mohon informasi dan bantuan untuk aktivasi kode akses. Terima kasih.'
         ].join('\n');
 
-        window.open(`https://wa.me/6285890007359?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+        window.open(`https://wa.me/<?php echo e(config('contacts.customer_service.whatsapp')); ?>?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
         requestAccessDialog.close();
     });
 </script>

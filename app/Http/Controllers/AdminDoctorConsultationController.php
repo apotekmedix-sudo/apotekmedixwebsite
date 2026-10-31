@@ -3,12 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\DoctorConsultation;
+use App\Models\ConsultationAccessCode;
 use App\Models\DoctorConsultationPaymentSetting;
 use App\Models\DoctorProfile;
+use App\Models\Medicine;
+use App\Support\StockAvailability;
 use App\Support\DoctorConsultationSpecialties;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class AdminDoctorConsultationController extends Controller
@@ -25,11 +30,24 @@ class AdminDoctorConsultationController extends Controller
             ]);
 
         $activeTab = $request->query('tab', 'doctors');
-        if (!in_array($activeTab, ['doctors', 'transactions', 'patients'], true)) {
+        if (!in_array($activeTab, ['doctors', 'transactions', 'patients', 'access-codes'], true)) {
             $activeTab = 'doctors';
         }
 
+        ConsultationAccessCode::query()
+            ->where('status', ConsultationAccessCode::STATUS_ASSIGNED)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now())
+            ->update(['status' => ConsultationAccessCode::STATUS_EXPIRED]);
+
         $doctors = DoctorProfile::orderBy('display_name')->get();
+        $prescriptionMedicines = $activeTab === 'transactions'
+            ? Medicine::query()
+                ->nonPbf()
+                ->availableForB2c()
+                ->orderBy('nama_obat')
+                ->get(['id', 'nama_obat', 'brand', 'kategori'])
+            : collect();
         $consultations = DoctorConsultation::with(['doctorProfile', 'paymentVerifiedBy'])
             ->latest()
             ->paginate(25)
@@ -40,8 +58,57 @@ class AdminDoctorConsultationController extends Controller
             ->where('payment_due_at', '>', now())
             ->count();
         $settings = DoctorConsultationPaymentSetting::query()->first();
+        $consultationAccessCodes = $activeTab === 'access-codes'
+            ? ConsultationAccessCode::query()
+                ->whereIn('status', [
+                    ConsultationAccessCode::STATUS_AVAILABLE,
+                    ConsultationAccessCode::STATUS_ASSIGNED,
+                ])
+                ->with('consultation.doctorProfile')
+                ->latest()
+                ->paginate(50)
+                ->withQueryString()
+            : collect();
+        $availableAccessCodesForCopy = $activeTab === 'access-codes'
+            ? ConsultationAccessCode::query()
+                ->where('status', ConsultationAccessCode::STATUS_AVAILABLE)
+                ->latest()
+                ->get()
+                ->map(fn (ConsultationAccessCode $accessCode) => $accessCode->readCode())
+                ->filter(fn (?string $code) => filled($code))
+                ->values()
+            : collect();
+        $availableAccessCodesCount = ConsultationAccessCode::query()
+            ->where('status', ConsultationAccessCode::STATUS_AVAILABLE)
+            ->count();
+        $remainingAccessCodeCapacity = max(0, 10000 - ConsultationAccessCode::query()->count());
 
-        return view('admin.consultations.index', compact('doctors', 'consultations', 'settings', 'activeTab', 'pendingConsultationsCount'));
+        return view('admin.consultations.index', compact('doctors', 'consultations', 'settings', 'activeTab', 'pendingConsultationsCount', 'prescriptionMedicines', 'consultationAccessCodes', 'availableAccessCodesCount', 'remainingAccessCodeCapacity', 'availableAccessCodesForCopy'));
+    }
+
+    public function generateAccessCodeStock(Request $request)
+    {
+        $validated = $request->validate([
+            'quantity' => ['required', 'integer', 'min:1', 'max:1000'],
+        ]);
+        $quantity = (int) $validated['quantity'];
+        $remainingCapacity = 10000 - ConsultationAccessCode::query()->count();
+
+        if ($quantity > $remainingCapacity) {
+            return back()->withErrors([
+                'quantity' => 'Stok kode tidak mencukupi ruang kode yang tersisa. Maksimal dapat dibuat: ' . max(0, $remainingCapacity) . '.',
+            ])->withInput();
+        }
+
+        DB::transaction(function () use ($quantity, $request): void {
+            for ($index = 0; $index < $quantity; $index++) {
+                ConsultationAccessCode::createAvailable((int) $request->user()->id);
+            }
+        });
+
+        return redirect()
+            ->route('admin.consultations.index', ['tab' => 'access-codes'])
+            ->with('success', "{$quantity} kode akses konsultasi berhasil ditambahkan ke stok.");
     }
 
     public function exportPatients()
@@ -121,23 +188,6 @@ class AdminDoctorConsultationController extends Controller
     public function updateDoctor(Request $request, DoctorProfile $doctor)
     {
         $validated = $request->validate($this->doctorRules());
-        if (
-            (!$request->boolean('is_active') || !$request->boolean('str_verified'))
-            && $this->hasActiveConsultation($doctor)
-        ) {
-            return back()->withErrors([
-                'is_active' => 'Dokter tidak dapat dinonaktifkan atau STR tidak dapat dibatalkan saat konsultasi sedang aktif.',
-            ])->withInput();
-        }
-        if (
-            (!$request->boolean('is_active') || !$request->boolean('str_verified') || !$request->boolean('is_online'))
-            && $this->hasPendingPayment($doctor)
-        ) {
-            return back()->withErrors([
-                'is_active' => 'Batalkan atau selesaikan antrean pembayaran dokter sebelum menonaktifkan profil, STR, atau status online.',
-            ])->withInput();
-        }
-
         $newPhotoPath = $request->file('photo')
             ? $this->storeImage($request->file('photo'), 'doctors')
             : null;
@@ -156,10 +206,6 @@ class AdminDoctorConsultationController extends Controller
 
     public function deactivateDoctor(DoctorProfile $doctor)
     {
-        if ($this->hasActiveConsultation($doctor) || $this->hasPendingPayment($doctor)) {
-            return back()->withErrors(['doctor' => 'Selesaikan atau batalkan sesi aktif dan antrean pembayaran dokter sebelum dinonaktifkan.']);
-        }
-
         $doctor->update(['is_active' => false, 'is_online' => false]);
 
         return back()->with('success', "Profil {$doctor->display_name} dinonaktifkan.");
@@ -196,80 +242,124 @@ class AdminDoctorConsultationController extends Controller
         return back()->with('success', 'Instruksi pembayaran konsultasi berhasil disimpan.');
     }
 
-    public function markPaid(Request $request, DoctorConsultation $consultation)
+    public function storeConsultationPrescription(Request $request, DoctorConsultation $consultation)
     {
-        $result = DB::transaction(function () use ($consultation, $request): array {
-            $locked = DoctorConsultation::query()->lockForUpdate()->findOrFail($consultation->id);
-            if ($locked->status !== 'awaiting_payment' || $locked->payment_status !== 'pending') {
-                return ['status' => 'not_pending'];
-            }
-            if ($locked->payment_due_at && $locked->payment_due_at->isPast()) {
-                $locked->update(['status' => 'cancelled', 'payment_status' => 'expired']);
+        abort_unless(
+            $consultation->payment_channel === 'online'
+                && $consultation->payment_status === 'paid'
+                && in_array($consultation->status, ['awaiting_whatsapp', 'active', 'completed'], true)
+                && $consultation->prescription_number === null,
+            409,
+            'Resep hanya dapat dibuat satu kali untuk konsultasi Online yang sudah diverifikasi.'
+        );
 
-                return ['status' => 'expired'];
+        $validated = $request->validate([
+            'items' => ['required', 'array', 'min:1', 'max:10'],
+            'items.*.id' => ['required', 'integer', 'distinct', 'exists:medicines,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1', 'max:100'],
+            'items.*.instructions' => ['required', 'string', 'max:500'],
+        ]);
+        $productIds = collect($validated['items'])->pluck('id')->map(fn ($id): int => (int) $id);
+        $products = Medicine::query()
+            ->nonPbf()
+            ->availableForB2c()
+            ->whereIn('id', $productIds)
+            ->get()
+            ->keyBy('id');
+        abort_unless($products->count() === $productIds->count(), 422, 'Produk resep tidak tersedia di katalog B2C.');
+
+        $availableUnits = StockAvailability::unitsByMedicineId($products);
+        $prescribedItems = [];
+        foreach ($validated['items'] as $item) {
+            $medicine = $products->get((int) $item['id']);
+            $factor = $medicine?->getSaleUnitFactor('box') ?? 0;
+            $quantity = (int) $item['quantity'];
+            $price = (int) round($medicine?->getChannelBasePrice('b2c') ?? 0);
+            if (
+                !$medicine
+                || $factor < 1
+                || $price < 1
+                || ($availableUnits[$medicine->id] ?? 0) < $factor * $quantity
+            ) {
+                return back()->withErrors([
+                    'prescription' => 'Stok atau harga produk resep berubah. Periksa katalog dan coba kembali.',
+                ]);
             }
 
-            $doctor = DoctorProfile::query()->lockForUpdate()->findOrFail($locked->doctor_profile_id);
-            if (!$doctor->is_active || !$doctor->str_verified || !$doctor->is_online || !$doctor->whatsapp_phone) {
-                return ['status' => 'doctor_unavailable'];
-            }
-            $doctorBusy = DoctorConsultation::query()
-                ->where('doctor_profile_id', $doctor->id)
-                ->where('id', '!=', $locked->id)
-                ->where('status', 'active')
-                ->where(function ($query): void {
-                    $query->whereNull('ends_at')->orWhere('ends_at', '>', now());
-                })
-                ->exists();
-            if ($doctorBusy) {
-                return ['status' => 'doctor_busy'];
-            }
-
-            $verifiedAt = now();
-            $doctorToken = $this->createDoctorRoomToken();
-            $locked->update([
-                'payment_status' => 'paid',
-                'status' => 'active',
-                'paid_at' => $verifiedAt,
-                'payment_verified_by_user_id' => $request->user()->id,
-                'payment_verified_at' => $verifiedAt,
-                'starts_at' => null,
-                'ends_at' => null,
-                'patient_room_token_hash' => null,
-                'doctor_room_token_hash' => hash('sha256', $doctorToken),
-                'patient_room_token_used_at' => now(),
-                'doctor_room_token_used_at' => null,
-            ]);
-
-            return [
-                'status' => 'paid',
-                'consultation_id' => $locked->id,
-                'doctor_token' => $doctorToken,
-                'doctor_phone' => $doctor->whatsapp_phone,
-                'patient_name' => $locked->patient_name,
-                'doctor_name' => $doctor->display_name,
-                'session_duration_minutes' => (int) ($locked->session_duration_minutes ?: $doctor->session_duration_minutes ?: DoctorConsultation::DURATION_MINUTES),
+            $prescribedItems[] = [
+                'id' => $medicine->id,
+                'name' => $medicine->nama_obat,
+                'brand' => $medicine->brand ?: $medicine->kategori,
+                'image' => $medicine->image_url,
+                'quantity' => $quantity,
+                'sale_unit' => 'box',
+                'unit_label' => $medicine->package_unit_label ?: 'Kemasan',
+                'price' => $price,
+                'discount' => 0,
+                'instructions' => trim($item['instructions']),
+                'requires_prescription' => $medicine->hasRedLogo(),
+                'available_quantity' => intdiv((int) $availableUnits[$medicine->id], $factor),
             ];
-        });
-
-        if ($result['status'] !== 'paid') {
-            return match ($result['status']) {
-                'expired' => back()->withErrors(['payment' => 'Batas pembayaran 30 menit telah lewat; konsultasi dibatalkan.']),
-                'doctor_busy' => back()->withErrors(['payment' => 'Dokter sedang menangani sesi lain. Verifikasi pembayaran setelah dokter tersedia.']),
-                'doctor_unavailable' => back()->withErrors(['payment' => 'Dokter harus aktif, STR terverifikasi, online, dan memiliki nomor WhatsApp sebelum pembayaran dikonfirmasi.']),
-                default => back()->withErrors(['payment' => 'Konsultasi ini tidak lagi menunggu pembayaran.']),
-            };
         }
 
-        return $this->redirectWithRoomLinks($result)
-            ->with('success', "Pembayaran diverifikasi. Timer sesi {$result['session_duration_minutes']} menit dimulai saat dokter masuk ke room.");
+        $prescription = DB::transaction(function () use ($consultation, $prescribedItems): ?DoctorConsultation {
+            $locked = DoctorConsultation::query()->lockForUpdate()->findOrFail($consultation->id);
+            if (
+                $locked->payment_channel !== 'online'
+                || $locked->payment_status !== 'paid'
+                || !in_array($locked->status, ['awaiting_whatsapp', 'active', 'completed'], true)
+                || $locked->prescription_number !== null
+            ) {
+                return null;
+            }
+
+            $locked->update([
+                'prescription_number' => 'RSP-' . Str::upper(Str::random(12)),
+                'prescribed_items' => $prescribedItems,
+                'prescription_approved_at' => now(),
+            ]);
+
+            return $locked->refresh();
+        });
+
+        if (!$prescription) {
+            return back()->withErrors(['prescription' => 'Resep sudah dibuat atau konsultasi tidak lagi memenuhi syarat.']);
+        }
+
+        $checkoutUrl = URL::temporarySignedRoute(
+            'checkout.consultation-prescription',
+            now()->addDays(7),
+            ['consultation' => $prescription->id]
+        );
+        $whatsappPhone = preg_replace('/\D+/', '', (string) $prescription->patient_phone);
+        $whatsappPhone = str_starts_with($whatsappPhone, '0')
+            ? '62' . substr($whatsappPhone, 1)
+            : (str_starts_with($whatsappPhone, '8') ? '62' . $whatsappPhone : $whatsappPhone);
+        $message = implode("\n", [
+            'Halo ' . $prescription->patient_name . ', resep konsultasi Anda sudah disiapkan.',
+            'Nomor resep: ' . $prescription->prescription_number,
+            'Silakan buka tautan checkout berikut, lengkapi alamat pengiriman, lalu selesaikan pembayaran:',
+            $checkoutUrl,
+            'Tautan berlaku 7 hari. Pesanan hanya dapat dibuat satu kali.',
+        ]);
+        $sendUrl = 'https://wa.me/' . $whatsappPhone . '?text=' . rawurlencode($message);
+
+        return redirect()
+            ->route('admin.consultations.index', ['tab' => 'transactions'])
+            ->with('success', 'Resep berhasil dibuat. Kirim tautan checkout kepada pasien.')
+            ->with('consultation_prescription_link', [
+                'consultation_id' => $prescription->id,
+                'number' => $prescription->prescription_number,
+                'url' => $checkoutUrl,
+                'send_url' => $sendUrl,
+            ]);
     }
 
     public function resendRoomInvitations(DoctorConsultation $consultation)
     {
         $result = DB::transaction(function () use ($consultation): ?array {
             $locked = DoctorConsultation::query()->lockForUpdate()->findOrFail($consultation->id);
-            if (!$locked->isActive()) {
+            if (!$locked->isActive() || $locked->access_code_used_at !== null) {
                 return null;
             }
 
@@ -321,29 +411,6 @@ class AdminDoctorConsultationController extends Controller
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
-    }
-
-    public function rejectPayment(DoctorConsultation $consultation)
-    {
-        $rejected = DB::transaction(function () use ($consultation): bool {
-            $locked = DoctorConsultation::query()->lockForUpdate()->findOrFail($consultation->id);
-            if ($locked->status !== 'awaiting_payment' || $locked->payment_status !== 'pending') {
-                return false;
-            }
-
-            $locked->update([
-                'status' => 'cancelled',
-                'payment_status' => 'rejected',
-            ]);
-
-            return true;
-        });
-
-        if (!$rejected) {
-            return back()->withErrors(['payment' => 'Hanya pembayaran yang masih menunggu verifikasi yang dapat ditolak.']);
-        }
-
-        return back()->with('success', 'Pembayaran ditolak. Pasien akan diarahkan untuk menghubungi admin terkait pengembalian dana.');
     }
 
     public function endSession(DoctorConsultation $consultation)
@@ -461,25 +528,6 @@ class AdminDoctorConsultationController extends Controller
             ->unique()
             ->values()
             ->all();
-    }
-
-    private function hasActiveConsultation(DoctorProfile $doctor): bool
-    {
-        return $doctor->consultations()
-            ->where('status', 'active')
-            ->where(function ($query): void {
-                $query->whereNull('ends_at')->orWhere('ends_at', '>', now());
-            })
-            ->exists();
-    }
-
-    private function hasPendingPayment(DoctorProfile $doctor): bool
-    {
-        return $doctor->consultations()
-            ->where('status', 'awaiting_payment')
-            ->where('payment_status', 'pending')
-            ->where('payment_due_at', '>', now())
-            ->exists();
     }
 
     private function profileAttributes(array $validated, ?string $photoPath): array

@@ -36,6 +36,7 @@ class PurchaseHistory extends Model
         'consultation_prescription_number',
         'approval_status',
         'payment_method',
+        'payment_proof_path',
         'payment_qris_image_path',
         'payment_bank_name',
         'payment_account_number',

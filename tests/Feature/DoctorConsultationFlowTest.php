@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\DoctorConsultation;
+use App\Models\ConsultationAccessCode;
 use App\Models\DoctorConsultationPaymentSetting;
 use App\Models\Medicine;
 use App\Models\DoctorProfile;
@@ -17,28 +18,112 @@ class DoctorConsultationFlowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_patient_data_is_required_before_doctor_search_without_guardian_checkbox(): void
+    public function test_patient_enters_details_before_selecting_doctor_and_goes_directly_to_payment(): void
     {
-        $this->get(route('consultations.doctors'))->assertForbidden();
+        $doctor = $this->createDoctor();
+
+        $this->get(route('consultations.intake'))
+            ->assertOk()
+            ->assertSee('Data pasien')
+            ->assertSee('Informasi konsultasi')
+            ->assertSee('name="patient_address"', false)
+            ->assertDontSee('Dr. Contoh');
 
         $this->post(route('consultations.patient.store'), [
-            'patient_name' => 'Pasien Anak',
-            'patient_birth_date' => now()->subYears(10)->toDateString(),
-            'patient_gender' => 'Laki-laki',
+            'patient_name' => 'Pasien Contoh',
+            'patient_birth_date' => now()->subYears(30)->toDateString(),
+            'patient_gender' => 'Perempuan',
             'patient_phone' => '081234567890',
-            'patient_email' => 'wali@example.test',
-            'height_cm' => '140',
-            'weight_kg' => '35.5',
-            'complaint' => 'Demam sejak kemarin. Obat yang diinginkan: Paracetamol 500 mg.',
+            'patient_email' => 'pasien@example.test',
+            'patient_address' => 'Jl. Contoh No. 10, Bogor',
+            'height_cm' => '170',
+            'weight_kg' => '65.5',
+            'complaint' => 'Nyeri kepala sejak kemarin.',
             'drug_allergies' => 'Tidak ada yang diketahui',
             'privacy_consent' => '1',
-        ])
-            ->assertRedirect(route('consultations.doctors'))
-            ->assertSessionHas('doctor_consultation.intake.complaint', 'Demam sejak kemarin. Obat yang diinginkan: Paracetamol 500 mg.')
-            ->assertSessionHas('doctor_consultation.intake.height_cm', '140');
+        ])->assertRedirect(route('consultations.doctors'));
+
+        $this->get(route('consultations.doctors'))
+            ->assertOk()
+            ->assertSee('Dr. Contoh')
+            ->assertSee(route('consultations.payment', $doctor), false)
+            ->assertDontSee('Semua kategori');
+        $this->get(route('consultations.doctor', $doctor))
+            ->assertOk()
+            ->assertSee('Chat Dokter');
+
+        $this->get(route('consultations.payment', $doctor))
+            ->assertOk()
+            ->assertSee('Pasien Contoh')
+            ->assertSee('Dr. Contoh')
+            ->assertSee('STR-TEST-123');
     }
 
-    public function test_consultation_uses_configured_session_duration_after_admin_payment_verification(): void
+    public function test_offline_status_and_existing_consultations_do_not_limit_new_bookings(): void
+    {
+        $doctor = $this->createDoctor();
+        $doctor->update(['is_online' => false]);
+        DoctorConsultationPaymentSetting::create(['qris_image_path' => 'consultation-payments/qris.png']);
+        DoctorConsultation::create([
+            'doctor_profile_id' => $doctor->id,
+            'patient_access_hash' => hash('sha256', bin2hex(random_bytes(32))),
+            'patient_name' => 'Pasien Sebelumnya',
+            'patient_birth_date' => now()->subYears(30)->toDateString(),
+            'patient_gender' => 'Perempuan',
+            'patient_phone' => '081234567890',
+            'patient_email' => 'sebelumnya@example.test',
+            'complaint' => 'Konsultasi yang sedang berlangsung.',
+            'drug_allergies' => 'Tidak ada',
+            'amount' => 49000,
+            'payment_method' => 'qris',
+            'payment_channel' => 'online',
+            'payment_status' => 'paid',
+            'status' => 'active',
+            'privacy_consent_at' => now(),
+            'paid_at' => now(),
+            'starts_at' => now(),
+            'ends_at' => now()->addMinutes(15),
+        ]);
+
+        $this->post(route('consultations.patient.store'), [
+            'patient_name' => 'Pasien Baru',
+            'patient_birth_date' => now()->subYears(30)->toDateString(),
+            'patient_gender' => 'Laki-laki',
+            'patient_phone' => '081234567890',
+            'patient_email' => 'baru@example.test',
+            'patient_address' => 'Jl. Contoh No. 11, Bogor',
+            'height_cm' => '170',
+            'weight_kg' => '65.5',
+            'complaint' => 'Keluhan konsultasi baru.',
+            'drug_allergies' => 'Tidak ada',
+            'privacy_consent' => '1',
+        ])->assertRedirect(route('consultations.doctors'));
+
+        $this->get(route('consultations.doctors'))
+            ->assertOk()
+            ->assertSee('Status: Offline')
+            ->assertSee('Chat Dokter');
+        $this->get(route('consultations.doctor', $doctor))
+            ->assertOk()
+            ->assertSee('Chat Dokter')
+            ->assertSee('Status layanan: Offline');
+        $this->get(route('consultations.payment', $doctor))
+            ->assertOk()
+            ->assertSee('Pasien Baru');
+
+        $this->post(route('consultations.store', $doctor), [
+            'payment_method' => 'qris',
+            'payment_channel' => 'online',
+            'privacy_consent' => '1',
+        ])->assertRedirect();
+
+        $this->assertSame(2, DoctorConsultation::query()->where('doctor_profile_id', $doctor->id)->count());
+        $this->assertSame(1, DoctorConsultation::query()->where('status', 'active')->count());
+        $this->assertSame(1, DoctorConsultation::query()->where('status', 'awaiting_payment')->count());
+        $this->assertFalse($doctor->fresh()->is_online);
+    }
+
+    public function test_whatsapp_access_code_confirms_payment_and_can_only_be_used_once(): void
     {
         $doctor = $this->createDoctor();
         $doctor->update(['session_duration_minutes' => 30]);
@@ -51,6 +136,7 @@ class DoctorConsultationFlowTest extends TestCase
                 'gender' => 'Perempuan',
                 'phone' => '081234567890',
                 'email' => 'pasien@example.test',
+                'address' => 'Jl. Contoh No. 12, Bogor',
                 'guardian_name' => null,
                 'guardian_relationship' => null,
                 'guardian_consent_at' => null,
@@ -65,25 +151,44 @@ class DoctorConsultationFlowTest extends TestCase
         ])->post(route('consultations.store', $doctor), [
             'payment_method' => 'qris',
             'payment_channel' => 'online',
-            'payment_proof' => UploadedFile::fake()->create('receipt.pdf', 100, 'application/pdf'),
             'privacy_consent' => '1',
         ]);
         $response->assertRedirect();
-        $this->get($response->headers->get('Location'))
+        $patientUrl = $response->headers->get('Location');
+        $patientToken = basename((string) parse_url($patientUrl, PHP_URL_PATH));
+        $this->assertSame(64, strlen($patientToken));
+        $patientPage = $this->get($patientUrl)
             ->assertOk()
-            ->assertSee('Menunggu verifikasi pembayaran')
-            ->assertSee('Timer sesi 30 menit dimulai saat dokter masuk ke room.')
-            ->assertSee('Bukti pembayaran sudah dikirim');
+            ->assertSee('Menunggu konfirmasi WhatsApp')
+            ->assertSee('Konfirmasi Pembayaran')
+            ->assertSee('access-confirm', false)
+            ->assertSee('name="access_code"', false)
+            ->assertSee('Mulai Konsultasi')
+            ->assertSee('id="verifyAccessCode" type="button" disabled', false)
+            ->assertSee('https://wa.me/628159111911', false);
+        preg_match('/class="access-confirm" href="([^"]+)"/', $patientPage->getContent(), $adminUrlMatch);
+        $this->assertNotEmpty($adminUrlMatch[1] ?? null);
+        parse_str((string) parse_url(html_entity_decode($adminUrlMatch[1]), PHP_URL_QUERY), $adminMessageQuery);
+        $this->assertSame(
+            "Halo Apotek Medix, saya ingin konfirmasi pembayaran konsultasi.\n\n"
+                . "Nama: Pasien Contoh\nNo. telepon: 081234567890\nAlamat: Jl. Contoh No. 12, Bogor\n\n"
+                . "Saya sudah melakukan pembayaran sejumlah Rp 49.000 melalui QRIS (Online).\n"
+                . "Bukti pembayaran saya lampirkan pada chat ini.\n\n"
+                . "Mohon bantu verifikasi pembayaran dan kirimkan kode akses konsultasi setelah pembayaran dikonfirmasi. Terima kasih.",
+            $adminMessageQuery['text'] ?? ''
+        );
+        $this->assertStringNotContainsString('127.0.0.1', $adminMessageQuery['text'] ?? '');
+        $this->assertStringNotContainsString('Mohon bantu proses pembayaran', $adminMessageQuery['text'] ?? '');
 
         $consultation = DoctorConsultation::firstOrFail();
-        $this->assertNotNull($consultation->payment_proof_path);
-        Storage::disk('local')->assertExists($consultation->payment_proof_path);
+        $this->assertSame('Jl. Contoh No. 12, Bogor', $consultation->patient_address);
+        $this->assertNull($consultation->payment_proof_path);
         $this->assertSame('awaiting_payment', $consultation->status);
         $this->assertSame('pending', $consultation->payment_status);
         $this->assertNull($consultation->starts_at);
         $this->assertSame(30, $consultation->session_duration_minutes);
         $this->assertSame('Nyeri kepala sejak kemarin. Obat yang diinginkan: Paracetamol 500 mg.', $consultation->complaint);
-        $this->assertSame(170, $consultation->height_cm);
+        $this->assertSame('170', $consultation->height_cm);
         $this->assertSame(65.5, (float) $consultation->weight_kg);
         $this->assertNull($consultation->requested_medicine);
         $this->assertNotSame(
@@ -92,56 +197,97 @@ class DoctorConsultationFlowTest extends TestCase
         );
 
         $admin = User::factory()->create(['role' => 'admin']);
-        $invitation = null;
         $this->actingAs($admin)
-            ->post(route('admin.consultations.mark-paid', $consultation))
-            ->assertRedirect()
-            ->assertSessionHas('success', 'Pembayaran diverifikasi. Timer sesi 30 menit dimulai saat dokter masuk ke room.')
-            ->assertSessionHas('consultation_whatsapp_links.doctor', function ($url) use (&$invitation): bool {
-                if (!is_string($url)) {
-                    return false;
-                }
-
-                $invitation = $url;
-
-                return true;
-            })
-            ->assertSessionMissing('consultation_whatsapp_links.patient');
-
-        $consultation->refresh();
-        $this->assertSame('active', $consultation->status);
-        $this->assertSame('paid', $consultation->payment_status);
-        $this->assertNull($consultation->starts_at);
-        $this->assertNull($consultation->ends_at);
-        $this->assertSame($admin->id, $consultation->payment_verified_by_user_id);
-        $this->assertNull($consultation->patient_room_token_hash);
-        $this->assertNotNull($consultation->doctor_room_token_hash);
-        $this->get($response->headers->get('Location'))
+            ->post(route('admin.consultations.access-codes.generate'), ['quantity' => 2])
+            ->assertRedirect(route('admin.consultations.index', ['tab' => 'access-codes']))
+            ->assertSessionHas('success', '2 kode akses konsultasi berhasil ditambahkan ke stok.');
+        $this->assertSame(2, ConsultationAccessCode::query()->count());
+        $this->assertSame(2, ConsultationAccessCode::query()->where('status', ConsultationAccessCode::STATUS_AVAILABLE)->count());
+        $availableCodes = ConsultationAccessCode::query()
+            ->where('status', ConsultationAccessCode::STATUS_AVAILABLE)
+            ->latest()
+            ->get()
+            ->map(fn (ConsultationAccessCode $code) => $code->readCode())
+            ->implode("\n");
+        $this->get(route('admin.consultations.index', ['tab' => 'access-codes']))
             ->assertOk()
-            ->assertSee('Menunggu dokter bergabung');
+            ->assertSee('Salin semua kode tersedia')
+            ->assertSee('id="all-available-access-codes"', false)
+            ->assertSee(e($availableCodes), false)
+            ->assertSee('navigator.clipboard.writeText(codes)', false)
+            ->assertSee('Menampilkan 1–2 dari 2 kode akses')
+            ->assertDontSee('Showing 1 to 2 of 2 results');
 
-        $this->assertNotEmpty($invitation);
-        parse_str((string) parse_url($invitation, PHP_URL_QUERY), $invitationQuery);
-        preg_match('#https?://[^ ]+#', $invitationQuery['text'] ?? '', $roomLink);
-        $this->assertNotEmpty($roomLink);
-        $roomToken = basename((string) parse_url($roomLink[0], PHP_URL_PATH));
-        $this->get(route('consultations.room.join', ['token' => $roomToken]))->assertOk();
-        $this->post(route('consultations.room.redeem', ['token' => $roomToken]))
-            ->assertRedirect(route('consultations.room', $consultation));
+        $stockCode = ConsultationAccessCode::query()->where('status', ConsultationAccessCode::STATUS_AVAILABLE)->firstOrFail();
+        $accessCode = $stockCode->readCode();
+        $this->assertMatchesRegularExpression('/^0[0-9]{4}$/', (string) $accessCode);
+        $this->assertSame(2, ConsultationAccessCode::query()->where('status', ConsultationAccessCode::STATUS_AVAILABLE)->count());
+        $this->get(route('admin.consultations.index', ['tab' => 'transactions']))
+            ->assertOk()
+            ->assertSee('Menunggu konfirmasi WhatsApp')
+            ->assertDontSee('Verifikasi</button>')
+            ->assertDontSee('Tidak diverifikasi');
+        $this->get($patientUrl)
+            ->assertOk()
+            ->assertSee('Menunggu konfirmasi WhatsApp')
+            ->assertSee('Masukkan kode 5 digit yang dikirim admin melalui WhatsApp')
+            ->assertSee('id="verifyAccessCode" type="button"', false)
+            ->assertSee('id="startWhatsApp" type="submit" disabled', false);
+
+        $wrongCode = '0' . str_pad((string) (((int) substr((string) $accessCode, 1) + 1) % 10000), 4, '0', STR_PAD_LEFT);
+        $this->postJson(route('consultations.patient.access-code.verify', ['token' => basename((string) parse_url($patientUrl, PHP_URL_PATH))]), [
+            'access_code' => $wrongCode,
+        ])->assertStatus(422);
+        $this->post(route('consultations.patient.whatsapp.start', ['token' => $patientToken]), [
+            'access_code' => $wrongCode,
+        ])->assertSessionHasErrors('access_code');
+        $this->post(route('consultations.patient.whatsapp.start', ['token' => $patientToken]), [])
+            ->assertSessionHasErrors('access_code');
+        $this->postJson(route('consultations.patient.access-code.verify', ['token' => $patientToken]), [
+            'access_code' => $accessCode,
+        ])->assertOk()->assertJsonPath('valid', true)
+            ->assertJsonPath('message', 'Kode valid. Pembayaran dikonfirmasi melalui WhatsApp.');
+        $consultation->refresh();
+        $this->assertSame('awaiting_whatsapp', $consultation->status);
+        $this->assertSame('paid', $consultation->payment_status);
+        $this->assertNull($consultation->payment_verified_by_user_id);
+        $this->assertSame($admin->id, $stockCode->fresh()->generated_by_user_id);
+        $stockCode->refresh();
+        $this->assertSame(ConsultationAccessCode::STATUS_ASSIGNED, $stockCode->status);
+        $this->assertSame($consultation->id, $stockCode->doctor_consultation_id);
+        $this->assertSame(1, ConsultationAccessCode::query()->where('status', ConsultationAccessCode::STATUS_AVAILABLE)->count());
+        $this->assertTrue($consultation->access_code_expires_at->isFuture());
+        $whatsappResponse = $this->post(route('consultations.patient.whatsapp.start', ['token' => $patientToken]), [
+            'access_code' => $accessCode,
+        ]);
+        $whatsappResponse->assertRedirect();
+        $doctorWhatsappUrl = $whatsappResponse->headers->get('Location');
+        $this->assertStringStartsWith('https://wa.me/6281234567890?text=', $doctorWhatsappUrl);
+        parse_str((string) parse_url($doctorWhatsappUrl, PHP_URL_QUERY), $doctorMessageQuery);
+        $this->assertStringContainsString('Pasien Contoh', $doctorMessageQuery['text'] ?? '');
+        $this->assertStringContainsString('Nyeri kepala sejak kemarin.', $doctorMessageQuery['text'] ?? '');
+        $this->assertStringContainsString('Tidak ada yang diketahui', $doctorMessageQuery['text'] ?? '');
 
         $consultation->refresh();
         $this->assertNotNull($consultation->starts_at);
         $this->assertEquals(30, $consultation->starts_at->diffInMinutes($consultation->ends_at));
+        $this->assertNotNull($consultation->access_code_used_at);
+        $this->assertSame(ConsultationAccessCode::STATUS_USED, $stockCode->fresh()->status);
+        $this->assertNotNull($stockCode->fresh()->used_at);
+        $reuseResponse = $this->postJson(route('consultations.patient.access-code.verify', ['token' => $patientToken]), [
+            'access_code' => $accessCode,
+        ]);
+        $this->assertContains($reuseResponse->getStatusCode(), [422, 429]);
         $this->get(route('admin.consultations.index', ['tab' => 'transactions']))
             ->assertOk()
-            ->assertSee('Kirim tautan dokter')
-            ->assertSee('Buat ulang tautan WA')
-            ->assertDontSee('Kirim tautan room lewat WhatsApp');
+            ->assertDontSee('Kirim tautan dokter')
+            ->assertDontSee('Buat ulang tautan WA')
+            ->assertSee('Konsultasi WhatsApp aktif');
         $this->actingAs($admin)
-            ->get(route('admin.consultations.payment-proof', $consultation))
+            ->get(route('admin.consultations.index', ['tab' => 'access-codes']))
             ->assertOk()
-            ->assertHeader('Content-Type', 'application/pdf')
-            ->assertHeader('Content-Disposition', "inline; filename=\"bukti-pembayaran-{$consultation->id}.pdf\"");
+            ->assertDontSee($accessCode)
+            ->assertDontSee('Terpakai (tidak berlaku)');
     }
 
     public function test_admin_can_resend_room_invitation_when_consultation_duration_is_missing(): void
@@ -226,12 +372,10 @@ class DoctorConsultationFlowTest extends TestCase
         $this->assertEquals(30, $consultation->starts_at->diffInMinutes($consultation->ends_at));
     }
 
-    public function test_admin_can_view_payment_proof_and_reject_payment_with_patient_refund_guidance(): void
+    public function test_admin_consultation_dashboard_shows_payment_status_without_confirmation_actions(): void
     {
-        Storage::fake('local');
         $doctor = $this->createDoctor();
         $patientToken = bin2hex(random_bytes(32));
-        $proofPath = UploadedFile::fake()->create('receipt.pdf', 100, 'application/pdf')->store('consultation-payment-proofs', 'local');
         $consultation = DoctorConsultation::create([
             'doctor_profile_id' => $doctor->id,
             'patient_access_hash' => hash('sha256', $patientToken),
@@ -243,9 +387,8 @@ class DoctorConsultationFlowTest extends TestCase
             'complaint' => 'Nyeri kepala sejak kemarin.',
             'drug_allergies' => 'Tidak ada yang diketahui',
             'amount' => 49000,
-            'payment_method' => 'transfer',
+            'payment_method' => 'Cash',
             'payment_channel' => 'online',
-            'payment_proof_path' => $proofPath,
             'payment_status' => 'pending',
             'status' => 'awaiting_payment',
             'privacy_consent_at' => now(),
@@ -256,27 +399,21 @@ class DoctorConsultationFlowTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.consultations.index', ['tab' => 'transactions']))
             ->assertOk()
-            ->assertSee(route('admin.consultations.payment-proof', $consultation), false)
-            ->assertSee('Tolak pembayaran');
-
-        $this->get(route('admin.consultations.payment-proof', $consultation))
-            ->assertOk()
-            ->assertHeader('Content-Type', 'application/pdf');
-
-        $this->post(route('admin.consultations.reject-payment', $consultation))
-            ->assertRedirect()
-            ->assertSessionHas('success', 'Pembayaran ditolak. Pasien akan diarahkan untuk menghubungi admin terkait pengembalian dana.');
+            ->assertSee('Tunai')
+            ->assertSee('Menunggu konfirmasi WhatsApp')
+            ->assertDontSee('Tolak pembayaran')
+            ->assertDontSee('Tidak diverifikasi')
+            ->assertDontSee('Verifikasi</button>')
+            ->assertDontSee(route('admin.consultations.payment-proof', $consultation), false);
 
         $consultation->refresh();
-        $this->assertSame('rejected', $consultation->payment_status);
-        $this->assertSame('cancelled', $consultation->status);
+        $this->assertSame('pending', $consultation->payment_status);
+        $this->assertSame('awaiting_payment', $consultation->status);
 
         $this->get(route('consultations.patient.show', ['token' => $patientToken]))
             ->assertOk()
-            ->assertSee('Pembayaran ditolak.')
-            ->assertSee('Jika saldo Anda sudah terpotong, pengembaliannya akan diproses manual oleh admin.')
-            ->assertSee('Kembali ke daftar dokter')
-            ->assertSee('Hubungi admin')
+            ->assertSee('Menunggu konfirmasi WhatsApp')
+            ->assertSee('admin akan mengirim kode akses')
             ->assertSee('https://wa.me/' . config('contacts.customer_service.whatsapp'), false);
     }
 
@@ -302,6 +439,12 @@ class DoctorConsultationFlowTest extends TestCase
                 'selected-profile' => $selectedProfile,
                 'other-profile' => $otherProfile,
             ],
+            'doctor_consultation.intake' => [
+                'height_cm' => null,
+                'weight_kg' => null,
+                'complaint' => 'Nyeri kepala sejak kemarin.',
+                'drug_allergies' => 'Tidak ada yang diketahui',
+            ],
         ])
             ->get(route('consultations.details', $doctor))
             ->assertOk()
@@ -311,13 +454,14 @@ class DoctorConsultationFlowTest extends TestCase
 
         $this->get(route('consultations.patient.create', $doctor))
             ->assertOk()
-            ->assertSee('Tambah profil pasien');
+            ->assertSee('Data pasien');
         $this->post(route('consultations.patient.profile.store', $doctor), [
             'patient_name' => 'Profil Baru',
             'patient_birth_date' => now()->subYears(12)->toDateString(),
             'patient_gender' => 'Laki-laki',
             'patient_phone' => '081234567891',
             'patient_email' => 'new-profile@example.test',
+            'patient_address' => 'Jl. Contoh No. 13, Bogor',
             'privacy_consent' => '1',
         ])->assertRedirect(route('consultations.details', $doctor));
         $this->get(route('consultations.details', $doctor))
@@ -335,25 +479,29 @@ class DoctorConsultationFlowTest extends TestCase
             ->assertSee('Pasien Terpilih')
             ->assertSee('QRIS')
             ->assertSee('name="payment_channel"', false)
-            ->assertSee('name="payment_proof"', false)
-            ->assertSee('Konfirmasi Konsultasi');
+            ->assertSee('value="online"', false)
+            ->assertSee('value="offline"', false)
+            ->assertDontSee('name="payment_proof"', false)
+            ->assertSee('Konfirmasi Pembayaran')
+            ->assertSee('fa-brands fa-whatsapp', false)
+            ->assertDontSee('wajib, maks. 5 MB');
         $this->assertDatabaseCount('doctor_consultations', 0);
 
+        Storage::fake('local');
         $this->post(route('consultations.store', $doctor), [
             'complaint' => 'Nyeri kepala sejak kemarin.',
             'drug_allergies' => 'Tidak ada yang diketahui',
             'payment_method' => 'qris',
-            'payment_channel' => 'offline',
+            'payment_channel' => 'online',
             'privacy_consent' => '1',
         ])->assertRedirect();
 
-        $this->assertDatabaseHas('doctor_consultations', [
-            'patient_name' => 'Pasien Terpilih',
-            'patient_email' => 'selected@example.test',
-            'payment_method' => 'qris',
-            'payment_channel' => 'offline',
-            'payment_proof_path' => null,
-        ]);
+        $consultation = DoctorConsultation::firstOrFail();
+        $this->assertSame('Pasien Terpilih', $consultation->patient_name);
+        $this->assertSame('selected@example.test', $consultation->patient_email);
+        $this->assertSame('qris', $consultation->payment_method);
+        $this->assertSame('online', $consultation->payment_channel);
+        $this->assertNull($consultation->payment_proof_path);
     }
 
     public function test_payment_summary_shows_only_the_selected_payment_method_details(): void
@@ -377,30 +525,88 @@ class DoctorConsultationFlowTest extends TestCase
                 'guardian_consent_at' => null,
                 'privacy_consent_at' => now()->toDateTimeString(),
             ],
+            'doctor_consultation.intake' => [
+                'height_cm' => null,
+                'weight_kg' => null,
+                'complaint' => 'Nyeri kepala sejak kemarin.',
+                'drug_allergies' => 'Tidak ada yang diketahui',
+            ],
         ];
 
         $this->withSession($patientSession)
             ->get(route('consultations.payment', $doctor))
             ->assertOk()
-            ->assertSee('data-payment-method-panel="qris"', false)
-            ->assertSee('data-payment-method-panel="transfer" hidden', false)
-            ->assertSee('Atas nama Apotek Medix')
-            ->assertSee('Tunggu Verifikasi Admin');
+            ->assertDontSee('value="online" checked', false)
+            ->assertDontSee('value="offline" checked', false)
+            ->assertDontSee('value="qris" checked', false)
+            ->assertDontSee('payment-method-card is-selected', false)
+            ->assertSee('data-payment-method-section hidden', false)
+            ->assertSee('name="payment_method" value="qris" disabled required', false)
+            ->assertSee('name="payment_method" value="transfer" disabled required', false)
+            ->assertSee('value="qris"', false)
+            ->assertSee('value="transfer"', false)
+            ->assertSee('value="Cash"', false)
+            ->assertSee('data-cash-option hidden', false)
+            ->assertSee('Simpan QRIS')
+            ->assertSee('payment-method-reveal', false)
+            ->assertSee('.payment-method-card.is-selected .payment-method-reveal', false)
+            ->assertDontSee('.payment-method-card:hover .payment-method-reveal', false)
+            ->assertSee('makeRadiosToggleable(channelInputs)', false)
+            ->assertSee('makeRadiosToggleable(paymentMethodInputs)', false)
+            ->assertSee('if (selectedInput !== input)', false)
+            ->assertSee('scrollIntoViewIfNeeded', false)
+            ->assertSee("window.matchMedia('(prefers-reduced-motion: reduce)')", false)
+            ->assertSee('class="payment-or" aria-hidden="true">atau..</span>', false)
+            ->assertSee('data-cash-or aria-hidden="true" hidden>atau..</span>', false)
+            ->assertSee('<dialog class="payment-reminder"', false)
+            ->assertSee('Jangan lupa simpan bukti pembayaran Anda.')
+            ->assertSee('aria-label="Tutup pengingat"', false)
+            ->assertSee('data-reminder-confirm>Oke</button>', false)
+            ->assertSee('paymentReminder?.showModal()', false)
+            ->assertSee('paymentReminder.close()', false)
+            ->assertSee('requestSubmit(paymentSubmitButton)', false)
+            ->assertSee('Atas Nama:')
+            ->assertSee('Apotek Medix')
+            ->assertSee('Verifikasi dilakukan admin melalui WhatsApp.</p>', false);
 
-        $this->withSession([...$patientSession, '_old_input' => ['payment_method' => 'transfer']])
+        $this->withSession([...$patientSession, '_old_input' => ['payment_channel' => 'online', 'payment_method' => 'transfer']])
             ->get(route('consultations.payment', $doctor))
             ->assertOk()
-            ->assertSee('data-payment-method-panel="qris" hidden', false)
-            ->assertSee('data-payment-method-panel="transfer"', false)
-            ->assertSee('BCA:')
+            ->assertDontSee('data-payment-method-section hidden', false)
+            ->assertSee('value="online" checked', false)
+            ->assertSee('value="transfer" checked', false)
+            ->assertDontSee('value="transfer" disabled', false)
+            ->assertSee('payment-method-card is-selected" data-payment-card', false)
+            ->assertSee('BCA')
             ->assertSee('0658484265')
-            ->assertSee('Atas nama Apotek Medix')
-            ->assertSee('Tunggu Verifikasi Admin');
+            ->assertSee('payment-account-number', false)
+            ->assertSee('data-copy-account="0658484265"', false)
+            ->assertSee('Salin nomor rekening')
+            ->assertSee('Atas Nama:')
+            ->assertSee('Nomor rekening')
+            ->assertSee('Apotek Medix')
+            ->assertSee('Verifikasi dilakukan admin melalui WhatsApp.');
+
+        $this->withSession([...$patientSession, '_old_input' => ['payment_channel' => 'offline', 'payment_method' => 'Cash']])
+            ->get(route('consultations.payment', $doctor))
+            ->assertOk()
+            ->assertDontSee('data-payment-method-section hidden', false)
+            ->assertSee('data-cash-option', false)
+            ->assertDontSee('data-cash-option hidden', false)
+            ->assertSee('value="qris"', false)
+            ->assertSee('value="transfer"', false)
+            ->assertSee('value="Cash" checked', false)
+            ->assertSee('data-cash-or aria-hidden="true">atau..</span>', false)
+            ->assertSee('payment-method-card is-selected" data-payment-card data-cash-option', false)
+            ->assertSee('> Tunai <small>(khusus offline)</small>')
+            ->assertSee('Pembayaran tunai dilakukan langsung di apotek.')
+            ->assertDontSee('> Cash <small>(khusus offline)</small>');
     }
 
-    public function test_online_payment_requires_proof_while_offline_payment_does_not(): void
+    public function test_consultation_payment_can_be_submitted_without_site_upload_for_online_or_offline(): void
     {
         $doctor = $this->createDoctor();
+        $offlineDoctor = $this->createDoctor('offline-doctor@example.test');
         DoctorConsultationPaymentSetting::create(['qris_image_path' => 'consultation-payments/qris.png']);
         $patientSession = [
             'doctor_consultation.patient' => [
@@ -414,6 +620,12 @@ class DoctorConsultationFlowTest extends TestCase
                 'guardian_consent_at' => null,
                 'privacy_consent_at' => now()->toDateTimeString(),
             ],
+            'doctor_consultation.intake' => [
+                'height_cm' => null,
+                'weight_kg' => null,
+                'complaint' => 'Nyeri kepala sejak kemarin.',
+                'drug_allergies' => 'Tidak ada yang diketahui',
+            ],
         ];
         $payload = [
             'complaint' => 'Nyeri kepala sejak kemarin.',
@@ -424,21 +636,43 @@ class DoctorConsultationFlowTest extends TestCase
 
         $this->withSession($patientSession)
             ->post(route('consultations.store', $doctor), [...$payload, 'payment_channel' => 'online'])
-            ->assertSessionHasErrors('payment_proof');
-        $this->assertDatabaseCount('doctor_consultations', 0);
-
-        $this->withSession($patientSession)
-            ->post(route('consultations.store', $doctor), [...$payload, 'payment_channel' => 'offline'])
             ->assertRedirect();
-        $this->assertDatabaseHas('doctor_consultations', [
-            'patient_name' => 'Pasien Contoh',
-            'payment_channel' => 'offline',
-            'payment_proof_path' => null,
-            'payment_status' => 'pending',
-        ]);
+        $onlineConsultation = DoctorConsultation::where('doctor_profile_id', $doctor->id)->firstOrFail();
+        $this->assertSame('online', $onlineConsultation->payment_channel);
+        $this->assertSame('qris', $onlineConsultation->payment_method);
+        $this->assertNull($onlineConsultation->payment_proof_path);
+
+        $offlineResponse = $this->withSession($patientSession)
+            ->post(route('consultations.store', $offlineDoctor), [...$payload, 'payment_channel' => 'offline'])
+            ->assertRedirect();
+        $offlinePatientUrl = $offlineResponse->headers->get('Location');
+        $offlinePatientPage = $this->get($offlinePatientUrl)
+            ->assertOk()
+            ->assertSee('Konfirmasi Pembayaran');
+        preg_match('/class="access-confirm" href="([^"]+)"/', $offlinePatientPage->getContent(), $offlineAdminUrlMatch);
+        $this->assertNotEmpty($offlineAdminUrlMatch[1] ?? null);
+        parse_str((string) parse_url(html_entity_decode($offlineAdminUrlMatch[1]), PHP_URL_QUERY), $offlineMessageQuery);
+        $this->assertStringContainsString('Metode pembayaran: QRIS', $offlineMessageQuery['text'] ?? '');
+        $offlineConsultation = DoctorConsultation::where('doctor_profile_id', $offlineDoctor->id)->firstOrFail();
+        $this->assertSame('offline', $offlineConsultation->payment_channel);
+        $this->assertSame('qris', $offlineConsultation->payment_method);
+        $this->assertNull($offlineConsultation->payment_proof_path);
+
+        $cashDoctor = $this->createDoctor('cash-doctor@example.test');
+        $this->withSession($patientSession)
+            ->post(route('consultations.store', $cashDoctor), [...$payload, 'payment_channel' => 'offline', 'payment_method' => 'Cash'])
+            ->assertRedirect();
+        $cashConsultation = DoctorConsultation::where('doctor_profile_id', $cashDoctor->id)->firstOrFail();
+        $this->assertSame('offline', $cashConsultation->payment_channel);
+        $this->assertSame('Cash', $cashConsultation->payment_method);
+
+        $onlineCashDoctor = $this->createDoctor('online-cash-doctor@example.test');
+        $this->withSession($patientSession)
+            ->post(route('consultations.store', $onlineCashDoctor), [...$payload, 'payment_channel' => 'online', 'payment_method' => 'Cash'])
+            ->assertSessionHasErrors('payment_method');
     }
 
-    public function test_patient_token_stays_in_patient_room_and_cannot_reuse_doctor_room_session(): void
+    public function test_patient_page_hides_website_chat_after_whatsapp_consultation_starts(): void
     {
         $doctor = $this->createDoctor();
         $patientToken = bin2hex(random_bytes(32));
@@ -459,6 +693,7 @@ class DoctorConsultationFlowTest extends TestCase
             'status' => 'active',
             'privacy_consent_at' => now(),
             'paid_at' => now(),
+            'access_code_used_at' => now(),
             'starts_at' => now(),
             'ends_at' => now()->addMinutes(15),
         ]);
@@ -466,12 +701,10 @@ class DoctorConsultationFlowTest extends TestCase
         $this->withSession(['consultation_room_access.' . $consultation->id => 'doctor'])
             ->get(route('consultations.patient.show', ['token' => $patientToken]))
             ->assertOk()
-            ->assertSee('Chat dokter')
-            ->assertDontSee('Buka ruang chat dokter');
+            ->assertSee('Konsultasi sudah dimulai')
+            ->assertDontSee('sessionMessages');
         $this->postJson(route('consultations.patient.messages.store', ['token' => $patientToken]), ['body' => 'Saya sudah masuk.'])
-            ->assertCreated()
-            ->assertJsonPath('sender_type', 'patient')
-            ->assertJsonPath('sender_name', 'Pasien Lunas');
+            ->assertNotFound();
         $this->get(route('consultations.room', $consultation))
             ->assertNotFound();
     }
@@ -508,6 +741,10 @@ class DoctorConsultationFlowTest extends TestCase
         $this->get(route('admin.consultations.index', ['tab' => 'transactions']))
             ->assertOk()
             ->assertSee('Antrean pembayaran dan sesi')
+            ->assertSee('id="doctorQrisCropButton"', false)
+            ->assertSee('id="doctorQrisCropDialog"', false)
+            ->assertSee('id="doctorQrisCropCanvas"', false)
+            ->assertSee('id="doctorQrisCropConfirm"', false)
             ->assertSee('Pasien Terkonsultasi')
             ->assertDontSee('Data Pasien</h2>');
 
@@ -693,26 +930,36 @@ class DoctorConsultationFlowTest extends TestCase
             ],
         ];
 
+        $patientSession['doctor_consultation.intake'] = [
+            'height_cm' => '170',
+            'weight_kg' => '65',
+            'complaint' => 'Nyeri kepala sejak kemarin.',
+            'drug_allergies' => 'Tidak ada yang diketahui',
+        ];
+
+        $this->get(route('consultations.doctors'))
+            ->assertRedirect(route('consultations.intake'));
+
         $this->withSession($patientSession)
             ->get(route('consultations.doctors'))
             ->assertOk()
-            ->assertSee('Dokter Umum')
-            ->assertSee('Dokter Hewan')
-            ->assertSeeText('Dokter Belum Tersedia dan akan segera Tersedia')
-            ->assertDontSee('Dr. Contoh');
+            ->assertSee('Dr. Contoh')
+            ->assertDontSee('Dokter Hewan')
+            ->assertSee(route('consultations.payment', $doctor), false);
 
         $this->withSession($patientSession)
             ->get(route('consultations.doctors', ['specialty' => $doctor->specialty]))
             ->assertOk()
             ->assertSee('Dr. Contoh')
-            ->assertSee('Chat')
-            ->assertDontSee('Lihat profil')
-            ->assertDontSee('Dokter Hewan');
+            ->assertSee('Chat Dokter')
+            ->assertSee(route('consultations.payment', $doctor), false)
+            ->assertDontSee('Semua kategori');
 
         $this->withSession($patientSession)
             ->get(route('consultations.doctors', ['specialty' => 'Dokter Hewan']))
             ->assertOk()
-            ->assertSeeText('Dokter Belum Tersedia dan akan segera Tersedia untuk kategori Dokter Hewan');
+            ->assertSee('Dr. Contoh')
+            ->assertDontSee('Dokter Belum Tersedia dan akan segera Tersedia');
     }
 
     public function test_doctor_room_link_is_confirmed_then_consumed_once(): void
@@ -754,7 +1001,7 @@ class DoctorConsultationFlowTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_admin_cannot_take_doctor_offline_while_a_payment_reserves_their_slot(): void
+    public function test_admin_can_update_doctor_availability_while_payment_is_pending(): void
     {
         $doctor = $this->createDoctor();
         DoctorConsultation::create([
@@ -784,14 +1031,16 @@ class DoctorConsultationFlowTest extends TestCase
                 'str_number' => $doctor->str_number,
                 'experience_years' => $doctor->experience_years,
                 'consultation_price' => $doctor->consultation_price,
+                'session_duration_minutes' => 15,
                 'str_verified' => '1',
                 'is_active' => '1',
                 'is_online' => '0',
             ])
             ->assertRedirect()
-            ->assertSessionHasErrors('is_active');
+            ->assertSessionHas('success', "Profil {$doctor->display_name} berhasil diperbarui.");
 
-        $this->assertTrue($doctor->fresh()->is_online);
+        $this->assertFalse($doctor->fresh()->is_online);
+        $this->assertSame('pending', DoctorConsultation::query()->firstOrFail()->payment_status);
     }
 
     public function test_admin_can_end_an_active_consultation_and_stop_both_sides_from_sending_messages(): void
@@ -1170,7 +1419,89 @@ class DoctorConsultationFlowTest extends TestCase
             ])
             ->assertForbidden();
 
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)
+            ->post(route('admin.consultations.prescription.store', $consultation), ['items' => []])
+            ->assertConflict();
+
         $this->assertNull($consultation->fresh()->prescription_number);
+    }
+
+    public function test_admin_can_create_online_prescription_checkout_with_patient_identity_and_delivery_only(): void
+    {
+        $doctor = $this->createDoctor();
+        $consultation = $this->createPrescriptionConsultation($doctor);
+        $medicine = Medicine::create([
+            'nama_obat' => 'Obat Resep Admin',
+            'logo' => 'K',
+            'golongan' => 'Obat Keras',
+            'is_resep' => true,
+            'satuan' => 'Box',
+            'kategori' => 'Obat',
+            'harga' => 12000,
+            'harga_retail' => 12000,
+            'stok' => 8,
+            'stock_base_units' => 8,
+            'deskripsi' => 'Produk resep untuk pengujian.',
+        ]);
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($admin)
+            ->post(route('admin.consultations.prescription.store', $consultation), [
+                'items' => [[
+                    'id' => $medicine->id,
+                    'quantity' => 1,
+                    'instructions' => 'Minum satu kali sehari.',
+                ]],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Resep berhasil dibuat. Kirim tautan checkout kepada pasien.');
+
+        $consultation->refresh();
+        $this->assertNotNull($consultation->prescription_number);
+        $this->assertSame(1, $consultation->prescribed_items[0]['quantity']);
+        $checkoutUrl = $response->getSession()->get('consultation_prescription_link.url');
+        $this->assertIsString($checkoutUrl);
+
+        $this->get($checkoutUrl)
+            ->assertOk()
+            ->assertSee('value="Pasien Resep"', false)
+            ->assertSee('value="081234567890"', false)
+            ->assertSee('placeholder="Masukkan alamat pengiriman lengkap *"', false)
+            ->assertDontSee('tabPickupBtn');
+
+        $checkoutPayload = [
+            'buyer_type' => 'umum',
+            'buyer_name' => 'Pasien Resep',
+            'phone' => '081234567890',
+            'address' => 'Alamat Pasien',
+            'delivery_method' => 'pickup',
+            'price_channel' => 'b2c',
+            'payment_method' => 'Cash',
+            'total' => 12000,
+            'consultation_prescription_number' => $consultation->prescription_number,
+            'items' => [[
+                'id' => $medicine->id,
+                'quantity' => 1,
+                'sale_unit' => 'box',
+            ]],
+        ];
+        $this->postJson(route('orders.history.store'), $checkoutPayload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('consultation_prescription_number');
+
+        $checkoutPayload['delivery_method'] = 'delivery';
+        $checkoutPayload['buyer_name'] = 'Nama Tidak Sesuai';
+        $this->postJson(route('orders.history.store'), $checkoutPayload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('consultation_prescription_number');
+
+        $checkoutPayload['buyer_name'] = 'Pasien Resep';
+        $checkoutPayload['delivery_method'] = 'delivery';
+        $checkoutPayload['address'] = '';
+        $this->postJson(route('orders.history.store'), $checkoutPayload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('consultation_prescription_number');
     }
 
     private function createPrescriptionConsultation(DoctorProfile $doctor, string $paymentChannel = 'online'): DoctorConsultation

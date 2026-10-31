@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PurchaseHistoryController extends Controller
 {
@@ -64,6 +65,7 @@ class PurchaseHistoryController extends Controller
             'discounted_total'=> ['nullable', 'integer', 'min:0'],
             'approval_status' => ['nullable', 'string', 'in:pending,approved,rejected'],
             'payment_method'  => ['nullable', 'string', 'max:255'],
+            'payment_proof'   => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
             'payment_term_days' => ['nullable', 'integer', 'min:1'],
             'transaction_channel' => ['nullable', 'string', 'in:online'],
             'price_channel'   => ['nullable', 'string', 'in:b2c,internal,b2b'],
@@ -71,6 +73,8 @@ class PurchaseHistoryController extends Controller
             'consultation_prescription_number' => ['nullable', 'string', 'size:16', 'regex:/^RSP-[A-Z0-9]{12}$/'],
             'is_pbf_purchase_order' => ['nullable', 'boolean'],
             'discount_code'   => ['nullable', 'string', 'max:64'],
+        ], [
+            'is_pbf_purchase_order.boolean' => 'Status surat pesanan PBF harus bernilai benar atau salah.',
         ]);
 
         if ($isPbfPurchaseOrder && (
@@ -144,13 +148,15 @@ class PurchaseHistoryController extends Controller
 
         $paymentMethod = trim((string) ($data['payment_method'] ?? ''));
         $paymentTermDays = (int) ($data['payment_term_days'] ?? 0);
+        $requiresPaymentProof = !$isPbfPurchaseOrder
+            && in_array(strtolower($paymentMethod), ['qris', 'transfer'], true);
         if (
             $data['buyer_type'] === 'umum'
             && $paymentMethod === 'Tempo'
         ) {
             return response()->json([
                 'message' => 'Metode pembayaran Tempo tidak tersedia untuk transaksi B2C.',
-                'errors' => ['payment_method' => ['Pilih QRIS, Transfer, atau Cash untuk transaksi B2C.']],
+                'errors' => ['payment_method' => ['Pilih QRIS, Transfer, atau Tunai untuk transaksi B2C.']],
             ], 422);
         }
 
@@ -174,6 +180,12 @@ class PurchaseHistoryController extends Controller
             return response()->json([
                 'message' => 'Pembayaran transfer belum tersedia. Silakan pilih metode lain atau hubungi admin.',
                 'errors' => ['payment_method' => ['Rekening transfer belum dikonfigurasi.']],
+            ], 422);
+        }
+        if ($requiresPaymentProof && !$request->hasFile('payment_proof')) {
+            return response()->json([
+                'message' => 'Unggah bukti pembayaran QRIS atau transfer.',
+                'errors' => ['payment_proof' => ['Bukti pembayaran wajib diunggah untuk pembayaran QRIS atau transfer.']],
             ], 422);
         }
 
@@ -204,27 +216,33 @@ class PurchaseHistoryController extends Controller
         $hasB2cAccess = ShoppingAccessCode::hasActiveB2cSession();
         $hasInternalAccess = !$isPbfPurchaseOrder
             && ShoppingAccessCode::hasActiveInternalSession();
-        $hasB2bAccess = $request->hasSession()
-            && ((int) $request->session()->get('pbf_access_expires_at', 0)) > now()->timestamp
-            && ShoppingAccessCode::matchesSession(
-                ShoppingAccessCode::CHANNEL_B2B,
-                $request->session()->get('pbf_access_code_hash')
-            );
+        $hasB2bAccess = ShoppingAccessCode::hasActiveB2bSession();
         $consultationPrescriptionNumber = $data['consultation_prescription_number'] ?? null;
         $consultationPrescription = $consultationPrescriptionNumber
             ? DoctorConsultation::query()
                 ->where('prescription_number', $consultationPrescriptionNumber)
                 ->first()
             : null;
-        $prescriptionError = $consultationPrescriptionNumber
+        $consultationCheckoutId = $request->session()->get('consultation_prescription_checkout.id');
+        $consultationCheckoutNumber = $request->session()->get('consultation_prescription_checkout.number');
+        $isConsultationCheckout = $consultationCheckoutId !== null;
+        $prescriptionError = $isConsultationCheckout && !$consultationPrescriptionNumber
+            ? 'Tautan checkout resep tidak valid. Buka kembali tautan yang dikirim admin.'
+            : ($consultationPrescriptionNumber
             ? $this->consultationPrescriptionError(
                 $consultationPrescription,
                 $items,
                 $requestedPriceChannel,
                 $data['buyer_type'],
-                $isPbfPurchaseOrder
+                $isPbfPurchaseOrder,
+                $isConsultationCheckout ? (int) $consultationCheckoutId : null,
+                $consultationCheckoutNumber,
+                $data['buyer_name'] ?? '',
+                $data['phone'] ?? '',
+                $data['address'] ?? '',
+                $deliveryMethod
             )
-            : null;
+            : null);
         if ($prescriptionError !== null) {
             return response()->json([
                 'message' => $prescriptionError,
@@ -270,7 +288,7 @@ class PurchaseHistoryController extends Controller
             $sessionConfirmationToken = (string) $request->session()->get('b2c_red_prescription_confirmation_token', '');
             $providedConfirmationToken = (string) ($data['prescription_confirmation_token'] ?? '');
             if (
-                $confirmedIds !== $redLogoProductIds
+                array_diff($redLogoProductIds, $confirmedIds) !== []
                 || $sessionConfirmationToken === ''
                 || $providedConfirmationToken === ''
                 || !hash_equals($sessionConfirmationToken, $providedConfirmationToken)
@@ -431,6 +449,15 @@ class PurchaseHistoryController extends Controller
         $data['payment_status'] = 'pending';
         $data['cashier_id'] = null;
         $data['paid_at'] = null;
+        unset($data['payment_proof']);
+        $paymentProofPath = null;
+        if ($requiresPaymentProof) {
+            $paymentProofPath = $request->file('payment_proof')->store('purchase-payment-proofs', 'local');
+            if (!$paymentProofPath) {
+                throw new \RuntimeException('Bukti pembayaran gagal disimpan.');
+            }
+        }
+        $data['payment_proof_path'] = $paymentProofPath;
 
         $history = DB::transaction(function () use (
             $data,
@@ -438,7 +465,11 @@ class PurchaseHistoryController extends Controller
             $isPbfPurchaseOrder,
             $consultationPrescriptionNumber,
             $requestedPriceChannel,
-            $approvedPrescriptionIds
+            $approvedPrescriptionIds,
+            $isConsultationCheckout,
+            $consultationCheckoutId,
+            $consultationCheckoutNumber,
+            $deliveryMethod
         ) {
             $lockedPrescription = null;
             if ($consultationPrescriptionNumber) {
@@ -451,7 +482,13 @@ class PurchaseHistoryController extends Controller
                     $items,
                     $requestedPriceChannel,
                     $data['buyer_type'],
-                    $isPbfPurchaseOrder
+                    $isPbfPurchaseOrder,
+                    $isConsultationCheckout ? (int) $consultationCheckoutId : null,
+                    $consultationCheckoutNumber,
+                    $data['buyer_name'] ?? '',
+                    $data['phone'] ?? '',
+                    $data['address'] ?? '',
+                    $deliveryMethod
                 );
                 if ($prescriptionError !== null) {
                     return ['error' => $prescriptionError];
@@ -562,6 +599,9 @@ class PurchaseHistoryController extends Controller
         });
 
         if (isset($history['error'])) {
+            if ($paymentProofPath && !Storage::disk('local')->delete($paymentProofPath)) {
+                throw new \RuntimeException('Pesanan tidak dapat dibuat dan berkas bukti pembayaran gagal dibersihkan.');
+            }
             return response()->json([
                 'message' => $history['error'],
                 'errors' => ['items' => [$history['error']]],
@@ -574,16 +614,29 @@ class PurchaseHistoryController extends Controller
                 'b2c_red_prescription_confirmation_token',
             ]);
         }
+        if ($isConsultationCheckout) {
+            $request->session()->forget('consultation_prescription_checkout');
+        }
 
-        return response()->json([
+        $order = $history['history'];
+        $response = [
             'success' => true,
-            'id' => $history['history']->id,
+            'id' => $order->id,
             'invoice_url' => URL::temporarySignedRoute(
                 'orders.invoice',
                 now()->addDays(30),
-                ['order' => $history['history']->id]
+                ['order' => $order->id]
             ),
-        ]);
+        ];
+        if ($paymentProofPath) {
+            $response['payment_proof_url'] = URL::temporarySignedRoute(
+                'orders.payment-proof',
+                now()->addDays(30),
+                ['order' => $order->id]
+            );
+        }
+
+        return response()->json($response);
     }
 
     private function consultationPrescriptionError(
@@ -591,7 +644,13 @@ class PurchaseHistoryController extends Controller
         array $items,
         ?string $priceChannel,
         string $buyerType,
-        bool $isPbfPurchaseOrder
+        bool $isPbfPurchaseOrder,
+        ?int $checkoutConsultationId = null,
+        ?string $checkoutPrescriptionNumber = null,
+        string $buyerName = '',
+        string $phone = '',
+        string $address = '',
+        ?string $deliveryMethod = null
     ): ?string {
         if (!$consultation) {
             return 'Nomor resep konsultasi tidak ditemukan.';
@@ -602,10 +661,23 @@ class PurchaseHistoryController extends Controller
             || $priceChannel !== 'b2c'
             || $consultation->payment_channel !== 'online'
             || $consultation->payment_status !== 'paid'
-            || !in_array($consultation->status, ['active', 'completed'], true)
+            || !in_array($consultation->status, ['awaiting_whatsapp', 'active', 'completed'], true)
             || $consultation->prescription_approved_at === null
         ) {
             return 'Nomor resep ini tidak berlaku untuk transaksi B2C Online.';
+        }
+        if (
+            $checkoutConsultationId !== null
+            && (
+                $consultation->id !== $checkoutConsultationId
+                || $consultation->prescription_number !== $checkoutPrescriptionNumber
+                || $deliveryMethod !== 'delivery'
+                || trim($address) === ''
+                || trim($buyerName) !== trim((string) $consultation->patient_name)
+                || $this->normalizeIndonesianPhone($phone) !== $this->normalizeIndonesianPhone((string) $consultation->patient_phone)
+            )
+        ) {
+            return 'Checkout resep wajib memakai data pasien dan nomor telepon terdaftar, serta alamat pengiriman lengkap. Pengambilan di apotek tidak tersedia.';
         }
         if ($consultation->prescription_used_at !== null) {
             return 'Nomor resep ini sudah pernah digunakan.';
@@ -639,6 +711,16 @@ class PurchaseHistoryController extends Controller
         }
 
         return null;
+    }
+
+    private function normalizeIndonesianPhone(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone);
+        if (str_starts_with($digits, '0')) {
+            return '62' . substr($digits, 1);
+        }
+
+        return str_starts_with($digits, '8') ? '62' . $digits : $digits;
     }
 
     public function validateDiscountCode(Request $request)
@@ -715,6 +797,22 @@ class PurchaseHistoryController extends Controller
         }
 
         return view('orders.invoice', compact('order', 'items'));
+    }
+
+    public function paymentProof(PurchaseHistory $order)
+    {
+        $path = $order->payment_proof_path;
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        $mimeType = Storage::disk('local')->mimeType($path);
+        abort_unless(in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], true), 404);
+
+        return response()->file(Storage::disk('local')->path($path), [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="bukti-pembayaran-' . $order->id . '.' . pathinfo($path, PATHINFO_EXTENSION) . '"',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function updatePermit(Request $request, PurchaseHistory $order)

@@ -619,7 +619,7 @@
                 </div>
                 @include('partials.product-attribute-filters', ['resetUrl' => route('category.layer2', ['main' => $mainCategory, 'sub' => $subCategory])])
             </form>
-            <button class="cart-btn-header" onclick="if(typeof openCart==='function'){openCart();}">
+            <button class="cart-btn-header" onclick="if(typeof goToCheckoutPage==='function'){goToCheckoutPage();}else{window.location.href='{{ route('checkout.index') }}';}">
                 <i class="fa-solid fa-cart-shopping"></i> Keranjang
                 <span class="cart-badge-header" id="cartBadgeHeader">0</span>
             </button>

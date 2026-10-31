@@ -5,7 +5,6 @@
     $voucherDiscount = min((int) ($order->discount_code_amount ?? 0), max(0, $originalTotal - $total));
     $productDiscount = max(0, $originalTotal - $total - $voucherDiscount);
     $paymentMethod = $order->payment_method ?: 'Belum dipilih';
-    $paymentStatus = $order->payment_status === 'paid' ? 'Lunas' : 'Menunggu pembayaran';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -43,9 +42,6 @@
         .summary td:last-child { text-align: right; }
         .summary .grand-total td { padding-top: 7px; border-top: 1px solid #172033; font-size: 14px; font-weight: 800; }
         .payment { display: flex; justify-content: space-between; gap: 10px; }
-        .payment-instructions { margin-top:12px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc }
-        .payment-instructions img { display:block;width:150px;max-width:100%;margin:8px auto;object-fit:contain }
-        .payment-instructions p { margin:5px 0 }
         .thanks { margin: 14px 0 0; text-align: center; font-weight: 700; }
         .well-wishes { margin: 14px 0 0; text-align: center; font-size: 11px; }
         .tagline { display: block; width: fit-content; margin: 3px auto 0; color: #163c9c; font-family: "Segoe Script", "Brush Script MT", cursive; font-size: 21px; font-style: italic; font-weight: 600; }
@@ -68,7 +64,7 @@
             <h1>APOTEK MEDIX</h1>
             <p>Jl. Raya Ciawi Ruko No. 256C, Sindangsari</p>
             <p>Bogor Timur, Kota Bogor, Jawa Barat 16146</p>
-            <p>HP 0858 9000 7359 · apotekmedix.com</p>
+            <p>HP 08159111911 · apotekmedix.com</p>
             <p class="pharmacists">APJ: Apt. Safwan Nugraha, S. Farm<br>Apt. M. Syaiful Hidayat, S. Farm</p>
         </header>
 
@@ -127,19 +123,6 @@
         <div class="payment"><strong>Pembayaran</strong><span><?php echo e($paymentMethod); ?></span></div>
         <?php if($order->isTempoPayment()): ?>
             <div class="payment"><strong>Jatuh Tempo</strong><span><?php echo e($order->due_date_formatted); ?></span></div>
-        <?php endif; ?>
-        <div class="payment"><strong>Status</strong><span><?php echo e($paymentStatus); ?></span></div>
-        <?php if($order->payment_status === 'pending' && in_array(strtolower((string) $order->payment_method), ['qris', 'transfer'], true)): ?>
-            <section class="payment-instructions" aria-label="Instruksi pembayaran">
-                <strong>Instruksi pembayaran</strong>
-                <?php if(strtolower((string) $order->payment_method) === 'qris' && $order->payment_qris_image_path): ?>
-                    <img src="<?php echo e(asset('storage/' . $order->payment_qris_image_path)); ?>" alt="QRIS pembayaran Apotek Medix">
-                <?php elseif(strtolower((string) $order->payment_method) === 'transfer' && $order->payment_bank_name && $order->payment_account_number): ?>
-                    <p><strong><?php echo e($order->payment_bank_name); ?></strong><br><?php echo e($order->payment_account_number); ?><br>Atas nama <?php echo e($order->payment_account_holder); ?></p>
-                <?php endif; ?>
-                <?php if($order->payment_instructions): ?><p><?php echo e($order->payment_instructions); ?></p><?php endif; ?>
-                <p>Pesanan menunggu verifikasi pembayaran oleh kasir.</p>
-            </section>
         <?php endif; ?>
         <p class="well-wishes">Semoga lekas sembuh</p>
         <span class="tagline">Sehat Bersama Medix</span>

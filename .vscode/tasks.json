@@ -1,0 +1,75 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Test unlimited doctor consultations",
+			"type": "shell",
+			"command": "php",
+			"args": [
+				"artisan",
+				"test",
+				"tests\\Feature\\DoctorConsultationFlowTest.php",
+				"--filter=existing_consultations_do_not_limit_new_bookings_for_an_online_doctor",
+				"--compact"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Test doctor availability management",
+			"type": "shell",
+			"command": "php",
+			"args": [
+				"artisan",
+				"test",
+				"tests\\Feature\\DoctorConsultationFlowTest.php",
+				"--filter=admin_can_update_doctor_availability_while_payment_is_pending",
+				"--compact"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Retest availability management",
+			"type": "shell",
+			"command": "php",
+			"args": [
+				"artisan",
+				"test",
+				"tests\\Feature\\DoctorConsultationFlowTest.php",
+				"--filter=admin_can_update_doctor_availability_while_payment_is_pending",
+				"--compact"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify doctor availability edits",
+			"type": "shell",
+			"command": "php",
+			"args": [
+				"artisan",
+				"test",
+				"tests\\Feature\\DoctorConsultationFlowTest.php",
+				"--filter=admin_can_update_doctor_availability_while_payment_is_pending",
+				"--compact"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify WhatsApp access code flow",
+			"type": "shell",
+			"command": "php",
+			"args": [
+				"artisan",
+				"test",
+				"tests\\Feature\\DoctorConsultationFlowTest.php",
+				"--filter=whatsapp_access_code_confirms_payment_and_can_only_be_used_once",
+				"--compact"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

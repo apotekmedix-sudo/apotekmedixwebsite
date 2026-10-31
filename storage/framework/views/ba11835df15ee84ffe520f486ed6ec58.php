@@ -45,6 +45,32 @@
         .settings-grid textarea{width:100%;min-height:84px;border:1px solid #cbd5e1;border-radius:8px;padding:10px;font:inherit;resize:vertical}
         .settings-help{margin:5px 0 0;color:#64748b;font-size:12px}
         .settings-image{display:block;width:min(180px,100%);max-height:180px;margin-top:8px;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;background:#fff}
+        .qris-image-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}
+        .qris-image-preview{display:block;width:min(180px,100%);max-height:180px;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;background:#fff}
+        .qris-image-preview[hidden]{display:none}
+        .qris-crop-button{border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;color:#0052cc;padding:8px 10px;font-size:12px;font-weight:800;cursor:pointer}
+        .qris-crop-error{margin:8px 0 0;color:#b91c1c;font-size:12px;font-weight:700}
+        .qris-crop-dialog{width:min(760px,calc(100% - 24px));max-width:none;max-height:calc(100% - 24px);padding:0;border:0;border-radius:16px;overflow:auto;box-shadow:0 24px 70px #0f172a55}
+        .qris-crop-dialog::backdrop{background:#0f172acc}
+        .qris-crop-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid #e2e8f0}
+        .qris-crop-header h2{margin:0;font-size:17px}
+        .qris-crop-header p{margin:5px 0 0;color:#64748b;font-size:12px}
+        .qris-crop-close{border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:7px 10px;cursor:pointer}
+        .qris-crop-content{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:center;padding:18px}
+        .qris-crop-canvas-wrap{width:min(100%,520px);aspect-ratio:1.15;margin:auto;overflow:hidden;border:1px solid #cbd5e1;border-radius:10px;background:#111827;touch-action:none}
+        #qrisCropCanvas{display:block;width:100%;height:100%;cursor:crosshair;touch-action:none}
+        .qris-crop-tools{display:grid;gap:10px;align-content:center}
+        .qris-crop-tools label{margin:0;color:#334155}
+        .qris-crop-tools input{padding:0;accent-color:#0052cc}
+        .qris-crop-tools p{margin:0;color:#64748b;font-size:12px;line-height:1.5}
+        .qris-crop-dimensions{display:grid;grid-template-columns:1fr auto 1fr;gap:7px;align-items:end}
+        .qris-crop-dimensions label{min-width:0;margin:0;color:#334155}
+        .qris-crop-dimensions input{margin-top:5px;padding:8px;font-size:12px}
+        .qris-crop-dimensions>span{padding-bottom:9px;color:#64748b;font-weight:800}
+        .qris-crop-preview{display:block;width:min(100%,160px);max-height:160px;aspect-ratio:1.15;border:1px solid #cbd5e1;border-radius:8px;background:#fff;object-fit:contain}
+        .qris-crop-footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid #e2e8f0}
+        .qris-crop-footer button{min-height:40px;padding:9px 14px}
+        @media(max-width:620px){.qris-crop-content{grid-template-columns:1fr;padding:12px}.qris-crop-canvas-wrap{width:100%;aspect-ratio:1}.qris-crop-tools{grid-template-columns:1fr auto;align-items:center}.qris-crop-tools p{grid-column:1/-1}.qris-crop-preview{width:80px;height:80px}.qris-crop-footer{flex-direction:column-reverse}.qris-crop-footer button{width:100%}}
         .settings-submit{margin-top:14px}
         .filter-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end}
         label{display:block;font-size:11px;color:#64748b;font-weight:700;margin-bottom:6px}
@@ -76,6 +102,20 @@
         .channel.offline{background:#eff6ff;color:#1d4ed8}.channel.b2b{background:#ecfeff;color:#0e7490}.channel.b2c{background:#f0fdf4;color:#15803d}
         .status.pending{background:#fff7ed;color:#c2410c}.status.verified{background:#eff6ff;color:#1d4ed8}.status.printed{background:#dcfce7;color:#15803d}.status.cancelled{background:#f1f5f9;color:#64748b}
         .items{margin:7px 0 0;padding-left:16px;color:#64748b;line-height:1.6}.amount{font-weight:800;white-space:nowrap;color:#0f172a}
+        .payment-proof{margin-top:8px}
+        .payment-proof-button{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;color:#0052cc;font-size:11px;font-weight:800;cursor:pointer}
+        .payment-proof-button:hover{background:#dbeafe}
+        .payment-proof-dialog{width:min(900px,calc(100% - 24px));height:min(88vh,760px);max-width:none;max-height:none;padding:0;border:0;border-radius:14px;overflow:hidden;background:#fff;color:#0f172a;box-shadow:0 24px 70px #0f172a55}
+        .payment-proof-dialog::backdrop{background:#0f172a99}
+        .payment-proof-dialog-layout{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%}
+        .payment-proof-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid #e2e8f0}
+        .payment-proof-dialog-header strong{font-size:14px}
+        .payment-proof-dialog-close{border:0;border-radius:8px;background:#f1f5f9;color:#334155;padding:8px 11px;font-weight:800;cursor:pointer}
+        .payment-proof-dialog-content{display:grid;place-items:center;min-height:0;padding:12px;background:#f1f5f9}
+        .payment-proof-dialog-image{display:block;max-width:100%;max-height:100%;object-fit:contain}
+        .payment-proof-dialog-pdf{display:block;width:100%;height:100%;border:0;background:#fff}
+        .payment-proof-dialog-image[hidden],.payment-proof-dialog-pdf[hidden]{display:none}
+        @media(max-width:620px){.payment-proof-dialog{width:100%;height:100vh;height:100dvh;border-radius:0}.payment-proof-dialog-header{padding:10px 12px}}
         .actions{display:flex;gap:6px;flex-wrap:wrap}.actions form{margin:0}.empty{text-align:center;padding:54px 20px;color:#64748b}
         .hint{font-size:11px;color:#64748b;margin:13px 0 0}
         @media(max-width:1000px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -150,12 +190,22 @@
                 <?php echo method_field('PUT'); ?>
                 <div class="settings-grid">
                     <div>
-                        <label for="qris_image">Gambar QRIS (JPG/PNG/WEBP, maks. 3 MB)</label>
+                        <label for="qris_image">Gambar QRIS (JPG/PNG/WEBP, maks. 3 MB; dapat dipotong sebelum disimpan)</label>
                         <input id="qris_image" type="file" name="qris_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                        <div class="qris-image-actions">
+                            <button class="qris-crop-button" type="button" id="chooseAndCropQris"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Pilih &amp; crop QRIS</button>
+                        </div>
                         <?php if($paymentSettings->qris_image_url): ?>
-                            <img class="settings-image" src="<?php echo e($paymentSettings->qris_image_url); ?>" alt="QRIS pembayaran saat ini">
+                            <img class="qris-image-preview" id="qrisImagePreview" src="<?php echo e($paymentSettings->qris_image_url); ?>" alt="QRIS pembayaran saat ini">
+                            <div class="qris-image-actions">
+                                <button class="qris-crop-button" type="button" id="cropCurrentQris"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Crop ulang gambar ini</button>
+                            </div>
                             <label class="settings-help"><input type="checkbox" name="remove_qris" value="1"> Hapus QRIS</label>
+                        <?php else: ?>
+                            <img class="qris-image-preview" id="qrisImagePreview" alt="Pratinjau QRIS hasil crop" hidden>
                         <?php endif; ?>
+                        <p class="settings-help">Pilih gambar untuk mengatur crop. Geser gambar dan atur zoom, lalu konfirmasi sebelum menyimpan.</p>
+                        <p class="qris-crop-error" id="qrisCropError" role="alert" hidden></p>
                     </div>
                     <div>
                         <label for="payment_instructions">Instruksi pembayaran</label>
@@ -178,6 +228,39 @@
             </form>
         </div>
     </details>
+    <dialog class="qris-crop-dialog" id="qrisCropDialog" aria-labelledby="qrisCropTitle">
+        <div class="qris-crop-header">
+            <div>
+                <h2 id="qrisCropTitle">Atur potongan gambar QRIS</h2>
+                <p id="qrisCropFilename">Geser gambar untuk memilih area yang akan disimpan.</p>
+            </div>
+            <button type="button" class="qris-crop-close" id="qrisCropClose" aria-label="Tutup crop">&times;</button>
+        </div>
+        <div class="qris-crop-content">
+            <div class="qris-crop-canvas-wrap">
+                <canvas id="qrisCropCanvas" width="600" height="520" aria-label="Gambar dengan bingkai crop yang dapat digeser dan diubah ukurannya"></canvas>
+            </div>
+            <div class="qris-crop-tools">
+                <label for="qrisCropZoom">Zoom <output id="qrisCropZoomValue">1.0×</output></label>
+                <input id="qrisCropZoom" type="range" min="1" max="3" value="1" step="0.01">
+                <p>Geser bingkai untuk memindahkan area crop. Tarik sudut atau sisi bingkai untuk mengubah ukuran; pastikan seluruh kode QR tetap terlihat.</p>
+                <div class="qris-crop-dimensions" aria-label="Ukuran area crop dalam piksel">
+                    <label for="qrisCropWidth">Lebar
+                        <input id="qrisCropWidth" type="number" min="1" step="1" inputmode="numeric">
+                    </label>
+                    <span aria-hidden="true">×</span>
+                    <label for="qrisCropHeight">Tinggi
+                        <input id="qrisCropHeight" type="number" min="1" step="1" inputmode="numeric">
+                    </label>
+                </div>
+                <img class="qris-crop-preview" id="qrisCropPreview" alt="Pratinjau hasil crop">
+            </div>
+        </div>
+        <div class="qris-crop-footer">
+            <button class="secondary" type="button" id="qrisCropCancel">Batal</button>
+            <button class="primary" type="button" id="qrisCropConfirm"><i class="fa-solid fa-check" aria-hidden="true"></i> Gunakan hasil crop</button>
+        </div>
+    </dialog>
 
     <section class="metrics" aria-label="Ringkasan transaksi">
         <div class="metric"><div class="metric-label">TOTAL TRANSAKSI</div><div class="metric-value"><?php echo e(number_format($metrics['total'])); ?></div></div>
@@ -236,7 +319,30 @@
                             <ul class="items"><?php $__currentLoopData = array_slice($items, 0, 3); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><li><?php echo e($item['nama_obat'] ?? $item['name'] ?? 'Produk'); ?> × <?php echo e($item['quantity'] ?? $item['qty'] ?? 0); ?></li><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?></ul>
                             <?php if(count($items) > 3): ?><div class="muted">+<?php echo e(count($items) - 3); ?> produk lainnya</div><?php endif; ?>
                         </td>
-                        <td><?php echo e($order->payment_method ?: '-'); ?><div class="muted"><?php echo e($order->payment_status === 'paid' ? 'Lunas' : ucfirst($order->payment_status ?? 'pending')); ?><?php if($order->paid_at): ?> · <?php echo e($order->paid_at->timezone('Asia/Jakarta')->format('H:i:s')); ?> WIB <?php endif; ?></div><?php if($order->isTempoPayment()): ?><div class="muted" style="color:<?php echo e(in_array($order->tempo_due_status, ['overdue', 'due_today']) ? '#dc2626' : ($order->tempo_due_status === 'due_soon' ? '#d97706' : '#0369a1')); ?>;font-weight:700;">Jatuh tempo: <?php echo e($order->due_date_formatted); ?> (<?php echo e($order->tempo_due_label); ?>)</div><?php endif; ?></td>
+                        <td>
+                            <?php echo e($order->payment_method ?: '-'); ?>
+
+                            <div class="muted"><?php echo e($order->payment_status === 'paid' ? 'Lunas' : ucfirst($order->payment_status ?? 'pending')); ?><?php if($order->paid_at): ?> · <?php echo e($order->paid_at->timezone('Asia/Jakarta')->format('H:i:s')); ?> WIB <?php endif; ?></div>
+                            <?php if($order->isTempoPayment()): ?><div class="muted" style="color:<?php echo e(in_array($order->tempo_due_status, ['overdue', 'due_today']) ? '#dc2626' : ($order->tempo_due_status === 'due_soon' ? '#d97706' : '#0369a1')); ?>;font-weight:700;">Jatuh tempo: <?php echo e($order->due_date_formatted); ?> (<?php echo e($order->tempo_due_label); ?>)</div><?php endif; ?>
+                            <?php if($order->payment_proof_path): ?>
+                                <?php
+                                    $paymentProofUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute('orders.payment-proof', now()->addMinutes(30), ['order' => $order->id]);
+                                    $paymentProofExtension = strtolower(pathinfo($order->payment_proof_path, PATHINFO_EXTENSION));
+                                ?>
+                                <div class="payment-proof">
+                                    <button
+                                        type="button"
+                                        class="payment-proof-button"
+                                        data-proof-url="<?php echo e($paymentProofUrl); ?>"
+                                        data-proof-type="<?php echo e($paymentProofExtension === 'pdf' ? 'pdf' : 'image'); ?>"
+                                        data-order-id="<?php echo e($order->id); ?>"
+                                        aria-label="Lihat bukti pembayaran pesanan #<?php echo e($order->id); ?>"
+                                    ><i class="fa-solid fa-eye" aria-hidden="true"></i> Lihat bukti pembayaran</button>
+                                </div>
+                            <?php elseif(in_array(strtolower((string) $order->payment_method), ['qris', 'transfer'], true)): ?>
+                                <div class="muted" style="margin-top:8px;color:#b91c1c;font-weight:700;">Bukti pembayaran belum tersedia</div>
+                            <?php endif; ?>
+                        </td>
                         <td class="amount">Rp <?php echo e(number_format($order->effective_total, 0, ',', '.')); ?></td>
                         <td><span class="status <?php echo e($order->receipt_status ?? 'pending'); ?>"><?php echo e(match($order->receipt_status ?? 'pending') {'verified' => 'Terverifikasi', 'printed' => 'Dicetak', 'cancelled' => 'Dibatalkan', default => 'Pending'}); ?></span>
                             <?php if($order->receipt_status === 'printed'): ?><div class="muted"><?php echo e($order->printed_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s')); ?> WIB</div><?php elseif($order->receipt_status === 'verified' && $order->verified_at): ?><div class="muted"><?php echo e($order->verified_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i:s')); ?> WIB</div><?php endif; ?>
@@ -265,11 +371,453 @@
             </table>
             <div class="cashier-pagination"><?php echo e($orders->onEachSide(1)->links()); ?></div>
         <?php endif; ?>
-        <p class="hint" style="padding:0 15px 12px">Antrean ini menampilkan pesanan tersimpan; unggahan bukti transfer belum tersedia. Perubahan antrean diperiksa setiap 10 detik. Struk dicetak melalui dialog browser. Tandai “Dicetak” hanya setelah printer menyelesaikan cetak; cetak thermal tanpa dialog membutuhkan konektor printer lokal.</p>
+        <p class="hint" style="padding:0 15px 12px">Klik “Lihat bukti pembayaran” pada kolom pembayaran untuk membuka foto atau PDF bukti transaksi. Perubahan antrean diperiksa setiap 10 detik. Struk dicetak melalui dialog browser. Tandai “Dicetak” hanya setelah printer menyelesaikan cetak; cetak thermal tanpa dialog membutuhkan konektor printer lokal.</p>
     </section>
 </main>
+<dialog class="payment-proof-dialog" id="payment-proof-dialog" aria-labelledby="payment-proof-dialog-title">
+    <div class="payment-proof-dialog-layout">
+        <div class="payment-proof-dialog-header">
+            <strong id="payment-proof-dialog-title">Bukti pembayaran</strong>
+            <button type="button" class="payment-proof-dialog-close" id="payment-proof-dialog-close">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i> Tutup
+            </button>
+        </div>
+        <div class="payment-proof-dialog-content">
+            <img class="payment-proof-dialog-image" id="payment-proof-dialog-image" alt="" hidden>
+            <iframe class="payment-proof-dialog-pdf" id="payment-proof-dialog-pdf" title="Bukti pembayaran PDF" hidden></iframe>
+        </div>
+    </div>
+</dialog>
 <script>
     (() => {
+        const qrisInput = document.getElementById('qris_image');
+        const qrisPreview = document.getElementById('qrisImagePreview');
+        const chooseAndCropQris = document.getElementById('chooseAndCropQris');
+        const cropCurrentQris = document.getElementById('cropCurrentQris');
+        const cropDialog = document.getElementById('qrisCropDialog');
+        const cropCanvas = document.getElementById('qrisCropCanvas');
+        const cropContext = cropCanvas.getContext('2d');
+        const cropPreview = document.getElementById('qrisCropPreview');
+        const cropZoom = document.getElementById('qrisCropZoom');
+        const cropZoomValue = document.getElementById('qrisCropZoomValue');
+        const cropWidth = document.getElementById('qrisCropWidth');
+        const cropHeight = document.getElementById('qrisCropHeight');
+        const cropError = document.getElementById('qrisCropError');
+        const cropFilename = document.getElementById('qrisCropFilename');
+        let cropSource = null;
+        let cropObjectUrl = null;
+        let previewObjectUrl = null;
+        let cropScale = 1;
+        let imageBounds = null;
+        let cropRect = null;
+        let imageDisplayScale = 1;
+        let cropInteraction = null;
+        let cropGeneration = 0;
+
+        const showCropError = (message) => {
+            cropError.textContent = message;
+            cropError.hidden = !message;
+        };
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+        const getSourceCrop = () => {
+            if (!cropSource || !imageBounds || !cropRect) return null;
+            return {
+                x: (cropRect.x - imageBounds.x) / imageDisplayScale,
+                y: (cropRect.y - imageBounds.y) / imageDisplayScale,
+                width: cropRect.width / imageDisplayScale,
+                height: cropRect.height / imageDisplayScale
+            };
+        };
+        const drawQrisCrop = () => {
+            if (!cropSource || !cropContext || !imageBounds || !cropRect) return;
+            cropContext.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+            cropContext.fillStyle = '#111827';
+            cropContext.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
+            cropContext.drawImage(cropSource, imageBounds.x, imageBounds.y, imageBounds.width, imageBounds.height);
+
+            const x = cropRect.x;
+            const y = cropRect.y;
+            const right = x + cropRect.width;
+            const bottom = y + cropRect.height;
+            cropContext.fillStyle = 'rgba(2, 6, 23, .62)';
+            cropContext.fillRect(imageBounds.x, imageBounds.y, imageBounds.width, y - imageBounds.y);
+            cropContext.fillRect(imageBounds.x, bottom, imageBounds.width, imageBounds.y + imageBounds.height - bottom);
+            cropContext.fillRect(imageBounds.x, y, x - imageBounds.x, cropRect.height);
+            cropContext.fillRect(right, y, imageBounds.x + imageBounds.width - right, cropRect.height);
+
+            cropContext.save();
+            cropContext.beginPath();
+            cropContext.rect(x, y, cropRect.width, cropRect.height);
+            cropContext.clip();
+            cropContext.strokeStyle = 'rgba(255,255,255,.82)';
+            cropContext.lineWidth = 1;
+            cropContext.beginPath();
+            cropContext.moveTo(x + cropRect.width / 3, y);
+            cropContext.lineTo(x + cropRect.width / 3, bottom);
+            cropContext.moveTo(x + cropRect.width * 2 / 3, y);
+            cropContext.lineTo(x + cropRect.width * 2 / 3, bottom);
+            cropContext.moveTo(x, y + cropRect.height / 3);
+            cropContext.lineTo(right, y + cropRect.height / 3);
+            cropContext.moveTo(x, y + cropRect.height * 2 / 3);
+            cropContext.lineTo(right, y + cropRect.height * 2 / 3);
+            cropContext.stroke();
+            cropContext.restore();
+
+            cropContext.strokeStyle = '#fff';
+            cropContext.lineWidth = 2;
+            cropContext.strokeRect(x, y, cropRect.width, cropRect.height);
+            const handles = [
+                [x, y], [x + cropRect.width / 2, y], [right, y],
+                [right, y + cropRect.height / 2], [right, bottom],
+                [x + cropRect.width / 2, bottom], [x, bottom],
+                [x, y + cropRect.height / 2]
+            ];
+            handles.forEach(([handleX, handleY]) => {
+                cropContext.fillStyle = '#fff';
+                cropContext.strokeStyle = '#0755c8';
+                cropContext.lineWidth = 2;
+                cropContext.beginPath();
+                cropContext.rect(handleX - 5, handleY - 5, 10, 10);
+                cropContext.fill();
+                cropContext.stroke();
+            });
+
+            const sourceCrop = getSourceCrop();
+            if (sourceCrop) {
+                const previewCanvas = document.createElement('canvas');
+                const previewScale = Math.min(1, 320 / sourceCrop.width, 240 / sourceCrop.height);
+                previewCanvas.width = Math.max(1, Math.round(sourceCrop.width * previewScale));
+                previewCanvas.height = Math.max(1, Math.round(sourceCrop.height * previewScale));
+                previewCanvas.getContext('2d').drawImage(
+                    cropSource,
+                    sourceCrop.x,
+                    sourceCrop.y,
+                    sourceCrop.width,
+                    sourceCrop.height,
+                    0,
+                    0,
+                    previewCanvas.width,
+                    previewCanvas.height
+                );
+                cropPreview.src = previewCanvas.toDataURL('image/png');
+                cropWidth.value = String(Math.max(1, Math.round(sourceCrop.width)));
+                cropHeight.value = String(Math.max(1, Math.round(sourceCrop.height)));
+            }
+            cropZoomValue.value = `${cropScale.toFixed(1)}×`;
+        };
+        const closeQrisCrop = (clearSelectedFile = false) => {
+            cropGeneration++;
+            if (cropDialog.open) cropDialog.close();
+            cropSource = null;
+            imageBounds = null;
+            cropRect = null;
+            cropInteraction = null;
+            if (cropObjectUrl) {
+                URL.revokeObjectURL(cropObjectUrl);
+                cropObjectUrl = null;
+            }
+            if (clearSelectedFile) qrisInput.value = '';
+        };
+        const openQrisCrop = (source, fileName) => {
+            showCropError('');
+            const image = new Image();
+            image.onload = () => {
+                cropSource = image;
+                imageDisplayScale = Math.min(
+                    (cropCanvas.width - 40) / image.width,
+                    (cropCanvas.height - 40) / image.height
+                );
+                imageBounds = {
+                    x: (cropCanvas.width - image.width * imageDisplayScale) / 2,
+                    y: (cropCanvas.height - image.height * imageDisplayScale) / 2,
+                    width: image.width * imageDisplayScale,
+                    height: image.height * imageDisplayScale
+                };
+                const insetX = imageBounds.width * 0.1;
+                const insetY = imageBounds.height * 0.1;
+                cropRect = {
+                    x: imageBounds.x + insetX,
+                    y: imageBounds.y + insetY,
+                    width: imageBounds.width - insetX * 2,
+                    height: imageBounds.height - insetY * 2
+                };
+                cropScale = 1;
+                cropZoom.value = '1';
+                cropFilename.textContent = fileName || 'Geser gambar untuk memilih area yang akan disimpan.';
+                cropDialog.showModal();
+                drawQrisCrop();
+            };
+            image.onerror = () => {
+                showCropError('Gambar QRIS tidak dapat dibuka. Pilih file gambar lain.');
+                closeQrisCrop(true);
+            };
+            image.src = source;
+        };
+
+        chooseAndCropQris.addEventListener('click', () => qrisInput.click());
+        qrisInput.addEventListener('change', () => {
+            const file = qrisInput.files?.[0];
+            if (!file) return;
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                showCropError('Gunakan gambar JPG, PNG, atau WEBP.');
+                qrisInput.value = '';
+                return;
+            }
+            if (file.size > 20 * 1024 * 1024) {
+                showCropError('Ukuran gambar sumber terlalu besar. Pilih gambar maksimal 20 MB.');
+                qrisInput.value = '';
+                return;
+            }
+            if (cropObjectUrl) URL.revokeObjectURL(cropObjectUrl);
+            cropObjectUrl = URL.createObjectURL(file);
+            openQrisCrop(cropObjectUrl, file.name);
+        });
+
+        cropCurrentQris?.addEventListener('click', () => {
+            const imageUrl = qrisPreview?.getAttribute('src');
+            if (!imageUrl || qrisPreview.hidden) {
+                showCropError('Gambar QRIS saat ini tidak tersedia.');
+                return;
+            }
+            openQrisCrop(imageUrl, imageUrl.split('/').pop()?.split('?')[0] || 'qris.png');
+        });
+
+        const resizeCropAroundCenter = (width, height) => {
+            if (!imageBounds || !cropRect) return;
+            const centerX = cropRect.x + cropRect.width / 2;
+            const centerY = cropRect.y + cropRect.height / 2;
+            const nextWidth = clamp(width, 30, imageBounds.width);
+            const nextHeight = clamp(height, 30, imageBounds.height);
+            cropRect.width = nextWidth;
+            cropRect.height = nextHeight;
+            cropRect.x = clamp(centerX - nextWidth / 2, imageBounds.x, imageBounds.x + imageBounds.width - nextWidth);
+            cropRect.y = clamp(centerY - nextHeight / 2, imageBounds.y, imageBounds.y + imageBounds.height - nextHeight);
+            drawQrisCrop();
+        };
+        cropZoom.addEventListener('input', () => {
+            if (!cropRect) return;
+            const nextScale = Number(cropZoom.value);
+            const sizeFactor = cropScale / nextScale;
+            cropScale = nextScale;
+            resizeCropAroundCenter(cropRect.width * sizeFactor, cropRect.height * sizeFactor);
+        });
+        cropWidth.addEventListener('change', () => {
+            const requestedWidth = Number(cropWidth.value);
+            if (!Number.isFinite(requestedWidth) || requestedWidth <= 0) {
+                drawQrisCrop();
+                return;
+            }
+            resizeCropAroundCenter(requestedWidth * imageDisplayScale, cropRect.height);
+        });
+        cropHeight.addEventListener('change', () => {
+            const requestedHeight = Number(cropHeight.value);
+            if (!Number.isFinite(requestedHeight) || requestedHeight <= 0) {
+                drawQrisCrop();
+                return;
+            }
+            resizeCropAroundCenter(cropRect.width, requestedHeight * imageDisplayScale);
+        });
+        const canvasPoint = (event) => {
+            const bounds = cropCanvas.getBoundingClientRect();
+            return {
+                x: (event.clientX - bounds.left) * cropCanvas.width / bounds.width,
+                y: (event.clientY - bounds.top) * cropCanvas.height / bounds.height
+            };
+        };
+        const getCropHit = (point) => {
+            const left = cropRect.x;
+            const top = cropRect.y;
+            const right = left + cropRect.width;
+            const bottom = top + cropRect.height;
+            const tolerance = 14;
+            const nearLeft = Math.abs(point.x - left) <= tolerance;
+            const nearRight = Math.abs(point.x - right) <= tolerance;
+            const nearTop = Math.abs(point.y - top) <= tolerance;
+            const nearBottom = Math.abs(point.y - bottom) <= tolerance;
+            const withinVertical = point.y >= top - tolerance && point.y <= bottom + tolerance;
+            const withinHorizontal = point.x >= left - tolerance && point.x <= right + tolerance;
+            if (nearLeft && nearTop) return 'nw';
+            if (nearRight && nearTop) return 'ne';
+            if (nearLeft && nearBottom) return 'sw';
+            if (nearRight && nearBottom) return 'se';
+            if (nearTop && withinHorizontal) return 'n';
+            if (nearBottom && withinHorizontal) return 's';
+            if (nearLeft && withinVertical) return 'w';
+            if (nearRight && withinVertical) return 'e';
+            if (point.x >= left && point.x <= right && point.y >= top && point.y <= bottom) return 'move';
+            return 'new';
+        };
+        const updateCropCursor = (event) => {
+            if (!cropRect) return;
+            const cursors = {
+                nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize',
+                n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize',
+                move: 'move', new: 'crosshair'
+            };
+            cropCanvas.style.cursor = cursors[getCropHit(canvasPoint(event))];
+        };
+        cropCanvas.addEventListener('pointerdown', (event) => {
+            if (!cropRect) return;
+            const pointerPoint = canvasPoint(event);
+            let point = {
+                x: clamp(pointerPoint.x, imageBounds.x, imageBounds.x + imageBounds.width),
+                y: clamp(pointerPoint.y, imageBounds.y, imageBounds.y + imageBounds.height)
+            };
+            const mode = getCropHit(point);
+            if (mode === 'new') {
+                point = {
+                    x: clamp(point.x, imageBounds.x, imageBounds.x + imageBounds.width - 30),
+                    y: clamp(point.y, imageBounds.y, imageBounds.y + imageBounds.height - 30)
+                };
+            }
+            cropInteraction = {
+                id: event.pointerId,
+                mode,
+                startX: point.x,
+                startY: point.y,
+                rect: { ...cropRect }
+            };
+            cropCanvas.setPointerCapture(event.pointerId);
+            updateCropCursor(event);
+        });
+        cropCanvas.addEventListener('pointermove', (event) => {
+            if (!cropInteraction || cropInteraction.id !== event.pointerId) {
+                updateCropCursor(event);
+                return;
+            }
+            const point = canvasPoint(event);
+            const deltaX = point.x - cropInteraction.startX;
+            const deltaY = point.y - cropInteraction.startY;
+            const start = cropInteraction.rect;
+            if (cropInteraction.mode === 'move') {
+                cropRect.x = clamp(start.x + deltaX, imageBounds.x, imageBounds.x + imageBounds.width - start.width);
+                cropRect.y = clamp(start.y + deltaY, imageBounds.y, imageBounds.y + imageBounds.height - start.height);
+            } else {
+                let left = start.x;
+                let top = start.y;
+                let right = start.x + start.width;
+                let bottom = start.y + start.height;
+                const edges = cropInteraction.mode;
+                if (edges === 'new') {
+                    left = clamp(Math.min(cropInteraction.startX, point.x), imageBounds.x, imageBounds.x + imageBounds.width);
+                    top = clamp(Math.min(cropInteraction.startY, point.y), imageBounds.y, imageBounds.y + imageBounds.height);
+                    right = clamp(Math.max(cropInteraction.startX, point.x), imageBounds.x, imageBounds.x + imageBounds.width);
+                    bottom = clamp(Math.max(cropInteraction.startY, point.y), imageBounds.y, imageBounds.y + imageBounds.height);
+                } else {
+                    if (edges.includes('w')) left = clamp(start.x + deltaX, imageBounds.x, right - 30);
+                    if (edges.includes('e')) right = clamp(start.x + start.width + deltaX, left + 30, imageBounds.x + imageBounds.width);
+                    if (edges.includes('n')) top = clamp(start.y + deltaY, imageBounds.y, bottom - 30);
+                    if (edges.includes('s')) bottom = clamp(start.y + start.height + deltaY, top + 30, imageBounds.y + imageBounds.height);
+                }
+                if (right - left < 30 || bottom - top < 30) return;
+                cropRect = {
+                    x: left,
+                    y: top,
+                    width: right - left,
+                    height: bottom - top
+                };
+            }
+            drawQrisCrop();
+        });
+        cropCanvas.addEventListener('pointerup', () => { cropInteraction = null; });
+        cropCanvas.addEventListener('pointercancel', () => { cropInteraction = null; });
+
+        const cancelCrop = () => closeQrisCrop(true);
+        document.getElementById('qrisCropClose').addEventListener('click', cancelCrop);
+        document.getElementById('qrisCropCancel').addEventListener('click', cancelCrop);
+        cropDialog.addEventListener('cancel', (event) => {
+            event.preventDefault();
+            cancelCrop();
+        });
+        document.getElementById('qrisCropConfirm').addEventListener('click', () => {
+            if (!cropSource || !cropContext) {
+                showCropError('Gambar belum siap untuk dipotong.');
+                return;
+            }
+            const sourceCrop = getSourceCrop();
+            if (!sourceCrop || sourceCrop.width < 1 || sourceCrop.height < 1) {
+                showCropError('Pilih area crop yang lebih besar.');
+                return;
+            }
+            const output = document.createElement('canvas');
+            const outputScale = Math.min(1, 4000 / sourceCrop.width, 4000 / sourceCrop.height);
+            output.width = Math.max(1, Math.round(sourceCrop.width * outputScale));
+            output.height = Math.max(1, Math.round(sourceCrop.height * outputScale));
+            const outputContext = output.getContext('2d');
+            if (!outputContext) {
+                showCropError('Browser tidak mendukung proses crop gambar.');
+                return;
+            }
+            const generation = ++cropGeneration;
+            outputContext.imageSmoothingQuality = 'high';
+            outputContext.drawImage(
+                cropSource,
+                sourceCrop.x,
+                sourceCrop.y,
+                sourceCrop.width,
+                sourceCrop.height,
+                0,
+                0,
+                output.width,
+                output.height
+            );
+            output.toBlob((blob) => {
+                if (generation !== cropGeneration) return;
+                if (!blob) {
+                    showCropError('Hasil crop gagal dibuat. Coba pilih gambar lain.');
+                    return;
+                }
+                if (blob.size > 3 * 1024 * 1024) {
+                    showCropError('Hasil crop melebihi batas 3 MB. Kurangi zoom atau gunakan gambar sumber lain.');
+                    return;
+                }
+                const croppedFile = new File([blob], 'qris-cropped.png', { type: 'image/png' });
+                const transfer = new DataTransfer();
+                transfer.items.add(croppedFile);
+                qrisInput.files = transfer.files;
+                const removeQris = document.querySelector('input[name="remove_qris"]');
+                if (removeQris) removeQris.checked = false;
+                if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+                previewObjectUrl = URL.createObjectURL(blob);
+                qrisPreview.src = previewObjectUrl;
+                qrisPreview.hidden = false;
+                if (cropCurrentQris) cropCurrentQris.hidden = false;
+                showCropError('');
+                closeQrisCrop();
+            }, 'image/png');
+        });
+
+        const proofDialog = document.getElementById('payment-proof-dialog');
+        const proofImage = document.getElementById('payment-proof-dialog-image');
+        const proofPdf = document.getElementById('payment-proof-dialog-pdf');
+        const closeProofDialog = () => {
+            proofDialog.close();
+        };
+        proofDialog.addEventListener('close', () => {
+            proofImage.removeAttribute('src');
+            proofPdf.removeAttribute('src');
+        });
+        document.addEventListener('click', (event) => {
+            const button = event.target instanceof Element ? event.target.closest('.payment-proof-button') : null;
+            if (button) {
+                document.getElementById('payment-proof-dialog-title').textContent = `Bukti pembayaran pesanan #${button.dataset.orderId}`;
+                if (button.dataset.proofType === 'pdf') {
+                    proofImage.hidden = true;
+                    proofPdf.hidden = false;
+                    proofPdf.src = button.dataset.proofUrl;
+                } else {
+                    proofPdf.hidden = true;
+                    proofImage.hidden = false;
+                    proofImage.src = button.dataset.proofUrl;
+                    proofImage.alt = `Bukti pembayaran pesanan #${button.dataset.orderId}`;
+                }
+                proofDialog.showModal();
+                return;
+            }
+            if (event.target === proofDialog) closeProofDialog();
+        });
+        document.getElementById('payment-proof-dialog-close').addEventListener('click', closeProofDialog);
+
         const dateEl = document.getElementById('cashierRealtimeDate');
         const timeEl = document.getElementById('cashierRealtimeTime');
         const updateClock = () => {

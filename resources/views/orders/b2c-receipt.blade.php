@@ -5,7 +5,6 @@
     $voucherDiscount = min((int) ($order->discount_code_amount ?? 0), max(0, $originalTotal - $total));
     $productDiscount = max(0, $originalTotal - $total - $voucherDiscount);
     $paymentMethod = $order->payment_method ?: 'Belum dipilih';
-    $paymentStatus = $order->payment_status === 'paid' ? 'Lunas' : 'Menunggu pembayaran';
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -43,20 +42,75 @@
         .summary td:last-child { text-align: right; }
         .summary .grand-total td { padding-top: 7px; border-top: 1px solid #172033; font-size: 14px; font-weight: 800; }
         .payment { display: flex; justify-content: space-between; gap: 10px; }
-        .payment-instructions { margin-top:12px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc }
-        .payment-instructions img { display:block;width:150px;max-width:100%;margin:8px auto;object-fit:contain }
-        .payment-instructions p { margin:5px 0 }
         .thanks { margin: 14px 0 0; text-align: center; font-weight: 700; }
         .well-wishes { margin: 14px 0 0; text-align: center; font-size: 11px; }
         .tagline { display: block; width: fit-content; margin: 3px auto 0; color: #163c9c; font-family: "Segoe Script", "Brush Script MT", cursive; font-size: 21px; font-style: italic; font-weight: 600; }
         .print-button { display: block; margin: 16px auto 0; padding: 9px 16px; border: 0; border-radius: 6px; color: #fff; background: #163c9c; cursor: pointer; }
         .back-button { display: block; width: fit-content; margin: 10px auto 0; color: #163c9c; font-weight: 700; text-decoration: none; }
         .home-button { display: block; width: fit-content; margin: 10px auto 0; padding: 9px 14px; border-radius: 6px; color: #fff; background: #163c9c; font-weight: 700; text-decoration: none; }
+        @media screen and (max-width: 480px) {
+            body { padding: 10px 8px; }
+            .receipt { padding: 18px 14px; }
+            .brand img { width: 78px; height: 56px; }
+            .brand h1 { font-size: 19px; }
+            .brand p { overflow-wrap: anywhere; }
+            .pharmacists { line-height: 1.5; }
+            .details { grid-template-columns: 76px minmax(0, 1fr); gap: 4px 6px; }
+            .details span { overflow-wrap: anywhere; }
+            .items { display: block; }
+            .items thead { display: none; }
+            .items tbody { display: grid; gap: 8px; }
+            .items tbody tr {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr);
+                padding: 7px 9px;
+                border: 1px solid #dbe2ea;
+                border-radius: 7px;
+            }
+            .items tbody td {
+                display: flex;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 4px 0;
+                border-bottom: 0;
+                text-align: right !important;
+            }
+            .items tbody td::before {
+                flex: 0 0 auto;
+                color: #475569;
+                font-weight: 700;
+                text-align: left;
+            }
+            .items tbody td.product-name {
+                display: block;
+                padding-bottom: 7px;
+                border-bottom: 1px solid #dbe2ea;
+                text-align: left !important;
+            }
+            .items tbody td:nth-child(2)::before { content: "Qty"; }
+            .items tbody td:nth-child(3)::before { content: "Harga"; }
+            .items tbody td:nth-child(4)::before { content: "Diskon"; }
+            .items tbody td:nth-child(5)::before { content: "Subtotal"; }
+            .items tbody td[colspan] {
+                display: block;
+                text-align: center !important;
+            }
+            .payment { align-items: baseline; }
+            .payment span { text-align: right; overflow-wrap: anywhere; }
+            .tagline { max-width: 100%; font-size: 19px; text-align: center; }
+        }
         @media print {
             @page { size: 80mm auto; margin: 0; }
             body { width: 80mm; padding: 0; background: #fff; font-size: 10px; }
             .receipt { width: 80mm; max-width: none; padding: 4mm; box-shadow: none; }
             .brand img { width: 78px; height: 54px; }
+            .items { display: table; }
+            .items thead { display: table-header-group; }
+            .items tbody { display: table-row-group; }
+            .items tbody tr { display: table-row; padding: 0; border: 0; border-radius: 0; }
+            .items tbody td { display: table-cell; padding: 5px 2px; border-bottom: 1px solid #dbe2ea; }
+            .items tbody td.product-name { display: table-cell; padding-bottom: 5px; border-bottom: 1px solid #dbe2ea; }
+            .items tbody td::before { content: none !important; }
             .print-button, .back-button, .home-button { display: none; }
         }
     </style>
@@ -127,19 +181,6 @@
         <div class="payment"><strong>Pembayaran</strong><span>{{ $paymentMethod }}</span></div>
         @if($order->isTempoPayment())
             <div class="payment"><strong>Jatuh Tempo</strong><span>{{ $order->due_date_formatted }}</span></div>
-        @endif
-        <div class="payment"><strong>Status</strong><span>{{ $paymentStatus }}</span></div>
-        @if($order->payment_status === 'pending' && in_array(strtolower((string) $order->payment_method), ['qris', 'transfer'], true))
-            <section class="payment-instructions" aria-label="Instruksi pembayaran">
-                <strong>Instruksi pembayaran</strong>
-                @if(strtolower((string) $order->payment_method) === 'qris' && $order->payment_qris_image_path)
-                    <img src="{{ asset('storage/' . $order->payment_qris_image_path) }}" alt="QRIS pembayaran Apotek Medix">
-                @elseif(strtolower((string) $order->payment_method) === 'transfer' && $order->payment_bank_name && $order->payment_account_number)
-                    <p><strong>{{ $order->payment_bank_name }}</strong><br>{{ $order->payment_account_number }}<br>Atas nama {{ $order->payment_account_holder }}</p>
-                @endif
-                @if($order->payment_instructions)<p>{{ $order->payment_instructions }}</p>@endif
-                <p>Pesanan menunggu verifikasi pembayaran oleh kasir.</p>
-            </section>
         @endif
         <p class="well-wishes">Semoga lekas sembuh</p>
         <span class="tagline">Sehat Bersama Medix</span>

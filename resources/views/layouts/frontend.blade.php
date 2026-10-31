@@ -1101,7 +1101,7 @@
             </ul>
 
             {{-- Cart button --}}
-            <button class="cart-nav-btn" id="cartNavBtn" onclick="if(typeof openCart==='function'){openCart();}else{window.location.href='{{ route('cart.index') }}';}" title="Keranjang Belanja" aria-label="Buka keranjang belanja">
+            <button class="cart-nav-btn" id="cartNavBtn" onclick="if(typeof goToCheckoutPage==='function'){goToCheckoutPage();}else{window.location.href='{{ route('checkout.index') }}';}" title="Lanjut ke checkout" aria-label="Lanjut ke checkout">
                 <i class="fa-solid fa-cart-shopping"></i>
                 <span class="cart-badge" id="cartBadgeNav">0</span>
             </button>

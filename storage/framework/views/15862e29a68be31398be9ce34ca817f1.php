@@ -3,11 +3,18 @@
 <?php $__env->startSection('title', 'Checkout & Pembayaran - Apotek Medix'); ?>
 
 <?php
-  $fullName = trim((string) ($defaultShippingAddress?->name ?? (auth()->check() && auth()->user()->isUser() ? auth()->user()->name : '')));
+  $consultationPrescriptionCheckout = $consultationPrescription !== null;
+  $fullName = trim((string) ($consultationPrescription?->patient_name ?? ($defaultShippingAddress?->name ?? (auth()->check() && auth()->user()->isUser() ? auth()->user()->name : ''))));
+  $checkoutPhone = $consultationPrescription?->patient_phone ?? $defaultShippingAddress?->phone;
   $nameParts = $fullName !== '' ? preg_split('/\s+/', $fullName, 2) : [];
   $defaultFirstName = count($nameParts) > 1 ? $nameParts[0] : '';
   $defaultLastName = count($nameParts) > 1 ? $nameParts[1] : ($nameParts[0] ?? '');
   $defaultContact = $defaultShippingAddress?->email ?? (auth()->check() ? auth()->user()->email : ($defaultShippingAddress?->phone ?? ''));
+  $consultationPrescriptionPayload = $consultationPrescription ? [
+    'id' => $consultationPrescription->id,
+    'number' => $consultationPrescription->prescription_number,
+    'items' => $consultationPrescription->prescribed_items ?? [],
+  ] : null;
 ?>
 
 <?php $__env->startSection('styles'); ?>
@@ -78,28 +85,6 @@
     font-size: 0.92rem;
     margin: 0;
   }
-  .co-back-cart-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(6, 182, 212, 0.55);
-    color: #ffffff;
-    border-radius: 10px;
-    font-size: 0.86rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: all 0.2s;
-    backdrop-filter: blur(6px);
-  }
-  .co-back-cart-btn:hover {
-    background: rgba(6, 182, 212, 0.2);
-    border-color: #06B6D4;
-    color: #ffffff;
-    transform: translateY(-1px);
-  }
-
   /* ===== MAIN 2-COLUMN CHECKOUT CONTAINER ===== */
   .co-main-wrap {
     max-width: 1200px;
@@ -452,36 +437,42 @@
     display: flex;
     align-items: center;
     gap: 0.65rem;
-    padding: 0.78rem 0.9rem;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 11px;
-    background: #f8fafc;
-    color: #334155;
+    min-height: 50px;
+    padding: 0.7rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #243b53;
     font-size: 0.88rem;
-    font-weight: 600;
+    font-weight: 700;
     text-align: left;
-    transition: all 0.16s ease;
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
   }
   .co-pay-opt i {
     font-size: 1.05rem;
-    color: #64748b;
+    color: #0755c8;
     width: 20px;
     text-align: center;
-    transition: color 0.16s ease;
+    transition: color 0.18s ease;
   }
   .co-pay-opt:hover {
-    border-color: #06B6D4;
+    transform: translateY(-1px);
+    border-color: #0755c8;
     background: #ffffff;
   }
   .co-pay-opt.active {
-    background: #ECFEFF;
-    border-color: #06B6D4;
-    color: #0F172A;
+    background: #eff6ff;
+    border-color: #0755c8;
+    color: #10243e;
     font-weight: 700;
-    box-shadow: 0 3px 10px rgba(6, 182, 212, 0.14);
+    box-shadow: 0 3px 10px rgba(7, 85, 200, 0.14);
   }
   .co-pay-opt.active i {
-    color: #0E7490;
+    color: #0755c8;
+  }
+  .co-pay-opt:focus-visible {
+    outline: 3px solid rgba(7, 85, 200, 0.25);
+    outline-offset: 2px;
   }
   .co-pay-opt:disabled {
     border-color: #e2e8f0;
@@ -503,9 +494,9 @@
   }
   .co-payment-detail {
     margin: 0 0 0.85rem;
-    padding: 0.9rem;
-    border: 1px solid #dbeafe;
-    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    border: 1px solid #dbe4f0;
+    border-radius: 10px;
     background: #f8fafc;
     color: #334155;
     text-align: center;
@@ -534,6 +525,245 @@
     color: #64748b;
     font-size: 0.77rem;
     line-height: 1.45;
+  }
+  #coPaymentProof {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+    border: 0;
+  }
+  .co-proof-upload {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.55rem;
+    margin: 0.65rem 0 0;
+    padding: 1rem;
+    border: 1.5px dashed #9bb8de;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease;
+  }
+  .co-proof-upload:hover,
+  .co-proof-upload:focus-within {
+    border-color: #0755c8;
+    background: #f8fbff;
+  }
+  .co-proof-upload-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #0755c8;
+    font-size: 1.05rem;
+  }
+  .co-proof-upload-copy {
+    display: grid;
+    gap: 0.15rem;
+    text-align: center;
+  }
+  .co-proof-upload-copy strong {
+    color: #10243e;
+    font-size: 0.84rem;
+  }
+  .co-proof-upload-copy span {
+    color: #64748b;
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+  .co-proof-upload-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid #0755c8;
+    border-radius: 7px;
+    background: #fff;
+    color: #0755c8;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .co-proof-preview {
+    display: none;
+    max-width: 100%;
+    max-height: 160px;
+    border: 1px solid #dbe4f0;
+    border-radius: 8px;
+    background: #fff;
+    object-fit: contain;
+  }
+  .co-proof-file-name {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    color: #166534;
+    font-size: 0.77rem;
+    font-weight: 700;
+  }
+  .co-proof-remove {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 32px;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid #fecaca;
+    border-radius: 7px;
+    background: #fff;
+    color: #b91c1c;
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .co-proof-remove:hover {
+    background: #fef2f2;
+  }
+  .co-proof-upload.has-file {
+    border-style: solid;
+    border-color: #86c99b;
+    background: #f7fef9;
+  }
+  .co-pre-submit-notice {
+    position: fixed !important;
+    inset: 0 !important;
+    margin: 0 !important;
+    display: none;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none;
+    max-height: none;
+    padding: 1rem;
+    overflow: auto;
+    border: 0 !important;
+    border-radius: 0;
+    transform: none !important;
+    background: transparent;
+    color: #172b4d;
+    box-shadow: none;
+  }
+  .co-pre-submit-notice[open] {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+  .co-pre-submit-notice::backdrop {
+    background: rgba(15, 23, 42, 0.6);
+  }
+  .co-pre-submit-notice-card {
+    position: relative;
+    width: min(440px, 100%);
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+    padding: 1.6rem;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
+    text-align: center;
+  }
+  .co-pre-submit-notice-close {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.7rem;
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #475569;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  .co-pre-submit-notice-close:hover {
+    background: #e2e8f0;
+  }
+  .co-pre-submit-notice-icon {
+    display: grid;
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 0.85rem;
+    place-items: center;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #0755c8;
+    font-size: 1.35rem;
+  }
+  .co-pre-submit-notice-icon.is-warning {
+    background: #fff7ed;
+    color: #c2410c;
+  }
+  .co-pre-submit-notice-card h2 {
+    margin: 0 2rem 0.45rem;
+    color: #10243e;
+    font-size: 1.12rem;
+    font-weight: 800;
+  }
+  .co-pre-submit-notice-card p {
+    margin: 0 0 1rem;
+    color: #52657e;
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+  #coPreSubmitNoticeProducts {
+    display: grid;
+    gap: 0.4rem;
+    max-height: 150px;
+    overflow: auto;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+  }
+  #coPreSubmitNoticeProducts:not([hidden]) {
+    display: grid;
+  }
+  #coPreSubmitNoticeProducts[hidden] {
+    display: none !important;
+  }
+  #coPreSubmitNoticeProducts li {
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+    background: #fff7ed;
+    color: #7c2d12;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+  .co-pre-submit-notice-continue {
+    display: inline-flex;
+    min-width: 150px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+    border: 0;
+    border-radius: 9px;
+    background: #0755c8;
+    color: #fff;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .co-pre-submit-notice-continue:hover {
+    background: #063583;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .co-pay-opt,
+    .co-proof-upload {
+      transition: none;
+    }
   }
   .co-transfer-number {
     display: block;
@@ -680,8 +910,8 @@
   .co-sum-logo-marker {
     position: absolute;
     z-index: 2;
-    top: 4px;
-    left: 4px;
+    top: -8px;
+    right: -8px;
     display: inline-flex;
     width: 20px;
     height: 20px;
@@ -706,24 +936,6 @@
     object-fit: contain;
     display: block;
   }
-  .co-sum-qty-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    min-width: 23px;
-    height: 23px;
-    padding: 0 6px;
-    border-radius: 999px;
-    background: #0F172A;
-    border: 1.5px solid #06B6D4;
-    color: #ffffff;
-    font-size: 0.72rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
-  }
   .co-sum-name {
     font-size: 0.92rem;
     font-weight: 700;
@@ -735,6 +947,74 @@
     font-weight: 600;
     color: #0E7490;
     margin-top: 3px;
+  }
+  .co-sum-detail {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 0.76rem;
+    line-height: 1.4;
+  }
+  .co-sum-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.55rem;
+  }
+  .co-sum-quantity {
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    overflow: hidden;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+  }
+  .co-sum-quantity button {
+    width: 30px;
+    height: 28px;
+    border: 0;
+    background: #f8fafc;
+    color: #0f172a;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  .co-sum-quantity button:disabled {
+    color: #cbd5e1;
+    cursor: not-allowed;
+  }
+  .co-sum-quantity input {
+    width: 38px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    outline: none;
+    color: #0f172a;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: center;
+    -moz-appearance: textfield;
+  }
+  .co-sum-quantity input::-webkit-inner-spin-button,
+  .co-sum-quantity input::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
+  .co-sum-remove {
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fff;
+    color: #dc2626;
+    cursor: pointer;
+  }
+  .co-sum-remove:hover {
+    background: #fef2f2;
   }
   .co-sum-price {
     font-size: 0.92rem;
@@ -837,10 +1117,105 @@
     text-decoration: none;
     margin-bottom: 0.75rem;
     border: none;
+    font: inherit;
+    cursor: pointer;
     transition: transform 0.15s;
   }
   .co-action-btn:hover {
     transform: translateY(-1px);
+  }
+  .co-action-btn:disabled {
+    opacity: 0.65;
+    cursor: wait;
+    transform: none;
+  }
+  .co-receipt-dialog {
+    width: min(940px, calc(100% - 1.5rem));
+    max-width: none;
+    height: min(92vh, 900px);
+    height: min(92dvh, 900px);
+    max-height: none;
+    padding: 0;
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    color: #0f172a;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, .35);
+  }
+  .co-receipt-dialog::backdrop {
+    background: rgba(15, 23, 42, .72);
+  }
+  .co-receipt-dialog-layout {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    width: 100%;
+    height: 100%;
+  }
+  .co-receipt-dialog-toolbar,
+  .co-receipt-dialog-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .8rem 1rem;
+    background: #fff;
+  }
+  .co-receipt-dialog-toolbar {
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .co-receipt-dialog-toolbar strong {
+    font-size: .98rem;
+  }
+  .co-receipt-dialog-toolbar button,
+  .co-receipt-dialog-actions button {
+    min-height: 42px;
+    padding: .6rem .9rem;
+    border: 0;
+    border-radius: 9px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .co-receipt-dialog-close {
+    background: #f1f5f9;
+    color: #334155;
+  }
+  .co-receipt-frame {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #f1f5f9;
+  }
+  .co-receipt-dialog-actions {
+    justify-content: flex-end;
+    border-top: 1px solid #e2e8f0;
+  }
+  .co-receipt-print {
+    background: #0755c8;
+    color: #fff;
+  }
+  .co-receipt-whatsapp {
+    background: #10b981;
+    color: #fff;
+  }
+  @media (max-width: 520px) {
+    .co-receipt-dialog {
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      border-radius: 0;
+    }
+    .co-receipt-dialog-toolbar,
+    .co-receipt-dialog-actions {
+      padding: .65rem;
+    }
+    .co-receipt-dialog-actions button {
+      flex: 1;
+      padding: .55rem .4rem;
+      font-size: .82rem;
+    }
   }
 
   @media (max-width: 960px) {
@@ -875,11 +1250,8 @@
         <span class="current">Pembayaran &amp; Checkout</span>
       </div>
       <h1 class="co-banner-title">Checkout &amp; Pembayaran</h1>
-      <p class="co-banner-sub">Lengkapi alamat pengantaran dan metode pembayaran untuk menyelesaikan pesanan Anda.</p>
+      <p class="co-banner-sub"><?php echo e($consultationPrescriptionCheckout ? 'Lengkapi alamat pengiriman untuk menerima obat yang diresepkan.' : 'Lengkapi alamat pengantaran dan metode pembayaran untuk menyelesaikan pesanan Anda.'); ?></p>
     </div>
-    <a href="<?php echo e(route('cart.index')); ?>" class="co-back-cart-btn">
-      <i class="fa-solid fa-bag-shopping"></i> Kembali ke Keranjang
-    </a>
   </div>
 </section>
 
@@ -942,6 +1314,7 @@
               <h2 class="co-sec-title">Pengantaran</h2>
             </div>
 
+            <?php if (! ($consultationPrescriptionCheckout)): ?>
             <div class="co-delivery-tabs" id="coDeliveryTabs">
               <button type="button" class="co-delivery-tab active" id="tabShipBtn" onclick="setDeliveryMode('ship')">
                 <i class="fa-solid fa-truck-fast"></i> Kirim
@@ -950,16 +1323,17 @@
                 <i class="fa-solid fa-location-dot"></i> Ambil di tempat
               </button>
             </div>
+            <?php endif; ?>
 
             <div class="co-field">
               <input type="text" id="co_b2b_outlet" class="co-input" placeholder="Nama outlet *" style="display:none;margin-bottom:0.75rem;">
-              <input type="text" id="co_full_name" class="co-input" placeholder="Nama" value="<?php echo e($fullName); ?>">
-              <input type="tel" id="co_phone" class="co-input" placeholder="No. Telp / WhatsApp" value="<?php echo e($defaultShippingAddress?->phone); ?>" style="margin-top:0.75rem;">
+              <input type="text" id="co_full_name" class="co-input" placeholder="Nama" value="<?php echo e($fullName); ?>" <?php if($consultationPrescriptionCheckout): ?> readonly <?php endif; ?>>
+              <input type="tel" id="co_phone" class="co-input" placeholder="No. Telp / WhatsApp" value="<?php echo e($checkoutPhone); ?>" style="margin-top:0.75rem;" <?php if($consultationPrescriptionCheckout): ?> readonly <?php endif; ?>>
             </div>
 
             <div id="coShippingAddressFields">
               <div class="co-field">
-                <input type="text" id="co_address" class="co-input" placeholder="Alamat lengkap" value="<?php echo e($defaultShippingAddress?->address); ?>" oninput="updateShippingMethodStatus()">
+                <input type="text" id="co_address" class="co-input" placeholder="<?php echo e($consultationPrescriptionCheckout ? 'Masukkan alamat pengiriman lengkap *' : 'Alamat lengkap'); ?>" value="<?php echo e($consultationPrescriptionCheckout ? '' : $defaultShippingAddress?->address); ?>" oninput="updateShippingMethodStatus()">
               </div>
             </div>
 
@@ -1032,12 +1406,12 @@
             </div>
           </div>
           <p id="coSuccessDesc" style="font-size:0.9rem;color:#334155;line-height:1.55;margin-bottom:1.25rem;">
-            Pesanan Anda telah tercatat di sistem Apotek Medix. Silakan buka invoice atau lanjutkan konfirmasi melalui WhatsApp:
+            Pesanan Anda telah tercatat. Unduh struk dan konfirmasi pembayaran melalui WhatsApp agar admin dapat memverifikasi pesanan Anda.
           </p>
 
-          <a id="coInvoiceBtn" href="#" target="_blank" rel="noopener" class="co-action-btn" style="background:#0F172A;border:1.5px solid #06B6D4;color:#ffffff;">
-            <i class="fa-solid fa-file-invoice"></i> Lihat Invoice / Cetak Struk
-          </a>
+          <button type="button" id="coInvoiceBtn" onclick="openReceiptPreview()" class="co-action-btn" style="background:#0F172A;border:1.5px solid #06B6D4;color:#ffffff;">
+            <i class="fa-solid fa-file-invoice"></i> Lihat Struk
+          </button>
           <button type="button" id="coWhatsappBtn" onclick="openWhatsAppCheckout()" class="co-action-btn" style="background:#10B981;color:#ffffff;">
             <i class="fa-brands fa-whatsapp" style="font-size:1.15rem;"></i> Konfirmasi Pembayaran via WhatsApp
           </button>
@@ -1048,7 +1422,7 @@
 
         <div class="co-footer-links">
           <a href="<?php echo e(route('about')); ?>">Ketentuan dan kebijakan Apotek Medix</a>
-          <a id="coEditCartFooterLink" href="<?php echo e(route('cart.index')); ?>">Ubah isi keranjang</a>
+          <a id="coEditCartFooterLink" href="<?php echo e(route('cart.index')); ?>" <?php if($consultationPrescriptionCheckout): ?> style="display:none" <?php endif; ?>>Ubah isi keranjang</a>
         </div>
 
       </div>
@@ -1059,7 +1433,7 @@
       <div class="co-right-inner">
         <div class="co-summary-head">
           <h3><i class="fa-solid fa-receipt"></i> Ringkasan Pesanan</h3>
-          <a id="coEditSummaryLink" href="<?php echo e(route('cart.index')); ?>" style="font-size:0.8rem;font-weight:600;color:#0E7490;text-decoration:underline;">Ubah</a>
+          <a id="coEditSummaryLink" href="<?php echo e(route('cart.index')); ?>" style="font-size:0.8rem;font-weight:600;color:#0E7490;text-decoration:underline;<?php echo e($consultationPrescriptionCheckout ? 'display:none;' : ''); ?>">Ubah</a>
         </div>
 
         <div id="coSummaryItems"></div>
@@ -1116,7 +1490,7 @@
             <?php endif; ?>
             <button type="button" class="co-pay-opt <?php echo e($defaultCheckoutPaymentMethod === 'Cash' ? 'active' : ''); ?>" data-pay-method="Cash" onclick="selectPaymentMethod('Cash')">
               <i class="fa-solid fa-money-bill-wave"></i>
-              <span>Cash</span>
+              <span>Tunai</span>
             </button>
             <button type="button" class="co-pay-opt" id="coTempoOption" data-pay-method="Tempo" onclick="selectPaymentMethod('Tempo')" aria-disabled="false">
               <i class="fa-solid fa-calendar-day"></i>
@@ -1146,6 +1520,25 @@
             <span id="coCashAmount" class="co-cash-amount">Rp 0,00</span>
           </div>
 
+          <div id="coPaymentProofWrap" class="co-payment-detail" hidden>
+            <label for="coPaymentProof" class="co-payment-detail-title">Bukti pembayaran <span aria-hidden="true">*</span></label>
+            <label id="coProofUpload" class="co-proof-upload" for="coPaymentProof">
+              <span class="co-proof-upload-icon"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i></span>
+              <span class="co-proof-upload-copy">
+                <strong>Pilih bukti pembayaran</strong>
+                <span>Foto atau PDF · Maksimal 5 MB</span>
+              </span>
+              <span class="co-proof-upload-button"><i class="fa-regular fa-folder-open" aria-hidden="true"></i> Pilih file</span>
+              <img id="coProofPreview" class="co-proof-preview" alt="Pratinjau bukti pembayaran">
+              <span id="coProofFileName" class="co-proof-file-name" aria-live="polite"></span>
+              <input id="coPaymentProof" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" aria-describedby="coPaymentProofNote">
+            </label>
+            <button type="button" id="coProofRemove" class="co-proof-remove">
+              <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Hapus file
+            </button>
+            <p id="coPaymentProofNote" class="co-payment-detail-note">Unggah bukti transfer atau pembayaran QRIS (JPG, PNG, WEBP, atau PDF; maks. 5 MB).</p>
+          </div>
+
           <div id="coTempoDaysWrap" style="display:none;margin-bottom:0.75rem;">
             <input type="number" id="co_payment_term_days" min="1" step="1" class="co-input" placeholder="Jumlah hari tempo (contoh: 14)" style="height:44px;background:#fff;">
           </div>
@@ -1161,6 +1554,43 @@
     </div>
   </div>
 </div>
+
+<dialog id="coPreSubmitNotice" class="co-pre-submit-notice" aria-labelledby="coPreSubmitNoticeTitle">
+  <div class="co-pre-submit-notice-card">
+    <button type="button" class="co-pre-submit-notice-close" aria-label="Tutup pengingat" onclick="closeCheckoutNotices()">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+    <div id="coPreSubmitNoticeIcon" class="co-pre-submit-notice-icon" aria-hidden="true">
+      <i class="fa-solid fa-circle-info"></i>
+    </div>
+    <h2 id="coPreSubmitNoticeTitle"></h2>
+    <p id="coPreSubmitNoticeMessage"></p>
+    <ul id="coPreSubmitNoticeProducts" hidden></ul>
+    <button type="button" id="coPreSubmitNoticeContinue" class="co-pre-submit-notice-continue" onclick="continueCheckoutNotices()">
+      Oke, lanjutkan
+    </button>
+  </div>
+</dialog>
+
+<dialog id="coReceiptDialog" class="co-receipt-dialog" aria-labelledby="coReceiptDialogTitle" onclick="if(event.target === this) closeReceiptPreview()">
+  <div class="co-receipt-dialog-layout">
+    <div class="co-receipt-dialog-toolbar">
+      <strong id="coReceiptDialogTitle">Struk Pesanan</strong>
+      <button type="button" class="co-receipt-dialog-close" onclick="closeReceiptPreview()" aria-label="Tutup pratinjau struk">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i> Tutup
+      </button>
+    </div>
+    <iframe id="coReceiptFrame" class="co-receipt-frame" title="Pratinjau struk pesanan"></iframe>
+    <div class="co-receipt-dialog-actions">
+      <button type="button" id="coReceiptPrintButton" class="co-receipt-print" onclick="printReceiptPreview()" disabled>
+        <i class="fa-solid fa-print" aria-hidden="true"></i> Cetak / Simpan PDF
+      </button>
+      <button type="button" class="co-receipt-whatsapp" onclick="confirmReceiptViaWhatsApp()">
+        <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Konfirmasi WhatsApp
+      </button>
+    </div>
+  </div>
+</dialog>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('scripts'); ?>
@@ -1186,13 +1616,37 @@
     }
   } catch (e) {}
 
-  let checkoutCart = JSON.parse(localStorage.getItem(activeCtx.storageKey) || '[]');
+  const consultationCheckoutPrescription = <?php echo json_encode($consultationPrescriptionPayload, 15, 512) ?>;
+  let checkoutCart = consultationCheckoutPrescription
+    ? consultationCheckoutPrescription.items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        brand: item.brand,
+        img: item.image,
+        qty: item.quantity,
+        price: item.price,
+        discount: item.discount || 0,
+        saleUnit: item.sale_unit || 'box',
+        unitLabel: item.unit_label || 'Kemasan',
+        note: item.instructions || '',
+        consultationPrescriptionNumber: consultationCheckoutPrescription.number,
+      }))
+    : JSON.parse(localStorage.getItem(activeCtx.storageKey) || '[]');
+
+  if (consultationCheckoutPrescription) {
+    activeCtx.storageKey = `apotekmedix_cart_consultation_${consultationCheckoutPrescription.id}`;
+    activeCtx.priceChannel = 'b2c';
+    activeCtx.wholesaleOrder = false;
+    activeCtx.adminPbfOrder = false;
+  }
 
   if (activeCtx.storageKey === 'apotekmedix_cart_b2b' || activeCtx.storageKey === 'apotekmedix_cart_pbf') {
     activeCtx.wholesaleOrder = true;
   }
-  if (!activeCtx.priceChannel) {
-    activeCtx.priceChannel = activeCtx.wholesaleOrder ? 'b2b' : 'b2c';
+  if (activeCtx.wholesaleOrder) {
+    activeCtx.priceChannel = 'b2b';
+  } else if (!activeCtx.priceChannel) {
+    activeCtx.priceChannel = 'b2c';
   }
   activeCtx.continueShoppingUrl = activeCtx.adminPbfOrder
     ? <?php echo json_encode(route('admin.produk-pbf.index'), 15, 512) ?>
@@ -1201,6 +1655,9 @@
   let deliveryMode = 'ship';
   let extraVoucherDiscount = 0;
   let appliedVoucher = null;
+  let checkoutNoticeQueue = [];
+  let checkoutNoticesAcknowledged = false;
+  let checkoutPrescriptionConfirmationToken = <?php echo json_encode($prescriptionConfirmationToken, 15, 512) ?>;
 
   function resolveProductImage(item) {
     const catalogEntry = PRODUCT_CATALOG[item.id] || PRODUCT_CATALOG[String(item.id)];
@@ -1222,6 +1679,47 @@
     return 'Rp ' + Math.round(Number(num || 0)).toLocaleString('id-ID');
   }
 
+  function openReceiptPreview() {
+    const order = window.completedOrder;
+    const dialog = document.getElementById('coReceiptDialog');
+    const frame = document.getElementById('coReceiptFrame');
+    if (!order?.invoice_url || !dialog || !frame) {
+      document.getElementById('coErrorBox').textContent = 'Tautan struk tidak tersedia. Silakan muat ulang halaman dan coba kembali.';
+      document.getElementById('coErrorBox').style.display = 'block';
+      return;
+    }
+
+    frame.src = order.invoice_url;
+    const printButton = document.getElementById('coReceiptPrintButton');
+    printButton.disabled = true;
+    frame.onload = () => {
+      printButton.disabled = false;
+    };
+    document.getElementById('coReceiptDialogTitle').textContent = `Struk Pesanan #${order.id}`;
+    if (!dialog.open) dialog.showModal();
+  }
+
+  function closeReceiptPreview() {
+    document.getElementById('coReceiptDialog')?.close();
+  }
+
+  function printReceiptPreview() {
+    const frame = document.getElementById('coReceiptFrame');
+    if (!frame?.contentWindow) {
+      document.getElementById('coErrorBox').textContent = 'Struk belum selesai dimuat. Silakan coba kembali.';
+      document.getElementById('coErrorBox').style.display = 'block';
+      return;
+    }
+
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+  }
+
+  function confirmReceiptViaWhatsApp() {
+    closeReceiptPreview();
+    openWhatsAppCheckout();
+  }
+
   function escapeHtml(text) {
     return String(text || '')
       .replace(/&/g, '&amp;')
@@ -1229,6 +1727,127 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  function getCheckoutRedLogoItems() {
+    if (consultationCheckoutPrescription || activeCtx.wholesaleOrder || activeCtx.adminPbfOrder) return [];
+    return checkoutCart.filter((item) => {
+      const catalogItem = PRODUCT_CATALOG[item.id] || PRODUCT_CATALOG[String(item.id)] || {};
+      return item.requiresPrescription === true
+        || catalogItem.has_red_logo === true
+        || catalogItem.logo_color === 'red';
+    });
+  }
+
+  function getCheckoutPreSubmitNotices() {
+    const notices = [];
+    const logoKItems = checkoutPrescriptionConfirmationToken ? [] : getCheckoutRedLogoItems();
+    if (logoKItems.length) {
+      notices.push({
+        type: 'warning',
+        prescriptionConfirmation: true,
+        title: 'Ada produk Logo K di pesanan',
+        message: 'Produk bertanda Logo K memerlukan resep dokter yang sah. Jika Anda memiliki resep, konfirmasikan untuk melanjutkan.',
+        products: logoKItems.map((item) => item.name || 'Produk obat'),
+      });
+    }
+
+    const selectedMethod = document.getElementById('co_payment_method')?.value || '';
+    if (!activeCtx.adminPbfOrder && ['QRIS', 'Transfer'].includes(selectedMethod)) {
+      notices.push({
+        type: 'payment',
+        title: 'Pengingat bukti transaksi',
+        message: 'Simpan bukti transaksi QRIS atau transfer Anda. Pastikan bukti pembayaran sudah dipilih dan terlampir sebelum pesanan dikirim.',
+      });
+    }
+
+    return notices;
+  }
+
+  function showCheckoutNotice() {
+    const notice = checkoutNoticeQueue[0];
+    if (!notice) return;
+
+    const dialog = document.getElementById('coPreSubmitNotice');
+    const icon = document.getElementById('coPreSubmitNoticeIcon');
+    const products = document.getElementById('coPreSubmitNoticeProducts');
+    const continueButton = document.getElementById('coPreSubmitNoticeContinue');
+    document.getElementById('coPreSubmitNoticeTitle').textContent = notice.title;
+    document.getElementById('coPreSubmitNoticeMessage').textContent = notice.message;
+    continueButton.textContent = notice.prescriptionConfirmation
+      ? 'Saya memiliki resep, lanjutkan'
+      : 'Oke, lanjutkan';
+    icon.classList.toggle('is-warning', notice.type === 'warning');
+    icon.innerHTML = notice.type === 'warning'
+      ? '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>'
+      : '<i class="fa-solid fa-receipt" aria-hidden="true"></i>';
+
+    while (products.firstChild) products.removeChild(products.firstChild);
+    if (notice.products?.length) {
+      notice.products.forEach((name) => {
+        const item = document.createElement('li');
+        item.textContent = name;
+        products.appendChild(item);
+      });
+      products.hidden = false;
+    } else {
+      products.hidden = true;
+    }
+
+    if (!dialog.open) dialog.showModal();
+  }
+
+  function closeCheckoutNotices() {
+    document.getElementById('coPreSubmitNotice')?.close();
+    checkoutNoticeQueue = [];
+  }
+
+  function continueCheckoutNotices() {
+    checkoutNoticeQueue.shift();
+    if (checkoutNoticeQueue.length) {
+      showCheckoutNotice();
+      return;
+    }
+
+    document.getElementById('coPreSubmitNotice')?.close();
+    checkoutNoticesAcknowledged = true;
+    submitCheckoutOrder();
+  }
+
+  function persistCheckoutCart() {
+    checkoutNoticesAcknowledged = false;
+    localStorage.setItem(activeCtx.storageKey, JSON.stringify(checkoutCart));
+    extraVoucherDiscount = 0;
+    appliedVoucher = null;
+    const discountInput = document.getElementById('coDiscountCodeInput');
+    const discountMessage = document.getElementById('coDiscountMsgBox');
+    if (discountInput) discountInput.value = '';
+    if (discountMessage) discountMessage.style.display = 'none';
+  }
+
+  function updateCheckoutQuantity(index, value) {
+    const item = checkoutCart[index];
+    if (!item || consultationCheckoutPrescription) return;
+
+    const parsedQuantity = Number.parseInt(value, 10);
+    let quantity = Number.isFinite(parsedQuantity) ? Math.max(1, parsedQuantity) : 1;
+    const availableQuantity = Number(item.availableQty);
+    if (Number.isFinite(availableQuantity) && availableQuantity > 0) {
+      quantity = Math.min(quantity, availableQuantity);
+    }
+
+    item.qty = quantity;
+    item.discount = Math.min(Number(item.discount || 0), Number(item.price || 0) * quantity);
+    persistCheckoutCart();
+    renderCheckoutSummary();
+  }
+
+  function removeCheckoutItem(index) {
+    if (consultationCheckoutPrescription || !checkoutCart[index]) return;
+
+    checkoutCart.splice(index, 1);
+    persistCheckoutCart();
+    renderCheckoutSummary();
   }
 
   function renderCheckoutSummary() {
@@ -1243,7 +1862,15 @@
       itemsContainer.innerHTML = `<div style="padding:1rem 0;color:#64748b;font-size:0.9rem;">Keranjang belanja kosong. <a href="<?php echo e(route('cart.index')); ?>" style="color:#0E7490;font-weight:700;text-decoration:underline;">Kembali ke keranjang</a></div>`;
       countEl.textContent = '0';
       subEl.textContent = 'Rp 0,00';
+      discRow.style.display = 'none';
       grandEl.textContent = 'Rp 0,00';
+      const badge = document.getElementById('cartBadgeNav');
+      if (badge) {
+        badge.textContent = '0';
+        badge.style.display = 'none';
+      }
+      const cashAmount = document.getElementById('coCashAmount');
+      if (cashAmount) cashAmount.textContent = 'Rp 0,00';
       return;
     }
 
@@ -1269,6 +1896,21 @@
       const disc = Number(item.discount || 0);
       const unit = item.saleUnit || 'box';
       const unitLabel = item.unitLabel || item.unitLabels?.[unit] || '';
+      const availableQuantity = Number(item.availableQty);
+      const hasStockLimit = Number.isFinite(availableQuantity) && availableQuantity >= 0;
+      const hasUsableStockLimit = hasStockLimit && availableQuantity > 0;
+      const itemActionsHtml = consultationCheckoutPrescription
+        ? ''
+        : `<div class="co-sum-actions">
+            <div class="co-sum-quantity" aria-label="Atur jumlah ${escapeHtml(item.name)}">
+              <button type="button" aria-label="Kurangi jumlah" onclick="updateCheckoutQuantity(${checkoutCart.indexOf(item)}, ${qty - 1})" ${qty <= 1 ? 'disabled' : ''}>−</button>
+              <input type="number" min="1" ${hasUsableStockLimit ? `max="${availableQuantity}"` : ''} step="1" value="${qty}" aria-label="Jumlah ${escapeHtml(item.name)}" onchange="updateCheckoutQuantity(${checkoutCart.indexOf(item)}, this.value)">
+              <button type="button" aria-label="Tambah jumlah" onclick="updateCheckoutQuantity(${checkoutCart.indexOf(item)}, ${qty + 1})" ${hasStockLimit && qty >= availableQuantity ? 'disabled' : ''}>+</button>
+            </div>
+            <button type="button" class="co-sum-remove" aria-label="Hapus ${escapeHtml(item.name)}" title="Hapus produk" onclick="removeCheckoutItem(${checkoutCart.indexOf(item)})">
+              <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+            </button>
+          </div>`;
 
       subtotal += lineSub;
       itemDiscounts += disc;
@@ -1282,11 +1924,12 @@
             <div class="co-sum-thumb">
               ${thumbHtml}
               ${logoMarkerHtml}
-              <span class="co-sum-qty-badge">${qty}</span>
             </div>
             <div>
               <div class="co-sum-name">${escapeHtml(item.name)}</div>
               ${unitLabel ? `<div class="co-sum-meta">${escapeHtml(unitLabel)}${item.note ? ' &middot; ' + escapeHtml(item.note) : ''}</div>` : ''}
+              <div class="co-sum-detail">${qty} x ${formatIdrDecimal(price)}</div>
+              ${itemActionsHtml}
             </div>
           </div>
           <div class="co-sum-price">${formatIdrDecimal(lineSub)}</div>
@@ -1413,6 +2056,7 @@
     document.getElementById('coShippingAddressFields').style.display = mode === 'ship' ? '' : 'none';
     document.getElementById('coPickupLocationBox').style.display = mode === 'pickup' ? 'flex' : 'none';
     updateShippingMethodStatus();
+    updatePaymentProofRequirement();
   }
 
   function updateShippingMethodStatus() {
@@ -1436,6 +2080,7 @@
 
   function selectPaymentMethod(method) {
     if (method === 'Tempo' && !isTempoAvailable()) return;
+    checkoutNoticesAcknowledged = false;
     const input = document.getElementById('co_payment_method');
     if (input) input.value = method;
     document.querySelectorAll('#coPayOptionsGrid .co-pay-opt').forEach(btn => {
@@ -1453,6 +2098,80 @@
     document.getElementById('coQrisDetails').hidden = payMethod !== 'QRIS';
     document.getElementById('coTransferDetails').hidden = payMethod !== 'Transfer';
     document.getElementById('coCashDetails').hidden = payMethod !== 'Cash';
+    updatePaymentProofRequirement();
+  }
+
+  let paymentProofPreviewUrl = null;
+
+  function clearPaymentProof() {
+    const proofInput = document.getElementById('coPaymentProof');
+    const proofUpload = document.getElementById('coProofUpload');
+    const proofPreview = document.getElementById('coProofPreview');
+    const proofFileName = document.getElementById('coProofFileName');
+    const removeButton = document.getElementById('coProofRemove');
+    if (proofInput) proofInput.value = '';
+    if (proofPreview) {
+      proofPreview.removeAttribute('src');
+      proofPreview.style.display = 'none';
+    }
+    if (proofFileName) proofFileName.textContent = '';
+    if (proofUpload) proofUpload.classList.remove('has-file');
+    if (removeButton) removeButton.style.display = 'none';
+    if (paymentProofPreviewUrl) {
+      URL.revokeObjectURL(paymentProofPreviewUrl);
+      paymentProofPreviewUrl = null;
+    }
+  }
+
+  function handlePaymentProofChange() {
+    const proofInput = document.getElementById('coPaymentProof');
+    const selectedFile = proofInput?.files?.[0];
+    if (!selectedFile) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    const errorBox = document.getElementById('coErrorBox');
+    if (!allowedTypes.includes(selectedFile.type) || selectedFile.size > 5 * 1024 * 1024) {
+      clearPaymentProof();
+      errorBox.textContent = selectedFile.size > 5 * 1024 * 1024
+        ? 'Ukuran bukti pembayaran maksimal 5 MB.'
+        : 'Format bukti pembayaran harus JPG, PNG, WEBP, atau PDF.';
+      errorBox.style.display = 'block';
+      return;
+    }
+
+    errorBox.style.display = 'none';
+    const proofUpload = document.getElementById('coProofUpload');
+    const proofPreview = document.getElementById('coProofPreview');
+    const proofFileName = document.getElementById('coProofFileName');
+    const removeButton = document.getElementById('coProofRemove');
+    proofUpload?.classList.add('has-file');
+    if (proofFileName) proofFileName.textContent = selectedFile.name;
+    if (removeButton) removeButton.style.display = 'inline-flex';
+    if (paymentProofPreviewUrl) URL.revokeObjectURL(paymentProofPreviewUrl);
+    paymentProofPreviewUrl = null;
+
+    if (selectedFile.type.startsWith('image/')) {
+      paymentProofPreviewUrl = URL.createObjectURL(selectedFile);
+      if (proofPreview) {
+        proofPreview.src = paymentProofPreviewUrl;
+        proofPreview.style.display = 'block';
+      }
+    } else if (proofPreview) {
+      proofPreview.removeAttribute('src');
+      proofPreview.style.display = 'none';
+    }
+  }
+
+  function updatePaymentProofRequirement() {
+    const proofWrap = document.getElementById('coPaymentProofWrap');
+    const proofInput = document.getElementById('coPaymentProof');
+    if (!proofWrap || !proofInput) return;
+    const selectedMethod = document.getElementById('co_payment_method')?.value || '';
+    const requiresProof = !activeCtx.adminPbfOrder
+      && ['QRIS', 'Transfer'].includes(selectedMethod);
+    proofWrap.hidden = !requiresProof;
+    proofInput.required = requiresProof;
+    if (!requiresProof) clearPaymentProof();
   }
 
   function isTempoAvailable() {
@@ -1494,6 +2213,48 @@
       return;
     }
 
+    if (!checkoutNoticesAcknowledged) {
+      checkoutNoticeQueue = getCheckoutPreSubmitNotices();
+      if (checkoutNoticeQueue.length) {
+        showCheckoutNotice();
+        return;
+      }
+    }
+
+    const redLogoItems = getCheckoutRedLogoItems();
+    if (redLogoItems.length && !checkoutPrescriptionConfirmationToken) {
+      const confirmationButton = document.getElementById('coPreSubmitNoticeContinue');
+      if (confirmationButton) confirmationButton.disabled = true;
+      try {
+        const response = await fetch(<?php echo json_encode(route('checkout.confirm-prescription'), 15, 512) ?>, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': <?php echo json_encode(csrf_token(), 15, 512) ?>,
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            product_ids: [...new Set(redLogoItems.map((item) => Number(item.id)))]
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.message || 'Konfirmasi resep tidak dapat disimpan.');
+        }
+        if (!result.confirmation_token) {
+          throw new Error('Token konfirmasi resep tidak diterima. Silakan coba kembali.');
+        }
+        checkoutPrescriptionConfirmationToken = result.confirmation_token;
+        return submitCheckoutOrder();
+      } catch (error) {
+        errBox.textContent = error instanceof Error ? error.message : 'Konfirmasi resep tidak dapat disimpan. Silakan coba kembali.';
+        errBox.style.display = 'block';
+        return;
+      } finally {
+        if (confirmationButton) confirmationButton.disabled = false;
+      }
+    }
+
     const jenis = activeCtx.adminPbfOrder
       ? 'apotik'
       : (activeCtx.wholesaleOrder || activeCtx.priceChannel === 'b2b' ? 'pbf' : 'umum');
@@ -1511,6 +2272,9 @@
 
     const paymentMethod = document.getElementById('co_payment_method').value;
     const paymentTermDays = Number(document.getElementById('co_payment_term_days')?.value || 0);
+    const paymentProof = document.getElementById('coPaymentProof')?.files?.[0] || null;
+    const requiresPaymentProof = !activeCtx.adminPbfOrder
+      && ['QRIS', 'Transfer'].includes(paymentMethod);
 
     const mappedItems = checkoutCart.map((it) => ({
       id: it.id,
@@ -1526,8 +2290,8 @@
 
     const payload = {
       buyer_type: jenis,
-      price_channel: activeCtx.priceChannel || (activeCtx.wholesaleOrder ? 'b2b' : 'b2c'),
-      prescription_confirmation_token: <?php echo json_encode($prescriptionConfirmationToken, 15, 512) ?>,
+      price_channel: activeCtx.wholesaleOrder ? 'b2b' : (activeCtx.priceChannel || 'b2c'),
+      prescription_confirmation_token: checkoutPrescriptionConfirmationToken,
       consultation_prescription_number: consultationPrescriptionNumber,
       items: mappedItems,
       total: discountedTotal,
@@ -1549,7 +2313,7 @@
       payload.purchase_order_type = document.getElementById('co_pbf_order_type').value;
       payload.purchase_order_profile = document.getElementById('co_pbf_profile').value;
       payload.buyer_name = 'Apotek Medix';
-      payload.phone = '085890007359';
+      payload.phone = '08159111911';
       payload.address = 'ITC Cempaka Mas LT.1 No.88, Jakarta Pusat';
       payload.requester_name = document.getElementById('co_signer_name').value.trim();
       payload.apj = document.getElementById('co_signer_title').value.trim();
@@ -1608,11 +2372,18 @@
         errBox.style.display = 'block';
         return;
       }
-      if (deliveryMode === 'ship' && !addressVal) {
+      if ((consultationCheckoutPrescription || deliveryMode === 'ship') && !addressVal) {
         errBox.textContent = 'Alamat pengiriman wajib diisi.';
         errBox.style.display = 'block';
         return;
       }
+    }
+
+    if (requiresPaymentProof && !paymentProof) {
+      errBox.textContent = 'Unggah bukti pembayaran QRIS atau transfer sebelum melanjutkan.';
+      errBox.style.display = 'block';
+      document.getElementById('coPaymentProof')?.focus();
+      return;
     }
 
     if (paymentMethod === 'Tempo' && (!Number.isInteger(paymentTermDays) || paymentTermDays < 1)) {
@@ -1625,14 +2396,35 @@
     submitBtn.innerHTML = '<span>Memproses pesanan...</span> <i class="fa-solid fa-spinner fa-spin"></i>';
 
     try {
+      const formData = new FormData();
+      const appendFormData = (key, value) => {
+        if (value === null || value === undefined) return;
+        if (typeof value === 'boolean') {
+          formData.append(key, value ? '1' : '0');
+          return;
+        }
+        if (Array.isArray(value)) {
+          value.forEach((entry, index) => {
+            if (entry && typeof entry === 'object') {
+              Object.entries(entry).forEach(([childKey, childValue]) => appendFormData(`${key}[${index}][${childKey}]`, childValue));
+            } else {
+              appendFormData(`${key}[${index}]`, entry);
+            }
+          });
+          return;
+        }
+        formData.append(key, String(value));
+      };
+      Object.entries(payload).forEach(([key, value]) => appendFormData(key, value));
+      if (requiresPaymentProof && paymentProof) formData.append('payment_proof', paymentProof);
+
       const response = await fetch('<?php echo e(route("orders.history.store")); ?>', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: formData
       });
 
       if (!response.ok) {
@@ -1645,16 +2437,21 @@
         ...payload,
         id: result.id,
         invoice_url: result.invoice_url,
+        payment_proof_url: result.payment_proof_url || null,
         cartSnapshot: [...checkoutCart]
       };
 
       localStorage.setItem(activeCtx.storageKey, '[]');
 
       document.getElementById('coOrderNumberLabel').textContent = `ID Pesanan #${result.id}`;
-      document.getElementById('coInvoiceBtn').href = activeCtx.adminPurchaseOrderBase
-        ? activeCtx.adminPurchaseOrderBase.replace('__ORDER__', result.id)
-        : result.invoice_url;
-
+      if (requiresPaymentProof) {
+        document.getElementById('coSuccessDesc').textContent = 'Bukti pembayaran berhasil diunggah. Buka struk, lalu cetak atau simpan sebagai PDF sebelum konfirmasi melalui WhatsApp.';
+      } else if (payload.delivery_method === 'delivery') {
+        document.getElementById('coSuccessDesc').textContent = 'Pesanan kirim Anda telah tercatat. Buka struk untuk mencetak atau menyimpannya sebagai PDF, lalu konfirmasi melalui WhatsApp.';
+      } else {
+        document.getElementById('coSuccessDesc').textContent = 'Pesanan Anda telah tercatat. Buka struk untuk melihat rincian pesanan.';
+        document.getElementById('coWhatsappBtn').style.display = 'none';
+      }
       document.getElementById('coFormWrapper').style.display = 'none';
       const payRight = document.getElementById('coPaymentRightWrapper');
       if (payRight) payRight.style.display = 'none';
@@ -1709,11 +2506,19 @@
     msg += `---\n*Total: ${formatRpPlain(ord.total)}*\n\n*Data Pemesan:*\n`;
     const nowWib = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date()).replace(/\./g, ':') + ' WIB';
     const tempoInfo = ord.payment_method === 'Tempo' && ord.payment_term_days ? ` (${ord.payment_term_days} hari)` : '';
-    msg += `- Nama: ${ord.buyer_name}\n- Telepon: ${ord.phone}\n- Pengantaran: ${ord.address || 'Ambil di Apotek'}\n- Pembayaran: ${ord.payment_method}${tempoInfo}\n- Waktu Pesan: ${nowWib}\n\nTerima kasih!`;
+    const attachmentInstruction = ord.payment_proof_url
+      ? '\n\n*Instruksi:* Saya sudah mengunggah bukti pembayaran pada checkout. Saya juga akan melampirkan PDF struk yang sudah diunduh dan foto bukti transfer langsung di chat ini. Mohon bantu verifikasi pembayaran dan pesanan saya. Terima kasih!'
+      : '\n\nMohon bantu proses pesanan saya. Terima kasih!';
+    msg += `- Nama: ${ord.buyer_name}\n- Telepon: ${ord.phone}\n- Pengantaran: ${ord.address || 'Ambil di Apotek'}\n- Pembayaran: ${ord.payment_method}${tempoInfo}\n- Waktu Pesan: ${nowWib}${attachmentInstruction}`;
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    if (consultationCheckoutPrescription) {
+      document.getElementById('coDeliveryTabs')?.setAttribute('hidden', 'hidden');
+      document.getElementById('coEditSummaryLink')?.setAttribute('hidden', 'hidden');
+      document.getElementById('coEditCartFooterLink')?.setAttribute('hidden', 'hidden');
+    }
     const consultationPrescriptionNumber = checkoutCart
       .find(item => item.consultationPrescriptionNumber)?.consultationPrescriptionNumber;
     if (consultationPrescriptionNumber) {
@@ -1722,6 +2527,9 @@
       notice.style.display = 'block';
     }
     configureTempoOption();
+    onPaymentMethodChange();
+    document.getElementById('coPaymentProof')?.addEventListener('change', handlePaymentProofChange);
+    document.getElementById('coProofRemove')?.addEventListener('click', clearPaymentProof);
     if (activeCtx.adminPbfOrder) {
       document.getElementById('coAdminPbfFields').style.display = 'block';
     } else if (activeCtx.wholesaleOrder || activeCtx.priceChannel === 'b2b') {

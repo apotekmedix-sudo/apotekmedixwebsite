@@ -79,6 +79,9 @@ Route::post('/products-apotek/access/logout/{channel}', [ProductController::clas
 Route::get('/keranjang', [ProductController::class, 'cart'])->name('cart.index');
 Route::get('/cart', [ProductController::class, 'cart'])->name('cart.page');
 Route::get('/checkout', [ProductController::class, 'checkout'])->name('checkout.index');
+Route::get('/checkout/konsultasi/{consultation}', [ProductController::class, 'consultationPrescriptionCheckout'])
+    ->middleware('signed')
+    ->name('checkout.consultation-prescription');
 Route::post('/checkout/confirm-prescription', [ProductController::class, 'confirmB2cPrescription'])->name('checkout.confirm-prescription');
 Route::post('/checkout/validate-discount', [PurchaseHistoryController::class, 'validateDiscountCode'])->name('checkout.validate-discount');
 Route::post('/orders/history', [PurchaseHistoryController::class, 'store'])->name('orders.history.store');
@@ -86,6 +89,9 @@ Route::post('/invoice/{order}/permit', [PurchaseHistoryController::class, 'updat
 Route::get('/invoice/{order}', [PurchaseHistoryController::class, 'invoice'])
     ->middleware('signed')
     ->name('orders.invoice');
+Route::get('/orders/{order}/payment-proof', [PurchaseHistoryController::class, 'paymentProof'])
+    ->middleware('signed')
+    ->name('orders.payment-proof');
 
 Route::prefix('chat-dokter')->name('consultations.')->group(function () {
     Route::get('/', [DoctorConsultationController::class, 'intake'])->name('intake');
@@ -98,7 +104,16 @@ Route::prefix('chat-dokter')->name('consultations.')->group(function () {
     Route::post('/dokter/{doctor}/pasien/baru', [DoctorConsultationController::class, 'storePatientProfile'])->middleware('throttle:10,1')->name('patient.profile.store');
     Route::get('/dokter/{doctor}/pembayaran', [DoctorConsultationController::class, 'paymentSummary'])->name('payment');
     Route::post('/dokter/{doctor}/konsultasi', [DoctorConsultationController::class, 'store'])->middleware('throttle:10,1')->name('store');
+    Route::post('/konsultasi/{token}/kode-akses/verifikasi', [DoctorConsultationController::class, 'verifyAccessCode'])
+        ->middleware('throttle:5,1')
+        ->name('patient.access-code.verify');
+    Route::post('/konsultasi/{token}/mulai-whatsapp', [DoctorConsultationController::class, 'startWhatsAppConsultation'])
+        ->middleware('throttle:5,1')
+        ->name('patient.whatsapp.start');
     Route::get('/konsultasi/{token}', [DoctorConsultationController::class, 'patientShow'])->name('patient.show');
+    Route::get('/bukti-pembayaran/{consultation}', [DoctorConsultationController::class, 'sharedPaymentProof'])
+        ->middleware(['signed', 'throttle:30,1'])
+        ->name('payment-proof.shared');
     Route::get('/konsultasi/{token}/updates', [DoctorConsultationController::class, 'patientUpdates'])->middleware('throttle:60,1')->name('patient.updates');
     Route::post('/konsultasi/{token}/messages', [DoctorConsultationController::class, 'patientMessage'])->middleware('throttle:30,1')->name('patient.messages.store');
     Route::get('/masuk/{token}', [DoctorConsultationController::class, 'roomJoin'])->middleware('throttle:30,1')->name('room.join');
@@ -190,8 +205,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/consultations/{consultation}/payment-proof', [AdminDoctorConsultationController::class, 'viewPaymentProof'])->name('consultations.payment-proof');
     Route::get('/consultations/{consultation}/chat', [AdminDoctorConsultationController::class, 'chatHistory'])->name('consultations.chat');
     Route::delete('/consultations/{consultation}', [AdminDoctorConsultationController::class, 'deleteCompletedSession'])->name('consultations.delete');
-    Route::post('/consultations/{consultation}/mark-paid', [AdminDoctorConsultationController::class, 'markPaid'])->name('consultations.mark-paid');
-    Route::post('/consultations/{consultation}/reject-payment', [AdminDoctorConsultationController::class, 'rejectPayment'])->name('consultations.reject-payment');
+    Route::post('/consultations/access-codes/generate', [AdminDoctorConsultationController::class, 'generateAccessCodeStock'])->name('consultations.access-codes.generate');
+    Route::post('/consultations/{consultation}/prescription', [AdminDoctorConsultationController::class, 'storeConsultationPrescription'])->name('consultations.prescription.store');
     Route::post('/consultations/{consultation}/end-session', [AdminDoctorConsultationController::class, 'endSession'])->name('consultations.end-session');
     Route::post('/consultations/{consultation}/room-invitations', [AdminDoctorConsultationController::class, 'resendRoomInvitations'])->name('consultations.room-invitations');
     Route::post('/consultations/{consultation}/cancel', [AdminDoctorConsultationController::class, 'cancel'])->name('consultations.cancel');

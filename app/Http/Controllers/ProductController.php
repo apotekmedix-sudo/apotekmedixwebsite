@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Medicine;
+use App\Models\DoctorConsultation;
 use App\Models\ShoppingAccessCode;
 use App\Models\PurchasePaymentSetting;
 use App\Constants\Companies;
@@ -497,6 +498,7 @@ class ProductController extends Controller
         $request->session()->put('b2c_red_prescription_confirmation_token', $confirmationToken);
 
         return response()->json([
+            'confirmation_token' => $confirmationToken,
             'checkout_url' => route('checkout.index', ['prescription_confirmation' => $confirmationToken]),
         ]);
     }
@@ -505,6 +507,30 @@ class ProductController extends Controller
      * Halaman Checkout / Transaksi (Full Page)
      */
     public function checkout(Request $request)
+    {
+        return $this->renderCheckout($request);
+    }
+
+    public function consultationPrescriptionCheckout(Request $request, DoctorConsultation $consultation)
+    {
+        abort_unless(
+            $consultation->payment_channel === 'online'
+                && $consultation->payment_status === 'paid'
+                && $consultation->prescription_approved_at !== null
+                && $consultation->prescription_number !== null
+                && $consultation->prescription_used_at === null
+                && !empty($consultation->prescribed_items),
+            404
+        );
+        $request->session()->put([
+            'consultation_prescription_checkout.id' => $consultation->id,
+            'consultation_prescription_checkout.number' => $consultation->prescription_number,
+        ]);
+
+        return $this->renderCheckout($request, $consultation);
+    }
+
+    private function renderCheckout(Request $request, ?DoctorConsultation $consultationPrescription = null)
     {
         $defaultShippingAddress = auth()->check()
             && auth()->user()->isUser()
@@ -552,7 +578,8 @@ class ProductController extends Controller
             'productCatalog',
             'prescriptionConfirmationToken',
             'paymentSettings',
-            'defaultCheckoutPaymentMethod'
+            'defaultCheckoutPaymentMethod',
+            'consultationPrescription'
         ));
     }
 }
