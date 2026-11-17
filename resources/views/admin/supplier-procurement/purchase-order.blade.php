@@ -115,19 +115,29 @@
             body { background:#fff; }
             .toolbar { display:none; }
             .document { width:100%; min-height:0; margin:0; padding:0; border:0; box-shadow:none; }
+            .head { gap:2mm; padding-bottom:1mm; }
+            .brand-logo { width:14mm; height:14mm; }
+            h1 { margin:3mm 0 1mm; font-size:14pt; }
+            .subtitle { margin:0 0 2mm; font-size:9pt; }
             .table-wrap { overflow:visible; }
             table { width:100%; max-width:none; min-width:0; margin:0; }
             .regular-table th:nth-child(2) { width:26%; }
             .regular-table th:nth-child(3) { width:20%; }
             .regular-table th:nth-child(6) { width:15%; }
             .regular-table th:nth-child(7) { width:18%; }
-            .order-totals { width:100%; margin:8px 0 0; }
-            th,td { padding:1.5mm 1mm; font-size:8.5pt; }
-            th { line-height:1.2; }
-            td { line-height:1.3; }
-            .detail-row { grid-template-columns:38mm 3mm 1fr; font-size:9pt; }
-            .section-title { margin:3mm 0 1.5mm; }
-            .order-number { margin-bottom:2mm; }
+            .order-totals { width:100%; margin:2mm 0 0; }
+            .order-grand-total { margin-top:1mm; padding-top:1mm; font-size:9pt; }
+            th,td { padding:1mm .8mm; font-size:8pt; }
+            th,td { line-height:1.2; }
+            .detail-row { grid-template-columns:38mm 3mm 1fr; margin:1mm 0; font-size:8.5pt; line-height:1.2; }
+            .section-title { margin:2mm 0 1mm; font-size:8.5pt; }
+            .order-number { margin-bottom:1.5mm; }
+            .notes { margin-top:2mm; font-size:7.5pt; line-height:1.25; }
+            .signature { width:70mm; margin:3mm 0 0 auto; font-size:8pt; line-height:1.3; }
+            .signature-space { width:70mm; height:14mm; }
+            .signature-stamp { width:45mm; height:24mm; }
+            .signature-stamp-pharmacist { left:-25mm; }
+            .signature-stamp-pharmacy { left:4mm; }
             .signature, .order-totals, tr, .detail-row { break-inside:avoid; page-break-inside:avoid; }
             thead { display:table-header-group; }
             .number { white-space:normal; }
@@ -145,6 +155,7 @@
             body[data-paper-size="a5"] .notes { font-size:6.5pt; }
             body[data-paper-size="a5"] .section-title { margin:2mm 0 1mm; }
             body[data-paper-size="a5"] .signature { width:45mm; font-size:7pt; }
+            body[data-paper-size="a5"] .signature-space { width:45mm; height:12mm; }
             body[data-paper-size="f4"] .detail-row { font-size:8.5pt; }
             body[data-paper-size="f4"] th,
             body[data-paper-size="f4"] td { padding:1.5mm 1mm; font-size:8pt; }
@@ -159,6 +170,7 @@
             body[data-paper-size="f5"] .notes { font-size:7pt; }
             body[data-paper-size="f5"] .section-title { margin:2mm 0 1mm; }
             body[data-paper-size="f5"] .signature { width:48mm; font-size:7.5pt; }
+            body[data-paper-size="f5"] .signature-space { width:48mm; height:12mm; }
         }
         @media screen and (max-width:600px) {
             .document { min-height:0; padding:20px 14px; }
@@ -174,10 +186,10 @@
     <div class="toolbar">
         <label for="paper-size">Ukuran kertas:</label>
         <select id="paper-size" aria-label="Ukuran kertas untuk cetak SP">
-            <option value="210mm 297mm" data-paper-size="a4" data-margin="10mm">A4</option>
-            <option value="148mm 210mm" data-paper-size="a5" data-margin="6mm">A5</option>
-            <option value="215mm 330mm" data-paper-size="f4" data-margin="10mm">F4</option>
-            <option value="165mm 215mm" data-paper-size="f5" data-margin="6mm">F5</option>
+            <option value="210mm 297mm" data-paper-size="a4" data-margin="7mm">A4</option>
+            <option value="148mm 210mm" data-paper-size="a5" data-margin="5mm">A5</option>
+            <option value="215mm 330mm" data-paper-size="f4" data-margin="7mm">F4</option>
+            <option value="165mm 215mm" data-paper-size="f5" data-margin="5mm">F5</option>
         </select>
         <button type="button" onclick="window.print()">Cetak / Simpan PDF</button>
     </div>

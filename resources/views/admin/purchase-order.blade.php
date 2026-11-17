@@ -127,10 +127,20 @@
             body { background: #fff; }
             .toolbar { display: none; }
             .paper { width: 100%; min-height: 0; margin: 0; padding: 0; border: 0; box-shadow: none; }
+            .head { gap: 2mm; padding-bottom: 1mm; }
+            .brand-logo { width: 14mm; height: 14mm; }
+            h1 { margin: 3mm 0 1mm; font-size: 14pt; }
+            .subtitle { margin: 0 0 2mm; font-size: 9pt; }
             table { width: 100%; }
-            th, td { padding: 1.3mm .9mm; font-size: 8pt; line-height: 1.25; }
-            .detail-row { grid-template-columns: 38mm 3mm 1fr; font-size: 8.5pt; }
-            .section-title { margin: 3mm 0 1.5mm; }
+            th, td { padding: 1mm .8mm; font-size: 8pt; line-height: 1.2; }
+            .detail-row { grid-template-columns: 38mm 3mm 1fr; margin: 1mm 0; font-size: 8.5pt; line-height: 1.2; }
+            .section-title { margin: 2mm 0 1mm; font-size: 8.5pt; }
+            .notes { margin-top: 2mm; font-size: 7.5pt; line-height: 1.25; }
+            .signature { width: 70mm; margin: 3mm 0 0 auto; font-size: 8pt; line-height: 1.3; }
+            .signature-space { width: 70mm; height: 14mm; }
+            .signature-stamp { width: 45mm; height: 24mm; }
+            .signature-stamp-pharmacist { left: -25mm; }
+            .signature-stamp-pharmacy { left: 4mm; }
             .signature, .notes, tr, .detail-row { break-inside: avoid; page-break-inside: avoid; }
             thead { display: table-header-group; }
             th, td, .detail-row > span:last-child { overflow-wrap: anywhere; }
@@ -146,6 +156,7 @@
             body[data-paper-size="a5"] td { padding: .8mm .5mm; font-size: 6.5pt; line-height: 1.15; }
             body[data-paper-size="a5"] .notes { font-size: 6.5pt; }
             body[data-paper-size="a5"] .signature { width: 45mm; font-size: 7pt; }
+            body[data-paper-size="a5"] .signature-space { width: 45mm; height: 12mm; }
             body[data-paper-size="f4"] .detail-row { font-size: 8pt; }
             body[data-paper-size="f4"] th,
             body[data-paper-size="f4"] td { font-size: 7.5pt; }
@@ -159,6 +170,7 @@
             body[data-paper-size="f5"] td { padding: 1mm .7mm; font-size: 7pt; line-height: 1.2; }
             body[data-paper-size="f5"] .notes { font-size: 7pt; }
             body[data-paper-size="f5"] .signature { width: 48mm; font-size: 7.5pt; }
+            body[data-paper-size="f5"] .signature-space { width: 48mm; height: 12mm; }
         }
     </style>
     <style id="print-page-size"></style>
@@ -167,10 +179,10 @@
     <div class="toolbar">
         <label for="paper-size">Ukuran kertas:</label>
         <select id="paper-size" aria-label="Ukuran kertas untuk cetak SP">
-            <option value="210mm 297mm" data-paper-size="a4" data-margin="10mm">A4</option>
-            <option value="148mm 210mm" data-paper-size="a5" data-margin="6mm">A5</option>
-            <option value="215mm 330mm" data-paper-size="f4" data-margin="10mm">F4</option>
-            <option value="165mm 215mm" data-paper-size="f5" data-margin="6mm">F5</option>
+            <option value="210mm 297mm" data-paper-size="a4" data-margin="7mm">A4</option>
+            <option value="148mm 210mm" data-paper-size="a5" data-margin="5mm">A5</option>
+            <option value="215mm 330mm" data-paper-size="f4" data-margin="7mm">F4</option>
+            <option value="165mm 215mm" data-paper-size="f5" data-margin="5mm">F5</option>
         </select>
         <button class="print-button" type="button" onclick="window.print()">Cetak / Simpan PDF</button>
     </div>
