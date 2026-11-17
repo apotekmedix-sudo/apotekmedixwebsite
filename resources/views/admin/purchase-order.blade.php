@@ -79,9 +79,11 @@
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; color: #172b3f; background: #edf1f4; font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
-        .toolbar { width: min(800px, calc(100% - 28px)); margin: 18px auto 0; display: flex; justify-content: flex-end; gap: 8px; }
+        .toolbar { width: min(800px, calc(100% - 28px)); margin: 18px auto 0; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
         .toolbar button { border: 0; border-radius: 4px; padding: 9px 14px; color: #fff; font-weight: 700; cursor: pointer; }
         .toolbar .print-button { background: #344054; }
+        .toolbar label { font-weight: 700; }
+        .toolbar select { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; color: #172b3f; }
         .paper { width: min(800px, calc(100% - 28px)); min-height: 1050px; margin: 10px auto 30px; padding: 30px 34px 28px; border: 1px solid #64748b; background: #fff; box-shadow: 0 5px 22px rgba(0,0,0,.12); }
         .head { display:flex; align-items:center; gap:14px; border-bottom: 3px solid #29445b; padding-bottom: 8px; }
         .brand-logo { width:58px; height:58px; object-fit:contain; }
@@ -124,13 +126,54 @@
         @media print {
             body { background: #fff; }
             .toolbar { display: none; }
-            .paper { width: 100%; min-height: 0; margin: 0; border: 1px solid #64748b; box-shadow: none; }
-            @page { size: A4; margin: 10mm; }
+            .paper { width: 100%; min-height: 0; margin: 0; padding: 0; border: 0; box-shadow: none; }
+            table { width: 100%; }
+            th, td { padding: 1.3mm .9mm; font-size: 8pt; line-height: 1.25; }
+            .detail-row { grid-template-columns: 38mm 3mm 1fr; font-size: 8.5pt; }
+            .section-title { margin: 3mm 0 1.5mm; }
+            .signature, .notes, tr, .detail-row { break-inside: avoid; page-break-inside: avoid; }
+            thead { display: table-header-group; }
+            th, td, .detail-row > span:last-child { overflow-wrap: anywhere; }
+        }
+        @media print {
+            body[data-paper-size="a5"] { font-size: 7pt; }
+            body[data-paper-size="a5"] h1 { font-size: 10pt; }
+            body[data-paper-size="a5"] .subtitle,
+            body[data-paper-size="a5"] .section-title,
+            body[data-paper-size="a5"] .detail-row { font-size: 7pt; }
+            body[data-paper-size="a5"] .detail-row { grid-template-columns: 27mm 2mm 1fr; }
+            body[data-paper-size="a5"] th,
+            body[data-paper-size="a5"] td { padding: .8mm .5mm; font-size: 6.5pt; line-height: 1.15; }
+            body[data-paper-size="a5"] .notes { font-size: 6.5pt; }
+            body[data-paper-size="a5"] .signature { width: 45mm; font-size: 7pt; }
+            body[data-paper-size="f4"] .detail-row { font-size: 8pt; }
+            body[data-paper-size="f4"] th,
+            body[data-paper-size="f4"] td { font-size: 7.5pt; }
+            body[data-paper-size="f5"] { font-size: 7.5pt; }
+            body[data-paper-size="f5"] h1 { font-size: 10.5pt; }
+            body[data-paper-size="f5"] .subtitle,
+            body[data-paper-size="f5"] .section-title,
+            body[data-paper-size="f5"] .detail-row { font-size: 7.5pt; }
+            body[data-paper-size="f5"] .detail-row { grid-template-columns: 29mm 2mm 1fr; }
+            body[data-paper-size="f5"] th,
+            body[data-paper-size="f5"] td { padding: 1mm .7mm; font-size: 7pt; line-height: 1.2; }
+            body[data-paper-size="f5"] .notes { font-size: 7pt; }
+            body[data-paper-size="f5"] .signature { width: 48mm; font-size: 7.5pt; }
         }
     </style>
+    <style id="print-page-size"></style>
 </head>
 <body>
-    <div class="toolbar"><button class="print-button" onclick="window.print()">Cetak / Simpan PDF</button></div>
+    <div class="toolbar">
+        <label for="paper-size">Ukuran kertas:</label>
+        <select id="paper-size" aria-label="Ukuran kertas untuk cetak SP">
+            <option value="210mm 297mm" data-paper-size="a4" data-margin="10mm">A4</option>
+            <option value="148mm 210mm" data-paper-size="a5" data-margin="6mm">A5</option>
+            <option value="215mm 330mm" data-paper-size="f4" data-margin="10mm">F4</option>
+            <option value="165mm 215mm" data-paper-size="f5" data-margin="6mm">F5</option>
+        </select>
+        <button class="print-button" type="button" onclick="window.print()">Cetak / Simpan PDF</button>
+    </div>
     <main class="paper">
         <header class="head">
             <img class="brand-logo" src="{{ asset($identity['logo']) }}" alt="Logo {{ $identity['name'] }}">
@@ -233,5 +276,16 @@
             {{ $order->apj ?: $identity['title'] }} / No. SIPA {{ $order->sipa ?: $identity['sipa'] }}
         </div>
     </main>
+    <script>
+        const paperSize = document.getElementById('paper-size');
+        const printPageSize = document.getElementById('print-page-size');
+        const updatePrintPageSize = () => {
+            const selectedSize = paperSize.selectedOptions[0];
+            document.body.dataset.paperSize = selectedSize.dataset.paperSize;
+            printPageSize.textContent = `@page { size: ${paperSize.value}; margin: ${selectedSize.dataset.margin}; }`;
+        };
+        paperSize.addEventListener('change', updatePrintPageSize);
+        updatePrintPageSize();
+    </script>
 </body>
 </html>
