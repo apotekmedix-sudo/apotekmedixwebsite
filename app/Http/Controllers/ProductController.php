@@ -200,7 +200,7 @@ class ProductController extends Controller
     public function pbfVerify(Request $request)
     {
         $validated = $request->validate([
-            'kode' => ['required', 'string', 'regex:/^[0-9]{5}$/'],
+            'kode' => ['required', 'string', 'regex:/^[!-~]{5,32}$/'],
         ]);
         $accessCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2B)->first();
 
@@ -313,7 +313,7 @@ class ProductController extends Controller
     public function apotekActivate(Request $request)
     {
         $validated = $request->validate([
-            'kode' => ['required', 'string', 'regex:/^[0-9]{5}$/'],
+            'kode' => ['required', 'string', 'regex:/^[!-~]{5,32}$/'],
             'redirect_to' => ['nullable', 'in:home,products.apotek'],
         ]);
         $accessCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2C)->first();
@@ -347,7 +347,7 @@ class ProductController extends Controller
     public function internalActivate(Request $request)
     {
         $validated = $request->validate([
-            'kode' => ['required', 'string', 'regex:/^[0-9]{5}$/'],
+            'kode' => ['required', 'string', 'regex:/^[!-~]{5,32}$/'],
             'redirect_to' => ['nullable', 'in:home,products.apotek'],
         ]);
         $accessCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_INTERNAL)->first();

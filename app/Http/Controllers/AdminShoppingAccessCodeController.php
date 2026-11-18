@@ -39,7 +39,7 @@ class AdminShoppingAccessCodeController extends Controller
     public function update(Request $request, ShoppingAccessCode $accessCode): RedirectResponse
     {
         $validated = $request->validate([
-            'code' => ['required', 'string', 'regex:/^[0-9]{5}$/'],
+            'code' => ['required', 'string', 'regex:/^[!-~]{5,32}$/'],
         ]);
         $code = $validated['code'];
         $duplicate = ShoppingAccessCode::query()
@@ -49,7 +49,7 @@ class AdminShoppingAccessCodeController extends Controller
 
         if ($duplicate) {
             return back()->withErrors([
-                'code' => 'Kode sudah digunakan kanal lain. Silakan pilih 5 digit berbeda.',
+                'code' => 'Kode sudah digunakan kanal lain. Silakan pilih kode yang berbeda.',
             ])->withInput();
         }
 

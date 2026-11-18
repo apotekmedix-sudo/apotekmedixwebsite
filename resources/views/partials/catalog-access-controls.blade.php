@@ -17,6 +17,11 @@
     .catalog-access-dialog p { margin:0 0 .9rem; color:#475569; font-size:.86rem; line-height:1.5; }
     .catalog-access-dialog label { display:block; margin-bottom:.35rem; color:#334155; font-size:.82rem; font-weight:700; }
     .catalog-access-dialog input { width:100%; padding:.7rem .8rem; border:1px solid #cbd5e1; border-radius:8px; color:#0f172a; font:inherit; letter-spacing:.16em; }
+    .catalog-access-code-field { position:relative; }
+    .catalog-access-code-field input { padding-right:5.5rem; }
+    .catalog-access-code-toggle { position:absolute; top:50%; right:.4rem; transform:translateY(-50%); padding:.45rem .55rem; border:0; border-radius:.35rem; background:transparent; color:#0052cc; font-size:.8rem; font-weight:700; cursor:pointer; }
+    .catalog-access-code-toggle:hover { background:#eff6ff; color:#003eaa; }
+    .catalog-access-code-toggle:focus-visible { outline:2px solid #0052cc; outline-offset:2px; }
     .catalog-access-dialog-actions { display:flex; justify-content:flex-end; gap:.55rem; margin-top:1rem; }
     .catalog-access-dialog-actions button { padding:.6rem .9rem; border:0; border-radius:8px; font:inherit; font-weight:700; cursor:pointer; }
     .catalog-access-dialog-submit { background:#0052cc; color:#fff; }
@@ -56,7 +61,10 @@
         <input type="hidden" name="access_type" value="b2c">
         <h2 id="b2cAccessDialogTitle">B2C FULL AKSES</h2>
         <label for="b2cAccessCode">Kode akses B2C</label>
-        <input id="b2cAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" autocomplete="one-time-code" required>
+        <div class="catalog-access-code-field">
+            <input id="b2cAccessCode" name="kode" type="password" minlength="5" maxlength="32" autocomplete="one-time-code" required>
+            <button class="catalog-access-code-toggle" type="button" aria-label="Tampilkan kode akses B2C" aria-pressed="false" aria-controls="b2cAccessCode">Lihat</button>
+        </div>
         @if($errors->has('kode') && old('redirect_to') === $accessReturnTo && old('access_type') === 'b2c')
             <p class="catalog-access-error" role="alert">{{ $errors->first('kode') }}</p>
         @endif
@@ -74,7 +82,10 @@
         <input type="hidden" name="access_type" value="internal">
         <h2 id="internalAccessDialogTitle">TRANSAKSI INTERNAL</h2>
         <label for="internalAccessCode">Kode akses Internal</label>
-        <input id="internalAccessCode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" autocomplete="one-time-code" required>
+        <div class="catalog-access-code-field">
+            <input id="internalAccessCode" name="kode" type="password" minlength="5" maxlength="32" autocomplete="one-time-code" required>
+            <button class="catalog-access-code-toggle" type="button" aria-label="Tampilkan kode akses Internal" aria-pressed="false" aria-controls="internalAccessCode">Lihat</button>
+        </div>
         @if($errors->has('kode') && old('redirect_to') === $accessReturnTo && old('access_type') === 'internal')
             <p class="catalog-access-error" role="alert">{{ $errors->first('kode') }}</p>
         @endif
@@ -85,6 +96,19 @@
     </form>
 </dialog>
 <script>
+document.querySelectorAll('.catalog-access-code-toggle').forEach((button) => {
+    button.addEventListener('click', () => {
+        const input = document.getElementById(button.getAttribute('aria-controls'));
+        const isVisible = input.type === 'text';
+        input.type = isVisible ? 'password' : 'text';
+        button.textContent = isVisible ? 'Lihat' : 'Sembunyikan';
+        button.setAttribute('aria-label', isVisible
+            ? `Tampilkan ${input.id === 'b2cAccessCode' ? 'kode akses B2C' : 'kode akses Internal'}`
+            : `Sembunyikan ${input.id === 'b2cAccessCode' ? 'kode akses B2C' : 'kode akses Internal'}`);
+        button.setAttribute('aria-pressed', String(!isVisible));
+    });
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     const dialog = @json(old('access_type'));
     if (dialog === 'b2c' || dialog === 'internal') {

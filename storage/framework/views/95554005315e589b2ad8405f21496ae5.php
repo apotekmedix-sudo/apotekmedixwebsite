@@ -38,7 +38,7 @@
 
 <div class="card">
     <div class="card-title">Aktivasi kode akses</div>
-    <p class="activation-intro">Buat kode angka 5 digit untuk akses katalog B2B, produk khusus B2C, dan harga internal. Masa berlaku setiap kode dapat diatur dalam hari.</p>
+    <p class="activation-intro">Buat kode aktivasi 12 karakter yang mengombinasikan huruf, angka, dan simbol untuk akses katalog B2B, produk khusus B2C, dan harga internal. Masa berlaku setiap kode dapat diatur dalam hari.</p>
 
     <?php if(session('success')): ?><div class="activation-success"><?php echo e(session('success')); ?></div><?php endif; ?>
     <?php if($errors->any()): ?>
@@ -47,9 +47,9 @@
 
     <div class="activation-grid">
         <?php $__currentLoopData = [
-            'b2b' => ['title' => 'Belanja B2B', 'description' => 'Kode angka 5 digit untuk membuka katalog khusus mitra dan distributor.', 'icon' => 'fa-boxes-stacked'],
-            'b2c' => ['title' => 'Produk Khusus B2C', 'description' => 'Kode angka 5 digit untuk membuka produk B2C dengan logo merah.', 'icon' => 'fa-unlock-keyhole'],
-            'internal' => ['title' => 'Harga Internal', 'description' => 'Kode angka 5 digit untuk membuka harga internal dan produk berlogo merah di katalog B2C.', 'icon' => 'fa-triangle-exclamation'],
+            'b2b' => ['title' => 'Belanja B2B', 'description' => 'Kode kombinasi huruf, angka, dan simbol untuk membuka katalog khusus mitra dan distributor.', 'icon' => 'fa-boxes-stacked'],
+            'b2c' => ['title' => 'Produk Khusus B2C', 'description' => 'Kode kombinasi huruf, angka, dan simbol untuk membuka produk B2C dengan logo merah.', 'icon' => 'fa-unlock-keyhole'],
+            'internal' => ['title' => 'Harga Internal', 'description' => 'Kode kombinasi huruf, angka, dan simbol untuk membuka harga internal dan produk berlogo merah di katalog B2C.', 'icon' => 'fa-triangle-exclamation'],
         ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $channel => $details): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <article class="activation-card">
                 <div class="activation-icon"><i class="fa-solid <?php echo e($details['icon']); ?>" aria-hidden="true"></i></div>
@@ -78,7 +78,7 @@
                         Masa berlaku kode (hari)
                         <input id="validity-<?php echo e($channel); ?>" name="validity_days" type="number" min="1" max="3650" value="<?php echo e($channelCode?->validity_days ?: config('internal.code_validity_days', 30)); ?>" required>
                     </label>
-                    <button type="submit"><?php echo e(isset($codes[$channel]) ? 'Buat Ulang Kode 5 Digit' : 'Buat Kode 5 Digit'); ?></button>
+                    <button type="submit"><?php echo e(isset($codes[$channel]) ? 'Buat Ulang Kode' : 'Buat Kode Aktivasi'); ?></button>
                 </form>
             </article>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -116,7 +116,7 @@
                                     <?php echo csrf_field(); ?>
                                     <?php echo method_field('PUT'); ?>
                                     <label class="sr-only" for="code-<?php echo e($code->id); ?>">Kode baru untuk <?php echo e($code->channel); ?></label>
-                                    <input id="code-<?php echo e($code->id); ?>" name="code" type="text" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" placeholder="5 digit" required>
+                                    <input id="code-<?php echo e($code->id); ?>" name="code" type="text" minlength="5" maxlength="32" placeholder="5–32 karakter" required>
                                     <button type="submit">Edit</button>
                                 </form>
                                 <form action="<?php echo e(route('admin.access-codes.destroy', $code)); ?>" method="POST" onsubmit="return confirm('Hapus kode akses ini? Kode tidak lagi bisa dipakai untuk login.')">

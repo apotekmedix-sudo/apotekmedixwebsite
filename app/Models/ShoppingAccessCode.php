@@ -142,7 +142,26 @@ class ShoppingAccessCode extends Model
     public static function generate(string $channel, ?int $validityDays = null): string
     {
         do {
-            $code = (string) random_int(10000, 99999);
+            $letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+            $digits = '23456789';
+            $symbols = '!@#$%&*+-_=';
+            $alphabet = $letters . $digits . $symbols;
+            $characters = [
+                self::randomCharacter($letters),
+                self::randomCharacter($digits),
+                self::randomCharacter($symbols),
+            ];
+
+            while (count($characters) < 12) {
+                $characters[] = self::randomCharacter($alphabet);
+            }
+
+            for ($index = count($characters) - 1; $index > 0; $index--) {
+                $swapIndex = random_int(0, $index);
+                [$characters[$index], $characters[$swapIndex]] = [$characters[$swapIndex], $characters[$index]];
+            }
+
+            $code = implode('', $characters);
             $isDuplicate = self::query()->get()->contains(
                 fn (self $existing) => $existing->matchesCode($code)
             );
@@ -152,5 +171,10 @@ class ShoppingAccessCode extends Model
         $accessCode->replaceCode($code, $validityDays);
 
         return $code;
+    }
+
+    private static function randomCharacter(string $characters): string
+    {
+        return $characters[random_int(0, strlen($characters) - 1)];
     }
 }

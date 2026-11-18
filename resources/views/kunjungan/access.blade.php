@@ -11,6 +11,10 @@
     .kunjungan-form{display:grid;gap:.7rem;margin-top:1.25rem}
     .kunjungan-form label{font-weight:700;color:#334155}
     .kunjungan-form input{width:100%;padding:.75rem;border:1px solid #cbd5e1;border-radius:9px;font:inherit}
+    .kunjungan-code-field{position:relative}.kunjungan-code-field input{padding-right:5.5rem}
+    .kunjungan-code-toggle{position:absolute;top:50%;right:.4rem;transform:translateY(-50%);padding:.45rem .55rem;border:0;border-radius:.35rem;background:transparent;color:#08734f;font-size:.8rem;font-weight:700;cursor:pointer}
+    .kunjungan-code-toggle:hover{background:#ecfdf5;color:#065f46}
+    .kunjungan-code-toggle:focus-visible{outline:2px solid #08734f;outline-offset:2px}
     .kunjungan-button{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;width:fit-content;padding:.7rem 1rem;border:0;border-radius:9px;background:#08734f;color:#fff;font:inherit;font-weight:800;text-decoration:none;cursor:pointer}
     .kunjungan-button:hover{background:#065f46;color:#fff}
     .kunjungan-error{color:#b91c1c}
@@ -27,10 +31,26 @@
         <form class="kunjungan-form" action="{{ route('kunjungan.access') }}" method="POST">
             @csrf
             <label for="access_code">Kode akses</label>
-            <input id="access_code" name="access_code" type="password" required maxlength="100" autocomplete="current-password" autofocus>
+            <div class="kunjungan-code-field">
+                <input id="access_code" name="access_code" type="password" required maxlength="100" autocomplete="current-password" autofocus>
+                <button class="kunjungan-code-toggle" type="button" aria-label="Tampilkan kode akses KUNJUNGAN" aria-pressed="false" aria-controls="access_code">Lihat</button>
+            </div>
             @error('access_code')<span class="kunjungan-error" role="alert">{{ $message }}</span>@enderror
             <button class="kunjungan-button" type="submit"><i class="fa-solid fa-lock-open"></i> Masuk ke KUNJUNGAN</button>
         </form>
     </section>
 </main>
+<script>
+    document.querySelector('.kunjungan-code-toggle').addEventListener('click', (event) => {
+        const button = event.currentTarget;
+        const input = document.getElementById(button.getAttribute('aria-controls'));
+        const isVisible = input.type === 'text';
+        input.type = isVisible ? 'password' : 'text';
+        button.textContent = isVisible ? 'Lihat' : 'Sembunyikan';
+        button.setAttribute('aria-label', isVisible
+            ? 'Tampilkan kode akses KUNJUNGAN'
+            : 'Sembunyikan kode akses KUNJUNGAN');
+        button.setAttribute('aria-pressed', String(!isVisible));
+    });
+</script>
 @endsection

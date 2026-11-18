@@ -16,6 +16,11 @@ class KunjunganFileTest extends TestCase
     {
         config(['kunjungan.access_code' => 'Rh.101185']);
 
+        $this->get(route('kunjungan.access.form'))
+            ->assertOk()
+            ->assertSee('id="access_code" name="access_code" type="password"', false)
+            ->assertSee('aria-label="Tampilkan kode akses KUNJUNGAN" aria-pressed="false" aria-controls="access_code"', false);
+
         $this->get(route('kunjungan.room'))
             ->assertRedirect(route('kunjungan.access.form'));
 

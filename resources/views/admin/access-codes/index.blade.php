@@ -38,7 +38,7 @@
 
 <div class="card">
     <div class="card-title">Aktivasi kode akses</div>
-    <p class="activation-intro">Buat kode angka 5 digit untuk akses katalog B2B, produk khusus B2C, dan harga internal. Masa berlaku setiap kode dapat diatur dalam hari.</p>
+    <p class="activation-intro">Buat kode aktivasi 12 karakter yang mengombinasikan huruf, angka, dan simbol untuk akses katalog B2B, produk khusus B2C, dan harga internal. Masa berlaku setiap kode dapat diatur dalam hari.</p>
 
     @if(session('success'))<div class="activation-success">{{ session('success') }}</div>@endif
     @if($errors->any())
@@ -47,9 +47,9 @@
 
     <div class="activation-grid">
         @foreach([
-            'b2b' => ['title' => 'Belanja B2B', 'description' => 'Kode angka 5 digit untuk membuka katalog khusus mitra dan distributor.', 'icon' => 'fa-boxes-stacked'],
-            'b2c' => ['title' => 'Produk Khusus B2C', 'description' => 'Kode angka 5 digit untuk membuka produk B2C dengan logo merah.', 'icon' => 'fa-unlock-keyhole'],
-            'internal' => ['title' => 'Harga Internal', 'description' => 'Kode angka 5 digit untuk membuka harga internal dan produk berlogo merah di katalog B2C.', 'icon' => 'fa-triangle-exclamation'],
+            'b2b' => ['title' => 'Belanja B2B', 'description' => 'Kode kombinasi huruf, angka, dan simbol untuk membuka katalog khusus mitra dan distributor.', 'icon' => 'fa-boxes-stacked'],
+            'b2c' => ['title' => 'Produk Khusus B2C', 'description' => 'Kode kombinasi huruf, angka, dan simbol untuk membuka produk B2C dengan logo merah.', 'icon' => 'fa-unlock-keyhole'],
+            'internal' => ['title' => 'Harga Internal', 'description' => 'Kode kombinasi huruf, angka, dan simbol untuk membuka harga internal dan produk berlogo merah di katalog B2C.', 'icon' => 'fa-triangle-exclamation'],
         ] as $channel => $details)
             <article class="activation-card">
                 <div class="activation-icon"><i class="fa-solid {{ $details['icon'] }}" aria-hidden="true"></i></div>
@@ -77,7 +77,7 @@
                         Masa berlaku kode (hari)
                         <input id="validity-{{ $channel }}" name="validity_days" type="number" min="1" max="3650" value="{{ $channelCode?->validity_days ?: config('internal.code_validity_days', 30) }}" required>
                     </label>
-                    <button type="submit">{{ isset($codes[$channel]) ? 'Buat Ulang Kode 5 Digit' : 'Buat Kode 5 Digit' }}</button>
+                    <button type="submit">{{ isset($codes[$channel]) ? 'Buat Ulang Kode' : 'Buat Kode Aktivasi' }}</button>
                 </form>
             </article>
         @endforeach
@@ -115,7 +115,7 @@
                                     @csrf
                                     @method('PUT')
                                     <label class="sr-only" for="code-{{ $code->id }}">Kode baru untuk {{ $code->channel }}</label>
-                                    <input id="code-{{ $code->id }}" name="code" type="text" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" placeholder="5 digit" required>
+                                    <input id="code-{{ $code->id }}" name="code" type="text" minlength="5" maxlength="32" placeholder="5–32 karakter" required>
                                     <button type="submit">Edit</button>
                                 </form>
                                 <form action="{{ route('admin.access-codes.destroy', $code) }}" method="POST" onsubmit="return confirm('Hapus kode akses ini? Kode tidak lagi bisa dipakai untuk login.')">

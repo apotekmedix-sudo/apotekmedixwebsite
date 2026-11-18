@@ -725,7 +725,7 @@ class CashierWorkflowTest extends TestCase
         $this->post(route('admin.access-codes.generate', ShoppingAccessCode::CHANNEL_B2B))
             ->assertRedirect(route('admin.access-codes.index'));
         $b2bCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2B)->firstOrFail()->readCode();
-        $this->assertMatchesRegularExpression('/^[0-9]{5}$/', $b2bCode);
+        $this->assertMatchesRegularExpression('/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%&*+_=-])[A-Z0-9!@#$%&*+_=-]{12}$/', $b2bCode);
         $b2bRecord = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2B)->firstOrFail();
         $this->assertTrue($b2bRecord->verify($b2bCode));
         $this->assertTrue($b2bRecord->expires_at->between(now()->addDays(29), now()->addDays(30)->addMinute()));
@@ -796,7 +796,7 @@ class CashierWorkflowTest extends TestCase
             ->assertRedirect(route('admin.access-codes.index'));
 
         $accessCode->refresh();
-        $this->assertMatchesRegularExpression('/^[0-9]{5}$/', $accessCode->readCode());
+        $this->assertMatchesRegularExpression('/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%&*+_=-])[A-Z0-9!@#$%&*+_=-]{12}$/', $accessCode->readCode());
     }
 
     public function test_admin_can_manage_channel_discounts_and_homepage_shows_b2c_promotions(): void
@@ -855,7 +855,8 @@ class CashierWorkflowTest extends TestCase
 
         $this->get(route('products.pbf'))
             ->assertOk()
-            ->assertSee('Masukkan kode angka 5 digit.')
+            ->assertSee('Masukkan kode aktivasi 5–32 karakter.')
+            ->assertSee('aria-label="Tampilkan kode akses" aria-pressed="false" aria-controls="kode"', false)
             ->assertSee('type="password"', false);
         $this->from(route('products.pbf'))
             ->post(route('products.pbf.verify'), ['kode' => '12345'])
@@ -895,13 +896,15 @@ class CashierWorkflowTest extends TestCase
         $oldHash = $code->code_hash;
 
         $this->actingAs($admin)
-            ->put(route('admin.access-codes.update', $code), ['code' => '54321'])
+            ->put(route('admin.access-codes.update', $code), ['code' => 'Aa9!+_X7z@K2'])
             ->assertRedirect(route('admin.access-codes.index'));
 
         $code->refresh();
-        $this->assertSame('54321', $code->readCode());
+        $this->assertSame('AA9!+_X7Z@K2', $code->readCode());
         $this->assertFalse($code->verify('12345'));
-        $this->assertTrue($code->verify('54321'));
+        $this->assertTrue($code->verify('aa9!+_x7z@k2'));
+        $this->post(route('products.pbf.verify'), ['kode' => 'aa9!+_x7z@k2'])
+            ->assertRedirect(route('products.pbf'));
         $this->assertFalse(ShoppingAccessCode::matchesSession(ShoppingAccessCode::CHANNEL_B2B, $oldHash));
 
         $this->withSession([
@@ -909,7 +912,7 @@ class CashierWorkflowTest extends TestCase
             'pbf_access_code_hash' => $oldHash,
         ])->get(route('products.pbf'))
             ->assertOk()
-            ->assertSee('Masukkan kode angka 5 digit.')
+            ->assertSee('Masukkan kode aktivasi 5–32 karakter.')
             ->assertSessionMissing('pbf_access_code_hash');
 
         $this->delete(route('admin.access-codes.destroy', $code))

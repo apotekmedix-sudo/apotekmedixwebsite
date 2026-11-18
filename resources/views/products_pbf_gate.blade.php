@@ -15,6 +15,10 @@
         label{display:block;margin:1.25rem 0 .4rem;font-weight:700}
         input{width:100%;padding:.8rem;border:1px solid #cbd5e1;border-radius:.5rem;font:inherit;letter-spacing:.15em}
         input:focus{outline:3px solid #bfdbfe;border-color:#0052cc}
+        .code-field{position:relative}.code-field input{padding-right:5.5rem}
+        .toggle-code-visibility{position:absolute;right:.4rem;top:50%;transform:translateY(-50%);width:auto;margin:0;padding:.45rem .55rem;border:0;border-radius:.35rem;background:transparent;color:#0052cc;font-size:.8rem;font-weight:700;cursor:pointer}
+        .toggle-code-visibility:hover{background:#eff6ff;color:#003eaa}
+        .toggle-code-visibility:focus-visible{outline:2px solid #0052cc;outline-offset:2px}
         button{width:100%;margin-top:1.25rem;padding:.85rem;border:0;border-radius:.5rem;background:#0052cc;color:#fff;font:inherit;font-weight:700;cursor:pointer}
         button:hover{background:#003eaa}
         .request-access-prompt{margin:1rem 0 0;text-align:center;font-size:.9rem}
@@ -40,8 +44,11 @@
     <form action="{{ route('products.pbf.verify') }}" method="POST">
         @csrf
         <label for="kode">Kode akses</label>
-        <input id="kode" name="kode" type="password" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" autocomplete="one-time-code" aria-describedby="codeHint" required autofocus>
-        <small id="codeHint">Masukkan kode angka 5 digit.</small>
+        <div class="code-field">
+            <input id="kode" name="kode" type="password" minlength="5" maxlength="32" autocomplete="one-time-code" aria-describedby="codeHint" required autofocus>
+            <button class="toggle-code-visibility" type="button" aria-label="Tampilkan kode akses" aria-pressed="false" aria-controls="kode">Lihat</button>
+        </div>
+        <small id="codeHint">Masukkan kode aktivasi 5–32 karakter.</small>
         @error('kode')<p class="error" role="alert">{{ $message }}</p>@enderror
         <button type="submit">Verifikasi &amp; Masuk</button>
     </form>
@@ -117,6 +124,18 @@
 
         window.open(`https://wa.me/{{ config('contacts.customer_service.whatsapp') }}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
         requestAccessDialog.close();
+    });
+</script>
+<script>
+    document.querySelectorAll('.toggle-code-visibility').forEach((button) => {
+        button.addEventListener('click', () => {
+            const input = document.getElementById(button.getAttribute('aria-controls'));
+            const isVisible = input.type === 'text';
+            input.type = isVisible ? 'password' : 'text';
+            button.textContent = isVisible ? 'Lihat' : 'Sembunyikan';
+            button.setAttribute('aria-label', isVisible ? 'Tampilkan kode akses' : 'Sembunyikan kode akses');
+            button.setAttribute('aria-pressed', String(!isVisible));
+        });
     });
 </script>
 </body>

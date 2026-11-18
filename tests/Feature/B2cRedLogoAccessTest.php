@@ -32,6 +32,8 @@ class B2cRedLogoAccessTest extends TestCase
             ->assertSee('WARNING B2C SALAH KLIK', false)
             ->assertDontSee('placeholder="5 digit"', false)
             ->assertSee('id="b2cAccessCode" name="kode" type="password"', false)
+            ->assertSee('aria-label="Tampilkan kode akses B2C" aria-pressed="false" aria-controls="b2cAccessCode"', false)
+            ->assertSee('aria-label="Tampilkan kode akses Internal" aria-pressed="false" aria-controls="internalAccessCode"', false)
             ->assertSee(route('products.apotek.activate'), false);
 
         $this->get(route('products.show', $redMedicine))
@@ -537,7 +539,7 @@ class B2cRedLogoAccessTest extends TestCase
             ->assertSessionHas('success');
 
         $accessCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_INTERNAL)->firstOrFail();
-        $this->assertMatchesRegularExpression('/^[0-9]{5}$/', $accessCode->readCode());
+        $this->assertMatchesRegularExpression('/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%&*+_=-])[A-Z0-9!@#$%&*+_=-]{12}$/', $accessCode->readCode());
         $this->assertTrue($accessCode->verify($accessCode->readCode()));
     }
 
@@ -556,7 +558,7 @@ class B2cRedLogoAccessTest extends TestCase
             ->assertSessionHas('success');
 
         $accessCode = ShoppingAccessCode::where('channel', ShoppingAccessCode::CHANNEL_B2C)->firstOrFail();
-        $this->assertMatchesRegularExpression('/^[0-9]{5}$/', $accessCode->readCode());
+        $this->assertMatchesRegularExpression('/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%&*+_=-])[A-Z0-9!@#$%&*+_=-]{12}$/', $accessCode->readCode());
         $this->assertTrue($accessCode->verify($accessCode->readCode()));
     }
 
