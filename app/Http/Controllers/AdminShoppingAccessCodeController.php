@@ -42,16 +42,6 @@ class AdminShoppingAccessCodeController extends Controller
             'code' => ['required', 'string', 'regex:/^[!-~]{5,32}$/'],
         ]);
         $code = $validated['code'];
-        $duplicate = ShoppingAccessCode::query()
-            ->where('id', '!=', $accessCode->id)
-            ->get()
-            ->contains(fn (ShoppingAccessCode $existing) => $existing->matchesCode($code));
-
-        if ($duplicate) {
-            return back()->withErrors([
-                'code' => 'Kode sudah digunakan kanal lain. Silakan pilih kode yang berbeda.',
-            ])->withInput();
-        }
 
         $accessCode->replaceCode($code, (int) ($accessCode->validity_days ?: config('internal.code_validity_days', 30)));
 

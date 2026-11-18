@@ -141,31 +141,26 @@ class ShoppingAccessCode extends Model
 
     public static function generate(string $channel, ?int $validityDays = null): string
     {
-        do {
-            $letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-            $digits = '23456789';
-            $symbols = '!@#$%&*+-_=';
-            $alphabet = $letters . $digits . $symbols;
-            $characters = [
-                self::randomCharacter($letters),
-                self::randomCharacter($digits),
-                self::randomCharacter($symbols),
-            ];
+        $letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        $digits = '23456789';
+        $symbols = '!@#$%&*+-_=';
+        $alphabet = $letters . $digits . $symbols;
+        $characters = [
+            self::randomCharacter($letters),
+            self::randomCharacter($digits),
+            self::randomCharacter($symbols),
+        ];
 
-            while (count($characters) < 12) {
-                $characters[] = self::randomCharacter($alphabet);
-            }
+        while (count($characters) < 12) {
+            $characters[] = self::randomCharacter($alphabet);
+        }
 
-            for ($index = count($characters) - 1; $index > 0; $index--) {
-                $swapIndex = random_int(0, $index);
-                [$characters[$index], $characters[$swapIndex]] = [$characters[$swapIndex], $characters[$index]];
-            }
+        for ($index = count($characters) - 1; $index > 0; $index--) {
+            $swapIndex = random_int(0, $index);
+            [$characters[$index], $characters[$swapIndex]] = [$characters[$swapIndex], $characters[$index]];
+        }
 
-            $code = implode('', $characters);
-            $isDuplicate = self::query()->get()->contains(
-                fn (self $existing) => $existing->matchesCode($code)
-            );
-        } while ($isDuplicate);
+        $code = implode('', $characters);
 
         $accessCode = self::firstOrNew(['channel' => $channel]);
         $accessCode->replaceCode($code, $validityDays);

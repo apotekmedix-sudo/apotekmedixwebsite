@@ -903,6 +903,20 @@ class CashierWorkflowTest extends TestCase
         $this->assertSame('AA9!+_X7Z@K2', $code->readCode());
         $this->assertFalse($code->verify('12345'));
         $this->assertTrue($code->verify('aa9!+_x7z@k2'));
+
+        $otherChannelCode = ShoppingAccessCode::create([
+            'channel' => ShoppingAccessCode::CHANNEL_B2C,
+            'code_hash' => Hash::make('12345'),
+            'code_value' => encrypt('12345'),
+            'expires_at' => now()->addDays(30),
+        ]);
+        $this->actingAs($admin)
+            ->put(route('admin.access-codes.update', $otherChannelCode), ['code' => 'aa9!+_x7z@k2'])
+            ->assertRedirect(route('admin.access-codes.index'));
+        $otherChannelCode->refresh();
+        $this->assertSame($code->readCode(), $otherChannelCode->readCode());
+        $this->assertTrue($otherChannelCode->verify('AA9!+_X7Z@K2'));
+
         $this->post(route('products.pbf.verify'), ['kode' => 'aa9!+_x7z@k2'])
             ->assertRedirect(route('products.pbf'));
         $this->assertFalse(ShoppingAccessCode::matchesSession(ShoppingAccessCode::CHANNEL_B2B, $oldHash));
